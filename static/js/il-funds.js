@@ -1,5 +1,7 @@
 let _ilMeta = null;
 let _ilResults = [];
+let _ilPage = 1;
+const _ilPerPage = 50;
 
 async function loadILFunds() {
     const container = document.getElementById("il-funds-container");
@@ -104,7 +106,10 @@ function buildILFilters() {
     }
 }
 
-async function runILSearch() {
+async function runILSearch(page) {
+    if (page !== undefined) _ilPage = page;
+    else _ilPage = 1;
+
     const params = new URLSearchParams();
     const v = id => { const el = document.getElementById(id); return el ? el.value : ""; };
 
@@ -115,27 +120,37 @@ async function runILSearch() {
     if (v("il-filter-min-return")) params.set("min_return", v("il-filter-min-return"));
     if (v("il-filter-min-size")) params.set("min_size", v("il-filter-min-size"));
     if (document.getElementById("il-filter-kosher")?.checked) params.set("kosher_only", "true");
+    params.set("page", _ilPage);
+    params.set("per_page", _ilPerPage);
 
     const resultsEl = document.getElementById("il-results-area");
     const countEl = document.getElementById("il-result-count");
     if (!resultsEl) return;
 
     try {
-        const results = await api.get(`/api/il-funds?${params}`);
-        _ilResults = results;
-        if (countEl) countEl.textContent = `${results.length} funds`;
-        renderILResults(resultsEl, results);
+        const data = await api.get(`/api/il-funds?${params}`);
+        const funds = data.items || [];
+        _ilResults = funds;
+        if (countEl) countEl.textContent = `${data.total} funds`;
+        renderILResults(resultsEl, funds, data);
+        renderPagination("il-pagination", data, "ilGoPage");
     } catch (e) {
         resultsEl.innerHTML = '<p style="color:var(--red);padding:20px;">Error loading funds. Check connection.</p>';
     }
 }
 
-function renderILResults(el, funds) {
+function ilGoPage(p) {
+    runILSearch(p);
+    document.getElementById("page-il-funds")?.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderILResults(el, funds, pageData) {
     if (funds.length === 0) {
         el.innerHTML = '<div class="empty-state"><p>No funds match your filters.</p></div>';
         return;
     }
 
+    const offset = pageData ? (pageData.page - 1) * pageData.per_page : 0;
     const fees = funds.map(f => f.fee).filter(f => f != null);
     const avgFee = fees.length ? fees.reduce((a, b) => a + b, 0) / fees.length : 0;
 
@@ -161,7 +176,7 @@ function renderILResults(el, funds) {
         const catShort = f.category.length > 15 ? f.category.substring(0, 14) + "…" : f.category;
 
         html += `<div class="il-table-row" onclick="window.open('${f.funder_url}','_blank')">
-            <span class="il-col-rank">${i + 1}</span>
+            <span class="il-col-rank">${offset + i + 1}</span>
             <span class="il-col-name">
                 <div class="il-fund-name">${f.name}${kosherTag}</div>
                 <div class="il-fund-manager">${f.manager}</div>

@@ -12,7 +12,7 @@ from src.services.market_data import SECTORS, REGIONS
 router = APIRouter(prefix="/api/screener", tags=["screener"])
 
 
-@router.get("", response_model=list[StockResult])
+@router.get("")
 def run_screener(
     asset_type: Optional[str] = None,
     sector: Optional[str] = None,
@@ -24,9 +24,10 @@ def run_screener(
     dividend_yield_min: Optional[float] = None,
     beta_min: Optional[float] = None,
     beta_max: Optional[float] = None,
-    limit: int = 25,
+    page: int = 1,
+    per_page: int = 50,
 ):
-    results = screen_instruments(
+    all_results = screen_instruments(
         asset_type=asset_type,
         sector=sector,
         region=region,
@@ -37,9 +38,17 @@ def run_screener(
         dividend_yield_min=dividend_yield_min,
         beta_min=beta_min,
         beta_max=beta_max,
-        limit=limit,
     )
-    return results
+    total = len(all_results)
+    start = (page - 1) * per_page
+    end = start + per_page
+    return {
+        "items": all_results[start:end],
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": (total + per_page - 1) // per_page,
+    }
 
 
 @router.get("/sectors")

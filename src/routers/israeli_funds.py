@@ -16,8 +16,10 @@ def list_funds(
     max_fee: Optional[float] = None,
     min_return: Optional[float] = None,
     min_size: Optional[float] = None,
+    page: int = 1,
+    per_page: int = 50,
 ):
-    return get_funds(
+    all_results = get_funds(
         fund_type=fund_type,
         manager=manager,
         kosher_only=kosher_only,
@@ -26,6 +28,16 @@ def list_funds(
         min_return=min_return,
         min_size=min_size,
     )
+    total = len(all_results)
+    start = (page - 1) * per_page
+    end = start + per_page
+    return {
+        "items": all_results[start:end],
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": (total + per_page - 1) // per_page,
+    }
 
 
 @router.get("/best")

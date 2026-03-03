@@ -1,5 +1,7 @@
 let screenerLoaded = false;
 let _lastResults = [];
+let _scrPage = 1;
+const _scrPerPage = 50;
 
 async function initScreener() {
     if (!screenerLoaded) {
@@ -47,7 +49,10 @@ function signalBadge(signal) {
     return `<span class="signal-badge ${s.cls}">${s.icon} ${signal}</span>`;
 }
 
-async function runScreener() {
+async function runScreener(page) {
+    if (page !== undefined) _scrPage = page;
+    else _scrPage = 1;
+
     const params = new URLSearchParams();
     const v = (id) => document.getElementById(id).value;
     if (v("scr-asset-type")) params.set("asset_type", v("scr-asset-type"));
@@ -60,7 +65,8 @@ async function runScreener() {
     if (v("scr-div-min")) params.set("dividend_yield_min", v("scr-div-min"));
     if (v("scr-beta-min")) params.set("beta_min", v("scr-beta-min"));
     if (v("scr-beta-max")) params.set("beta_max", v("scr-beta-max"));
-    params.set("limit", "100");
+    params.set("page", _scrPage);
+    params.set("per_page", _scrPerPage);
 
     const resultsEl = document.getElementById("scr-results-area");
     const empty = document.getElementById("scr-empty");
@@ -72,7 +78,8 @@ async function runScreener() {
     const t0 = performance.now();
 
     try {
-        const results = await api.get(`/api/screener?${params}`);
+        const data = await api.get(`/api/screener?${params}`);
+        const results = data.items || [];
         _lastResults = results;
         const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
 
@@ -80,15 +87,22 @@ async function runScreener() {
             resultsEl.innerHTML = "";
             empty.style.display = "block";
             if (countEl) countEl.textContent = "0 results";
+            renderPagination("scr-pagination", data, "scrGoPage");
             return;
         }
         empty.style.display = "none";
-        if (countEl) countEl.textContent = `${results.length} results in ${elapsed}s`;
+        if (countEl) countEl.textContent = `${data.total} results in ${elapsed}s`;
 
-        resultsEl.innerHTML = '<div class="scr-cards-grid">' + results.map((r, i) => renderCard(r, i)).join("") + '</div>';
+        resultsEl.innerHTML = '<div class="scr-cards-grid">' + results.map((r, i) => renderCard(r, i + (data.page - 1) * data.per_page)).join("") + '</div>';
+        renderPagination("scr-pagination", data, "scrGoPage");
     } catch (err) {
         resultsEl.innerHTML = `<p style="color:var(--red);padding:20px;">Error loading data. Try again.</p>`;
     }
+}
+
+function scrGoPage(p) {
+    runScreener(p);
+    document.getElementById("page-screener")?.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function renderCard(r, idx) {
@@ -262,6 +276,9 @@ function clearScreener() {
         .forEach((id) => { const el = document.getElementById(id); if (el) el.value = ""; });
     const countEl = document.getElementById("scr-result-count");
     if (countEl) countEl.textContent = "";
+    _scrPage = 1;
+    const pagEl = document.getElementById("scr-pagination");
+    if (pagEl) pagEl.innerHTML = "";
 }
 
 async function addToWLFromScreener(symbol, name) {

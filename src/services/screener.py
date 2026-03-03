@@ -247,7 +247,6 @@ def screen_instruments(
     dividend_yield_min: Optional[float] = None,
     beta_min: Optional[float] = None,
     beta_max: Optional[float] = None,
-    limit: int = 25,
 ) -> list[dict]:
     if asset_type == "ETF":
         universe = ETF_UNIVERSE
@@ -319,4 +318,4 @@ def screen_instruments(
         })
 
     filtered.sort(key=lambda x: x.get("market_cap", 0), reverse=True)
-    return filtered[:limit]
+    return filtered
