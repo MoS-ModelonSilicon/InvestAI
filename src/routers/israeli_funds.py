@@ -48,3 +48,21 @@ def best_deals(category: Optional[str] = None, top_n: int = 5):
 @router.get("/meta")
 def fund_meta():
     return get_fund_meta()
+
+
+@router.get("/debug")
+def debug_scrape():
+    """Diagnostic: test funder.co.il connectivity from this server."""
+    import requests
+    import time
+    results = {}
+    for key, url in [("kaspit", "https://www.funder.co.il/kaspit"), ("mehakot", "https://www.funder.co.il/mehakot")]:
+        t0 = time.time()
+        try:
+            r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
+            elapsed = round(time.time() - t0, 2)
+            has_data = "kaspitData" in r.text or "mehakotData" in r.text
+            results[key] = {"status": r.status_code, "length": len(r.text), "has_js_var": has_data, "elapsed_s": elapsed}
+        except Exception as e:
+            results[key] = {"error": str(e), "elapsed_s": round(time.time() - t0, 2)}
+    return results
