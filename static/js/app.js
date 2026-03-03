@@ -35,6 +35,8 @@ function navigateTo(page) {
     if (page === "il-funds") loadILFunds();
     if (page === "autopilot") loadAutopilot();
     if (page === "value-scanner") loadValueScanner();
+    if (page === "smart-advisor") loadSmartAdvisor();
+    if (page === "trading-advisor") loadTradingAdvisor();
 }
 
 async function loadCategories() {

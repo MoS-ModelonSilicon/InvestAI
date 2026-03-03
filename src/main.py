@@ -17,7 +17,7 @@ from src.routers import (
     categories, transactions, budgets, dashboard, profile, screener,
     recommendations, market, stock_detail, portfolio, news, comparison,
     alerts, education, calendar_router, israeli_funds, value_scanner,
-    autopilot,
+    autopilot, smart_advisor, trading_advisor,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -56,6 +56,8 @@ app.include_router(calendar_router.router)
 app.include_router(israeli_funds.router)
 app.include_router(value_scanner.router)
 app.include_router(autopilot.router)
+app.include_router(smart_advisor.router)
+app.include_router(trading_advisor.router)
 
 
 @app.get("/")
@@ -129,3 +131,6 @@ def startup():
 
     from src.services.value_scanner import start_auto_scanner
     start_auto_scanner()
+
+    from src.services.trading_advisor import start_trading_advisor
+    start_trading_advisor()

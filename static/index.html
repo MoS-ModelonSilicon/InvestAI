@@ -45,6 +45,12 @@
             <li><a href="#" class="nav-link" data-page="value-scanner">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                 Value Scanner</a></li>
+            <li><a href="#" class="nav-link" data-page="smart-advisor">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 12l7-7"/></svg>
+                Smart Advisor</a></li>
+            <li><a href="#" class="nav-link" data-page="trading-advisor">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 4 18 3-9h4"/></svg>
+                Trading Advisor</a></li>
             <li><a href="#" class="nav-link" data-page="comparison">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
                 Compare</a></li>
@@ -54,6 +60,9 @@
         </ul>
         <div class="nav-section-label">Tools</div>
         <ul class="nav-links">
+            <li><a href="#" class="nav-link" data-page="picks-tracker">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Picks Tracker</a></li>
             <li><a href="#" class="nav-link" data-page="alerts">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 Alerts <span class="bell-badge" id="bell-badge" style="display:none">0</span></a></li>
@@ -285,6 +294,67 @@
                 <svg id="vs-rej-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
             <div id="vs-rejected" style="display:none;"></div>
+        </section>
+
+        <!-- ─── Smart Advisor ─────────────────────────── -->
+        <section id="page-smart-advisor" class="page">
+            <div class="page-header">
+                <h1>Smart Advisor <span style="font-size:.55em;color:var(--text-muted);">AI Stock Simulator</span></h1>
+            </div>
+            <p class="adv-subtitle">Scans 80 top stocks with technical &amp; fundamental analysis, ranks winners, builds optimized portfolios, and tells you exactly what to do.</p>
+            <div class="adv-controls">
+                <div class="form-group">
+                    <label>Risk Level</label>
+                    <div class="adv-risk-row">
+                        <button class="btn btn-sm adv-risk-btn" data-risk="conservative" onclick="setAdvRisk('conservative')">Conservative</button>
+                        <button class="btn btn-sm adv-risk-btn adv-risk-active" data-risk="balanced" onclick="setAdvRisk('balanced')">Balanced</button>
+                        <button class="btn btn-sm adv-risk-btn" data-risk="aggressive" onclick="setAdvRisk('aggressive')">Aggressive</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Investment Amount</label>
+                    <div class="adv-amount-row">
+                        <span class="ap-dollar">$</span>
+                        <input type="number" id="adv-amount" value="10000" min="100" max="10000000" step="100">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Backtest Period</label>
+                    <div class="adv-period-row">
+                        <button class="btn btn-sm adv-period-btn" data-period="1m" onclick="setAdvPeriod('1m')">1M</button>
+                        <button class="btn btn-sm adv-period-btn" data-period="3m" onclick="setAdvPeriod('3m')">3M</button>
+                        <button class="btn btn-sm adv-period-btn" data-period="6m" onclick="setAdvPeriod('6m')">6M</button>
+                        <button class="btn btn-sm adv-period-btn adv-period-active" data-period="1y" onclick="setAdvPeriod('1y')">1Y</button>
+                    </div>
+                </div>
+                <button class="btn btn-primary adv-run-btn" onclick="runAdvisor()">Run Analysis</button>
+            </div>
+            <div id="adv-loading" style="display:none;">
+                <div class="loading-spinner"><div class="spinner"></div><p>Scanning stocks and computing indicators... This may take a minute.</p></div>
+            </div>
+            <div id="adv-error" class="empty-state" style="display:none;"></div>
+            <div id="adv-results" style="display:none;">
+                <div id="adv-report-card"></div>
+                <div id="adv-rankings-section"></div>
+                <div id="adv-portfolio-section"></div>
+            </div>
+        </section>
+
+        <!-- ─── Trading Advisor ────────────────────────── -->
+        <section id="page-trading-advisor" class="page">
+            <div class="page-header">
+                <h1>Trading Advisor <span style="font-size:.55em;color:var(--text-muted);">Live Signal Scanner</span></h1>
+            </div>
+            <div class="ta-mood-header" id="ta-mood-header"></div>
+            <div class="ta-progress" id="ta-progress"></div>
+            <div class="ta-pkg-tabs" id="ta-pkg-tabs"></div>
+            <div id="ta-pkg-content"></div>
+            <div class="ta-section" id="ta-all-picks-section" style="display:none;">
+                <h3>All Scanned Stocks <span class="scr-result-count" id="ta-pick-count"></span></h3>
+                <div class="table-wrapper"><table class="tx-table ta-picks-table"><thead><tr>
+                    <th>#</th><th>Stock</th><th>Score</th><th>Signal</th><th>RSI</th><th>MACD</th><th>Entry</th><th>Target</th><th>Stop</th><th>R/R</th>
+                </tr></thead><tbody id="ta-picks-body"></tbody></table></div>
+            </div>
         </section>
 
         <!-- ─── Comparison ───────────────────────────── -->
@@ -544,6 +614,8 @@
     <script src="/static/js/il-funds.js"></script>
     <script src="/static/js/autopilot.js"></script>
     <script src="/static/js/value-scanner.js"></script>
+    <script src="/static/js/smart-advisor.js"></script>
+    <script src="/static/js/advisor.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>
