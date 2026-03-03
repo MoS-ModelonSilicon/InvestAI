@@ -99,8 +99,20 @@ def _fetch_page(page_key: str) -> list[dict]:
         return []
 
 
+_STATIC_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "static", "data", "il-funds.json")
+
+
+def _load_static_fallback() -> list[dict]:
+    """Load pre-scraped fund data shipped with the app."""
+    try:
+        with open(_STATIC_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
 def fetch_all_funds(force_refresh: bool = False) -> list[dict]:
-    """Fetch funds from all categories, using cache."""
+    """Fetch funds from all categories, using cache. Falls back to static data."""
     cache_key = "all_il_funds"
     if not force_refresh:
         with _cache_lock:
@@ -114,6 +126,10 @@ def fetch_all_funds(force_refresh: bool = False) -> list[dict]:
         funds = _fetch_page(page_key)
         all_funds.extend(funds)
         logger.info("Fetched %d funds from %s", len(funds), page_key)
+
+    if not all_funds:
+        logger.info("Live scrape returned 0 funds, loading static fallback")
+        all_funds = _load_static_fallback()
 
     if all_funds:
         with _cache_lock:
