@@ -140,14 +140,24 @@ function renderSparkline(symbol, data, isUp) {
     });
 }
 
+async function loadHome() {
+    try {
+        const data = await api.get("/api/market/home");
+        renderTicker(data.ticker);
+        renderFeaturedStocks(data.featured);
+    } catch (e) {
+        loadTicker();
+        loadFeaturedStocks();
+    }
+}
+
 function startMarketRefresh() {
     if (tickerInterval) clearInterval(tickerInterval);
     if (marketInterval) clearInterval(marketInterval);
 
-    Promise.all([loadTicker(), loadFeaturedStocks()]);
+    loadHome();
 
-    tickerInterval = setInterval(loadTicker, 60000);
-    marketInterval = setInterval(loadFeaturedStocks, 120000);
+    marketInterval = setInterval(loadHome, 120000);
 }
 
 function stopMarketRefresh() {

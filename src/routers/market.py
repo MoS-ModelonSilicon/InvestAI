@@ -7,13 +7,11 @@ from src.services.market_data import fetch_live_quotes, fetch_sparklines, get_ca
 router = APIRouter(prefix="/api/market", tags=["market"])
 
 TICKER_SYMBOLS = [
-    "SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA",
-    "JPM", "NFLX", "AMD", "XOM", "LLY", "BABA", "TSM",
+    "SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "NVDA", "TSLA", "AMZN",
 ]
 
 FEATURED_SYMBOLS = [
-    "AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "META",
-    "BABA", "TSM", "GOOGL", "JPM",
+    "AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL",
 ]
 
 
@@ -24,14 +22,27 @@ def get_ticker_data():
 
 @router.get("/featured")
 def get_featured_stocks():
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        f_quotes = pool.submit(fetch_live_quotes, FEATURED_SYMBOLS)
-        f_sparks = pool.submit(fetch_sparklines, FEATURED_SYMBOLS)
-        quotes = f_quotes.result()
-        sparklines = f_sparks.result()
+    quotes = fetch_live_quotes(FEATURED_SYMBOLS)
     for q in quotes:
-        q["sparkline"] = sparklines.get(q["symbol"], [])
+        q["sparkline"] = []
     return quotes
+
+
+@router.get("/home")
+def get_home_data():
+    """Combined endpoint: ticker + featured in one round trip."""
+    all_syms = list(dict.fromkeys(TICKER_SYMBOLS + FEATURED_SYMBOLS))
+    quotes = fetch_live_quotes(all_syms)
+    quote_map = {q["symbol"]: q for q in quotes}
+
+    ticker = [quote_map[s] for s in TICKER_SYMBOLS if s in quote_map]
+    featured = []
+    for s in FEATURED_SYMBOLS:
+        if s in quote_map:
+            entry = {**quote_map[s], "sparkline": []}
+            featured.append(entry)
+
+    return {"ticker": ticker, "featured": featured}
 
 
 @router.get("/cache-status")

@@ -70,9 +70,10 @@ function filterCategoriesByType() {
     if (dashFrom) dashFrom.value = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, "0")}`;
     if (dashTo) dashTo.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 
-    await loadCategories();
-    await loadDashboard();
     startMarketRefresh();
+
+    try { await loadCategories(); } catch (e) { console.warn("loadCategories failed:", e); }
+    try { await loadDashboard(); } catch (e) { console.warn("loadDashboard failed:", e); }
 
     if (typeof startAlertPolling === "function") startAlertPolling();
 })();

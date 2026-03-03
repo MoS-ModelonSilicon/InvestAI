@@ -255,7 +255,7 @@ def screen_instruments(
     else:
         universe = STOCK_UNIVERSE + ETF_UNIVERSE
 
-    all_data = fetch_batch(universe)
+    all_data = fetch_batch(universe, cached_only=True)
 
     filtered = []
     for d in all_data:

@@ -263,6 +263,20 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
         metrics = fh.get_metrics(symbol) if full else {}
 
         price = quote["c"]
+        prev_close = quote.get("pc", price)
+        _set_cache(f"quote:{symbol}", {
+            "symbol": symbol,
+            "name": profile.get("name", symbol),
+            "price": round(price, 2),
+            "change": round(quote.get("d", price - prev_close), 2),
+            "change_pct": round(quote.get("dp", 0), 2),
+            "market_cap": (profile.get("marketCapitalization", 0) or 0) * 1_000_000,
+            "volume": 0,
+            "day_high": round(quote.get("h", price), 2),
+            "day_low": round(quote.get("l", price), 2),
+        })
+
+        price = quote["c"]
         w52_high = metrics.get("52WeekHigh")
         w52_low = metrics.get("52WeekLow")
         pct_from_high = round((price - w52_high) / w52_high * 100, 1) if w52_high and price else None
@@ -318,8 +332,8 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
         return None
 
 
-def fetch_batch(symbols: list[str]) -> list[dict]:
-    """Fetch info for multiple symbols in parallel."""
+def fetch_batch(symbols: list[str], cached_only: bool = False) -> list[dict]:
+    """Fetch info for multiple symbols. If cached_only=True, skip uncached symbols."""
     cached_results = []
     uncached = []
 
@@ -330,7 +344,7 @@ def fetch_batch(symbols: list[str]) -> list[dict]:
         else:
             uncached.append(sym)
 
-    if not uncached:
+    if not uncached or cached_only:
         return cached_results
 
     fresh = []
@@ -391,7 +405,7 @@ def format_market_cap(cap: float) -> str:
     return f"${cap:,.0f}"
 
 
-QUOTE_CACHE_TTL = 90  # live quotes refresh faster than full info
+QUOTE_CACHE_TTL = 300  # 5 min cache for live quotes
 
 
 def fetch_live_quotes(symbols: list[str]) -> list[dict]:
@@ -404,19 +418,41 @@ def fetch_live_quotes(symbols: list[str]) -> list[dict]:
 
     results = []
     _names = _batch_resolve_names(symbols)
+    uncached_syms = []
 
     for sym in symbols:
+        cached = _get_cached(f"quote:{sym}")
+        if cached:
+            cached["name"] = _names.get(sym, sym)
+            results.append(cached)
+            continue
+        info = _get_cached(f"info:{sym}")
+        if info and info.get("price", 0) > 0:
+            entry = {
+                "symbol": sym,
+                "name": info.get("name", sym),
+                "price": info["price"],
+                "change": 0,
+                "change_pct": 0,
+                "market_cap": info.get("market_cap", 0),
+                "volume": 0,
+                "day_high": info["price"],
+                "day_low": info["price"],
+            }
+            results.append(entry)
+            continue
+        uncached_syms.append(sym)
+
+    def _fetch_one_quote(sym):
         try:
             quote = fh.get_quote(sym)
             if not quote or quote.get("c", 0) <= 0:
-                continue
-
+                return None
             price = quote["c"]
             prev = quote.get("pc", price)
             change = quote.get("d", price - prev)
             change_pct = quote.get("dp", (change / prev * 100) if prev else 0)
-
-            results.append({
+            entry = {
                 "symbol": sym,
                 "name": _names.get(sym, sym),
                 "price": round(price, 2),
@@ -426,9 +462,21 @@ def fetch_live_quotes(symbols: list[str]) -> list[dict]:
                 "volume": 0,
                 "day_high": round(quote.get("h", price), 2),
                 "day_low": round(quote.get("l", price), 2),
-            })
+            }
+            _set_cache(f"quote:{sym}", entry)
+            return entry
         except Exception:
-            continue
+            return None
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        futures = {pool.submit(_fetch_one_quote, sym): sym for sym in uncached_syms}
+        for future in as_completed(futures):
+            entry = future.result()
+            if entry:
+                results.append(entry)
+
+    sym_order = {s: i for i, s in enumerate(symbols)}
+    results.sort(key=lambda x: sym_order.get(x["symbol"], 999))
 
     if results:
         _set_cache(cache_key, results)
@@ -479,24 +527,34 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
 # ── Background cache warming ────────────────────
 
 def warm_cache():
-    """Pre-fetch priority symbols in background. Screener fetches the rest on demand."""
+    """Phase 1: priority symbols (fast). Phase 2: rest of universe (background)."""
     global _warming
     if _warming:
         return
     _warming = True
-    symbols = WARM_PRIORITY
-    logger.info("Cache warm: starting for %d priority symbols", len(symbols))
-    t0 = time.time()
 
-    for sym in symbols:
+    # Phase 1 — priority symbols for homepage / quick screener
+    logger.info("Cache warm phase 1: %d priority symbols", len(WARM_PRIORITY))
+    t0 = time.time()
+    for sym in WARM_PRIORITY:
         try:
             fetch_stock_info(sym, full=False)
         except Exception:
             pass
-
-    elapsed = time.time() - t0
-    logger.info("Cache warm: done in %.1fs, %d symbols attempted", elapsed, len(symbols))
+    logger.info("Cache warm phase 1 done in %.1fs", time.time() - t0)
     _warm_done.set()
+
+    # Phase 2 — remaining universe for full screener coverage
+    rest = [s for s in ALL_UNIVERSE if not _get_cached(f"info:{s}")]
+    if rest:
+        logger.info("Cache warm phase 2: %d remaining symbols", len(rest))
+        for sym in rest:
+            try:
+                fetch_stock_info(sym, full=False)
+            except Exception:
+                pass
+        logger.info("Cache warm phase 2 done in %.1fs total", time.time() - t0)
+
     _warming = False
 
 
