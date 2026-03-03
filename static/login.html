@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvestAI — Login</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f1117;color:#e4e4e7;display:flex;align-items:center;justify-content:center;min-height:100vh}
+        .login-card{background:#1a1c2e;border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:48px 40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+        .logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:32px;color:#818cf8}
+        .logo span{font-size:1.5rem;font-weight:700;color:#e4e4e7}
+        h2{text-align:center;margin-bottom:8px;font-size:1.15rem;font-weight:500}
+        .subtitle{text-align:center;color:#8b8fa3;font-size:.875rem;margin-bottom:28px}
+        .form-group{margin-bottom:20px}
+        label{display:block;font-size:.8rem;color:#8b8fa3;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+        input{width:100%;padding:12px 14px;background:#141622;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:#e4e4e7;font-size:1rem;outline:none;transition:border-color .2s}
+        input:focus{border-color:#818cf8}
+        input::placeholder{color:#4a4d5e}
+        .btn{width:100%;padding:12px;background:#818cf8;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:background .2s}
+        .btn:hover{background:#6366f1}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
+        .error{color:#ef4444;font-size:.85rem;text-align:center;margin-top:16px;min-height:20px}
+        .footer{text-align:center;color:#4a4d5e;font-size:.75rem;margin-top:28px}
+        .lock-icon{width:48px;height:48px;margin:0 auto 20px;background:rgba(129,140,248,.1);border-radius:50%;display:flex;align-items:center;justify-content:center}
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="lock-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>InvestAI</span>
+        </div>
+        <h2>Welcome</h2>
+        <p class="subtitle">Enter the access key to continue</p>
+        <form id="login-form" onsubmit="doLogin(event)">
+            <div class="form-group">
+                <label for="access-key">Access Key</label>
+                <input type="password" id="access-key" placeholder="Enter your access key" autocomplete="off" autofocus required>
+            </div>
+            <button type="submit" class="btn" id="login-btn">Unlock</button>
+            <div class="error" id="error-msg"></div>
+        </form>
+        <div class="footer">Access restricted to authorized users only.</div>
+    </div>
+    <script>
+        async function doLogin(e) {
+            e.preventDefault();
+            const key = document.getElementById("access-key").value.trim();
+            const btn = document.getElementById("login-btn");
+            const err = document.getElementById("error-msg");
+            if (!key) return;
+
+            btn.disabled = true;
+            btn.textContent = "Verifying...";
+            err.textContent = "";
+
+            try {
+                const res = await fetch("/auth/login", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({key: key}),
+                });
+                if (res.ok) {
+                    window.location.href = "/";
+                } else {
+                    const data = await res.json();
+                    err.textContent = data.detail || "Invalid access key";
+                    btn.disabled = false;
+                    btn.textContent = "Unlock";
+                }
+            } catch (ex) {
+                err.textContent = "Connection error. Try again.";
+                btn.disabled = false;
+                btn.textContent = "Unlock";
+            }
+        }
+    </script>
+</body>
+</html>
