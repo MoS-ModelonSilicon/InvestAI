@@ -2655,6 +2655,78 @@ body {
     font-size: 0.78rem;
 }
 
+/* Progress bar */
+#vs-progress {
+    margin-bottom: 16px;
+}
+.vs-progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.vs-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), #22d3ee);
+    border-radius: 3px;
+    transition: width 0.6s ease;
+}
+.vs-progress-text {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    text-align: center;
+}
+
+/* Pagination */
+.vs-pagination {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+.vs-pagination-info {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+.vs-pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.vs-page-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-main);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.vs-page-btn:hover:not(:disabled) {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+.vs-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.vs-page-active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+.vs-page-dots {
+    padding: 0 4px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
 @media (max-width: 1200px) {
     .vs-table-header, .vs-table-row {
         grid-template-columns: 30px 80px 60px 1fr 90px 80px 60px 48px 52px 48px 55px 50px 100px 50px;

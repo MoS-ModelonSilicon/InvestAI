@@ -13,8 +13,16 @@ def run_value_scanner(
     sector: Optional[str] = None,
     signal: Optional[str] = None,
     sort_by: str = "score",
+    page: int = 1,
+    per_page: int = 15,
 ):
-    return scan_value_stocks(sector=sector, signal_filter=signal, sort_by=sort_by)
+    return scan_value_stocks(
+        sector=sector,
+        signal_filter=signal,
+        sort_by=sort_by,
+        page=page,
+        per_page=per_page,
+    )
 
 
 @router.get("/sectors")

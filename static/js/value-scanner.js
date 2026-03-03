@@ -1,5 +1,8 @@
 let _vsLoaded = false;
 let _vsData = null;
+let _vsPolling = null;
+let _vsCurrentPage = 1;
+const VS_PER_PAGE = 15;
 
 async function loadValueScanner() {
     if (!_vsLoaded) {
@@ -13,10 +16,20 @@ async function loadValueScanner() {
         } catch (e) { /* sectors optional */ }
         _vsLoaded = true;
     }
+    _vsCurrentPage = 1;
     runValueScanner();
 }
 
-async function runValueScanner() {
+function _stopPolling() {
+    if (_vsPolling) {
+        clearInterval(_vsPolling);
+        _vsPolling = null;
+    }
+}
+
+async function runValueScanner(keepPage) {
+    if (!keepPage) _vsCurrentPage = 1;
+
     const params = new URLSearchParams();
     const sector = document.getElementById("vs-sector").value;
     const signal = document.getElementById("vs-signal").value;
@@ -25,22 +38,63 @@ async function runValueScanner() {
     if (sector) params.set("sector", sector);
     if (signal) params.set("signal", signal);
     if (sort) params.set("sort_by", sort);
+    params.set("page", _vsCurrentPage);
+    params.set("per_page", VS_PER_PAGE);
 
     const container = document.getElementById("vs-candidates");
-    const statsEl = document.getElementById("vs-stats");
-    container.innerHTML = '<div class="text-center" style="padding:40px;"><div class="spinner"></div><p style="margin-top:12px;color:var(--text-muted);">Scanning stocks...</p></div>';
+    if (!_vsData) {
+        container.innerHTML = '<div class="text-center" style="padding:40px;"><div class="spinner"></div><p style="margin-top:12px;color:var(--text-muted);">Starting scan...</p></div>';
+    }
 
     try {
         const data = await api.get(`/api/value-scanner?${params}`);
         _vsData = data;
         renderStatCards(data.stats);
+        renderProgress(data.progress);
         renderCandidates(data.candidates);
+        renderPagination(data.pagination);
         renderRejected(data.rejected);
-        renderSectorTabs(data.candidates);
+        renderSectorTabs(data);
+
+        const statsEl = document.getElementById("vs-stats");
         if (statsEl) statsEl.textContent = `${data.stats.scanned} scanned · ${data.stats.candidates} candidates`;
+
+        if (!data.progress.complete) {
+            _startPolling();
+        } else {
+            _stopPolling();
+        }
     } catch (err) {
         container.innerHTML = '<p style="color:var(--red);padding:20px;">Error loading data. Try again later.</p>';
+        _stopPolling();
     }
+}
+
+function _startPolling() {
+    if (_vsPolling) return;
+    _vsPolling = setInterval(() => {
+        runValueScanner(true);
+    }, 4000);
+}
+
+function renderProgress(progress) {
+    const el = document.getElementById("vs-progress");
+    if (!el) return;
+
+    if (progress.complete) {
+        el.style.display = "none";
+        return;
+    }
+
+    el.style.display = "block";
+    const pct = progress.total > 0 ? Math.round((progress.scanned / progress.total) * 100) : 0;
+    el.innerHTML = `
+        <div class="vs-progress-bar">
+            <div class="vs-progress-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="vs-progress-text">
+            Scanning stocks... ${progress.scanned} of ${progress.total} (${pct}%)
+        </div>`;
 }
 
 function renderStatCards(stats) {
@@ -60,25 +114,30 @@ function renderStatCards(stats) {
         </div>`;
 }
 
-function renderSectorTabs(candidates) {
+function renderSectorTabs(data) {
     const el = document.getElementById("vs-sector-tabs");
+    const candidates = data.candidates || [];
+    const totalCandidates = data.pagination ? data.pagination.total_items : candidates.length;
+
     const sectors = {};
     candidates.forEach(c => {
         sectors[c.sector] = (sectors[c.sector] || 0) + 1;
     });
-    const sorted = Object.entries(sectors).sort((a, b) => b[1] - a[1]);
-    if (sorted.length <= 1) { el.innerHTML = ""; return; }
 
-    el.innerHTML = `<button class="vs-tab vs-tab-active" onclick="filterVSSector(this, '')">All (${candidates.length})</button>` +
+    if (totalCandidates <= 0) { el.innerHTML = ""; return; }
+
+    const sorted = Object.entries(sectors).sort((a, b) => b[1] - a[1]);
+    el.innerHTML = `<button class="vs-tab vs-tab-active" onclick="filterVSSector(this, '')">All (${totalCandidates})</button>` +
         sorted.map(([s, n]) => `<button class="vs-tab" onclick="filterVSSector(this, '${s}')">${s} (${n})</button>`).join("");
 }
 
 function filterVSSector(btn, sector) {
     document.querySelectorAll(".vs-tab").forEach(t => t.classList.remove("vs-tab-active"));
     btn.classList.add("vs-tab-active");
-    if (!_vsData) return;
-    const filtered = sector ? _vsData.candidates.filter(c => c.sector === sector) : _vsData.candidates;
-    renderCandidates(filtered);
+    const sectorEl = document.getElementById("vs-sector");
+    sectorEl.value = sector;
+    _vsCurrentPage = 1;
+    runValueScanner();
 }
 
 function vsSignalBadge(signal) {
@@ -115,9 +174,16 @@ function renderCandidates(candidates) {
     const container = document.getElementById("vs-candidates");
 
     if (!candidates || candidates.length === 0) {
-        container.innerHTML = '<div class="empty-state"><p>No candidates match the current filters. Try adjusting the signal or sector filter.</p></div>';
+        const prog = _vsData && _vsData.progress;
+        if (prog && !prog.complete) {
+            container.innerHTML = '<div class="text-center" style="padding:40px;"><div class="spinner"></div><p style="margin-top:12px;color:var(--text-muted);">Scanning in progress... results will appear shortly.</p></div>';
+        } else {
+            container.innerHTML = '<div class="empty-state"><p>No candidates match the current filters. Try adjusting the signal or sector filter.</p></div>';
+        }
         return;
     }
+
+    const pageOffset = (_vsCurrentPage - 1) * VS_PER_PAGE;
 
     let html = `<div class="vs-table">
         <div class="vs-table-header">
@@ -139,7 +205,7 @@ function renderCandidates(candidates) {
 
     candidates.forEach((c, i) => {
         html += `<div class="vs-table-row" onclick="navigateToStock('${c.symbol}')">
-            <div class="vs-col-rank">${i + 1}</div>
+            <div class="vs-col-rank">${pageOffset + i + 1}</div>
             <div class="vs-col-signal">${vsSignalBadge(c.signal)}</div>
             <div class="vs-col-ticker"><strong>${c.symbol}</strong></div>
             <div class="vs-col-company">${c.name}</div>
@@ -161,6 +227,61 @@ function renderCandidates(candidates) {
 
     html += '</div>';
     container.innerHTML = html;
+}
+
+function renderPagination(pagination) {
+    const el = document.getElementById("vs-pagination");
+    if (!el) return;
+
+    if (!pagination || pagination.total_pages <= 1) {
+        el.innerHTML = "";
+        return;
+    }
+
+    const { page, total_pages, total_items, per_page } = pagination;
+    const start = (page - 1) * per_page + 1;
+    const end = Math.min(page * per_page, total_items);
+
+    let btns = "";
+
+    btns += `<button class="vs-page-btn" ${page <= 1 ? "disabled" : ""} onclick="vsGoPage(${page - 1})">‹ Prev</button>`;
+
+    const range = _pageRange(page, total_pages);
+    for (const p of range) {
+        if (p === "...") {
+            btns += `<span class="vs-page-dots">…</span>`;
+        } else {
+            btns += `<button class="vs-page-btn ${p === page ? "vs-page-active" : ""}" onclick="vsGoPage(${p})">${p}</button>`;
+        }
+    }
+
+    btns += `<button class="vs-page-btn" ${page >= total_pages ? "disabled" : ""} onclick="vsGoPage(${page + 1})">Next ›</button>`;
+
+    el.innerHTML = `
+        <div class="vs-pagination-info">Showing ${start}–${end} of ${total_items} candidates</div>
+        <div class="vs-pagination-buttons">${btns}</div>`;
+}
+
+function _pageRange(current, total) {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+    const pages = [1];
+    const left = Math.max(2, current - 1);
+    const right = Math.min(total - 1, current + 1);
+
+    if (left > 2) pages.push("...");
+    for (let i = left; i <= right; i++) pages.push(i);
+    if (right < total - 1) pages.push("...");
+    pages.push(total);
+
+    return pages;
+}
+
+function vsGoPage(p) {
+    _vsCurrentPage = p;
+    runValueScanner(true);
+    const container = document.getElementById("vs-candidates");
+    if (container) container.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderRejected(rejected) {
