@@ -17,10 +17,12 @@ _cache: dict[str, tuple[float, list]] = {}
 _cache_lock = threading.Lock()
 CACHE_TTL = 3600  # 1 hour
 
+import os
+_USE_PROXY = os.environ.get("USE_INTEL_PROXY", "").lower() in ("1", "true", "yes")
 PROXIES = {
     "http": "http://proxy-dmz.intel.com:911",
     "https": "http://proxy-dmz.intel.com:912",
-}
+} if _USE_PROXY else None
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 TIMEOUT = 20
 
