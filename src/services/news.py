@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from src.services import finnhub_client as fh
+from src.services import data_provider as dp
 from src.services.market_data import _get_cached, _set_cache
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ def get_ticker_news(symbol: str) -> list[dict]:
         return cached
 
     try:
-        raw = fh.get_company_news(symbol, days_back=7)
+        raw = dp.get_company_news(symbol, days_back=7)
         logger.info("News for %s: got %d raw items", symbol, len(raw))
         articles = []
         for item in raw[:10]:

@@ -127,9 +127,13 @@ def fetch_all_funds(force_refresh: bool = False) -> list[dict]:
         all_funds.extend(funds)
         logger.info("Fetched %d funds from %s", len(funds), page_key)
 
-    if not all_funds:
-        logger.info("Live scrape returned 0 funds, loading static fallback")
-        all_funds = _load_static_fallback()
+    static_funds = _load_static_fallback()
+    if len(all_funds) < len(static_funds) * 0.5:
+        logger.info(
+            "Live scrape returned only %d funds (static has %d), using static fallback",
+            len(all_funds), len(static_funds),
+        )
+        all_funds = static_funds
 
     if all_funds:
         with _cache_lock:

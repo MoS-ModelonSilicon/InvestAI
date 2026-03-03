@@ -4,6 +4,7 @@ sqlalchemy
 pydantic
 requests
 aiofiles
+yfinance
 
 # Testing (E2E with real browser)
 pytest

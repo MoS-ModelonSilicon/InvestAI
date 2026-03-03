@@ -39,6 +39,9 @@
             <li><a href="#" class="nav-link" data-page="recommendations">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 For You</a></li>
+            <li><a href="#" class="nav-link" data-page="value-scanner">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                Value Scanner</a></li>
             <li><a href="#" class="nav-link" data-page="comparison">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
                 Compare</a></li>
@@ -217,6 +220,65 @@
             <div id="recs-no-profile" class="empty-state" style="display:none;">
                 <p>Complete your <a href="#" onclick="navigateTo('profile');return false;" style="color:var(--primary)">Risk Profile</a> first to get personalized recommendations.</p>
             </div>
+        </section>
+
+        <!-- ─── Value Scanner ────────────────────────── -->
+        <section id="page-value-scanner" class="page">
+            <div class="page-header">
+                <h1>Value Scanner</h1>
+                <span class="scr-result-count" id="vs-stats"></span>
+            </div>
+            <div class="vs-disclaimer">
+                This scanner uses a Graham-Buffett value investing framework. It is for educational and research purposes only — not financial advice. Always do your own due diligence.
+            </div>
+            <div class="vs-methodology-toggle" onclick="toggleVSMethodology()">
+                <span>Methodology</span>
+                <svg id="vs-meth-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="vs-methodology" id="vs-methodology" style="display:none;">
+                <div class="vs-meth-grid">
+                    <div class="vs-meth-item"><strong>P/E ≤ 15</strong><span>Price-to-earnings below 15 indicates reasonable valuation</span></div>
+                    <div class="vs-meth-item"><strong>D/E ≤ 1.0</strong><span>Debt-to-equity ratio below 1.0 shows manageable leverage</span></div>
+                    <div class="vs-meth-item"><strong>Current Ratio ≥ 1.5</strong><span>Sufficient short-term liquidity to cover obligations</span></div>
+                    <div class="vs-meth-item"><strong>Positive Margin</strong><span>Company is profitable at the net-income level</span></div>
+                    <div class="vs-meth-item"><strong>Positive ROE</strong><span>Generates returns on shareholder equity</span></div>
+                    <div class="vs-meth-item"><strong>Positive FCF</strong><span>Generates real cash after capital expenditures</span></div>
+                </div>
+                <p class="vs-meth-note">Stocks passing all criteria are ranked by Quality Score (0-100) and Margin of Safety. Financial Services and Real Estate sectors are excluded.</p>
+            </div>
+            <div class="vs-controls">
+                <div class="vs-filter-group">
+                    <label>Sector</label>
+                    <select id="vs-sector" onchange="runValueScanner()"><option value="">All Sectors</option></select>
+                </div>
+                <div class="vs-filter-group">
+                    <label>Signal</label>
+                    <select id="vs-signal" onchange="runValueScanner()">
+                        <option value="">All Signals</option>
+                        <option value="Strong Buy">Strong Buy</option>
+                        <option value="Buy">Buy</option>
+                        <option value="Watch">Watch</option>
+                    </select>
+                </div>
+                <div class="vs-filter-group">
+                    <label>Sort By</label>
+                    <select id="vs-sort" onchange="runValueScanner()">
+                        <option value="score">Quality Score</option>
+                        <option value="mos">Margin of Safety</option>
+                        <option value="pe">P/E (lowest)</option>
+                        <option value="roe">ROE (highest)</option>
+                        <option value="fcf_yield">FCF Yield</option>
+                    </select>
+                </div>
+            </div>
+            <div class="vs-stat-cards" id="vs-stat-cards"></div>
+            <div class="vs-sector-tabs" id="vs-sector-tabs"></div>
+            <div id="vs-candidates"></div>
+            <div class="vs-rejected-toggle" id="vs-rejected-toggle" style="display:none;" onclick="toggleRejected()">
+                <span>🔴 Rejected Stocks (<span id="vs-rejected-count">0</span>)</span>
+                <svg id="vs-rej-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div id="vs-rejected" style="display:none;"></div>
         </section>
 
         <!-- ─── Comparison ───────────────────────────── -->
@@ -399,6 +461,7 @@
     <script src="/static/js/education.js"></script>
     <script src="/static/js/calendar.js"></script>
     <script src="/static/js/il-funds.js"></script>
+    <script src="/static/js/value-scanner.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>

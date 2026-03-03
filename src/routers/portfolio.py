@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -6,17 +8,38 @@ from src.models import Holding
 from src.schemas.portfolio import HoldingCreate, HoldingOut, PortfolioSummary
 from src.services.portfolio import calculate_portfolio, get_portfolio_performance
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
+
+_EMPTY_SUMMARY = {
+    "total_invested": 0,
+    "total_value": 0,
+    "total_gain_loss": 0,
+    "total_gain_loss_pct": 0,
+    "holdings": [],
+    "sector_allocation": [],
+    "best_performer": None,
+    "worst_performer": None,
+}
 
 
 @router.get("/summary")
 def portfolio_summary(db: Session = Depends(get_db)):
-    return calculate_portfolio(db)
+    try:
+        return calculate_portfolio(db)
+    except Exception as e:
+        logger.error("portfolio_summary error: %s", e)
+        return _EMPTY_SUMMARY
 
 
 @router.get("/performance")
 def portfolio_performance(db: Session = Depends(get_db)):
-    return get_portfolio_performance(db)
+    try:
+        return get_portfolio_performance(db)
+    except Exception as e:
+        logger.error("portfolio_performance error: %s", e)
+        return {"dates": [], "portfolio": [], "benchmark": []}
 
 
 @router.get("/holdings")

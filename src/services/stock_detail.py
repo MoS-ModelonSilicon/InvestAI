@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 from typing import Optional
 
-from src.services import finnhub_client as fh
+from src.services import data_provider as dp
 from src.services.market_data import fetch_stock_info, _get_cached, _set_cache
 
 
@@ -30,7 +30,7 @@ def get_price_history(symbol: str, period: str = "1y", interval: str = "1d") -> 
     from_ts = to_ts - days * 86400
 
     try:
-        candles = fh.get_candles(symbol, res, from_ts, to_ts)
+        candles = dp.get_candles(symbol, res, from_ts, to_ts)
         if not candles or not candles.get("c"):
             return {"dates": [], "open": [], "high": [], "low": [], "close": [], "volume": []}
 

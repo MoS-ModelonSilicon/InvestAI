@@ -63,11 +63,10 @@ def _live_server():
 
 @pytest.fixture(scope="session")
 def browser_type_launch_args():
-    """Chromium launch args — bypass proxy for localhost."""
+    """Chromium launch args — use proxy for CDN but bypass for localhost."""
     return {
         "args": [
-            "--no-proxy-server",
-            "--proxy-bypass-list=<-loopback>",
+            "--proxy-bypass-list=127.0.0.1;localhost;<-loopback>",
         ]
     }
 
@@ -77,7 +76,10 @@ def browser_context_args():
     """Playwright browser-context options (session-wide)."""
     return {
         "viewport": {"width": 1280, "height": 1024},
-        "proxy": {"server": "direct://", "bypass": "127.0.0.1,localhost"},
+        "proxy": {
+            "server": "http://proxy-dmz.intel.com:912",
+            "bypass": "127.0.0.1,localhost",
+        },
     }
 
 

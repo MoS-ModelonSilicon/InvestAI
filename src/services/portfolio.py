@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from src.models import Holding
-from src.services import finnhub_client as fh
+from src.services import data_provider as dp
 from src.services.market_data import fetch_stock_info, _get_cached, _set_cache
 
 
@@ -105,7 +105,7 @@ def get_portfolio_performance(db: Session) -> dict:
     start_ts = int(datetime.combine(earliest, datetime.min.time()).timestamp())
     end_ts = int(time.time())
 
-    spy_candles = fh.get_candles("SPY", "D", start_ts, end_ts)
+    spy_candles = dp.get_candles("SPY", "D", start_ts, end_ts)
     if not spy_candles or not spy_candles.get("c"):
         return {"dates": [], "portfolio": [], "benchmark": []}
 
@@ -116,7 +116,7 @@ def get_portfolio_performance(db: Session) -> dict:
     symbol_candles = {}
     for h in holdings:
         if h.symbol not in symbol_candles:
-            candles = fh.get_candles(h.symbol, "D", start_ts, end_ts)
+            candles = dp.get_candles(h.symbol, "D", start_ts, end_ts)
             symbol_candles[h.symbol] = candles
 
     portfolio_values = []

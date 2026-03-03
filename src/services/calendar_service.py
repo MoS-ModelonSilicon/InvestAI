@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from src.services import finnhub_client as fh
+from src.services import data_provider as dp
 from src.services.market_data import _get_cached, _set_cache
 
 
@@ -15,7 +15,7 @@ def get_earnings_calendar(symbols: list[str]) -> list[dict]:
     to_date = (datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
 
     symbol_set = set(symbols[:30])
-    raw = fh.get_earnings_calendar(from_date, to_date)
+    raw = dp.get_earnings_calendar(from_date, to_date)
 
     events = []
     for item in raw:

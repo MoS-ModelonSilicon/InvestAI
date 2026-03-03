@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from typing import Optional
 
-from src.services import finnhub_client as fh
+from src.services import data_provider as dp
 
 logger = logging.getLogger(__name__)
 
@@ -165,12 +165,12 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
         return cached
 
     try:
-        quote = fh.get_quote(symbol)
+        quote = dp.get_quote(symbol)
         if not quote or quote.get("c", 0) <= 0:
             return None
 
-        profile = fh.get_profile(symbol) or {}
-        metrics = fh.get_metrics(symbol) if full else {}
+        profile = dp.get_profile(symbol) or {}
+        metrics = dp.get_metrics(symbol) if full else {}
 
         price = quote["c"]
         prev_close = quote.get("pc", price)
@@ -228,6 +228,10 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
             "debt_to_equity": metrics.get("totalDebt/totalEquityQuarterly"),
             "return_on_equity": metrics.get("roeTTM"),
             "free_cash_flow": metrics.get("freeCashFlowTTM"),
+            "current_ratio": metrics.get("currentRatio"),
+            "price_to_book": metrics.get("priceToBook"),
+            "trailing_eps": metrics.get("trailingEps"),
+            "book_value": metrics.get("bookValue"),
             "target_mean_price": metrics.get("targetMeanPrice"),
             "target_high_price": metrics.get("targetHighPrice"),
             "target_low_price": metrics.get("targetLowPrice"),
@@ -355,7 +359,7 @@ def fetch_live_quotes(symbols: list[str]) -> list[dict]:
 
     def _fetch_one_quote(sym):
         try:
-            quote = fh.get_quote(sym)
+            quote = dp.get_quote(sym)
             if not quote or quote.get("c", 0) <= 0:
                 return None
             price = quote["c"]
@@ -422,7 +426,7 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
     result = {}
     for sym in symbols:
         try:
-            candles = fh.get_candles(sym, res, from_ts, to_ts)
+            candles = dp.get_candles(sym, res, from_ts, to_ts)
             if candles and candles.get("c"):
                 result[sym] = [round(v, 2) for v in candles["c"]]
             else:

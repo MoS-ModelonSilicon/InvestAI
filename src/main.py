@@ -15,7 +15,7 @@ from src.auth import (
 from src.routers import (
     categories, transactions, budgets, dashboard, profile, screener,
     recommendations, market, stock_detail, portfolio, news, comparison,
-    alerts, education, calendar_router, israeli_funds,
+    alerts, education, calendar_router, israeli_funds, value_scanner,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -41,6 +41,7 @@ app.include_router(alerts.router)
 app.include_router(education.router)
 app.include_router(calendar_router.router)
 app.include_router(israeli_funds.router)
+app.include_router(value_scanner.router)
 
 
 @app.get("/")
