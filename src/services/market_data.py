@@ -2,9 +2,10 @@ import logging
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timedelta
 from typing import Optional
 
-import yfinance as yf
+from src.services import finnhub_client as fh
 
 logger = logging.getLogger(__name__)
 
@@ -246,60 +247,66 @@ def fetch_stock_info(symbol: str) -> Optional[dict]:
         return cached
 
     try:
-        ticker = yf.Ticker(symbol)
-        info = ticker.info
-        if not info or "symbol" not in info:
+        quote = fh.get_quote(symbol)
+        if not quote or quote.get("c", 0) <= 0:
             return None
 
-        raw_div = info.get("dividendYield")
-        div_yield = _pct_safe(raw_div)
-        if div_yield is not None and div_yield > 20:
-            div_yield = None
+        profile = fh.get_profile(symbol) or {}
+        metrics = fh.get_metrics(symbol) or {}
 
-        price = info.get("currentPrice", info.get("regularMarketPrice", info.get("previousClose", 0)))
-        w52_high = info.get("fiftyTwoWeekHigh")
-        w52_low = info.get("fiftyTwoWeekLow")
+        price = quote["c"]
+        w52_high = metrics.get("52WeekHigh")
+        w52_low = metrics.get("52WeekLow")
         pct_from_high = round((price - w52_high) / w52_high * 100, 1) if w52_high and price else None
         pct_from_low = round((price - w52_low) / w52_low * 100, 1) if w52_low and price else None
 
+        raw_div = metrics.get("dividendYieldIndicatedAnnual")
+        div_yield = round(raw_div, 2) if raw_div else None
+        if div_yield is not None and div_yield > 20:
+            div_yield = None
+
+        mcap_millions = profile.get("marketCapitalization", 0) or 0
+        market_cap = mcap_millions * 1_000_000
+
         result = {
-            "symbol": info.get("symbol", symbol),
-            "name": info.get("shortName", info.get("longName", symbol)),
-            "sector": info.get("sector", info.get("category", "N/A")),
-            "industry": info.get("industry", "N/A"),
-            "price": price,
-            "market_cap": info.get("marketCap", 0),
-            "pe_ratio": info.get("trailingPE"),
-            "forward_pe": info.get("forwardPE"),
+            "symbol": profile.get("ticker", symbol),
+            "name": profile.get("name", symbol),
+            "sector": profile.get("finnhubIndustry", "N/A"),
+            "industry": profile.get("finnhubIndustry", "N/A"),
+            "price": round(price, 2),
+            "market_cap": market_cap,
+            "pe_ratio": metrics.get("peTTM"),
+            "forward_pe": metrics.get("peAnnual"),
             "dividend_yield": div_yield,
-            "beta": info.get("beta"),
-            "year_change": _pct(info.get("52WeekChange")),
-            "recommendation": info.get("recommendationKey"),
-            "expense_ratio": _pct_safe(info.get("annualReportExpenseRatio")),
-            "asset_type": _classify_asset(info),
-            "total_assets": info.get("totalAssets"),
-            "three_year_return": _pct(info.get("threeYearAverageReturn")),
-            "five_year_return": _pct(info.get("fiveYearAverageReturn")),
+            "beta": metrics.get("beta"),
+            "year_change": None,
+            "recommendation": None,
+            "expense_ratio": None,
+            "asset_type": _classify_asset_fh(profile),
+            "total_assets": None,
+            "three_year_return": None,
+            "five_year_return": None,
             "week52_high": w52_high,
             "week52_low": w52_low,
             "pct_from_high": pct_from_high,
             "pct_from_low": pct_from_low,
-            "profit_margin": _pct(info.get("profitMargins")),
-            "revenue_growth": _pct(info.get("revenueGrowth")),
-            "earnings_growth": _pct(info.get("earningsGrowth")),
-            "debt_to_equity": info.get("debtToEquity"),
-            "return_on_equity": _pct(info.get("returnOnEquity")),
-            "free_cash_flow": info.get("freeCashflow"),
-            "target_mean_price": info.get("targetMeanPrice"),
-            "target_high_price": info.get("targetHighPrice"),
-            "target_low_price": info.get("targetLowPrice"),
-            "num_analysts": info.get("numberOfAnalystOpinions"),
-            "summary": info.get("longBusinessSummary", ""),
+            "profit_margin": metrics.get("netProfitMarginTTM"),
+            "revenue_growth": metrics.get("revenueGrowthTTMYoy"),
+            "earnings_growth": metrics.get("epsGrowthTTMYoy"),
+            "debt_to_equity": metrics.get("totalDebt/totalEquityQuarterly"),
+            "return_on_equity": metrics.get("roeTTM"),
+            "free_cash_flow": metrics.get("freeCashFlowTTM"),
+            "target_mean_price": metrics.get("targetMeanPrice"),
+            "target_high_price": metrics.get("targetHighPrice"),
+            "target_low_price": metrics.get("targetLowPrice"),
+            "num_analysts": None,
+            "summary": "",
             "region": get_region(symbol),
         }
         _set_cache(f"info:{symbol}", result)
         return result
-    except Exception:
+    except Exception as e:
+        logger.warning("fetch_stock_info error for %s: %s", symbol, e)
         return None
 
 
@@ -356,6 +363,14 @@ def _classify_asset(info: dict) -> str:
     return "Stock"
 
 
+def _classify_asset_fh(profile: dict) -> str:
+    """Classify asset type from Finnhub profile data."""
+    exchange = (profile.get("exchange") or "").upper()
+    if "ETF" in exchange or profile.get("ticker", "") in ETF_UNIVERSE:
+        return "ETF"
+    return "Stock"
+
+
 def format_market_cap(cap: float) -> str:
     if not cap:
         return "N/A"
@@ -380,51 +395,32 @@ def fetch_live_quotes(symbols: list[str]) -> list[dict]:
                 return data
 
     results = []
-    try:
-        df = yf.download(
-            symbols, period="5d", interval="1d",
-            group_by="ticker", progress=False, threads=True,
-        )
-        if df.empty:
-            return results
+    _names = _batch_resolve_names(symbols)
 
-        _names = _batch_resolve_names(symbols)
-
-        for sym in symbols:
-            try:
-                if len(symbols) == 1:
-                    sym_df = df
-                else:
-                    sym_df = df[sym]
-
-                closes = sym_df["Close"].dropna()
-                if len(closes) < 1:
-                    continue
-
-                price = float(closes.iloc[-1])
-                prev = float(closes.iloc[-2]) if len(closes) >= 2 else price
-                change = price - prev
-                change_pct = (change / prev * 100) if prev else 0
-
-                highs = sym_df["High"].dropna()
-                lows = sym_df["Low"].dropna()
-                vols = sym_df["Volume"].dropna()
-
-                results.append({
-                    "symbol": sym,
-                    "name": _names.get(sym, sym),
-                    "price": round(price, 2),
-                    "change": round(change, 2),
-                    "change_pct": round(change_pct, 2),
-                    "market_cap": 0,
-                    "volume": int(vols.iloc[-1]) if len(vols) else 0,
-                    "day_high": round(float(highs.iloc[-1]), 2) if len(highs) else round(price, 2),
-                    "day_low": round(float(lows.iloc[-1]), 2) if len(lows) else round(price, 2),
-                })
-            except Exception:
+    for sym in symbols:
+        try:
+            quote = fh.get_quote(sym)
+            if not quote or quote.get("c", 0) <= 0:
                 continue
-    except Exception as e:
-        logger.warning("fetch_live_quotes error: %s", e)
+
+            price = quote["c"]
+            prev = quote.get("pc", price)
+            change = quote.get("d", price - prev)
+            change_pct = quote.get("dp", (change / prev * 100) if prev else 0)
+
+            results.append({
+                "symbol": sym,
+                "name": _names.get(sym, sym),
+                "price": round(price, 2),
+                "change": round(change, 2),
+                "change_pct": round(change_pct, 2),
+                "market_cap": 0,
+                "volume": 0,
+                "day_high": round(quote.get("h", price), 2),
+                "day_low": round(quote.get("l", price), 2),
+            })
+        except Exception:
+            continue
 
     if results:
         _set_cache(cache_key, results)
@@ -449,20 +445,24 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
     if cached:
         return cached
 
+    period_map = {"1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "1y": 365}
+    days = period_map.get(period, 5)
+    resolution_map = {"1m": "1", "5m": "5", "15m": "15", "1h": "60", "1d": "D"}
+    res = resolution_map.get(interval, "60")
+
+    to_ts = int(time.time())
+    from_ts = to_ts - days * 86400
+
     result = {}
-    try:
-        data = yf.download(symbols, period=period, interval=interval, group_by="ticker", progress=False, threads=True)
-        for sym in symbols:
-            try:
-                if len(symbols) == 1:
-                    closes = data["Close"].dropna().tolist()
-                else:
-                    closes = data[sym]["Close"].dropna().tolist()
-                result[sym] = [round(v, 2) for v in closes]
-            except Exception:
+    for sym in symbols:
+        try:
+            candles = fh.get_candles(sym, res, from_ts, to_ts)
+            if candles and candles.get("c"):
+                result[sym] = [round(v, 2) for v in candles["c"]]
+            else:
                 result[sym] = []
-    except Exception:
-        pass
+        except Exception:
+            result[sym] = []
 
     _set_cache(cache_key, result)
     return result

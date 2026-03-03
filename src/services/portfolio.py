@@ -1,6 +1,11 @@
+import time
+from datetime import datetime, timedelta
+
 from sqlalchemy.orm import Session
+
 from src.models import Holding
-from src.services.market_data import fetch_stock_info
+from src.services import finnhub_client as fh
+from src.services.market_data import fetch_stock_info, _get_cached, _set_cache
 
 
 def calculate_portfolio(db: Session) -> dict:
@@ -91,51 +96,43 @@ def get_portfolio_performance(db: Session) -> dict:
     if not holdings:
         return {"dates": [], "portfolio": [], "benchmark": []}
 
-    import yfinance as yf
-    from datetime import datetime, timedelta
-    from src.services.market_data import _get_cached, _set_cache
-
     cache_key = "portfolio_perf"
     cached = _get_cached(cache_key)
     if cached:
         return cached
 
     earliest = min(h.buy_date for h in holdings)
-    start_str = earliest.strftime("%Y-%m-%d")
+    start_ts = int(datetime.combine(earliest, datetime.min.time()).timestamp())
+    end_ts = int(time.time())
 
-    spy = yf.Ticker("SPY")
-    bench_hist = spy.history(start=start_str, interval="1d")
-    if bench_hist.empty:
+    spy_candles = fh.get_candles("SPY", "D", start_ts, end_ts)
+    if not spy_candles or not spy_candles.get("c"):
         return {"dates": [], "portfolio": [], "benchmark": []}
 
-    dates = [d.strftime("%Y-%m-%d") for d in bench_hist.index]
-    bench_start = bench_hist["Close"].iloc[0]
-    benchmark = [round((v / bench_start - 1) * 100, 2) for v in bench_hist["Close"]]
+    dates = [datetime.fromtimestamp(t).strftime("%Y-%m-%d") for t in spy_candles["t"]]
+    bench_start = spy_candles["c"][0]
+    benchmark = [round((v / bench_start - 1) * 100, 2) for v in spy_candles["c"]]
 
-    symbol_histories = {}
+    symbol_candles = {}
     for h in holdings:
-        if h.symbol not in symbol_histories:
-            try:
-                t = yf.Ticker(h.symbol)
-                hist = t.history(start=start_str, interval="1d")
-                symbol_histories[h.symbol] = hist
-            except Exception:
-                symbol_histories[h.symbol] = None
+        if h.symbol not in symbol_candles:
+            candles = fh.get_candles(h.symbol, "D", start_ts, end_ts)
+            symbol_candles[h.symbol] = candles
 
     portfolio_values = []
     for i, date_str in enumerate(dates):
         total = 0
         invested = 0
         for h in holdings:
-            hist = symbol_histories.get(h.symbol)
-            if hist is None or hist.empty:
+            candles = symbol_candles.get(h.symbol)
+            if not candles or not candles.get("c"):
                 continue
             buy_date_str = h.buy_date.strftime("%Y-%m-%d")
             if date_str < buy_date_str:
                 continue
             try:
-                idx = min(i, len(hist) - 1)
-                price = hist["Close"].iloc[idx]
+                idx = min(i, len(candles["c"]) - 1)
+                price = candles["c"][idx]
                 total += h.quantity * price
                 invested += h.quantity * h.buy_price
             except Exception:

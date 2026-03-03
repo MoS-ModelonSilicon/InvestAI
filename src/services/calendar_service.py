@@ -1,5 +1,6 @@
-import yfinance as yf
 from datetime import datetime, timedelta
+
+from src.services import finnhub_client as fh
 from src.services.market_data import _get_cached, _set_cache
 
 
@@ -10,44 +11,26 @@ def get_earnings_calendar(symbols: list[str]) -> list[dict]:
     if cached is not None:
         return cached
 
-    events = []
-    for sym in symbols[:30]:
-        try:
-            ticker = yf.Ticker(sym)
-            info = ticker.info or {}
+    from_date = datetime.now().strftime("%Y-%m-%d")
+    to_date = (datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
 
-            cal = ticker.calendar
-            if cal is not None and not (hasattr(cal, 'empty') and cal.empty):
-                if isinstance(cal, dict):
-                    ed = cal.get("Earnings Date")
-                    if ed and isinstance(ed, list) and len(ed) > 0:
-                        for d in ed:
-                            events.append({
-                                "symbol": sym,
-                                "name": info.get("shortName", sym),
-                                "event": "Earnings",
-                                "date": d.strftime("%Y-%m-%d") if hasattr(d, "strftime") else str(d),
-                            })
-                    dividend_date = cal.get("Dividend Date")
-                    if dividend_date:
-                        d = dividend_date
-                        events.append({
-                            "symbol": sym,
-                            "name": info.get("shortName", sym),
-                            "event": "Dividend",
-                            "date": d.strftime("%Y-%m-%d") if hasattr(d, "strftime") else str(d),
-                        })
-                    ex_dividend = cal.get("Ex-Dividend Date")
-                    if ex_dividend:
-                        d = ex_dividend
-                        events.append({
-                            "symbol": sym,
-                            "name": info.get("shortName", sym),
-                            "event": "Ex-Dividend",
-                            "date": d.strftime("%Y-%m-%d") if hasattr(d, "strftime") else str(d),
-                        })
-        except Exception:
+    symbol_set = set(symbols[:30])
+    raw = fh.get_earnings_calendar(from_date, to_date)
+
+    events = []
+    for item in raw:
+        sym = item.get("symbol", "")
+        if sym not in symbol_set:
             continue
+        date_str = item.get("date", "")
+        if not date_str:
+            continue
+        events.append({
+            "symbol": sym,
+            "name": sym,
+            "event": "Earnings",
+            "date": date_str,
+        })
 
     events.sort(key=lambda x: x.get("date", ""))
     _set_cache(cache_key, events)

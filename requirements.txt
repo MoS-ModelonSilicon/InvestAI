@@ -2,6 +2,10 @@ fastapi
 uvicorn[standard]
 sqlalchemy
 pydantic
-yfinance
 requests
 aiofiles
+
+# Testing (E2E with real browser)
+pytest
+playwright
+pytest-playwright

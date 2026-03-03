@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-import yfinance as yf
+from src.services import finnhub_client as fh
 from src.services.market_data import _get_cached, _set_cache
 
 logger = logging.getLogger(__name__)
@@ -14,49 +14,22 @@ def get_ticker_news(symbol: str) -> list[dict]:
         return cached
 
     try:
-        ticker = yf.Ticker(symbol)
-        raw = ticker.news or []
+        raw = fh.get_company_news(symbol, days_back=7)
         logger.info("News for %s: got %d raw items", symbol, len(raw))
         articles = []
         for item in raw[:10]:
-            content = item.get("content") or item
-            title = content.get("title", "") or item.get("title", "")
+            title = item.get("headline", "")
             if not title:
                 continue
 
-            provider = content.get("provider") or {}
-            publisher = provider.get("displayName", "") or item.get("publisher", "")
-
-            pub_date = content.get("pubDate", "") or ""
-            published_ts = 0
-            if pub_date:
-                try:
-                    dt = datetime.fromisoformat(pub_date.replace("Z", "+00:00"))
-                    published_ts = int(dt.timestamp())
-                except Exception:
-                    published_ts = item.get("providerPublishTime", 0)
-            else:
-                published_ts = item.get("providerPublishTime", 0)
-
-            canonical = content.get("canonicalUrl") or {}
-            click_through = content.get("clickThroughUrl") or {}
-            link = click_through.get("url", "") or canonical.get("url", "") or item.get("link", "")
-
-            thumbnail_url = ""
-            thumb_data = content.get("thumbnail") or item.get("thumbnail") or {}
-            if isinstance(thumb_data, dict):
-                resolutions = thumb_data.get("resolutions", [])
-                if resolutions and isinstance(resolutions, list):
-                    thumbnail_url = resolutions[0].get("url", "")
-
             articles.append({
                 "title": title,
-                "publisher": publisher,
-                "link": link,
-                "published": published_ts,
-                "thumbnail": thumbnail_url,
-                "summary": content.get("summary", ""),
-                "related": item.get("relatedTickers", []),
+                "publisher": item.get("source", ""),
+                "link": item.get("url", ""),
+                "published": item.get("datetime", 0),
+                "thumbnail": item.get("image", ""),
+                "summary": item.get("summary", ""),
+                "related": [item.get("related", "")] if item.get("related") else [],
             })
 
         logger.info("News for %s: parsed %d articles", symbol, len(articles))
