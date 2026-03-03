@@ -5,8 +5,8 @@ from src.services.risk_profile import get_allocation
 def generate_recommendations(risk_score: int, profile_label: str) -> dict:
     allocation = get_allocation(profile_label)
 
-    all_stocks = fetch_batch(STOCK_UNIVERSE)
-    all_etfs = fetch_batch(ETF_UNIVERSE)
+    all_stocks = fetch_batch(STOCK_UNIVERSE, cached_only=True)
+    all_etfs = fetch_batch(ETF_UNIVERSE, cached_only=True)
 
     scored_stocks = [_score_instrument(s, risk_score, profile_label) for s in all_stocks if s]
     scored_etfs = [_score_instrument(e, risk_score, profile_label) for e in all_etfs if e]
