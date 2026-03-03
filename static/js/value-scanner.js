@@ -42,8 +42,8 @@ async function runValueScanner(keepPage) {
     params.set("per_page", VS_PER_PAGE);
 
     const container = document.getElementById("vs-candidates");
-    if (!_vsData) {
-        container.innerHTML = '<div class="text-center" style="padding:40px;"><div class="spinner"></div><p style="margin-top:12px;color:var(--text-muted);">Starting scan...</p></div>';
+    if (!_vsData && !keepPage) {
+        container.innerHTML = '<div class="text-center" style="padding:40px;"><div class="spinner"></div><p style="margin-top:12px;color:var(--text-muted);">Loading results...</p></div>';
     }
 
     try {
@@ -60,7 +60,16 @@ async function runValueScanner(keepPage) {
         renderSectorTabs(data);
 
         const statsEl = document.getElementById("vs-stats");
-        if (statsEl) statsEl.textContent = `${data.stats.scanned} scanned · ${data.stats.candidates} candidates`;
+        if (statsEl) {
+            let txt = `${data.stats.scanned} scanned · ${data.stats.candidates} candidates`;
+            if (data.progress.complete && data.progress.updated_at) {
+                const ago = Math.round((Date.now() / 1000) - data.progress.updated_at);
+                if (ago < 60) txt += ` · updated just now`;
+                else if (ago < 3600) txt += ` · updated ${Math.round(ago / 60)}m ago`;
+                else txt += ` · updated ${Math.round(ago / 3600)}h ago`;
+            }
+            statsEl.textContent = txt;
+        }
 
         if (!data.progress.complete) {
             _startPolling();

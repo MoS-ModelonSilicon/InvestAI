@@ -17,6 +17,7 @@ from src.routers import (
     categories, transactions, budgets, dashboard, profile, screener,
     recommendations, market, stock_detail, portfolio, news, comparison,
     alerts, education, calendar_router, israeli_funds, value_scanner,
+    autopilot,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -54,6 +55,7 @@ app.include_router(education.router)
 app.include_router(calendar_router.router)
 app.include_router(israeli_funds.router)
 app.include_router(value_scanner.router)
+app.include_router(autopilot.router)
 
 
 @app.get("/")
@@ -124,3 +126,6 @@ def startup():
 
     from src.services.market_data import start_cache_warmer
     start_cache_warmer()
+
+    from src.services.value_scanner import start_auto_scanner
+    start_auto_scanner()

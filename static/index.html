@@ -30,6 +30,9 @@
         </ul>
         <div class="nav-section-label">Invest</div>
         <ul class="nav-links">
+            <li><a href="#" class="nav-link" data-page="autopilot">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/><circle cx="12" cy="12" r="3"/></svg>
+                AutoPilot</a></li>
             <li><a href="#" class="nav-link" data-page="profile">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Risk Profile</a></li>
@@ -315,6 +318,81 @@
             <div id="edu-container"></div>
         </section>
 
+        <!-- ─── AutoPilot ──────────────────────────────── -->
+        <section id="page-autopilot" class="page">
+            <div class="page-header">
+                <h1>AutoPilot <span style="font-size:.55em;color:var(--text-muted);">AI Smart Portfolios</span></h1>
+            </div>
+            <p class="ap-subtitle">Pick a strategy, set your amount, and watch history prove the approach. Three AI-constructed portfolios backtested with real market data.</p>
+            <div class="ap-profiles" id="ap-profiles">
+                <div class="ap-loading"><div class="spinner"></div><span>Loading strategies...</span></div>
+            </div>
+            <div id="ap-config" style="display:none;">
+                <div class="ap-config-bar">
+                    <div class="form-group">
+                        <label>Investment Amount</label>
+                        <div class="ap-amount-row">
+                            <span class="ap-dollar">$</span>
+                            <input type="number" id="ap-amount" value="10000" min="100" max="10000000" step="100">
+                            <div class="ap-presets">
+                                <button class="btn btn-sm" onclick="setApAmount(1000)">$1K</button>
+                                <button class="btn btn-sm" onclick="setApAmount(5000)">$5K</button>
+                                <button class="btn btn-sm ap-preset-active" onclick="setApAmount(10000)">$10K</button>
+                                <button class="btn btn-sm" onclick="setApAmount(50000)">$50K</button>
+                                <button class="btn btn-sm" onclick="setApAmount(100000)">$100K</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Backtest Period</label>
+                        <div class="ap-period-row">
+                            <button class="btn btn-sm" data-period="1m" onclick="setApPeriod('1m')">1M</button>
+                            <button class="btn btn-sm" data-period="3m" onclick="setApPeriod('3m')">3M</button>
+                            <button class="btn btn-sm" data-period="6m" onclick="setApPeriod('6m')">6M</button>
+                            <button class="btn btn-sm ap-preset-active" data-period="1y" onclick="setApPeriod('1y')">1Y</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary ap-run-btn" onclick="runAutopilot()">Run Simulation</button>
+                </div>
+            </div>
+            <div id="ap-results" style="display:none;">
+                <div id="ap-stats-row" class="ap-stats-row"></div>
+                <div class="ap-chart-card">
+                    <div class="ap-chart-header">
+                        <h3>Portfolio vs S&P 500</h3>
+                        <div class="ap-chart-legend">
+                            <span class="ap-legend-item"><span class="ap-dot ap-dot-portfolio"></span> Portfolio</span>
+                            <span class="ap-legend-item"><span class="ap-dot ap-dot-bench"></span> S&P 500</span>
+                        </div>
+                    </div>
+                    <canvas id="ap-chart"></canvas>
+                </div>
+                <div class="ap-bottom-grid">
+                    <div class="ap-sleeves-card">
+                        <h3>Allocation Breakdown</h3>
+                        <div id="ap-sleeves"></div>
+                    </div>
+                    <div class="ap-holdings-card">
+                        <h3>Holdings <span class="scr-result-count" id="ap-holdings-count"></span></h3>
+                        <div class="table-wrapper">
+                            <table class="tx-table ap-holdings-table">
+                                <thead><tr><th>Symbol</th><th>Sleeve</th><th class="text-right">Shares</th><th class="text-right">Buy</th><th class="text-right">Current</th><th class="text-right">G/L</th><th class="text-right">G/L %</th></tr></thead>
+                                <tbody id="ap-holdings-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="ap-methodology" id="ap-methodology">
+                    <div class="ap-meth-toggle" onclick="toggleApMethodology()">
+                        <span>Strategy Methodology</span>
+                        <svg id="ap-meth-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="ap-meth-content" id="ap-meth-content" style="display:none;"></div>
+                </div>
+            </div>
+            <div id="ap-error" class="empty-state" style="display:none;"></div>
+        </section>
+
         <!-- ─── Israeli Funds ──────────────────────────── -->
         <section id="page-il-funds" class="page">
             <div class="page-header">
@@ -464,6 +542,7 @@
     <script src="/static/js/education.js"></script>
     <script src="/static/js/calendar.js"></script>
     <script src="/static/js/il-funds.js"></script>
+    <script src="/static/js/autopilot.js"></script>
     <script src="/static/js/value-scanner.js"></script>
     <script src="/static/js/app.js"></script>
 </body>

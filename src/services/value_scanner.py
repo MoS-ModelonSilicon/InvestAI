@@ -418,6 +418,35 @@ def _ensure_scan_running():
     t.start()
 
 
+def start_auto_scanner():
+    """
+    Launch a daemon thread that pre-computes scan results automatically.
+    Waits for the cache warmer to finish, then runs the scan and
+    repeats periodically so results are always fresh.
+    """
+    from src.services.market_data import _warm_done
+
+    def _loop():
+        logger.info("Value auto-scanner: waiting for cache warmer...")
+        _warm_done.wait()
+        logger.info("Value auto-scanner: cache warm, starting first scan")
+        while True:
+            _ensure_scan_running()
+            # Wait for the current scan to finish
+            for _ in range(600):
+                with _scan_lock:
+                    if _scan_cache["complete"]:
+                        break
+                time.sleep(1)
+            logger.info("Value auto-scanner: scan ready (%d candidates). "
+                        "Next refresh in %ds",
+                        len(_scan_cache["candidates"]), SCAN_CACHE_TTL)
+            time.sleep(SCAN_CACHE_TTL)
+
+    t = threading.Thread(target=_loop, daemon=True, name="value-auto-scanner")
+    t.start()
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -440,6 +469,7 @@ def scan_value_stocks(
         scanned = _scan_cache["scanned"]
         total = _scan_cache["total"]
         complete = _scan_cache["complete"]
+        updated_at = _scan_cache["updated_at"]
 
     if sector:
         all_candidates = [c for c in all_candidates if c["sector"].lower() == sector.lower()]
@@ -477,6 +507,7 @@ def scan_value_stocks(
             "scanned": scanned,
             "total": total,
             "complete": complete,
+            "updated_at": int(updated_at) if updated_at else None,
         },
         "pagination": {
             "page": page,

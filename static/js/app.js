@@ -33,6 +33,7 @@ function navigateTo(page) {
     if (page === "education") loadEducation();
     if (page === "calendar") loadCalendar();
     if (page === "il-funds") loadILFunds();
+    if (page === "autopilot") loadAutopilot();
     if (page === "value-scanner") loadValueScanner();
 }
 
