@@ -44,6 +44,8 @@ def _get(endpoint: str, params: dict | None = None) -> dict | list | None:
     p["token"] = API_KEY
     try:
         resp = requests.get(f"{BASE_URL}{endpoint}", params=p, timeout=15, proxies=PROXIES)
+        if resp.status_code == 403:
+            return None
         if resp.status_code == 429:
             logger.warning("Finnhub rate limit hit, sleeping 5s")
             time.sleep(5)

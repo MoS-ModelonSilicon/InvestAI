@@ -49,107 +49,25 @@ STOCK_UNIVERSE = [
     # US: Basic Materials
     "LIN", "APD", "SHW", "ECL", "NEM", "FCX", "NUE", "DOW", "DD",
 
-    # ── China / Hong Kong (HKEX) ──────────────────
-    "1810.HK",  # Xiaomi
-    "0700.HK",  # Tencent
-    "9988.HK",  # Alibaba (HK listing)
-    "9618.HK",  # JD.com (HK listing)
-    "1211.HK",  # BYD
-    "3690.HK",  # Meituan
-    "9888.HK",  # Baidu (HK listing)
-    "0992.HK",  # Lenovo
-    "2015.HK",  # Li Auto (HK listing)
-    "9866.HK",  # NIO (HK listing)
-    "0005.HK",  # HSBC Holdings
-    "0941.HK",  # China Mobile
-    "2318.HK",  # Ping An Insurance
-    "1299.HK",  # AIA Group
-    "0388.HK",  # Hong Kong Exchanges
-    # China / HK US-listed ADRs
+    # ── International (US-listed ADRs only) ───────
+    # China / HK
     "BABA", "JD", "BIDU", "NIO", "LI", "XPEV", "PDD", "TME", "BEKE",
-
-    # ── Japan (TSE) ───────────────────────────────
-    "7203.T",   # Toyota
-    "6758.T",   # Sony
-    "7974.T",   # Nintendo
-    "9984.T",   # SoftBank Group
-    "6861.T",   # Keyence
-    "6501.T",   # Hitachi
-    "8306.T",   # Mitsubishi UFJ Financial
-    # Japan US-listed ADRs
+    # Japan
     "TM", "SONY", "MUFG",
-
-    # ── South Korea (KRX) ─────────────────────────
-    "005930.KS",  # Samsung Electronics
-    "000660.KS",  # SK Hynix
-    "005380.KS",  # Hyundai Motor
-    "035420.KS",  # NAVER
-    "035720.KS",  # Kakao
-
-    # ── Taiwan ────────────────────────────────────
-    "2330.TW",    # TSMC (local listing)
-    "TSM",        # TSMC (US ADR)
-    "2317.TW",    # Hon Hai / Foxconn
-
-    # ── Europe ────────────────────────────────────
-    "ASML.AS",    # ASML (Netherlands)
-    "MC.PA",      # LVMH (France)
-    "OR.PA",      # L'Oréal (France)
-    "SAP.DE",     # SAP (Germany)
-    "SIE.DE",     # Siemens (Germany)
-    "BMW.DE",     # BMW (Germany)
-    "ALV.DE",     # Allianz (Germany)
-    "ADS.DE",     # Adidas (Germany)
-    "SHEL.L",     # Shell (UK)
-    "AZN.L",      # AstraZeneca (UK)
-    "ULVR.L",     # Unilever (UK)
-    "RIO.L",      # Rio Tinto (UK)
-    "NESN.SW",    # Nestlé (Switzerland)
-    "ROG.SW",     # Roche (Switzerland)
-    "NOVN.SW",    # Novartis (Switzerland)
-    # Europe US-listed ADRs
+    # Taiwan
+    "TSM",
+    # Europe
     "ASML", "NVO", "SAP", "SHEL", "AZN", "UL", "DEO", "TTE", "SPOT",
-
-    # ── India ─────────────────────────────────────
-    "RELIANCE.NS",  # Reliance Industries
-    "TCS.NS",       # Tata Consultancy Services
-    "HDFCBANK.NS",  # HDFC Bank
-    "INFY.NS",      # Infosys (local)
-    "WIPRO.NS",     # Wipro
-    # India US-listed ADRs
+    # India
     "INFY", "WIT", "IBN",
-
-    # ── Australia ─────────────────────────────────
-    "BHP.AX",     # BHP Group
-    "CBA.AX",     # Commonwealth Bank
-    "CSL.AX",     # CSL Limited
-    "WDS.AX",     # Woodside Energy
-
-    # ── Canada ────────────────────────────────────
-    "SHOP.TO",    # Shopify (TSX)
-    "RY.TO",      # Royal Bank of Canada
-    "TD.TO",      # TD Bank
-    "ENB.TO",     # Enbridge
-    # Canada US-listed
+    # Canada
     "SHOP", "RY", "TD",
-
-    # ── Brazil ────────────────────────────────────
-    "VALE3.SA",   # Vale
-    "PETR4.SA",   # Petrobras
-    "ITUB4.SA",   # Itaú Unibanco
-    # Brazil US-listed ADRs
+    # Brazil
     "VALE", "PBR", "ITUB", "NU",
-
-    # ── Singapore ─────────────────────────────────
-    "D05.SI",     # DBS Group
-    "SE",         # Sea Limited (US-listed)
-    "GRAB",       # Grab Holdings (US-listed)
-
-    # ── Israel (US-listed ADRs) ───────────────────
+    # Singapore
+    "SE", "GRAB",
+    # Israel
     "TEVA", "CHKP", "NICE", "WIX", "MNDY", "CYBR", "ICL", "ESLT",
-    # Israel (TASE-listed)
-    "TASE.TA", "LUMI.TA", "POLI.TA", "DSCT.TA", "FIBI.TA", "MZTF.TA",
-    "HARL.TA", "BEZQ.TA", "CEL.TA", "AZRG.TA",
 ]
 
 ETF_UNIVERSE = [
@@ -194,30 +112,22 @@ REGIONS = [
 ]
 
 _REGION_MAP = {}
+_INTL = {
+    "China / Hong Kong": {"BABA", "JD", "BIDU", "NIO", "LI", "XPEV", "PDD", "TME", "BEKE"},
+    "Japan": {"TM", "SONY", "MUFG"},
+    "Taiwan": {"TSM"},
+    "Europe": {"ASML", "NVO", "SAP", "SHEL", "AZN", "UL", "DEO", "TTE", "SPOT"},
+    "India": {"INFY", "WIT", "IBN"},
+    "Canada": {"SHOP", "RY", "TD"},
+    "Brazil": {"VALE", "PBR", "ITUB", "NU"},
+    "Singapore": {"SE", "GRAB"},
+    "Israel": {"TEVA", "CHKP", "NICE", "WIX", "MNDY", "CYBR", "ICL", "ESLT"},
+}
+for region, syms in _INTL.items():
+    for sym in syms:
+        _REGION_MAP[sym] = region
 for sym in STOCK_UNIVERSE:
-    if sym.endswith(".HK") or sym in ("BABA", "JD", "BIDU", "NIO", "LI", "XPEV", "PDD", "TME", "BEKE"):
-        _REGION_MAP[sym] = "China / Hong Kong"
-    elif sym.endswith(".T") or sym in ("TM", "SONY", "MUFG"):
-        _REGION_MAP[sym] = "Japan"
-    elif sym.endswith(".KS"):
-        _REGION_MAP[sym] = "South Korea"
-    elif sym.endswith(".TW") or sym == "TSM":
-        _REGION_MAP[sym] = "Taiwan"
-    elif sym.endswith((".AS", ".PA", ".DE", ".L", ".SW")) or sym in ("ASML", "NVO", "SAP", "SHEL", "AZN", "UL", "DEO", "TTE", "SPOT"):
-        _REGION_MAP[sym] = "Europe"
-    elif sym.endswith(".NS") or sym in ("INFY", "WIT", "IBN"):
-        _REGION_MAP[sym] = "India"
-    elif sym.endswith(".AX"):
-        _REGION_MAP[sym] = "Australia"
-    elif sym.endswith(".TO") or sym in ("SHOP", "RY", "TD"):
-        _REGION_MAP[sym] = "Canada"
-    elif sym.endswith(".SA") or sym in ("VALE", "PBR", "ITUB", "NU"):
-        _REGION_MAP[sym] = "Brazil"
-    elif sym.endswith(".SI") or sym in ("SE", "GRAB"):
-        _REGION_MAP[sym] = "Singapore"
-    elif sym.endswith(".TA") or sym in ("TEVA", "CHKP", "NICE", "WIX", "MNDY", "CYBR", "ICL", "ESLT"):
-        _REGION_MAP[sym] = "Israel"
-    else:
+    if sym not in _REGION_MAP:
         _REGION_MAP[sym] = "US"
 
 
