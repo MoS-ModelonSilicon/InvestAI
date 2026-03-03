@@ -1,7 +1,7 @@
 let _taData = null;
 let _taDetailChart = null;
 let _taRefreshTimer = null;
-let _taActiveTab = "momentum";
+let _taActiveTab = "hidden";
 
 async function loadTradingAdvisor() {
     _fetchTradingData();
@@ -79,6 +79,8 @@ function _renderTATabs(packages) {
     if (!el || !packages) return;
 
     const tabs = [
+        { id: "hidden", icon: "🔍" },
+        { id: "institutional", icon: "🏦" },
         { id: "momentum", icon: "⚡" },
         { id: "swing", icon: "↗" },
         { id: "oversold", icon: "💎" },
@@ -148,7 +150,13 @@ function _renderTAPackage(pkg) {
 
 function _renderPickCard(p) {
     const sigCls = _taSigClass(p.verdict);
-    const signalsList = (p.signals_text || []).slice(0, 3).map(s => `<li>${s}</li>`).join("");
+    const signalsList = (p.signals_text || []).slice(0, 4).map(s => `<li>${s}</li>`).join("");
+
+    let edgeBadges = "";
+    if (p.has_divergence) edgeBadges += '<span class="ta-edge-badge ta-edge-div">Divergence</span>';
+    if (p.quiet_accumulation || p.has_institutional_signal) edgeBadges += '<span class="ta-edge-badge ta-edge-inst">Smart Money</span>';
+    if (p.rs_outperforming) edgeBadges += '<span class="ta-edge-badge ta-edge-rs">Outperformer</span>';
+    if (p.boll_squeeze) edgeBadges += '<span class="ta-edge-badge ta-edge-squeeze">Squeeze</span>';
 
     return `
     <div class="ta-pick-card" onclick="showTADetail('${p.symbol}')">
@@ -159,6 +167,7 @@ function _renderPickCard(p) {
             </div>
             <span class="signal-badge ${sigCls}">${p.verdict} ${p.confidence}%</span>
         </div>
+        ${edgeBadges ? '<div class="ta-edge-badges">' + edgeBadges + '</div>' : ''}
         <div class="ta-pick-prices">
             <div><span class="ta-lbl">Entry</span><span class="ta-val">$${p.entry.toFixed(2)}</span></div>
             <div><span class="ta-lbl">Target</span><span class="ta-val ta-green">$${p.target.toFixed(2)}</span></div>
@@ -268,6 +277,12 @@ function _renderTADetailModal(data) {
 
     const a = data.action;
     const sigCls = _taSigClass(a.verdict);
+
+    const edgeSignals = (a.edge_signals || []).map(s => {
+        const cls = s.direction === "bullish" ? "ta-sig-bull" : s.direction === "bearish" ? "ta-sig-bear" : "ta-sig-neut";
+        return `<div class="ta-sig-row ta-sig-edge ${cls}"><strong>★ ${s.name}</strong>: ${s.detail}</div>`;
+    }).join("");
+
     const signals = (a.signals || []).map(s => {
         const cls = s.direction === "bullish" ? "ta-sig-bull" : s.direction === "bearish" ? "ta-sig-bear" : "ta-sig-neut";
         return `<div class="ta-sig-row ${cls}"><strong>${s.name}</strong>: ${s.detail}</div>`;
@@ -292,7 +307,8 @@ function _renderTADetailModal(data) {
                     <div class="ta-dp"><span>R/R</span><strong>${a.risk_reward.toFixed(1)}x</strong></div>
                 </div>
                 <div class="ta-detail-reasoning">${a.reasoning}</div>
-                <div class="ta-detail-signals">${signals}</div>
+                ${edgeSignals ? '<div class="ta-detail-edge"><h4>Advanced Signals (Edge)</h4>' + edgeSignals + '</div>' : ''}
+                <div class="ta-detail-signals"><h4>Classic Indicators</h4>${signals}</div>
                 <div class="ta-detail-chart-area">
                     <h4>Price &amp; Indicators</h4>
                     <canvas id="ta-detail-canvas" height="300"></canvas>

@@ -3583,8 +3583,164 @@ body {
     padding: 6px;
 }
 
+/* Edge badges on pick cards */
+.ta-edge-badges {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+.ta-edge-badge {
+    font-size: .65em;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+}
+.ta-edge-div { background: rgba(168,85,247,.15); color: #a855f7; }
+.ta-edge-inst { background: rgba(59,130,246,.15); color: #3b82f6; }
+.ta-edge-rs { background: rgba(34,197,94,.15); color: var(--green); }
+.ta-edge-squeeze { background: rgba(234,179,8,.15); color: var(--yellow); }
+
+/* Edge signals in detail modal */
+.ta-detail-edge { margin-bottom: 14px; }
+.ta-detail-edge h4,
+.ta-detail-signals h4 {
+    font-size: .85em;
+    color: var(--text-muted);
+    margin: 0 0 6px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+.ta-sig-edge {
+    border-left: 3px solid var(--primary);
+    font-weight: 500;
+}
+
 @media (max-width: 700px) {
     .ta-picks-grid { grid-template-columns: 1fr; }
     .ta-detail-prices-row { gap: 8px; }
     .ta-dp { min-width: 70px; }
+}
+
+/* ── Picks Tracker ─────────────────────────────── */
+.pk-subtitle {
+    color: var(--text-muted);
+    font-size: .92em;
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+.pk-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+.pk-filters {
+    display: flex;
+    gap: 6px;
+}
+.pk-filter-btn {
+    padding: 6px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: .85em;
+    transition: all .15s;
+}
+.pk-filter-btn:hover { border-color: var(--primary); color: var(--text); }
+.pk-filter-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.pk-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.pk-stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 10px;
+    text-align: center;
+}
+.pk-stat-value {
+    font-size: 1.4em;
+    font-weight: 700;
+}
+.pk-stat-label {
+    font-size: .75em;
+    color: var(--text-muted);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.pk-table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+.pk-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85em;
+}
+.pk-table th {
+    background: var(--card-bg);
+    padding: 10px 12px;
+    text-align: left;
+    font-size: .78em;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.pk-th-sort { cursor: pointer; user-select: none; }
+.pk-th-sort:hover { color: var(--primary); }
+.pk-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.pk-row { cursor: pointer; transition: background .12s; }
+.pk-row:hover { background: rgba(99,102,241,.06); }
+.pk-targets-cell { white-space: normal !important; max-width: 160px; font-size: .9em; }
+
+.pk-type {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: .8em;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.pk-type-breakout { background: rgba(99,102,241,.12); color: var(--primary); }
+.pk-type-swing { background: rgba(6,182,212,.12); color: #06b6d4; }
+.pk-type-options { background: rgba(234,179,8,.12); color: var(--yellow); }
+
+.pk-status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: .78em;
+    font-weight: 600;
+}
+.pk-status-win { background: rgba(34,197,94,.15); color: var(--green); }
+.pk-status-stop { background: rgba(239,68,68,.15); color: var(--red); }
+.pk-status-open { background: rgba(234,179,8,.15); color: var(--yellow); }
+.pk-status-nodata { background: rgba(100,116,139,.12); color: var(--text-muted); }
+
+@media (max-width: 700px) {
+    .pk-stats-row { grid-template-columns: repeat(2, 1fr); }
+    .pk-table { font-size: .78em; }
 }

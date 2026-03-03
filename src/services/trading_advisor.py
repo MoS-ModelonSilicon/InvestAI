@@ -30,6 +30,10 @@ logger = logging.getLogger(__name__)
 CANDLE_LOOKBACK_DAYS = 420
 SCAN_CACHE_TTL = 1800  # 30 min
 
+# Benchmark candles for relative strength (cached per scan)
+_benchmark_lock = threading.Lock()
+_benchmark_closes: list[float] = []
+
 _scan_lock = threading.Lock()
 _scan_cache: dict = {
     "all_picks": [],
@@ -48,7 +52,7 @@ _scan_running = False
 # ---------------------------------------------------------------------------
 
 def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict]:
-    """Compute all indicators and build an action card for one stock."""
+    """Compute all indicators (classic + advanced) and build an action card."""
     closes = candles.get("c", [])
     if len(closes) < 50:
         return None
@@ -58,6 +62,7 @@ def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict
     volumes = candles.get("v", [0] * len(closes))
     timestamps = candles.get("t", [])
 
+    # Classic indicators
     sma50 = ta.sma(closes, 50)
     sma200 = ta.sma(closes, 200)
     rsi_vals = ta.rsi(closes)
@@ -67,9 +72,36 @@ def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict
     atr_vals = ta.atr(highs, lows, closes)
     obv_vals = ta.obv(closes, volumes)
 
+    # Advanced indicators
+    adx_data = ta.adx(highs, lows, closes)
+    rsi_div = ta.detect_divergence(closes, rsi_vals)
+    macd_div = ta.detect_divergence(closes, macd_data["histogram"])
+    vol_anom = ta.volume_anomaly(closes, volumes)
+    zscore_vals = ta.zscore(closes)
+    ichi = ta.ichimoku(highs, lows, closes)
+    ichi_sig = ta.ichimoku_signal(closes, ichi)
+    fib = ta.fibonacci_levels(closes)
+
+    # Relative strength vs SPY
+    rs_data = None
+    with _benchmark_lock:
+        if _benchmark_closes and len(_benchmark_closes) >= 22:
+            bench = _benchmark_closes
+            n = min(len(closes), len(bench))
+            if n >= 22:
+                rs_data = ta.relative_strength(closes[-n:], bench[-n:])
+
+    # Advanced composite score
     comp = ta.composite_score(
         rsi_vals, macd_data, closes, sma50, sma200,
         boll["pct_b"], stoch, obv_vals,
+        adx_data=adx_data,
+        rsi_div=rsi_div,
+        macd_div=macd_div,
+        vol_anomaly=vol_anom,
+        ichimoku_sig=ichi_sig,
+        zscore_vals=zscore_vals,
+        rs_data=rs_data,
     )
 
     current = closes[-1]
@@ -81,11 +113,20 @@ def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict
     s50 = ta._last_valid(sma50)
     s200 = ta._last_valid(sma200)
 
+    # Entry/target/stop using Fibonacci when available
     entry = current
-    if boll_lower and current > boll_lower:
+    if fib.get("nearest_support") and current > fib["nearest_support"]:
+        entry = round((current + fib["nearest_support"]) / 2, 2)
+    elif boll_lower and current > boll_lower:
         entry = round((current + boll_lower) / 2, 2)
 
-    target = round(boll_upper, 2) if boll_upper else round(current * 1.08, 2)
+    if fib.get("nearest_resistance"):
+        target = round(fib["nearest_resistance"], 2)
+    elif boll_upper:
+        target = round(boll_upper, 2)
+    else:
+        target = round(current * 1.08, 2)
+
     stop = round(entry - 2 * last_atr, 2) if last_atr else round(entry * 0.95, 2)
     if stop >= entry:
         stop = round(entry * 0.95, 2)
@@ -111,7 +152,10 @@ def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict
 
     sparkline = closes[-30:] if len(closes) >= 30 else closes
 
+    # Build signal text: classic + edge signals
     signals_text = [s["detail"] for s in comp["signals"] if s["score"] != 0]
+    edge_text = [s["detail"] for s in comp.get("edge_signals", []) if s["score"] != 0]
+    all_signals_text = edge_text + signals_text
 
     name = fund_info.get("name", symbol)
     sector = fund_info.get("sector", "N/A")
@@ -127,7 +171,8 @@ def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict
         "verdict": comp["verdict"],
         "confidence": comp["confidence"],
         "signals": comp["signals"],
-        "signals_text": signals_text,
+        "edge_signals": comp.get("edge_signals", []),
+        "signals_text": all_signals_text,
         "entry": round(entry, 2),
         "target": round(target, 2),
         "stop_loss": round(stop, 2),
@@ -142,6 +187,16 @@ def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict
         "vol_above_avg": vol_above_avg,
         "boll_pct_b": round(boll_pct_b, 3) if boll_pct_b is not None else None,
         "boll_squeeze": boll_bandwidth is not None and boll_bandwidth < 0.06,
+        "has_divergence": comp.get("has_divergence", False),
+        "has_institutional_signal": comp.get("has_institutional_signal", False),
+        "vol_anomaly_score": vol_anom.get("anomaly_score", 0),
+        "quiet_accumulation": vol_anom.get("quiet_accumulation", False),
+        "rs_outperforming": rs_data.get("outperforming", False) if rs_data else False,
+        "rs_1m": rs_data.get("rs_1m") if rs_data else None,
+        "ichimoku_bullish": ichi_sig.get("signal", 0) > 0,
+        "zscore": ta._last_valid(zscore_vals),
+        "fib_support": fib.get("nearest_support"),
+        "fib_resistance": fib.get("nearest_resistance"),
         "sparkline": sparkline,
         "beta": fund_info.get("beta"),
         "dividend_yield": fund_info.get("dividend_yield"),
@@ -225,15 +280,84 @@ def _build_oversold_package(picks: list[dict]) -> dict:
     }
 
 
+def _build_hidden_gems_package(picks: list[dict]) -> dict:
+    """
+    Hidden Gems: stocks showing divergences, quiet accumulation,
+    or relative strength that most traders miss.
+    """
+    pool = [
+        p for p in picks
+        if (p.get("has_divergence") or p.get("quiet_accumulation")
+            or p.get("rs_outperforming"))
+    ]
+    if not pool:
+        pool = [p for p in picks if p.get("has_institutional_signal")]
+    pool.sort(key=lambda x: (
+        (2 if x.get("has_divergence") else 0) +
+        (1.5 if x.get("quiet_accumulation") else 0) +
+        (1 if x.get("rs_outperforming") else 0) +
+        x["score"] / 100
+    ), reverse=True)
+    return {
+        "id": "hidden",
+        "name": "Hidden Gems",
+        "subtitle": "Non-obvious opportunities: divergences, quiet accumulation, relative strength",
+        "timeframe": "Days to Months",
+        "risk_level": "Medium",
+        "picks": pool[:8],
+    }
+
+
+def _build_institutional_package(picks: list[dict]) -> dict:
+    """
+    Institutional Accumulation: stocks with volume anomalies
+    suggesting smart money is positioning.
+    """
+    pool = [
+        p for p in picks
+        if (p.get("has_institutional_signal") or p.get("vol_anomaly_score", 0) > 30
+            or p.get("quiet_accumulation"))
+        and (p["rsi"] is not None and p["rsi"] < 70)
+    ]
+    if len(pool) < 3:
+        pool = [p for p in picks if p.get("vol_above_avg")]
+    pool.sort(key=lambda x: x.get("vol_anomaly_score", 0), reverse=True)
+    return {
+        "id": "institutional",
+        "name": "Smart Money Flow",
+        "subtitle": "Unusual volume patterns suggesting institutional positioning",
+        "timeframe": "Weeks to Months",
+        "risk_level": "Medium",
+        "picks": pool[:8],
+    }
+
+
 # ---------------------------------------------------------------------------
 # Background scanner
 # ---------------------------------------------------------------------------
+
+def _fetch_benchmark():
+    """Fetch SPY daily closes for relative strength comparisons."""
+    global _benchmark_closes
+    to_ts = int(time.time())
+    from_ts = to_ts - CANDLE_LOOKBACK_DAYS * 86400
+    try:
+        candles = dp.get_candles("SPY", "D", from_ts, to_ts)
+        if candles and candles.get("c") and len(candles["c"]) > 50:
+            with _benchmark_lock:
+                _benchmark_closes = candles["c"]
+            logger.info("Trading advisor: SPY benchmark loaded (%d days)", len(candles["c"]))
+    except Exception:
+        logger.warning("Trading advisor: failed to fetch SPY benchmark")
+
 
 def _run_background_scan():
     """Scan universe in batches, progressively updating the cache."""
     global _scan_running
 
     try:
+        _fetch_benchmark()
+
         fundamentals = fetch_batch(ALL_UNIVERSE, cached_only=True)
         fund_map = {d["symbol"]: d for d in fundamentals if d.get("price", 0) > 0}
         symbols = list(fund_map.keys())
@@ -278,6 +402,8 @@ def _run_background_scan():
             momentum = _build_momentum_package(all_picks)
             swing = _build_swing_package(all_picks)
             oversold = _build_oversold_package(all_picks)
+            hidden = _build_hidden_gems_package(all_picks)
+            institutional = _build_institutional_package(all_picks)
 
             bull = sum(1 for p in all_picks if p["verdict"] in ("Strong Buy", "Buy"))
             bear = sum(1 for p in all_picks if p["verdict"] in ("Sell", "Strong Sell"))
@@ -287,6 +413,8 @@ def _run_background_scan():
             with _scan_lock:
                 _scan_cache["all_picks"] = list(all_picks)
                 _scan_cache["packages"] = {
+                    "hidden": hidden,
+                    "institutional": institutional,
                     "momentum": momentum,
                     "swing": swing,
                     "oversold": oversold,
@@ -304,8 +432,10 @@ def _run_background_scan():
             _scan_cache["updated_at"] = time.time()
 
         logger.info(
-            "Trading advisor scan complete: %d picks, momentum=%d swing=%d oversold=%d",
+            "Trading advisor scan complete: %d picks, hidden=%d inst=%d momentum=%d swing=%d oversold=%d",
             len(all_picks),
+            len(_scan_cache["packages"].get("hidden", {}).get("picks", [])),
+            len(_scan_cache["packages"].get("institutional", {}).get("picks", [])),
             len(_scan_cache["packages"].get("momentum", {}).get("picks", [])),
             len(_scan_cache["packages"].get("swing", {}).get("picks", [])),
             len(_scan_cache["packages"].get("oversold", {}).get("picks", [])),
@@ -398,6 +528,7 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
 
     info = fetch_stock_info(symbol) or {}
 
+    # Classic indicators
     sma50 = ta.sma(closes, 50)
     sma200 = ta.sma(closes, 200)
     ema12 = ta.ema(closes, 12)
@@ -409,9 +540,34 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
     atr_vals = ta.atr(highs, lows, closes)
     obv_vals = ta.obv(closes, volumes)
 
+    # Advanced indicators
+    adx_data = ta.adx(highs, lows, closes)
+    rsi_div = ta.detect_divergence(closes, rsi_vals)
+    macd_div = ta.detect_divergence(closes, macd_data["histogram"])
+    vol_anom = ta.volume_anomaly(closes, volumes)
+    zscore_vals = ta.zscore(closes)
+    ichi = ta.ichimoku(highs, lows, closes)
+    ichi_sig = ta.ichimoku_signal(closes, ichi)
+    fib = ta.fibonacci_levels(closes)
+
+    rs_data = None
+    with _benchmark_lock:
+        if _benchmark_closes and len(_benchmark_closes) >= 22:
+            bench = _benchmark_closes
+            n = min(len(closes), len(bench))
+            if n >= 22:
+                rs_data = ta.relative_strength(closes[-n:], bench[-n:])
+
     comp = ta.composite_score(
         rsi_vals, macd_data, closes, sma50, sma200,
         boll["pct_b"], stoch, obv_vals,
+        adx_data=adx_data,
+        rsi_div=rsi_div,
+        macd_div=macd_div,
+        vol_anomaly=vol_anom,
+        ichimoku_sig=ichi_sig,
+        zscore_vals=zscore_vals,
+        rs_data=rs_data,
     )
 
     current = closes[-1]
@@ -420,16 +576,28 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
     boll_upper = ta._last_valid(boll["upper"])
 
     entry = current
-    if boll_lower and current > boll_lower:
+    if fib.get("nearest_support") and current > fib["nearest_support"]:
+        entry = round((current + fib["nearest_support"]) / 2, 2)
+    elif boll_lower and current > boll_lower:
         entry = round((current + boll_lower) / 2, 2)
-    target = round(boll_upper, 2) if boll_upper else round(current * 1.08, 2)
+
+    if fib.get("nearest_resistance"):
+        target = round(fib["nearest_resistance"], 2)
+    elif boll_upper:
+        target = round(boll_upper, 2)
+    else:
+        target = round(current * 1.08, 2)
+
     stop = round(entry - 2 * last_atr, 2) if last_atr else round(entry * 0.95, 2)
     if stop >= entry:
         stop = round(entry * 0.95, 2)
     rr = round((target - entry) / (entry - stop), 2) if entry > stop else 0
 
-    reasoning_parts = [s["detail"] for s in comp["signals"] if s["score"] != 0]
-    reasoning = ". ".join(reasoning_parts[:5]) + "." if reasoning_parts else "Insufficient data."
+    # Build reasoning from both classic and edge signals
+    classic_parts = [s["detail"] for s in comp["signals"] if s["score"] != 0]
+    edge_parts = [s["detail"] for s in comp.get("edge_signals", []) if s["score"] != 0]
+    all_parts = edge_parts + classic_parts
+    reasoning = ". ".join(all_parts[:6]) + "." if all_parts else "Insufficient data."
 
     return {
         "symbol": symbol,
@@ -446,6 +614,9 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
             "stochastic": stoch,
             "obv": obv_vals,
             "atr": atr_vals,
+            "ichimoku": ichi,
+            "adx": adx_data,
+            "zscore": zscore_vals,
         },
         "action": {
             "verdict": comp["verdict"],
@@ -458,5 +629,9 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
             "timeframe": "Short-term" if comp["raw_score"] > 1 else "Medium-term",
             "reasoning": reasoning,
             "signals": comp["signals"],
+            "edge_signals": comp.get("edge_signals", []),
         },
+        "fibonacci": fib,
+        "volume_analysis": vol_anom,
+        "relative_strength": rs_data,
     }
