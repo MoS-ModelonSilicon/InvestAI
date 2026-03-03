@@ -8,13 +8,12 @@ router = APIRouter(prefix="/api/market", tags=["market"])
 
 TICKER_SYMBOLS = [
     "SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA",
-    "JPM", "NFLX", "AMD", "XOM", "LLY", "BABA", "TSM", "ASML", "NVO",
-    "1810.HK", "0700.HK", "005930.KS",
+    "JPM", "NFLX", "AMD", "XOM", "LLY", "BABA", "TSM",
 ]
 
 FEATURED_SYMBOLS = [
     "AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "META",
-    "1810.HK", "0700.HK", "BABA", "TSM", "ASML", "NVO",
+    "BABA", "TSM", "GOOGL", "JPM",
 ]
 
 

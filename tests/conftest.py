@@ -5,6 +5,7 @@ Starts a live uvicorn server, authenticates via the login page,
 and hands each test a logged-in Playwright page pointed at the real site.
 """
 
+import os
 import subprocess
 import sys
 import time
@@ -12,6 +13,9 @@ import socket
 
 import pytest
 from playwright.sync_api import Page, BrowserContext
+
+os.environ["NO_PROXY"] = "127.0.0.1,localhost"
+os.environ["no_proxy"] = "127.0.0.1,localhost"
 
 BASE_URL = "http://127.0.0.1:8091"
 ACCESS_KEY = "intel2026"
@@ -58,22 +62,36 @@ def _live_server():
 
 
 @pytest.fixture(scope="session")
+def browser_type_launch_args():
+    """Chromium launch args — bypass proxy for localhost."""
+    return {
+        "args": [
+            "--no-proxy-server",
+            "--proxy-bypass-list=<-loopback>",
+        ]
+    }
+
+
+@pytest.fixture(scope="session")
 def browser_context_args():
     """Playwright browser-context options (session-wide)."""
-    return {"viewport": {"width": 1280, "height": 800}}
+    return {
+        "viewport": {"width": 1280, "height": 1024},
+        "proxy": {"server": "direct://", "bypass": "127.0.0.1,localhost"},
+    }
 
 
 @pytest.fixture()
-def authenticated_page(page: Page, _live_server: str) -> Page:
+def authenticated_page(page: Page, live_url: str) -> Page:
     """Navigate to the site and log in, returning a page on the dashboard."""
-    page.goto(f"{_live_server}/login")
+    page.goto(f"{live_url}/login", wait_until="domcontentloaded")
     page.fill("#access-key", ACCESS_KEY)
     page.click("#login-btn")
-    page.wait_for_url(f"{_live_server}/", timeout=10_000)
-    page.wait_for_load_state("networkidle")
+    page.wait_for_url(f"{live_url}/", timeout=15_000)
+    page.wait_for_load_state("domcontentloaded")
     return page
 
 
-@pytest.fixture()
-def base_url(_live_server: str) -> str:
+@pytest.fixture(scope="session")
+def live_url(_live_server: str) -> str:
     return _live_server

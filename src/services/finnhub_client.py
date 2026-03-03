@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 API_KEY = os.environ.get("FINNHUB_API_KEY", "")
 BASE_URL = "https://finnhub.io/api/v1"
 
+_USE_PROXY = os.environ.get("USE_INTEL_PROXY", "").lower() in ("1", "true", "yes")
+PROXIES = {
+    "http": "http://proxy-dmz.intel.com:911",
+    "https": "http://proxy-dmz.intel.com:912",
+} if _USE_PROXY else None
+
 _call_times: list[float] = []
 _rate_lock = threading.Lock()
 _RATE_LIMIT = 55
@@ -37,7 +43,7 @@ def _get(endpoint: str, params: dict | None = None) -> dict | list | None:
     p = params or {}
     p["token"] = API_KEY
     try:
-        resp = requests.get(f"{BASE_URL}{endpoint}", params=p, timeout=15)
+        resp = requests.get(f"{BASE_URL}{endpoint}", params=p, timeout=15, proxies=PROXIES)
         if resp.status_code == 429:
             logger.warning("Finnhub rate limit hit, sleeping 5s")
             time.sleep(5)

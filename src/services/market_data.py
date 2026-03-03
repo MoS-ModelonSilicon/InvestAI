@@ -224,7 +224,15 @@ for sym in STOCK_UNIVERSE:
 def get_region(symbol: str) -> str:
     return _REGION_MAP.get(symbol, "US")
 
-MAX_WORKERS = 25
+MAX_WORKERS = 5
+
+WARM_PRIORITY = [
+    "SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA",
+    "JPM", "NFLX", "AMD", "XOM", "LLY", "BABA", "TSM", "V", "MA",
+    "BRK-B", "UNH", "JNJ", "PG", "HD", "DIS", "COST", "INTC",
+    "VTI", "VOO", "IWM", "BND", "VIG", "SCHD", "XLK", "XLF",
+    "ARKK", "GLD", "VNQ", "SOXX",
+]
 
 
 def _get_cached(key: str) -> Optional[dict]:
@@ -241,7 +249,7 @@ def _set_cache(key: str, data):
         _cache[key] = (time.time(), data)
 
 
-def fetch_stock_info(symbol: str) -> Optional[dict]:
+def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
     cached = _get_cached(f"info:{symbol}")
     if cached:
         return cached
@@ -252,7 +260,7 @@ def fetch_stock_info(symbol: str) -> Optional[dict]:
             return None
 
         profile = fh.get_profile(symbol) or {}
-        metrics = fh.get_metrics(symbol) or {}
+        metrics = fh.get_metrics(symbol) if full else {}
 
         price = quote["c"]
         w52_high = metrics.get("52WeekHigh")
@@ -471,16 +479,23 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
 # ── Background cache warming ────────────────────
 
 def warm_cache():
-    """Pre-fetch all universe data in background so screener is instant."""
+    """Pre-fetch priority symbols in background. Screener fetches the rest on demand."""
     global _warming
     if _warming:
         return
     _warming = True
-    logger.info("Cache warm: starting for %d symbols", len(ALL_UNIVERSE))
+    symbols = WARM_PRIORITY
+    logger.info("Cache warm: starting for %d priority symbols", len(symbols))
     t0 = time.time()
-    fetch_batch(ALL_UNIVERSE)
+
+    for sym in symbols:
+        try:
+            fetch_stock_info(sym, full=False)
+        except Exception:
+            pass
+
     elapsed = time.time() - t0
-    logger.info("Cache warm: done in %.1fs, %d symbols cached", elapsed, len(ALL_UNIVERSE))
+    logger.info("Cache warm: done in %.1fs, %d symbols attempted", elapsed, len(symbols))
     _warm_done.set()
     _warming = False
 
