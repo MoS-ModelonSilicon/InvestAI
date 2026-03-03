@@ -3,6 +3,7 @@ import hmac
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -21,6 +22,17 @@ from src.routers import (
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="InvestAI")
+
+
+class NoCacheStaticMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-store, must-revalidate"
+        return response
+
+
+app.add_middleware(NoCacheStaticMiddleware)
 app.add_middleware(AuthMiddleware)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

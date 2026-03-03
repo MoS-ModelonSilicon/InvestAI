@@ -2543,6 +2543,7 @@ body {
 .vs-sig-strong { background: rgba(34, 197, 94, 0.15); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.25); }
 .vs-sig-buy { background: rgba(34, 197, 94, 0.08); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.15); }
 .vs-sig-watch { background: rgba(234, 179, 8, 0.1); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.2); }
+.vs-sig-consider { background: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
 
 .vs-sector-badge {
     display: inline-block;

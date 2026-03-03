@@ -47,7 +47,10 @@ async function runValueScanner(keepPage) {
     }
 
     try {
-        const data = await api.get(`/api/value-scanner?${params}`);
+        const url = `/api/value-scanner?${params}`;
+        console.log("[VS] Fetching:", url);
+        const data = await api.get(url);
+        console.log("[VS] Response:", data.stats, "progress:", data.progress, "page candidates:", data.candidates?.length);
         _vsData = data;
         renderStatCards(data.stats);
         renderProgress(data.progress);
@@ -65,6 +68,7 @@ async function runValueScanner(keepPage) {
             _stopPolling();
         }
     } catch (err) {
+        console.error("[VS] Error:", err);
         container.innerHTML = '<p style="color:var(--red);padding:20px;">Error loading data. Try again later.</p>';
         _stopPolling();
     }
@@ -145,6 +149,7 @@ function vsSignalBadge(signal) {
         "Strong Buy": { cls: "vs-sig-strong", icon: "▲▲" },
         "Buy":        { cls: "vs-sig-buy",    icon: "▲" },
         "Watch":      { cls: "vs-sig-watch",  icon: "●" },
+        "Consider":   { cls: "vs-sig-consider", icon: "◐" },
     };
     const s = map[signal] || map.Watch;
     return `<span class="vs-signal ${s.cls}">${s.icon} ${signal}</span>`;

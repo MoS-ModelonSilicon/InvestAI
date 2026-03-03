@@ -230,6 +230,8 @@ def _assign_signal(passed_count: int, total: int, quality: int, mos: Optional[fl
         return "Buy"
     if passed_count >= total - 1 and quality >= 40:
         return "Watch"
+    if passed_count >= total - 2 and quality >= 30:
+        return "Consider"
     return "Fail"
 
 
@@ -280,7 +282,7 @@ def _evaluate_stock(d: dict) -> tuple[Optional[dict], Optional[dict]]:
         "total_count": total_count,
     }
 
-    if signal in ("Strong Buy", "Buy", "Watch"):
+    if signal in ("Strong Buy", "Buy", "Watch", "Consider"):
         return item, None
     else:
         fail_reasons = [c["detail"] for c in checks if not c["passed"]]
