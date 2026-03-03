@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from src.services import finnhub_client as fh
+from src.services import data_provider as dp
 
 logger = logging.getLogger(__name__)
 
@@ -167,10 +168,12 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
     try:
         quote = fh.get_quote(symbol)
         if not quote or quote.get("c", 0) <= 0:
-            return None
+            quote = dp.get_quote(symbol)
+            if not quote or quote.get("c", 0) <= 0:
+                return None
 
-        profile = fh.get_profile(symbol) or {}
-        metrics = fh.get_metrics(symbol) if full else {}
+        profile = fh.get_profile(symbol) or dp.get_profile(symbol) or {}
+        metrics = (fh.get_metrics(symbol) or dp.get_metrics(symbol)) if full else {}
 
         price = quote["c"]
         prev_close = quote.get("pc", price)
@@ -359,7 +362,7 @@ def fetch_live_quotes(symbols: list[str]) -> list[dict]:
 
     def _fetch_one_quote(sym):
         try:
-            quote = fh.get_quote(sym)
+            quote = fh.get_quote(sym) or dp.get_quote(sym)
             if not quote or quote.get("c", 0) <= 0:
                 return None
             price = quote["c"]
@@ -426,7 +429,7 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
     result = {}
     for sym in symbols:
         try:
-            candles = fh.get_candles(sym, res, from_ts, to_ts)
+            candles = fh.get_candles(sym, res, from_ts, to_ts) or dp.get_candles(sym, res, from_ts, to_ts)
             if candles and candles.get("c"):
                 result[sym] = [round(v, 2) for v in candles["c"]]
             else:

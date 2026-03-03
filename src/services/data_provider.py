@@ -19,6 +19,10 @@ _PROXIES = {
     "https": "http://proxy-dmz.intel.com:912",
 } if _USE_PROXY else None
 
+if _USE_PROXY:
+    os.environ.setdefault("HTTP_PROXY", "http://proxy-dmz.intel.com:911")
+    os.environ.setdefault("HTTPS_PROXY", "http://proxy-dmz.intel.com:912")
+
 _yahoo_disabled = False
 
 

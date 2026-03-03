@@ -14,10 +14,11 @@ margin of safety using Graham's intrinsic-value formula.
 """
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
 
 from src.services.market_data import (
-    fetch_batch, STOCK_UNIVERSE, format_market_cap,
+    fetch_batch, fetch_stock_info, STOCK_UNIVERSE, format_market_cap,
 )
 
 logger = logging.getLogger(__name__)
@@ -213,6 +214,56 @@ def _assign_signal(passed_count: int, total: int, quality: int, mos: Optional[fl
     return "Fail"
 
 
+def _needs_metrics(d: dict) -> bool:
+    """Check if cached data is missing key financial metrics."""
+    return (d.get("pe_ratio") is None
+            and d.get("debt_to_equity") is None
+            and d.get("return_on_equity") is None)
+
+
+def _fetch_stocks_with_metrics() -> list[dict]:
+    """
+    Get stock data with full metrics.
+    Uses cache first, then re-fetches with full=True for stocks
+    that were cached without metrics (from the quick warmer).
+    """
+    cached = fetch_batch(STOCK_UNIVERSE, cached_only=True)
+
+    complete = []
+    needs_refetch = []
+
+    for d in cached:
+        if d.get("asset_type") == "ETF":
+            continue
+        if _needs_metrics(d):
+            needs_refetch.append(d["symbol"])
+        else:
+            complete.append(d)
+
+    if needs_refetch:
+        logger.info("Value scanner: re-fetching %d stocks with full metrics", len(needs_refetch))
+        import src.services.market_data as md
+
+        for sym in needs_refetch:
+            with md._cache_lock:
+                md._cache.pop(f"info:{sym}", None)
+
+        def _fetch_full(sym):
+            try:
+                return fetch_stock_info(sym, full=True)
+            except Exception:
+                return None
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            futures = {pool.submit(_fetch_full, sym): sym for sym in needs_refetch}
+            for future in as_completed(futures):
+                result = future.result()
+                if result and result.get("price", 0) > 0:
+                    complete.append(result)
+
+    return complete
+
+
 def scan_value_stocks(
     sector: Optional[str] = None,
     signal_filter: Optional[str] = None,
@@ -222,7 +273,7 @@ def scan_value_stocks(
     Run the Graham-Buffett screen on all stocks.
     Returns candidates and rejected stocks with reasons.
     """
-    all_data = fetch_batch(STOCK_UNIVERSE, cached_only=True)
+    all_data = _fetch_stocks_with_metrics()
 
     candidates = []
     rejected = []

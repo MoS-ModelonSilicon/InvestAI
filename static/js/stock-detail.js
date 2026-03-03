@@ -17,10 +17,10 @@ async function loadStockDetail() {
     container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Loading stock data...</p></div>';
 
     try {
-        const [info, history, news] = await Promise.all([
-            api.get(`/api/stock/${sym}`),
-            api.get(`/api/stock/${sym}/history?period=1y&interval=1d`),
-            api.get(`/api/stock/${sym}/news`),
+        const info = await api.get(`/api/stock/${sym}`);
+        const [history, news] = await Promise.all([
+            api.get(`/api/stock/${sym}/history?period=1y&interval=1d`).catch(() => ({ dates: [], close: [] })),
+            api.get(`/api/stock/${sym}/news`).catch(() => []),
         ]);
         renderStockDetail(info, history, news);
     } catch (e) {
