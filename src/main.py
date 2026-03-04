@@ -300,14 +300,29 @@ def startup():
     _seed_default_categories(db)
 
     # ── Auto-promote admin via env var (for Render / headless deploy) ──
+    # Set ADMIN_EMAIL + ADMIN_PASSWORD to auto-create & promote an admin account
     import os, logging
+    logger = logging.getLogger("investai")
     admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+    admin_password = os.environ.get("ADMIN_PASSWORD", "").strip()
     if admin_email:
         user = db.query(User).filter(User.email == admin_email).first()
-        if user and not user.is_admin:
+        if not user and admin_password:
+            # Auto-create admin account if it doesn't exist
+            user = User(
+                email=admin_email,
+                hashed_password=hash_password(admin_password),
+                name="Admin",
+                is_admin=1,
+                is_active=1,
+            )
+            db.add(user)
+            db.commit()
+            logger.info(f"Auto-created admin account: {admin_email}")
+        elif user and not user.is_admin:
             user.is_admin = 1
             db.commit()
-            logging.getLogger("investai").info(f"Auto-promoted {admin_email} to admin")
+            logger.info(f"Auto-promoted {admin_email} to admin")
 
     db.close()
 
