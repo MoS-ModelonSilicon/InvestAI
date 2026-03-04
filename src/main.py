@@ -20,6 +20,21 @@ from src.routers import (
 
 Base.metadata.create_all(bind=engine)
 
+# ── Auto-migrate: add missing columns to existing tables ──────
+def _auto_migrate():
+    """Add columns introduced after initial deploy (safe to re-run)."""
+    from sqlalchemy import inspect, text
+    insp = inspect(engine)
+    if "users" in insp.get_table_names():
+        cols = {c["name"] for c in insp.get_columns("users")}
+        with engine.begin() as conn:
+            if "is_admin" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0"))
+            if "is_active" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1"))
+
+_auto_migrate()
+
 app = FastAPI(title="InvestAI")
 
 
@@ -283,6 +298,17 @@ def _seed_default_categories(db: Session):
 def startup():
     db = next(get_db())
     _seed_default_categories(db)
+
+    # ── Auto-promote admin via env var (for Render / headless deploy) ──
+    import os, logging
+    admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+    if admin_email:
+        user = db.query(User).filter(User.email == admin_email).first()
+        if user and not user.is_admin:
+            user.is_admin = 1
+            db.commit()
+            logging.getLogger("investai").info(f"Auto-promoted {admin_email} to admin")
+
     db.close()
 
     from src.services.market_data import start_cache_warmer
