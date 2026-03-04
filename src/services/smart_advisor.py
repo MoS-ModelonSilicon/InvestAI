@@ -320,7 +320,14 @@ def scan_and_score(period: str = "1y") -> list[dict]:
     if cached:
         return cached
 
+    # Try cached data first; if cache isn't warm enough, fetch a smaller set
     fundamentals = fetch_batch(ALL_UNIVERSE, cached_only=True)
+    if len(fundamentals) < 20:
+        logger.info("Advisor: only %d cached stocks, fetching priority symbols on-demand", len(fundamentals))
+        from src.services.market_data import WARM_PRIORITY
+        # Fetch only the priority ~38 symbols rather than the full 258 universe
+        # to avoid Finnhub rate limits while still getting usable results
+        fundamentals = fetch_batch(WARM_PRIORITY, cached_only=False)
     fund_map = {d["symbol"]: d for d in fundamentals if d.get("price", 0) > 0}
 
     fund_sorted = sorted(

@@ -166,14 +166,16 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
         return cached
 
     try:
-        quote = fh.get_quote(symbol)
+        # Prefer Yahoo (via data_provider) to avoid Finnhub rate limits,
+        # fall back to Finnhub if Yahoo fails.
+        quote = dp.get_quote(symbol)
         if not quote or quote.get("c", 0) <= 0:
-            quote = dp.get_quote(symbol)
+            quote = fh.get_quote(symbol)
             if not quote or quote.get("c", 0) <= 0:
                 return None
 
-        profile = fh.get_profile(symbol) or dp.get_profile(symbol) or {}
-        metrics = (fh.get_metrics(symbol) or dp.get_metrics(symbol)) if full else {}
+        profile = dp.get_profile(symbol) or fh.get_profile(symbol) or {}
+        metrics = (dp.get_metrics(symbol) or fh.get_metrics(symbol)) if full else {}
 
         price = quote["c"]
         prev_close = quote.get("pc", price)
