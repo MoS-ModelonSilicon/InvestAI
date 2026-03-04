@@ -24,7 +24,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Backend URL — change to your deployed URL
-        buildConfigField("String", "BASE_URL", "\"https://finance-tracker-yklein.onrender.com\"")
+        buildConfigField("String", "BASE_URL", "\"https://investai-utho.onrender.com\"")
     }
 
     signingConfigs {
