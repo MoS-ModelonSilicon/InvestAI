@@ -547,6 +547,68 @@ class TestPortfolioFlow:
 
 
 # ────────────────────────────────────────────
+#  Portfolio — chart height constraint
+# ────────────────────────────────────────────
+
+class TestPortfolioChartHeight:
+    """
+    Regression tests for the Performance vs S&P 500 chart sizing.
+    The chart used to grow unbounded (maintainAspectRatio: false with no
+    height-constrained parent), requiring excessive scrolling.  Now the
+    canvas lives inside a .pf-chart-wrap container capped at 280px and
+    Chart.js uses maintainAspectRatio: true with aspectRatio: 1.8.
+    """
+
+    def test_perf_chart_canvas_inside_wrap_container(self, authenticated_page: Page):
+        """Canvas must be wrapped in a .pf-chart-wrap div that caps height."""
+        _nav_click(authenticated_page, "portfolio")
+        authenticated_page.wait_for_timeout(2000)
+        wrap = authenticated_page.locator(".pf-chart-wrap")
+        assert wrap.count() >= 2, (
+            "Expected at least 2 .pf-chart-wrap containers "
+            "(allocation + performance)"
+        )
+        # The performance chart canvas should be inside the wrapper
+        perf_canvas = authenticated_page.locator(".pf-chart-wrap #pf-perf-chart")
+        expect(perf_canvas).to_have_count(1)
+
+    def test_perf_chart_height_is_bounded(self, authenticated_page: Page):
+        """The performance chart should not exceed 280px in height."""
+        _nav_click(authenticated_page, "portfolio")
+        authenticated_page.wait_for_timeout(12000)
+        wrap = authenticated_page.locator(".pf-chart-wrap").nth(1)  # 2nd = perf chart
+        box = wrap.bounding_box()
+        assert box is not None, "Performance chart wrapper has no bounding box"
+        assert box["height"] <= 300, (
+            f"Performance chart is {box['height']:.0f}px tall — should be "
+            f"≤ 300px (max-height: 280px + padding). Chart is still too tall."
+        )
+
+    def test_alloc_chart_height_is_bounded(self, authenticated_page: Page):
+        """The sector allocation chart should also be height-constrained."""
+        _nav_click(authenticated_page, "portfolio")
+        authenticated_page.wait_for_timeout(2000)
+        wrap = authenticated_page.locator(".pf-chart-wrap").first
+        box = wrap.bounding_box()
+        assert box is not None, "Alloc chart wrapper has no bounding box"
+        assert box["height"] <= 300, (
+            f"Allocation chart is {box['height']:.0f}px tall — should be "
+            f"≤ 300px. Chart is still too tall."
+        )
+
+    def test_perf_chart_canvas_has_no_hardcoded_height(self, authenticated_page: Page):
+        """Canvas should NOT have a hardcoded height attribute (responsive)."""
+        _nav_click(authenticated_page, "portfolio")
+        authenticated_page.wait_for_timeout(2000)
+        canvas = authenticated_page.locator("#pf-perf-chart")
+        height_attr = canvas.get_attribute("height")
+        # Chart.js may set a computed height attr at runtime, but NOT "200"
+        assert height_attr != "200", (
+            "Canvas still has the old hardcoded height='200' attribute"
+        )
+
+
+# ────────────────────────────────────────────
 #  Comparison — compare stocks flow
 # ────────────────────────────────────────────
 
