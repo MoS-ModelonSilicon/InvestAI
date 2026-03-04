@@ -15,7 +15,7 @@ async function loadTicker() {
 
 function renderTicker(quotes) {
     const strip = document.getElementById("ticker-strip");
-    const items = quotes.map((q) => {
+    const singleSet = quotes.map((q) => {
         const up = q.change >= 0;
         const arrow = up ? "▲" : "▼";
         const cls = up ? "ticker-up" : "ticker-down";
@@ -34,7 +34,22 @@ function renderTicker(quotes) {
         </div>`;
     }).join("");
 
-    strip.innerHTML = items + items;
+    // Measure one set's width to ensure content fills the viewport
+    strip.style.animation = "none";
+    strip.innerHTML = singleSet;
+    const oneSetWidth = strip.scrollWidth;
+    const viewWidth = strip.parentElement.offsetWidth || window.innerWidth;
+
+    // Repeat enough times so each "half" is at least as wide as the viewport
+    const repeats = Math.max(1, Math.ceil(viewWidth / oneSetWidth) + 1);
+    const halfContent = new Array(repeats).fill(singleSet).join("");
+
+    // Double the half so translateX(-50%) scrolls exactly one half seamlessly
+    strip.innerHTML = halfContent + halfContent;
+
+    // Adjust speed proportionally: base 60s for 2 repeats
+    const duration = 30 * repeats;
+    strip.style.animation = `ticker-scroll ${duration}s linear infinite`;
 }
 
 async function loadFeaturedStocks() {
