@@ -7,6 +7,7 @@ requests
 aiofiles
 yfinance
 python-jose[cryptography]
+bcrypt
 passlib[bcrypt]
 
 # Testing (E2E with real browser)
