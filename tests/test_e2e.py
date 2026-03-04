@@ -100,6 +100,58 @@ class TestNavigation:
             h1 = section.locator("h1")
             expect(h1).to_contain_text(heading_text)
 
+    def test_browser_back_navigates_within_spa(self, authenticated_page: Page):
+        """Pressing browser Back should return to the previous SPA page, not leave the site."""
+        # Start on dashboard
+        expect(authenticated_page.locator("#page-dashboard")).to_have_class(re.compile("active"))
+
+        # Navigate to portfolio, then news
+        _nav_click(authenticated_page, "portfolio")
+        authenticated_page.wait_for_timeout(500)
+        expect(authenticated_page.locator("#page-portfolio")).to_have_class(re.compile("active"))
+        assert "#portfolio" in authenticated_page.url
+
+        _nav_click(authenticated_page, "news")
+        authenticated_page.wait_for_timeout(500)
+        expect(authenticated_page.locator("#page-news")).to_have_class(re.compile("active"))
+        assert "#news" in authenticated_page.url
+
+        # Press Back — should go to portfolio, not leave the site
+        authenticated_page.go_back()
+        authenticated_page.wait_for_timeout(500)
+        expect(authenticated_page.locator("#page-portfolio")).to_have_class(re.compile("active"))
+        assert "#portfolio" in authenticated_page.url
+
+        # Press Back again — should go to dashboard
+        authenticated_page.go_back()
+        authenticated_page.wait_for_timeout(500)
+        expect(authenticated_page.locator("#page-dashboard")).to_have_class(re.compile("active"))
+        assert "#dashboard" in authenticated_page.url
+
+    def test_browser_forward_after_back(self, authenticated_page: Page):
+        """Pressing Forward after Back should restore the next SPA page."""
+        _nav_click(authenticated_page, "budgets")
+        authenticated_page.wait_for_timeout(500)
+        _nav_click(authenticated_page, "alerts")
+        authenticated_page.wait_for_timeout(500)
+
+        authenticated_page.go_back()
+        authenticated_page.wait_for_timeout(500)
+        expect(authenticated_page.locator("#page-budgets")).to_have_class(re.compile("active"))
+
+        authenticated_page.go_forward()
+        authenticated_page.wait_for_timeout(500)
+        expect(authenticated_page.locator("#page-alerts")).to_have_class(re.compile("active"))
+
+    def test_url_hash_updates_on_navigation(self, authenticated_page: Page):
+        """Each nav click should update the URL hash to match the page."""
+        for page_id, _ in [("screener", ""), ("education", ""), ("portfolio", "")]:
+            _nav_click(authenticated_page, page_id)
+            authenticated_page.wait_for_timeout(300)
+            assert f"#{page_id}" in authenticated_page.url, (
+                f"URL should contain #{page_id}, got {authenticated_page.url}"
+            )
+
 
 # ────────────────────────────────────────────
 #  Dashboard — real data flow
