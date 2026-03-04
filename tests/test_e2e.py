@@ -128,6 +128,84 @@ class TestDashboardFlow:
             f"Grid HTML: {grid.inner_html()[:300]}"
         )
 
+    def test_sparkline_charts_render_on_market_cards(self, authenticated_page: Page):
+        """Each market card should have a visible sparkline canvas with drawn pixels."""
+        authenticated_page.wait_for_selector('.market-card', timeout=30_000)
+        # Wait for sparkline charts to be created by JS
+        authenticated_page.wait_for_function(
+            'typeof sparkCharts !== "undefined" && Object.keys(sparkCharts).length > 0',
+            timeout=30_000,
+        )
+        canvases = authenticated_page.query_selector_all('canvas[id^="spark-"]')
+        assert len(canvases) > 0, "No sparkline canvas elements found in market grid"
+
+        for canvas in canvases:
+            cid = canvas.get_attribute("id")
+            box = canvas.bounding_box()
+            assert box is not None, f"{cid} has no bounding box — not in DOM"
+            assert box["width"] > 0 and box["height"] > 0, (
+                f"{cid} has zero dimensions: {box}"
+            )
+
+    def test_sparkline_charts_have_pixel_data(self, authenticated_page: Page):
+        """Sparkline canvases should have non-zero pixel data (Chart.js drew something)."""
+        authenticated_page.wait_for_selector('.market-card', timeout=30_000)
+        authenticated_page.wait_for_function(
+            'typeof sparkCharts !== "undefined" && Object.keys(sparkCharts).length > 0',
+            timeout=30_000,
+        )
+        spark_keys = authenticated_page.evaluate(
+            'Object.keys(sparkCharts)'
+        )
+        assert len(spark_keys) > 0, (
+            "sparkCharts is empty — Chart.js never created any sparkline charts. "
+            "The /api/market/home sparkline arrays may be empty."
+        )
+
+        for symbol in spark_keys:
+            non_zero = authenticated_page.evaluate(
+                '''(sym) => {
+                    const el = document.getElementById("spark-" + sym);
+                    if (!el) return -1;
+                    const ctx = el.getContext("2d");
+                    const d = ctx.getImageData(0, 0, el.width, el.height).data;
+                    let n = 0;
+                    for (let i = 3; i < d.length; i += 4) { if (d[i] > 0) n++; }
+                    return n;
+                }''',
+                symbol,
+            )
+            assert non_zero > 0, (
+                f"spark-{symbol} canvas has 0 drawn pixels — chart did not render"
+            )
+
+    def test_sparkline_data_has_realistic_values(self, authenticated_page: Page):
+        """Sparkline chart data should contain multiple realistic price points."""
+        authenticated_page.wait_for_selector('.market-card', timeout=30_000)
+        authenticated_page.wait_for_function(
+            'typeof sparkCharts !== "undefined" && Object.keys(sparkCharts).length > 0',
+            timeout=30_000,
+        )
+        data_info = authenticated_page.evaluate('''() => {
+            const r = {};
+            for (const [sym, chart] of Object.entries(sparkCharts)) {
+                const d = chart.data.datasets[0].data;
+                r[sym] = {len: d.length, min: Math.min(...d), max: Math.max(...d)};
+            }
+            return r;
+        }''')
+        assert len(data_info) > 0, "No sparkline chart data found"
+        for symbol, info in data_info.items():
+            assert info["len"] > 1, (
+                f"{symbol} sparkline has only {info['len']} data point(s)"
+            )
+            assert info["min"] > 0, (
+                f"{symbol} sparkline has invalid min price: {info['min']}"
+            )
+            assert info["max"] > info["min"], (
+                f"{symbol} sparkline is flat (min={info['min']}, max={info['max']})"
+            )
+
     def test_ticker_strip_has_data(self, authenticated_page: Page):
         """Ticker bar should show real market symbols."""
         strip = authenticated_page.locator("#ticker-strip")

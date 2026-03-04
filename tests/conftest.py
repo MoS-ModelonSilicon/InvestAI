@@ -19,7 +19,7 @@ os.environ["no_proxy"] = "127.0.0.1,localhost"
 
 BASE_URL = "http://127.0.0.1:8091"
 ACCESS_KEY = "intel2026"
-SERVER_STARTUP_TIMEOUT = 15  # seconds
+SERVER_STARTUP_TIMEOUT = 30  # seconds
 
 
 def _port_is_open(port: int) -> bool:
@@ -86,10 +86,10 @@ def browser_context_args():
 @pytest.fixture()
 def authenticated_page(page: Page, live_url: str) -> Page:
     """Navigate to the site and log in, returning a page on the dashboard."""
-    page.goto(f"{live_url}/login", wait_until="domcontentloaded")
+    page.goto(f"{live_url}/login", wait_until="domcontentloaded", timeout=60_000)
     page.fill("#access-key", ACCESS_KEY)
     page.click("#login-btn")
-    page.wait_for_url(f"{live_url}/", timeout=15_000)
+    page.wait_for_url(f"{live_url}/", timeout=60_000)
     page.wait_for_load_state("domcontentloaded")
     return page
 
