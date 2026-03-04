@@ -2233,7 +2233,7 @@ body {
 
 /* ── Responsive ───────────────────────────────── */
 
-@media (max-width: 900px) {
+@media (min-width: 601px) and (max-width: 900px) {
     .sidebar { width: 64px; padding: 16px 8px; }
     .logo span, .nav-link span, .nav-section-label, .bell-badge { display: none; }
     .nav-link { justify-content: center; padding: 12px; }
@@ -4549,4 +4549,436 @@ body {
     .dna-insider-date { display: none; }
     .dna-pt-grid { grid-template-columns: repeat(3, 1fr); }
     .dna-exec-row { font-size: .8rem; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — phones (≤ 600px)
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Mobile Hamburger Button ────────────────────── */
+.mobile-hamburger {
+    display: none;
+    position: fixed;
+    top: 8px;
+    left: 10px;
+    z-index: 150;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    color: var(--text);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Sidebar Overlay Backdrop ───────────────────── */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 99;
+    -webkit-tap-highlight-color: transparent;
+}
+.sidebar-overlay.open { display: block; }
+
+/* ── Mobile Bottom Navigation ───────────────────── */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--bg-sidebar);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 4px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mob-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.62rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 8px;
+    transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    min-width: 52px;
+}
+
+.mob-nav-btn.active {
+    color: var(--primary);
+}
+
+.mob-nav-btn.active svg {
+    stroke: var(--primary);
+}
+
+.mob-nav-btn span {
+    line-height: 1;
+}
+
+/* ── Phone breakpoint (≤ 600px) ─────────────────── */
+@media (max-width: 600px) {
+
+    /* Show hamburger and bottom nav */
+    .mobile-hamburger { display: flex; }
+    .mobile-bottom-nav { display: flex; }
+
+    /* Sidebar: hidden by default, slide-in overlay on toggle */
+    .sidebar {
+        width: 260px;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        z-index: 110;
+        padding: 20px 16px;
+    }
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    /* Restore full sidebar labels when open on mobile */
+    .sidebar.mobile-open .logo span,
+    .sidebar.mobile-open .nav-link span,
+    .sidebar.mobile-open .nav-section-label,
+    .sidebar.mobile-open .bell-badge { display: inline; }
+
+    /* Ticker bar */
+    .ticker-bar {
+        left: 0;
+        top: 0;
+        height: 32px;
+    }
+    .ticker-item { padding: 0 12px; font-size: 0.72rem; }
+
+    /* Main content */
+    .content {
+        margin-left: 0;
+        width: 100%;
+        padding: 40px 12px 80px;  /* top for ticker, bottom for bottom-nav */
+    }
+
+    /* Page headers */
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .page-header h1 {
+        font-size: 1.3rem;
+        padding-left: 36px;  /* room for hamburger */
+    }
+
+    /* Date filters */
+    .date-filter {
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
+    }
+    .date-filter input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .stat-card {
+        padding: 16px;
+    }
+    .stat-card .stat-value { font-size: 1.4rem; }
+
+    /* Charts */
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .chart-card { padding: 16px; }
+
+    /* Market grid */
+    .market-grid { grid-template-columns: 1fr !important; }
+
+    /* Filters bar */
+    .filters-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .filters-bar select,
+    .filters-bar input {
+        width: 100%;
+    }
+
+    /* Tables */
+    .tx-table th, .tx-table td {
+        padding: 10px 10px;
+        font-size: 0.78rem;
+    }
+
+    /* Budgets grid */
+    .budgets-grid {
+        grid-template-columns: 1fr;
+    }
+    .budget-card { padding: 16px; }
+
+    /* Budget overview */
+    .budget-bar-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    .budget-bar-label { width: 100%; }
+    .budget-bar-text { width: 100%; text-align: left; }
+
+    /* Modals */
+    .modal {
+        max-width: 100vw !important;
+        width: 96vw !important;
+        margin: 8px;
+        padding: 20px 16px;
+        max-height: 90vh;
+        overflow-y: auto;
+        border-radius: 12px;
+    }
+    .form-row {
+        grid-template-columns: 1fr !important;
+    }
+    .modal-header h2 { font-size: 1.1rem; }
+
+    /* Screener layout */
+    .screener-layout {
+        grid-template-columns: 1fr !important;
+    }
+    .screener-filters {
+        position: static !important;
+    }
+
+    /* Merge tabs (for tabbed sections like Screener/Advisor) */
+    .merge-tabs {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .merge-tab {
+        flex: 1;
+        text-align: center;
+        padding: 8px 10px;
+        font-size: 0.8rem;
+    }
+
+    /* Search bars */
+    .page-search-bar input {
+        font-size: 0.85rem;
+        padding: 10px 14px 10px 38px;
+    }
+
+    /* Screener cards */
+    .scr-grid { grid-template-columns: 1fr !important; }
+
+    /* Watchlist & Alerts grids */
+    .watchlist-grid,
+    .alerts-grid,
+    .edu-grid,
+    .eco-grid,
+    .recs-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Recommendations */
+    .recs-top { grid-template-columns: 1fr !important; }
+
+    /* Portfolio stats */
+    .pf-stats { grid-template-columns: 1fr !important; }
+    .pf-grid-2col { grid-template-columns: 1fr !important; }
+    .pf-h-header, .pf-h-row {
+        font-size: 0.7rem;
+    }
+
+    /* Stock Detail */
+    .sd-grid-2col { grid-template-columns: 1fr !important; }
+    .sd-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .sd-price-area { text-align: left; }
+
+    /* Comparison page */
+    .comp-search {
+        flex-direction: column;
+    }
+    .comp-input {
+        width: 100%;
+    }
+
+    /* Israeli Funds */
+    .il-highlight-row { grid-template-columns: 1fr !important; }
+    .il-layout { grid-template-columns: 1fr !important; }
+    .il-filters {
+        position: static !important;
+    }
+    .il-table-header, .il-table-row {
+        grid-template-columns: 24px 1fr 70px 50px 50px !important;
+        font-size: 0.68rem !important;
+        padding: 6px 6px !important;
+    }
+    .il-col-cat, .il-col-size, .il-col-save, .il-col-fee { display: none; }
+
+    /* Value Scanner */
+    .vs-table-header, .vs-table-row {
+        grid-template-columns: 24px 60px 1fr 70px !important;
+        font-size: 0.68rem !important;
+        padding: 5px 6px !important;
+    }
+    .vs-col-pe, .vs-col-roe, .vs-col-de, .vs-col-fcfy, .vs-col-cr,
+    .vs-col-checks, .vs-col-links, .vs-col-sector, .vs-col-mos { display: none !important; }
+    .vs-stat-cards { grid-template-columns: 1fr !important; }
+    .vs-controls { flex-direction: column; }
+    .vs-filter-group select { width: 100%; }
+
+    /* AutoPilot */
+    .ap-profiles { grid-template-columns: 1fr !important; }
+    .ap-stats-row { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+    .ap-bottom-grid { grid-template-columns: 1fr !important; }
+    .ap-config-bar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 14px;
+    }
+    .ap-run-btn { margin-left: 0; }
+    .ap-presets { flex-wrap: wrap; }
+    .ap-chart-card canvas { height: 200px !important; }
+    .ap-card { padding: 16px; }
+
+    /* Smart Advisor */
+    .adv-controls {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 14px;
+    }
+    .adv-run-btn { margin-left: 0; width: 100%; }
+    .adv-report-grid { grid-template-columns: 1fr; }
+    .adv-stat-grid { flex-direction: column; }
+    .adv-detail-modal {
+        width: 96vw !important;
+        max-width: 96vw !important;
+    }
+    .adv-detail-top { flex-direction: column; }
+    .adv-chart-card canvas { height: 200px !important; }
+    .adv-risk-row, .adv-period-row {
+        flex-wrap: wrap;
+    }
+    .adv-amount-row input { width: 100%; }
+
+    /* Trading Advisor */
+    .ta-picks-grid { grid-template-columns: 1fr !important; }
+    .ta-detail-modal {
+        width: 96vw !important;
+        max-width: 96vw !important;
+    }
+    .ta-detail-prices-row { gap: 6px; }
+    .ta-dp { min-width: 60px; padding: 6px 4px; }
+    .ta-pkg-tabs { flex-wrap: wrap; }
+    .ta-tab { padding: 8px 12px; font-size: 0.82rem; }
+
+    /* Picks Tracker */
+    .pk-stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+    .pk-table { font-size: 0.72rem; }
+    .pk-controls { flex-direction: column; }
+
+    /* DCA Planner */
+    .dca-opp-grid { grid-template-columns: 1fr !important; }
+    .dca-plans-grid { grid-template-columns: 1fr !important; }
+    .dca-alloc-header, .dca-alloc-row {
+        grid-template-columns: 80px 60px 60px 60px 1fr !important;
+        font-size: 0.72rem !important;
+    }
+    .dca-alloc-header > div:nth-child(6),
+    .dca-alloc-row > div:nth-child(6) { display: none; }
+    .dca-alloc-header > div:nth-child(7),
+    .dca-alloc-row > div:nth-child(7) { display: none; }
+    .dca-budget-stats { flex-direction: column; gap: 8px; }
+
+    /* Calendar */
+    .cal-event-symbol { min-width: 50px; font-size: 0.82rem; }
+
+    /* News cards: stack nicely */
+    .news-grid { grid-template-columns: 1fr !important; }
+
+    /* Pagination */
+    .pag-bar {
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+    }
+    .pag-btn { padding: 6px 8px; min-width: 32px; font-size: 0.75rem; }
+
+    /* Rejected stocks table */
+    .vs-rej-header, .vs-rej-row {
+        grid-template-columns: 60px 1fr 2fr !important;
+        font-size: 0.72rem;
+    }
+    .vs-rej-row > div:nth-child(3) { display: none; }
+
+    /* Context menu: take more space on mobile */
+    .ctx-menu { min-width: 180px; }
+
+    /* DNA Modal */
+    .dna-modal {
+        max-width: 96vw !important;
+        width: 96vw !important;
+    }
+    .dna-pt-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* Company DNA sections */
+    .dna-bk-breakdown { gap: 10px; }
+
+    /* Bundle modal */
+    .bundle-modal { width: 96vw !important; }
+
+    /* Admin panel */
+    #page-admin .admin-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* Section headers */
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    /* General touch improvements */
+    button, .btn, .nav-link, .mob-nav-btn, a {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Make inputs larger for touch */
+    input, select, textarea {
+        font-size: 16px !important;  /* Prevents iOS zoom */
+    }
+}
+
+/* ── Very small phones (≤ 380px) ────────────────── */
+@media (max-width: 380px) {
+    .content { padding: 38px 8px 76px; }
+    .page-header h1 { font-size: 1.1rem; }
+    .stat-card .stat-value { font-size: 1.2rem; }
+    .mob-nav-btn { min-width: 44px; font-size: 0.58rem; }
+    .mob-nav-btn svg { width: 18px; height: 18px; }
+    .ap-stats-row { grid-template-columns: 1fr !important; }
+    .pk-stats-row { grid-template-columns: 1fr !important; }
 }

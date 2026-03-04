@@ -7,6 +7,69 @@ const PAGE_TO_NAV = {
     'recommendations': 'autopilot',
 };
 
+// ── Mobile Navigation ────────────────────────────────────────
+const mobileHamburger = document.getElementById('mobile-hamburger');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const sidebar = document.getElementById('sidebar');
+const mobileBottomNav = document.getElementById('mobile-bottom-nav');
+
+function openMobileSidebar() {
+    sidebar.classList.add('mobile-open');
+    sidebarOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeMobileSidebar() {
+    sidebar.classList.remove('mobile-open');
+    sidebarOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+if (mobileHamburger) {
+    mobileHamburger.addEventListener('click', () => {
+        if (sidebar.classList.contains('mobile-open')) {
+            closeMobileSidebar();
+        } else {
+            openMobileSidebar();
+        }
+    });
+}
+
+if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', closeMobileSidebar);
+}
+
+// Bottom nav buttons
+if (mobileBottomNav) {
+    mobileBottomNav.querySelectorAll('.mob-nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const page = btn.dataset.page;
+            if (page === 'more') {
+                openMobileSidebar();
+                return;
+            }
+            navigateTo(page);
+            // Update bottom nav active state
+            mobileBottomNav.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+}
+
+function updateMobileBottomNav(page) {
+    if (!mobileBottomNav) return;
+    const bottomPages = ['dashboard', 'portfolio', 'watchlist', 'smart-advisor'];
+    const navPage = PAGE_TO_NAV[page] || page;
+    mobileBottomNav.querySelectorAll('.mob-nav-btn').forEach(b => {
+        b.classList.remove('active');
+        if (b.dataset.page === navPage || (navPage === 'dashboard' && b.dataset.page === 'dashboard')) {
+            b.classList.add('active');
+        }
+    });
+    // If navigated to a page not in bottom nav, no button is highlighted
+    // (user got there from sidebar "More")
+}
+
 document.querySelectorAll(".nav-link").forEach((link) => {
     link.addEventListener("click", (e) => {
         e.preventDefault();
@@ -15,6 +78,9 @@ document.querySelectorAll(".nav-link").forEach((link) => {
 });
 
 function navigateTo(page, pushState = true) {
+    // Close mobile sidebar when navigating
+    closeMobileSidebar();
+
     document.querySelectorAll(".nav-link").forEach((l) => l.classList.remove("active"));
     const navPage = PAGE_TO_NAV[page] || page;
     const active = document.querySelector(`.nav-link[data-page="${navPage}"]`);
@@ -23,6 +89,9 @@ function navigateTo(page, pushState = true) {
     document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
     const pageEl = document.getElementById("page-" + page);
     if (pageEl) pageEl.classList.add("active");
+
+    // Update mobile bottom nav
+    updateMobileBottomNav(page);
 
     if (pushState) {
         history.pushState({ page }, "", `#${page}`);
