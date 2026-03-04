@@ -21,6 +21,8 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     hashed_password = Column(String, nullable=False)
     name = Column(String, default="")
+    is_admin = Column(Integer, default=0)  # 0 = regular user, 1 = admin
+    is_active = Column(Integer, default=1)  # 0 = disabled, 1 = active
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # relationships

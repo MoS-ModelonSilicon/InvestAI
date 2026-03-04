@@ -15,7 +15,7 @@ from src.routers import (
     categories, transactions, budgets, dashboard, profile, screener,
     recommendations, market, stock_detail, portfolio, news, comparison,
     alerts, education, calendar_router, israeli_funds, value_scanner,
-    autopilot, smart_advisor, trading_advisor, picks_tracker, dca,
+    autopilot, smart_advisor, trading_advisor, picks_tracker, dca, admin,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -58,6 +58,7 @@ app.include_router(smart_advisor.router)
 app.include_router(trading_advisor.router)
 app.include_router(picks_tracker.router)
 app.include_router(dca.router)
+app.include_router(admin.router)
 
 
 @app.get("/")
@@ -120,6 +121,8 @@ def do_login(body: LoginBody):
         user = db.query(User).filter(User.email == body.email.lower().strip()).first()
         if not user or not verify_password(body.password, user.hashed_password):
             return JSONResponse(status_code=403, content={"detail": "Invalid email or password"})
+        if not getattr(user, "is_active", 1):
+            return JSONResponse(status_code=403, content={"detail": "Account is disabled. Contact an administrator."})
         token = create_access_token(user.id, user.email)
         resp = JSONResponse(content={"ok": True, "name": user.name, "email": user.email})
         resp.set_cookie(
@@ -148,7 +151,7 @@ def get_me(request: Request):
         user = db.query(User).filter(User.id == int(payload["sub"])).first()
         if not user:
             return JSONResponse(status_code=401, content={"detail": "User not found"})
-        return {"name": user.name, "email": user.email}
+        return {"name": user.name, "email": user.email, "is_admin": user.is_admin or 0}
     finally:
         db.close()
 

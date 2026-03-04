@@ -62,6 +62,13 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     return user
 
 
+def require_admin(user=Depends(get_current_user)):
+    """Dependency that ensures the current user is an admin."""
+    if not getattr(user, "is_admin", 0):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+
 # ── Middleware ────────────────────────────────────────────────
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
@@ -78,6 +85,19 @@ class AuthMiddleware(BaseHTTPMiddleware):
         payload = decode_token(cookie) if cookie else None
 
         if payload:
+            # Check if user is still active
+            from src.models import User
+            db = next(get_db())
+            try:
+                user = db.query(User).filter(User.id == int(payload["sub"])).first()
+                if user and not getattr(user, "is_active", 1):
+                    # Disabled account — force logout
+                    resp = RedirectResponse(url="/login", status_code=302)
+                    resp.delete_cookie(key=COOKIE_NAME, path="/")
+                    return resp
+            finally:
+                db.close()
+
             request.state.user_id = int(payload["sub"])
             return await call_next(request)
 

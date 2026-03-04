@@ -49,6 +49,7 @@ document.querySelectorAll(".nav-link").forEach((link) => {
         if (page === "dashboard") loadDashboard();
         if (page === "transactions") loadTransactions();
         if (page === "budgets") loadBudgets();
+        if (page === "admin") loadAdminPanel();
     });
 });
 
