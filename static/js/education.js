@@ -72,3 +72,33 @@ function toggleEduContent(btn) {
         btn.textContent = "Read More ▾";
     }
 }
+
+function filterEducation(query) {
+    const q = (query || "").toLowerCase().trim();
+    const cards = document.querySelectorAll(".edu-card");
+    let visible = 0;
+    cards.forEach(card => {
+        // Respect category filter
+        const catMatch = currentCategory === "all" || card.dataset.category === currentCategory;
+        if (!catMatch) { card.style.display = "none"; return; }
+        const title = (card.querySelector(".edu-card-title")?.textContent || "").toLowerCase();
+        const summary = (card.querySelector(".edu-card-summary")?.textContent || "").toLowerCase();
+        const category = (card.dataset.category || "").toLowerCase();
+        const match = !q || title.includes(q) || summary.includes(q) || category.includes(q);
+        card.style.display = match ? "" : "none";
+        if (match) visible++;
+    });
+    let noRes = document.getElementById("edu-no-results");
+    if (!q || visible > 0) {
+        if (noRes) noRes.remove();
+    } else {
+        if (!noRes) {
+            noRes = document.createElement("div");
+            noRes.id = "edu-no-results";
+            noRes.className = "search-no-results";
+            const container = document.getElementById("edu-container");
+            if (container) container.appendChild(noRes);
+        }
+        noRes.textContent = `No articles matching "${query}"`;
+    }
+}

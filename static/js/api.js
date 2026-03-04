@@ -45,3 +45,10 @@ const fmt = (n) =>
     "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const fmtPct = (n) => (n != null ? n.toFixed(1) + "%" : "—");
+
+// ── Page Search Utilities ────────────────────────────────────
+function clearPageSearch(inputId, filterFn) {
+    const el = document.getElementById(inputId);
+    if (el) { el.value = ""; }
+    if (typeof filterFn === "function") filterFn("");
+}

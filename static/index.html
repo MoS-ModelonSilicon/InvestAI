@@ -24,6 +24,9 @@
             <li><a href="#" class="nav-link" data-page="watchlist">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
                 Watchlist</a></li>
+            <li><a href="#" class="nav-link" data-page="dca">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M2 12h20"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 2a10 10 0 0 0-10 10"/><circle cx="12" cy="12" r="3"/></svg>
+                DCA Planner</a></li>
             <li><a href="#" class="nav-link" data-page="alerts">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 Alerts <span class="bell-badge" id="bell-badge" style="display:none">0</span></a></li>
@@ -122,18 +125,44 @@
                 <h1>Portfolio</h1>
                 <button class="btn btn-primary" onclick="openAddHoldingModal()">+ Add Holding</button>
             </div>
+            <div class="page-search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="portfolio-search" placeholder="Search holdings by symbol or name..." oninput="filterPortfolio(this.value)">
+                <button class="search-clear" onclick="clearPageSearch('portfolio-search', filterPortfolio)">&times;</button>
+            </div>
             <div id="portfolio-container"></div>
+        </section>
+
+        <!-- ─── DCA Planner ────────────────────────────── -->
+        <section id="page-dca" class="page">
+            <div class="page-header">
+                <h1>DCA Planner</h1>
+                <button class="btn btn-primary" onclick="openDcaModal()">+ New DCA Plan</button>
+            </div>
+            <div id="dca-container">
+                <div class="loading-spinner"><div class="spinner"></div><p>Loading DCA plans...</p></div>
+            </div>
         </section>
 
         <!-- ─── Watchlist ──────────────────────────────── -->
         <section id="page-watchlist" class="page">
             <div class="page-header"><h1>Watchlist</h1><span class="scr-result-count" id="watchlist-count"></span></div>
+            <div class="page-search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="watchlist-search" placeholder="Search by symbol, name, or sector..." oninput="filterWatchlist(this.value)">
+                <button class="search-clear" onclick="clearPageSearch('watchlist-search', filterWatchlist)">&times;</button>
+            </div>
             <div id="watchlist-container"></div>
         </section>
 
         <!-- ─── News ───────────────────────────────────── -->
         <section id="page-news" class="page">
             <div class="page-header"><h1>Market News</h1><span class="scr-result-count" id="news-count"></span></div>
+            <div class="page-search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="news-search" placeholder="Search news by title, symbol, or source..." oninput="filterNews(this.value)">
+                <button class="search-clear" onclick="clearPageSearch('news-search', filterNews)">&times;</button>
+            </div>
             <div id="news-container"></div>
         </section>
 
@@ -148,6 +177,11 @@
         <!-- ─── Transactions ─────────────────────────── -->
         <section id="page-transactions" class="page">
             <div class="page-header"><h1>Transactions</h1><button class="btn btn-primary" onclick="openTransactionModal()">+ Add Transaction</button></div>
+            <div class="page-search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="transactions-search" placeholder="Search transactions by description..." oninput="filterTransactions(this.value)">
+                <button class="search-clear" onclick="clearPageSearch('transactions-search', filterTransactions)">&times;</button>
+            </div>
             <div class="filters-bar">
                 <select id="filter-type"><option value="">All Types</option><option value="income">Income</option><option value="expense">Expense</option></select>
                 <select id="filter-category"></select>
@@ -369,6 +403,11 @@
                 <button class="btn btn-primary" id="pk-seed-btn" onclick="seedWatchlistFromPicks()">Add All to Watchlist</button>
             </div>
             <p class="pk-subtitle">Every trade alert from the Discord backtested against real market data. See what actually hit targets, what got stopped out, and the real win rate.</p>
+            <div class="page-search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="picks-search" placeholder="Search picks by symbol or type..." oninput="filterPicks(this.value)">
+                <button class="search-clear" onclick="clearPageSearch('picks-search', filterPicks)">&times;</button>
+            </div>
             <div class="pk-controls">
                 <div class="pk-filters">
                     <button class="pk-filter-btn active" data-type="all" onclick="setPicksFilter(null)">All</button>
@@ -399,18 +438,33 @@
                 <h1>Price Alerts</h1>
                 <div><span class="scr-result-count" id="alerts-count"></span> <button class="btn btn-primary" onclick="openAlertModal()">+ New Alert</button></div>
             </div>
+            <div class="page-search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="alerts-search" placeholder="Search alerts by symbol..." oninput="filterAlerts(this.value)">
+                <button class="search-clear" onclick="clearPageSearch('alerts-search', filterAlerts)">&times;</button>
+            </div>
             <div id="alerts-container"></div>
         </section>
 
         <!-- ─── Calendar ─────────────────────────────── -->
         <section id="page-calendar" class="page">
             <div class="page-header"><h1>Earnings & Events Calendar</h1></div>
+            <div class="page-search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="calendar-search" placeholder="Search events by symbol or name..." oninput="filterCalendar(this.value)">
+                <button class="search-clear" onclick="clearPageSearch('calendar-search', filterCalendar)">&times;</button>
+            </div>
             <div id="calendar-container"></div>
         </section>
 
         <!-- ─── Education ────────────────────────────── -->
         <section id="page-education" class="page">
             <div class="page-header"><h1>Learn to Invest</h1></div>
+            <div class="page-search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="education-search" placeholder="Search articles by topic..." oninput="filterEducation(this.value)">
+                <button class="search-clear" onclick="clearPageSearch('education-search', filterEducation)">&times;</button>
+            </div>
             <div id="edu-container"></div>
         </section>
 
@@ -504,6 +558,11 @@
             </div>
             <div id="il-funds-container">
                 <div id="il-kaspit-highlight" class="il-highlight-row"></div>
+                <div class="page-search-bar">
+                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input type="text" id="il-funds-search" placeholder="Search funds by name or manager..." oninput="filterILFunds(this.value)">
+                    <button class="search-clear" onclick="clearPageSearch('il-funds-search', filterILFunds)">&times;</button>
+                </div>
                 <div class="il-layout">
                     <aside class="il-filters">
                         <h3>Filters</h3>
@@ -626,6 +685,29 @@
         </div>
     </div>
 
+    <!-- ─── DCA Plan Modal ────────────────────── -->
+    <div id="dca-modal-overlay" class="modal-overlay" onclick="closeDcaModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header"><h2>New DCA Plan</h2><button class="modal-close" onclick="closeDcaModal()">&times;</button></div>
+            <form id="dca-form" onsubmit="submitDcaPlan(event)">
+                <div class="form-row">
+                    <div class="form-group"><label>Symbol</label><input type="text" id="dca-symbol" required placeholder="AAPL"></div>
+                    <div class="form-group"><label>Name</label><input type="text" id="dca-name" placeholder="Apple Inc."></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Monthly Budget ($)</label><input type="number" id="dca-budget" step="1" min="1" required placeholder="200"></div>
+                    <div class="form-group"><label>Dip Threshold (%)</label><input type="number" id="dca-threshold" step="1" max="0" value="-15" required><small style="color:var(--text-muted);margin-top:2px">e.g. -15 = buy more when stock drops 15%</small></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Dip Multiplier (×)</label><input type="number" id="dca-multiplier" step="0.5" min="1" value="2" required><small style="color:var(--text-muted);margin-top:2px">How many × normal budget on dip (2 = double down)</small></div>
+                    <div class="form-group"><label>Notes</label><input type="text" id="dca-notes" placeholder="Long-term hold, buying dips"></div>
+                </div>
+                <div class="form-group"><label><input type="checkbox" id="dca-long-term" checked style="margin-right:6px">Long-term investment</label></div>
+                <div class="form-actions"><button type="button" class="btn btn-ghost" onclick="closeDcaModal()">Cancel</button><button type="submit" class="btn btn-primary">Create Plan</button></div>
+            </form>
+        </div>
+    </div>
+
     <script src="/static/js/api.js"></script>
     <script src="/static/js/context-menu.js"></script>
     <script src="/static/js/tooltips.js"></script>
@@ -651,6 +733,7 @@
     <script src="/static/js/smart-advisor.js"></script>
     <script src="/static/js/advisor.js"></script>
     <script src="/static/js/picks-tracker.js"></script>
+    <script src="/static/js/dca.js"></script>
     <script src="/static/js/app.js"></script>
     <script>
         // Load current user info into sidebar

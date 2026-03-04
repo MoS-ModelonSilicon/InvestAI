@@ -88,3 +88,28 @@ async function deleteTransaction(id) {
     await api.del(`/api/transactions/${id}`);
     loadTransactions();
 }
+
+function filterTransactions(query) {
+    const q = (query || "").toLowerCase().trim();
+    const rows = document.querySelectorAll("#tx-body tr");
+    let visible = 0;
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const match = !q || text.includes(q);
+        row.style.display = match ? "" : "none";
+        if (match) visible++;
+    });
+    let noRes = document.getElementById("tx-no-results");
+    if (!q || visible > 0) {
+        if (noRes) noRes.remove();
+    } else {
+        if (!noRes) {
+            noRes = document.createElement("div");
+            noRes.id = "tx-no-results";
+            noRes.className = "search-no-results";
+            const wrapper = document.querySelector("#page-transactions .table-wrapper");
+            if (wrapper) wrapper.parentElement.appendChild(noRes);
+        }
+        noRes.textContent = `No transactions matching "${query}"`;
+    }
+}

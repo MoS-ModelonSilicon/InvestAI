@@ -1,4 +1,5 @@
 let watchlistLoaded = false;
+let _watchlistItems = [];
 
 async function loadWatchlist() {
     const container = document.getElementById("watchlist-container");
@@ -12,6 +13,7 @@ async function loadWatchlist() {
             return;
         }
         renderWatchlist(items);
+        _watchlistItems = items;
     } catch (e) {
         container.innerHTML = '<p style="color:var(--red);padding:20px;">Failed to load watchlist.</p>';
     }
@@ -67,5 +69,32 @@ async function removeWatchlistItem(id, btn) {
         }
     } catch (e) {
         alert("Failed to remove item");
+    }
+}
+
+function filterWatchlist(query) {
+    const q = (query || "").toLowerCase().trim();
+    const cards = document.querySelectorAll(".watchlist-card");
+    let visible = 0;
+    cards.forEach(card => {
+        const symbol = (card.dataset.symbol || "").toLowerCase();
+        const name = (card.dataset.stockName || "").toLowerCase();
+        const sector = (card.querySelector(".wl-sector")?.textContent || "").toLowerCase();
+        const match = !q || symbol.includes(q) || name.includes(q) || sector.includes(q);
+        card.style.display = match ? "" : "none";
+        if (match) visible++;
+    });
+    let noRes = document.getElementById("watchlist-no-results");
+    if (!q || visible > 0) {
+        if (noRes) noRes.remove();
+    } else {
+        if (!noRes) {
+            noRes = document.createElement("div");
+            noRes.id = "watchlist-no-results";
+            noRes.className = "search-no-results";
+            const container = document.getElementById("watchlist-container");
+            if (container) container.appendChild(noRes);
+        }
+        noRes.textContent = `No stocks matching "${query}"`;
     }
 }

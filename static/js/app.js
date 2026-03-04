@@ -50,6 +50,7 @@ function navigateTo(page, pushState = true) {
     if (page === "smart-advisor") loadSmartAdvisor();
     if (page === "trading-advisor") loadTradingAdvisor();
     if (page === "picks-tracker") loadPicksTracker();
+    if (page === "dca") loadDca();
 }
 
 async function loadCategories() {

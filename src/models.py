@@ -31,6 +31,7 @@ class User(Base):
     watchlist_items = relationship("Watchlist", back_populates="owner")
     holdings = relationship("Holding", back_populates="owner")
     alerts = relationship("Alert", back_populates="owner")
+    dca_plans = relationship("DcaPlan", back_populates="owner")
 
 
 # ── Finance Tracker Models ───────────────────────────────────
@@ -153,3 +154,25 @@ class Alert(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", back_populates="alerts")
+
+
+class DcaPlan(Base):
+    __tablename__ = "dca_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    symbol = Column(String, nullable=False)
+    name = Column(String, default="")
+    monthly_budget = Column(Float, nullable=False)
+    dip_threshold = Column(Float, nullable=False, default=-15.0)
+    dip_multiplier = Column(Float, nullable=False, default=2.0)
+    is_long_term = Column(Integer, default=1)
+    notes = Column(String, default="")
+    active = Column(Integer, default=1)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "symbol", name="uq_dca_user_symbol"),
+    )
+
+    owner = relationship("User", back_populates="dca_plans")

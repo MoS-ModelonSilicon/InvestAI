@@ -1,5 +1,6 @@
 let portfolioChart = null;
 let perfChart = null;
+let _portfolioData = null;
 
 async function loadPortfolio() {
     const container = document.getElementById("portfolio-container");
@@ -7,6 +8,7 @@ async function loadPortfolio() {
 
     try {
         const data = await api.get("/api/portfolio/summary");
+        _portfolioData = data;
         renderPortfolio(data);
     } catch (e) {
         container.innerHTML = '<p style="color:var(--red);padding:20px;">Failed to load portfolio.</p>';
@@ -211,5 +213,32 @@ async function submitHolding(e) {
         loadPortfolio();
     } catch (e) {
         alert("Failed to add holding");
+    }
+}
+
+function filterPortfolio(query) {
+    const q = (query || "").toLowerCase().trim();
+    const rows = document.querySelectorAll(".pf-h-row");
+    let visible = 0;
+    rows.forEach(row => {
+        const symbol = (row.dataset.symbol || "").toLowerCase();
+        const name = (row.dataset.stockName || "").toLowerCase();
+        const match = !q || symbol.includes(q) || name.includes(q);
+        row.style.display = match ? "" : "none";
+        if (match) visible++;
+    });
+    // Show no-results message
+    let noRes = document.getElementById("portfolio-no-results");
+    if (!q || visible > 0) {
+        if (noRes) noRes.remove();
+    } else {
+        if (!noRes) {
+            noRes = document.createElement("div");
+            noRes.id = "portfolio-no-results";
+            noRes.className = "search-no-results";
+            const table = document.querySelector(".pf-holdings-table");
+            if (table) table.parentElement.appendChild(noRes);
+        }
+        noRes.textContent = `No holdings matching "${query}"`;
     }
 }

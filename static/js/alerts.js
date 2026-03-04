@@ -1,4 +1,5 @@
 let alertPollInterval = null;
+let _alertsData = [];
 
 async function loadAlerts() {
     const container = document.getElementById("alerts-container");
@@ -6,6 +7,7 @@ async function loadAlerts() {
 
     try {
         const alerts = await api.get("/api/alerts");
+        _alertsData = alerts;
         renderAlerts(alerts);
     } catch (e) {
         container.innerHTML = '<p style="color:var(--red);padding:20px;">Failed to load alerts.</p>';
@@ -155,5 +157,31 @@ function startAlertPolling() {
     checkTriggeredAlerts();
     if (!alertPollInterval) {
         alertPollInterval = setInterval(checkTriggeredAlerts, 60000);
+    }
+}
+
+function filterAlerts(query) {
+    const q = (query || "").toLowerCase().trim();
+    const cards = document.querySelectorAll(".alert-card");
+    let visible = 0;
+    cards.forEach(card => {
+        const symbol = (card.querySelector(".alert-symbol")?.textContent || "").toLowerCase();
+        const name = (card.querySelector(".alert-name")?.textContent || "").toLowerCase();
+        const match = !q || symbol.includes(q) || name.includes(q);
+        card.style.display = match ? "" : "none";
+        if (match) visible++;
+    });
+    let noRes = document.getElementById("alerts-no-results");
+    if (!q || visible > 0) {
+        if (noRes) noRes.remove();
+    } else {
+        if (!noRes) {
+            noRes = document.createElement("div");
+            noRes.id = "alerts-no-results";
+            noRes.className = "search-no-results";
+            const container = document.getElementById("alerts-container");
+            if (container) container.appendChild(noRes);
+        }
+        noRes.textContent = `No alerts matching "${query}"`;
     }
 }

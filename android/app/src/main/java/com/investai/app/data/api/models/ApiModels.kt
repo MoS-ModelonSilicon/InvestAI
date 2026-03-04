@@ -9,10 +9,13 @@ import kotlinx.serialization.Serializable
 data class OkResponse(val ok: Boolean = true)
 
 @Serializable
-data class LoginRequest(val key: String)
+data class LoginRequest(val email: String, val password: String)
 
 @Serializable
-data class LoginResponse(val ok: Boolean = false, val detail: String? = null)
+data class RegisterRequest(val email: String, val password: String, val name: String = "")
+
+@Serializable
+data class LoginResponse(val ok: Boolean = false, val detail: String? = null, val name: String? = null, val email: String? = null)
 
 // ── Dashboard ────────────────────────────────────────────
 

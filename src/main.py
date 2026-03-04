@@ -15,7 +15,7 @@ from src.routers import (
     categories, transactions, budgets, dashboard, profile, screener,
     recommendations, market, stock_detail, portfolio, news, comparison,
     alerts, education, calendar_router, israeli_funds, value_scanner,
-    autopilot, smart_advisor, trading_advisor, picks_tracker,
+    autopilot, smart_advisor, trading_advisor, picks_tracker, dca,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -57,6 +57,7 @@ app.include_router(autopilot.router)
 app.include_router(smart_advisor.router)
 app.include_router(trading_advisor.router)
 app.include_router(picks_tracker.router)
+app.include_router(dca.router)
 
 
 @app.get("/")

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import com.investai.app.data.api.AuthInterceptor.Companion.SESSION_COOKIE_KEY
 import com.investai.app.data.api.InvestAIApi
 import com.investai.app.data.api.models.LoginRequest
+import com.investai.app.data.api.models.RegisterRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -20,11 +21,10 @@ class AuthRepository @Inject constructor(
         prefs[SESSION_COOKIE_KEY] != null
     }
 
-    suspend fun login(accessKey: String): Result<Unit> {
+    suspend fun login(email: String, password: String): Result<Unit> {
         return try {
-            val response = api.login(LoginRequest(key = accessKey))
+            val response = api.login(LoginRequest(email = email, password = password))
             if (response.isSuccessful) {
-                // Extract Set-Cookie header and persist
                 val cookie = response.headers()["Set-Cookie"]
                 if (cookie != null) {
                     dataStore.edit { prefs ->
@@ -33,7 +33,28 @@ class AuthRepository @Inject constructor(
                 }
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Invalid access key"))
+                val detail = response.errorBody()?.string() ?: "Invalid email or password"
+                Result.failure(Exception(detail))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun register(email: String, password: String, name: String = ""): Result<Unit> {
+        return try {
+            val response = api.register(RegisterRequest(email = email, password = password, name = name))
+            if (response.isSuccessful) {
+                val cookie = response.headers()["Set-Cookie"]
+                if (cookie != null) {
+                    dataStore.edit { prefs ->
+                        prefs[SESSION_COOKIE_KEY] = cookie.split(";").first()
+                    }
+                }
+                Result.success(Unit)
+            } else {
+                val detail = response.errorBody()?.string() ?: "Registration failed"
+                Result.failure(Exception(detail))
             }
         } catch (e: Exception) {
             Result.failure(e)

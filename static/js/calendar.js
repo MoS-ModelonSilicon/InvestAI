@@ -82,3 +82,30 @@ function filterCalTab(tab, btn) {
     document.getElementById("cal-earnings").style.display = tab === "earnings" ? "block" : "none";
     document.getElementById("cal-economic").style.display = tab === "economic" ? "block" : "none";
 }
+
+function filterCalendar(query) {
+    const q = (query || "").toLowerCase().trim();
+    // Filter earnings events
+    const events = document.querySelectorAll(".cal-event");
+    const dateGroups = document.querySelectorAll(".cal-date-group");
+    events.forEach(ev => {
+        const symbol = (ev.querySelector(".cal-event-symbol")?.textContent || "").toLowerCase();
+        const name = (ev.querySelector(".cal-event-name")?.textContent || "").toLowerCase();
+        const type = (ev.querySelector(".cal-event-type")?.textContent || "").toLowerCase();
+        const match = !q || symbol.includes(q) || name.includes(q) || type.includes(q);
+        ev.style.display = match ? "" : "none";
+    });
+    // Hide date groups where all events are hidden
+    dateGroups.forEach(group => {
+        const visibleEvents = group.querySelectorAll(".cal-event:not([style*='display: none'])");
+        group.style.display = visibleEvents.length > 0 || !q ? "" : "none";
+    });
+    // Filter economic events
+    const ecoCards = document.querySelectorAll(".eco-card");
+    ecoCards.forEach(card => {
+        const name = (card.querySelector(".eco-name")?.textContent || "").toLowerCase();
+        const desc = (card.querySelector(".eco-desc")?.textContent || "").toLowerCase();
+        const match = !q || name.includes(q) || desc.includes(q);
+        card.style.display = match ? "" : "none";
+    });
+}

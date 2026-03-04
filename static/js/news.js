@@ -1,9 +1,12 @@
+let _newsArticles = [];
+
 async function loadNews() {
     const container = document.getElementById("news-container");
     container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Loading market news...</p></div>';
 
     try {
         const articles = await api.get("/api/news");
+        _newsArticles = articles;
         renderNews(articles);
     } catch (e) {
         container.innerHTML = '<p style="color:var(--red);padding:20px;">Failed to load news.</p>';
@@ -53,4 +56,31 @@ function getTimeAgo(date) {
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
     return date.toLocaleDateString();
+}
+
+function filterNews(query) {
+    const q = (query || "").toLowerCase().trim();
+    const cards = document.querySelectorAll(".news-card");
+    let visible = 0;
+    cards.forEach(card => {
+        const title = (card.querySelector(".news-title")?.textContent || "").toLowerCase();
+        const symbol = (card.dataset.symbol || "").toLowerCase();
+        const publisher = (card.querySelector(".news-meta")?.textContent || "").toLowerCase();
+        const match = !q || title.includes(q) || symbol.includes(q) || publisher.includes(q);
+        card.style.display = match ? "" : "none";
+        if (match) visible++;
+    });
+    let noRes = document.getElementById("news-no-results");
+    if (!q || visible > 0) {
+        if (noRes) noRes.remove();
+    } else {
+        if (!noRes) {
+            noRes = document.createElement("div");
+            noRes.id = "news-no-results";
+            noRes.className = "search-no-results";
+            const container = document.getElementById("news-container");
+            if (container) container.appendChild(noRes);
+        }
+        noRes.textContent = `No articles matching "${query}"`;
+    }
 }

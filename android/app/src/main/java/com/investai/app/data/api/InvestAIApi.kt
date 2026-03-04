@@ -15,6 +15,9 @@ interface InvestAIApi {
     @POST("auth/login")
     suspend fun login(@Body body: LoginRequest): Response<LoginResponse>
 
+    @POST("auth/register")
+    suspend fun register(@Body body: RegisterRequest): Response<LoginResponse>
+
     // ── Dashboard ─────────────────────────────────────────
 
     @GET("api/dashboard")

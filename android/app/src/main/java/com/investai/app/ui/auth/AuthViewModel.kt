@@ -25,10 +25,10 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    fun login(accessKey: String) {
+    fun login(email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = LoginUiState(isLoading = true)
-            authRepo.login(accessKey).fold(
+            authRepo.login(email, password).fold(
                 onSuccess = {
                     _uiState.value = LoginUiState()
                 },
@@ -37,6 +37,24 @@ class AuthViewModel @Inject constructor(
                 },
             )
         }
+    }
+
+    fun register(email: String, password: String, name: String = "") {
+        viewModelScope.launch {
+            _uiState.value = LoginUiState(isLoading = true)
+            authRepo.register(email, password, name).fold(
+                onSuccess = {
+                    _uiState.value = LoginUiState()
+                },
+                onFailure = { e ->
+                    _uiState.value = LoginUiState(error = e.message ?: "Registration failed")
+                },
+            )
+        }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
     }
 
     fun logout() {

@@ -184,3 +184,29 @@ async function seedWatchlistFromPicks() {
         if (btn) { btn.disabled = false; btn.textContent = "Failed — Retry"; }
     }
 }
+
+function filterPicks(query) {
+    const q = (query || "").toLowerCase().trim();
+    const rows = document.querySelectorAll(".pk-row");
+    let visible = 0;
+    rows.forEach(row => {
+        const symbol = (row.dataset.symbol || "").toLowerCase();
+        const type = (row.querySelector(".pk-type")?.textContent || "").toLowerCase();
+        const match = !q || symbol.includes(q) || type.includes(q);
+        row.style.display = match ? "" : "none";
+        if (match) visible++;
+    });
+    let noRes = document.getElementById("picks-no-results");
+    if (!q || visible > 0) {
+        if (noRes) noRes.remove();
+    } else {
+        if (!noRes) {
+            noRes = document.createElement("div");
+            noRes.id = "picks-no-results";
+            noRes.className = "search-no-results";
+            const container = document.getElementById("picks-results");
+            if (container) container.appendChild(noRes);
+        }
+        noRes.textContent = `No picks matching "${query}"`;
+    }
+}
