@@ -5,8 +5,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.investai.app.data.api.AuthInterceptor.Companion.SESSION_COOKIE_KEY
 import com.investai.app.data.api.InvestAIApi
+import com.investai.app.data.api.models.ForgotPasswordRequest
 import com.investai.app.data.api.models.LoginRequest
 import com.investai.app.data.api.models.RegisterRequest
+import com.investai.app.data.api.models.ResetPasswordRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -64,6 +66,36 @@ class AuthRepository @Inject constructor(
     suspend fun logout() {
         dataStore.edit { prefs ->
             prefs.remove(SESSION_COOKIE_KEY)
+        }
+    }
+
+    suspend fun forgotPassword(email: String): Result<String> {
+        return try {
+            val response = api.forgotPassword(ForgotPasswordRequest(email = email))
+            if (response.isSuccessful) {
+                val msg = response.body()?.message ?: "Reset code sent"
+                Result.success(msg)
+            } else {
+                val detail = response.errorBody()?.string() ?: "Request failed"
+                Result.failure(Exception(detail))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun resetPassword(email: String, code: String, newPassword: String): Result<String> {
+        return try {
+            val response = api.resetPassword(ResetPasswordRequest(email = email, code = code, newPassword = newPassword))
+            if (response.isSuccessful) {
+                val msg = response.body()?.message ?: "Password reset successfully"
+                Result.success(msg)
+            } else {
+                val detail = response.errorBody()?.string() ?: "Reset failed"
+                Result.failure(Exception(detail))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

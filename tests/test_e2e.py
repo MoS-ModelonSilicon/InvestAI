@@ -908,3 +908,170 @@ class TestMultiUserIsolation:
         assert "AMC" not in symbols_b, (
             f"User B can see User A's AMC alert! B's alerts: {symbols_b}"
         )
+
+
+# ────────────────────────────────────────────
+#  Full-width layout
+# ────────────────────────────────────────────
+
+class TestFullWidthLayout:
+    """Content area should fill all available width (no max-width constraint)."""
+
+    def test_content_has_no_max_width_constraint(self, authenticated_page: Page):
+        """The .content element should NOT have a restrictive max-width like 1200px."""
+        content = authenticated_page.locator("main.content")
+        max_w = content.evaluate("el => getComputedStyle(el).maxWidth")
+        assert max_w == "none" or max_w == "", (
+            f".content has max-width={max_w}, expected none"
+        )
+
+    def test_content_stretches_with_viewport(self, authenticated_page: Page):
+        """Content area width should track the viewport minus the sidebar."""
+        # Set a wide viewport
+        authenticated_page.set_viewport_size({"width": 1920, "height": 1080})
+        authenticated_page.wait_for_timeout(300)
+        content = authenticated_page.locator("main.content")
+        box = content.bounding_box()
+        # Sidebar is 240px, so content should be at least (1920 - 240 - some padding)
+        assert box is not None
+        assert box["width"] >= 1600, (
+            f"Content width {box['width']}px is too narrow for 1920px viewport"
+        )
+
+    def test_il_funds_table_is_wide(self, authenticated_page: Page):
+        """IL Funds table should use the full content width, not be capped at 1200px."""
+        authenticated_page.set_viewport_size({"width": 1920, "height": 1080})
+        _nav_click(authenticated_page, "il-funds")
+        authenticated_page.wait_for_timeout(500)
+        content = authenticated_page.locator("main.content")
+        box = content.bounding_box()
+        assert box is not None
+        assert box["width"] >= 1600, (
+            f"Content area is only {box['width']}px wide on IL Funds page"
+        )
+
+
+# ────────────────────────────────────────────
+#  Search bars on every applicable page
+# ────────────────────────────────────────────
+
+class TestSearchBars:
+    """Every data page should have a search bar that is visible and functional."""
+
+    SEARCH_PAGES = [
+        ("portfolio",    "portfolio-search",     "Search holdings"),
+        ("watchlist",    "watchlist-search",     "Search by symbol"),
+        ("news",         "news-search",          "Search news"),
+        ("transactions", "transactions-search",  "Search transactions"),
+        ("alerts",       "alerts-search",        "Search alerts"),
+        ("calendar",     "calendar-search",      "Search events"),
+        ("education",    "education-search",     "Search articles"),
+        ("il-funds",     "il-funds-search",      "Search funds"),
+        ("picks-tracker","picks-search",         "Search picks"),
+    ]
+
+    def test_search_bars_present_on_all_data_pages(self, authenticated_page: Page):
+        """Each data page should have a visible search input with a placeholder."""
+        for page_id, input_id, placeholder_fragment in self.SEARCH_PAGES:
+            _nav_click(authenticated_page, page_id)
+            authenticated_page.wait_for_timeout(300)
+            search_input = authenticated_page.locator(f"#{input_id}")
+            expect(search_input).to_be_visible(timeout=3_000)
+            ph = search_input.get_attribute("placeholder") or ""
+            assert placeholder_fragment.lower() in ph.lower(), (
+                f"Page '{page_id}': placeholder '{ph}' doesn't contain '{placeholder_fragment}'"
+            )
+
+    def test_search_bar_has_icon_and_clear_button(self, authenticated_page: Page):
+        """Each search bar should have a magnifying-glass icon and a clear button."""
+        for page_id, input_id, _ in self.SEARCH_PAGES:
+            _nav_click(authenticated_page, page_id)
+            authenticated_page.wait_for_timeout(300)
+            bar = authenticated_page.locator(f"#{input_id}").locator("..")
+            expect(bar.locator(".search-icon")).to_be_visible(timeout=2_000)
+            # Clear button exists (may be hidden until text is entered)
+            expect(bar.locator(".search-clear")).to_have_count(1)
+
+    def test_search_filters_education_cards(self, authenticated_page: Page):
+        """Typing in the education search should hide non-matching cards."""
+        _nav_click(authenticated_page, "education")
+        authenticated_page.wait_for_timeout(2_000)
+        # Ensure some cards rendered
+        cards_before = authenticated_page.locator(".edu-card:visible").count()
+        if cards_before == 0:
+            return  # no data, skip filtering test
+
+        # Type a very specific query that likely matches at most a few cards
+        authenticated_page.fill("#education-search", "dividend")
+        authenticated_page.wait_for_timeout(500)
+        cards_after = authenticated_page.locator(".edu-card:visible").count()
+        # After filtering, should have fewer (or same if all match, but very unlikely)
+        assert cards_after <= cards_before, (
+            f"Filtering didn't reduce cards: before={cards_before}, after={cards_after}"
+        )
+
+        # Clear search — should restore all cards
+        authenticated_page.fill("#education-search", "")
+        authenticated_page.wait_for_timeout(500)
+        cards_restored = authenticated_page.locator(".edu-card:visible").count()
+        assert cards_restored == cards_before, (
+            f"Clearing search didn't restore cards: expected {cards_before}, got {cards_restored}"
+        )
+
+    def test_search_filters_calendar_events(self, authenticated_page: Page):
+        """Typing in the calendar search should hide non-matching events."""
+        _nav_click(authenticated_page, "calendar")
+        authenticated_page.wait_for_timeout(3_000)
+        events_before = authenticated_page.locator(".cal-event:visible").count()
+        if events_before == 0:
+            return  # no data, skip
+
+        # Type something unlikely to match many events
+        authenticated_page.fill("#calendar-search", "xyznonexistent")
+        authenticated_page.wait_for_timeout(500)
+        events_after = authenticated_page.locator(".cal-event:visible").count()
+        assert events_after == 0, (
+            f"Expected 0 events for nonsense query, got {events_after}"
+        )
+
+        # Clear
+        authenticated_page.fill("#calendar-search", "")
+        authenticated_page.wait_for_timeout(500)
+        events_restored = authenticated_page.locator(".cal-event:visible").count()
+        assert events_restored == events_before
+
+    def test_search_no_results_message(self, authenticated_page: Page):
+        """Searching for gibberish on education page should show a no-results message."""
+        _nav_click(authenticated_page, "education")
+        authenticated_page.wait_for_timeout(2_000)
+        cards_before = authenticated_page.locator(".edu-card:visible").count()
+        if cards_before == 0:
+            return  # no data, skip
+
+        authenticated_page.fill("#education-search", "zzzzxyznonexistent999")
+        authenticated_page.wait_for_timeout(500)
+        no_res = authenticated_page.locator("#edu-no-results")
+        expect(no_res).to_be_visible(timeout=2_000)
+        expect(no_res).to_contain_text("No articles matching")
+
+    def test_clear_button_resets_search(self, authenticated_page: Page):
+        """Clicking the clear (×) button should empty the input and restore results."""
+        _nav_click(authenticated_page, "education")
+        authenticated_page.wait_for_timeout(2_000)
+        cards_before = authenticated_page.locator(".edu-card:visible").count()
+        if cards_before == 0:
+            return
+
+        authenticated_page.fill("#education-search", "zzzznonexistent")
+        authenticated_page.wait_for_timeout(300)
+        # Click the clear button
+        authenticated_page.locator("#page-education .search-clear").click(force=True)
+        authenticated_page.wait_for_timeout(500)
+
+        # Input should be empty
+        val = authenticated_page.locator("#education-search").input_value()
+        assert val == "", f"Search input not cleared, value='{val}'"
+
+        # Cards should be restored
+        cards_after = authenticated_page.locator(".edu-card:visible").count()
+        assert cards_after == cards_before

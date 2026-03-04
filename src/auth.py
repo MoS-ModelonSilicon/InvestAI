@@ -17,7 +17,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 COOKIE_NAME = "investai_session"
 
-PUBLIC_PATHS = {"/login", "/auth/login", "/auth/register", "/auth/logout"}
+PUBLIC_PATHS = {"/login", "/auth/login", "/auth/register", "/auth/logout", "/auth/forgot-password", "/auth/reset-password"}
 
 # ── Password hashing ─────────────────────────────────────────
 import bcrypt as _bcrypt

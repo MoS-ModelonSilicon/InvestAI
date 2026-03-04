@@ -176,3 +176,13 @@ class DcaPlan(Base):
     )
 
     owner = relationship("User", back_populates="dca_plans")
+
+
+class PasswordReset(Base):
+    __tablename__ = "password_resets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    code = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    used = Column(Integer, default=0)

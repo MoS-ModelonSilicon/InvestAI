@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.investai.app.ui.alerts.AlertsScreen
+import com.investai.app.ui.auth.ForgotPasswordScreen
 import com.investai.app.ui.auth.LoginScreen
 import com.investai.app.ui.autopilot.AutoPilotScreen
 import com.investai.app.ui.budgets.BudgetsScreen
@@ -43,7 +44,21 @@ fun InvestAINavGraph(
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
-                }
+                },
+                onForgotPassword = {
+                    navController.navigate(Screen.ForgotPassword.route)
+                },
+            )
+        }
+
+        composable(Screen.ForgotPassword.route) {
+            ForgotPasswordScreen(
+                onBack = { navController.popBackStack() },
+                onPasswordReset = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.ForgotPassword.route) { inclusive = true }
+                    }
+                },
             )
         }
 

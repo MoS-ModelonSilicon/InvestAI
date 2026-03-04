@@ -30,6 +30,11 @@
         .tab-btn{flex:1;padding:10px;background:transparent;color:#8b8fa3;border:none;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s}
         .tab-btn.active{background:#818cf8;color:#fff}
         .hidden{display:none}
+        .forgot-link{color:#818cf8;font-size:.85rem;text-align:right;display:block;margin-top:4px;cursor:pointer;text-decoration:none}
+        .forgot-link:hover{text-decoration:underline}
+        .back-link{color:#8b8fa3;font-size:.85rem;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:16px}
+        .back-link:hover{color:#e4e4e7}
+        .code-input{letter-spacing:.5em;text-align:center;font-size:1.3rem;font-family:monospace}
     </style>
 </head>
 <body>
@@ -58,6 +63,7 @@
                 <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" required>
             </div>
             <button type="submit" class="btn" id="login-btn">Sign In</button>
+            <a class="forgot-link" onclick="showForgotPassword()">Forgot password?</a>
             <div class="error" id="login-error"></div>
         </form>
 
@@ -81,10 +87,47 @@
         </form>
 
         <div class="footer">Your data is private — each account has its own portfolio, watchlist &amp; settings.</div>
+
+        <!-- Forgot Password: Step 1 - Enter Email -->
+        <form id="forgot-form" class="hidden" onsubmit="doForgot(event)">
+            <a class="back-link" onclick="showLoginFromForgot()">&#8592; Back to Sign In</a>
+            <h2 style="margin-bottom:8px">Reset Password</h2>
+            <p class="subtitle">Enter your email and we'll send you a reset code.</p>
+            <div class="form-group">
+                <label for="forgot-email">Email</label>
+                <input type="email" id="forgot-email" placeholder="you@example.com" required>
+            </div>
+            <button type="submit" class="btn" id="forgot-btn">Send Reset Code</button>
+            <div class="error" id="forgot-error"></div>
+            <div class="success" id="forgot-success"></div>
+        </form>
+
+        <!-- Forgot Password: Step 2 - Enter Code + New Password -->
+        <form id="reset-form" class="hidden" onsubmit="doReset(event)">
+            <a class="back-link" onclick="showForgotPassword()">&#8592; Back</a>
+            <h2 style="margin-bottom:8px">Enter Reset Code</h2>
+            <p class="subtitle">Check your email for the 6-digit code.</p>
+            <div class="form-group">
+                <label for="reset-code">Reset Code</label>
+                <input type="text" id="reset-code" class="code-input" placeholder="000000" maxlength="6" pattern="[0-9]{6}" required>
+            </div>
+            <div class="form-group">
+                <label for="reset-password">New Password</label>
+                <input type="password" id="reset-password" placeholder="Min 4 characters" minlength="4" required>
+            </div>
+            <button type="submit" class="btn" id="reset-btn">Reset Password</button>
+            <div class="error" id="reset-error"></div>
+            <div class="success" id="reset-success"></div>
+        </form>
     </div>
     <script>
+        // ── Tab switching ────────────────────────────
         function showTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('forgot-form').classList.add('hidden');
+            document.getElementById('reset-form').classList.add('hidden');
+            document.querySelector('.tab-bar').classList.remove('hidden');
+            document.querySelector('.footer').classList.remove('hidden');
             if (tab === 'login') {
                 document.querySelectorAll('.tab-btn')[0].classList.add('active');
                 document.getElementById('login-form').classList.remove('hidden');
@@ -96,6 +139,34 @@
             }
         }
 
+        // ── Show / hide forgot password ──────────────
+        let _forgotEmail = "";
+
+        function showForgotPassword() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('reset-form').classList.add('hidden');
+            document.querySelector('.tab-bar').classList.add('hidden');
+            document.querySelector('.footer').classList.add('hidden');
+            document.getElementById('forgot-form').classList.remove('hidden');
+            document.getElementById('forgot-error').textContent = "";
+            document.getElementById('forgot-success').textContent = "";
+        }
+
+        function showLoginFromForgot() {
+            document.getElementById('forgot-form').classList.add('hidden');
+            document.getElementById('reset-form').classList.add('hidden');
+            showTab('login');
+        }
+
+        function showResetForm() {
+            document.getElementById('forgot-form').classList.add('hidden');
+            document.getElementById('reset-form').classList.remove('hidden');
+            document.getElementById('reset-error').textContent = "";
+            document.getElementById('reset-success').textContent = "";
+        }
+
+        // ── Login ────────────────────────────────────
         async function doLogin(e) {
             e.preventDefault();
             const email = document.getElementById("login-email").value.trim();
@@ -129,6 +200,7 @@
             }
         }
 
+        // ── Register ─────────────────────────────────
         async function doRegister(e) {
             e.preventDefault();
             const name = document.getElementById("reg-name").value.trim();
@@ -162,6 +234,79 @@
                 err.textContent = "Connection error. Try again.";
                 btn.disabled = false;
                 btn.textContent = "Create Account";
+            }
+        }
+
+        // ── Forgot Password ─────────────────────────
+        async function doForgot(e) {
+            e.preventDefault();
+            const email = document.getElementById("forgot-email").value.trim();
+            const btn = document.getElementById("forgot-btn");
+            const err = document.getElementById("forgot-error");
+            const suc = document.getElementById("forgot-success");
+            if (!email) return;
+
+            btn.disabled = true;
+            btn.textContent = "Sending...";
+            err.textContent = "";
+            suc.textContent = "";
+
+            try {
+                const res = await fetch("/auth/forgot-password", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({email}),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    _forgotEmail = email;
+                    suc.textContent = data.message || "Reset code sent!";
+                    setTimeout(() => showResetForm(), 1500);
+                } else {
+                    err.textContent = data.detail || "Something went wrong";
+                }
+            } catch (ex) {
+                err.textContent = "Connection error. Try again.";
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Send Reset Code";
+            }
+        }
+
+        // ── Reset Password ──────────────────────────
+        async function doReset(e) {
+            e.preventDefault();
+            const code = document.getElementById("reset-code").value.trim();
+            const newPassword = document.getElementById("reset-password").value;
+            const btn = document.getElementById("reset-btn");
+            const err = document.getElementById("reset-error");
+            const suc = document.getElementById("reset-success");
+            if (!code || !newPassword) return;
+
+            btn.disabled = true;
+            btn.textContent = "Resetting...";
+            err.textContent = "";
+            suc.textContent = "";
+
+            try {
+                const res = await fetch("/auth/reset-password", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({email: _forgotEmail, code, new_password: newPassword}),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    suc.textContent = data.message || "Password reset! Redirecting...";
+                    setTimeout(() => showLoginFromForgot(), 2000);
+                } else {
+                    err.textContent = data.detail || "Reset failed";
+                    btn.disabled = false;
+                    btn.textContent = "Reset Password";
+                }
+            } catch (ex) {
+                err.textContent = "Connection error. Try again.";
+                btn.disabled = false;
+                btn.textContent = "Reset Password";
             }
         }
     </script>

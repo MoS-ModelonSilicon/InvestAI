@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.play.publisher)
 }
 
 android {
@@ -17,8 +18,8 @@ android {
         applicationId = "com.investai.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -70,6 +71,17 @@ android {
         compose = true
         buildConfig = true
     }
+}
+
+play {
+    // Path to the Google Play service account JSON key
+    serviceAccountCredentials.set(file("play-service-account.json"))
+    // Upload to internal testing track
+    track.set("internal")
+    // Auto-resolve version conflicts
+    resolutionStrategy.set(com.github.triplet.gradle.androidpublisher.ResolutionStrategy.AUTO)
+    // Disable until API access permissions are granted
+    enabled.set(false)
 }
 
 dependencies {

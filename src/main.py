@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from src.database import engine, get_db, Base
-from src.models import Category, User
+from src.models import Category, User, PasswordReset
 from src.auth import (
     AuthMiddleware, COOKIE_NAME, ACCESS_TOKEN_EXPIRE_DAYS,
     create_access_token, hash_password, verify_password,
@@ -149,6 +149,95 @@ def get_me(request: Request):
         if not user:
             return JSONResponse(status_code=401, content={"detail": "User not found"})
         return {"name": user.name, "email": user.email}
+    finally:
+        db.close()
+
+
+class ForgotPasswordBody(BaseModel):
+    email: str
+
+
+class ResetPasswordBody(BaseModel):
+    email: str
+    code: str
+    new_password: str
+
+
+@app.post("/auth/forgot-password")
+def forgot_password(body: ForgotPasswordBody):
+    """Generate a 6-digit reset code. Sends via email if SMTP is configured, otherwise logs it."""
+    import random, os, logging
+    logger = logging.getLogger("investai")
+    db: Session = next(get_db())
+    try:
+        user = db.query(User).filter(User.email == body.email.lower().strip()).first()
+        # Always return OK to not leak whether email exists
+        if not user:
+            return JSONResponse(content={"ok": True, "message": "If that email is registered, a reset code has been sent."})
+
+        code = f"{random.randint(0, 999999):06d}"
+        reset = PasswordReset(user_id=user.id, code=code)
+        db.add(reset)
+        db.commit()
+
+        # Try sending email
+        smtp_host = os.environ.get("SMTP_HOST")
+        smtp_user = os.environ.get("SMTP_USER")
+        smtp_pass = os.environ.get("SMTP_PASS")
+        if smtp_host and smtp_user:
+            try:
+                import smtplib
+                from email.mime.text import MIMEText
+                msg = MIMEText(f"Your InvestAI password reset code is: {code}\n\nThis code expires in 15 minutes.")
+                msg["Subject"] = "InvestAI — Password Reset Code"
+                msg["From"] = smtp_user
+                msg["To"] = user.email
+                with smtplib.SMTP(smtp_host, int(os.environ.get("SMTP_PORT", 587))) as s:
+                    s.starttls()
+                    s.login(smtp_user, smtp_pass or "")
+                    s.send_message(msg)
+                logger.info(f"Reset code sent to {user.email}")
+            except Exception as e:
+                logger.warning(f"SMTP failed, code for {user.email}: {code} ({e})")
+        else:
+            logger.info(f"[NO SMTP] Password reset code for {user.email}: {code}")
+
+        return JSONResponse(content={"ok": True, "message": "If that email is registered, a reset code has been sent."})
+    finally:
+        db.close()
+
+
+@app.post("/auth/reset-password")
+def reset_password(body: ResetPasswordBody):
+    """Verify reset code and set a new password."""
+    from datetime import datetime, timedelta
+    if len(body.new_password) < 4:
+        return JSONResponse(status_code=400, content={"detail": "Password must be at least 4 characters"})
+    db: Session = next(get_db())
+    try:
+        user = db.query(User).filter(User.email == body.email.lower().strip()).first()
+        if not user:
+            return JSONResponse(status_code=400, content={"detail": "Invalid code or email"})
+
+        cutoff = datetime.utcnow() - timedelta(minutes=15)
+        reset = (
+            db.query(PasswordReset)
+            .filter(
+                PasswordReset.user_id == user.id,
+                PasswordReset.code == body.code.strip(),
+                PasswordReset.used == 0,
+                PasswordReset.created_at >= cutoff,
+            )
+            .order_by(PasswordReset.created_at.desc())
+            .first()
+        )
+        if not reset:
+            return JSONResponse(status_code=400, content={"detail": "Invalid or expired reset code"})
+
+        reset.used = 1
+        user.hashed_password = hash_password(body.new_password)
+        db.commit()
+        return JSONResponse(content={"ok": True, "message": "Password has been reset. You can now sign in."})
     finally:
         db.close()
 

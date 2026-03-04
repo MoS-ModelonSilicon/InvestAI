@@ -18,6 +18,12 @@ interface InvestAIApi {
     @POST("auth/register")
     suspend fun register(@Body body: RegisterRequest): Response<LoginResponse>
 
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(@Body body: ForgotPasswordRequest): Response<MessageResponse>
+
+    @POST("auth/reset-password")
+    suspend fun resetPassword(@Body body: ResetPasswordRequest): Response<MessageResponse>
+
     // ── Dashboard ─────────────────────────────────────────
 
     @GET("api/dashboard")

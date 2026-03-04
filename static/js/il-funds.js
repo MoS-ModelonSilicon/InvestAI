@@ -239,3 +239,30 @@ function applyILPreset(name) {
     loadBestDeals();
     runILSearch();
 }
+
+function filterILFunds(query) {
+    const q = (query || "").toLowerCase().trim();
+    const rows = document.querySelectorAll(".il-table-row");
+    let visible = 0;
+    rows.forEach(row => {
+        const name = (row.querySelector(".il-fund-name")?.textContent || "").toLowerCase();
+        const manager = (row.querySelector(".il-fund-manager")?.textContent || "").toLowerCase();
+        const category = (row.querySelector(".il-cat-badge")?.textContent || "").toLowerCase();
+        const match = !q || name.includes(q) || manager.includes(q) || category.includes(q);
+        row.style.display = match ? "" : "none";
+        if (match) visible++;
+    });
+    let noRes = document.getElementById("il-no-results");
+    if (!q || visible > 0) {
+        if (noRes) noRes.remove();
+    } else {
+        if (!noRes) {
+            noRes = document.createElement("div");
+            noRes.id = "il-no-results";
+            noRes.className = "search-no-results";
+            const resultsArea = document.getElementById("il-results-area");
+            if (resultsArea) resultsArea.parentElement.appendChild(noRes);
+        }
+        noRes.textContent = `No funds matching "${query}"`;
+    }
+}

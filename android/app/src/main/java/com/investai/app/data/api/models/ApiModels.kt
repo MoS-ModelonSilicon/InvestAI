@@ -17,6 +17,15 @@ data class RegisterRequest(val email: String, val password: String, val name: St
 @Serializable
 data class LoginResponse(val ok: Boolean = false, val detail: String? = null, val name: String? = null, val email: String? = null)
 
+@Serializable
+data class ForgotPasswordRequest(val email: String)
+
+@Serializable
+data class ResetPasswordRequest(val email: String, val code: String, @SerialName("new_password") val newPassword: String)
+
+@Serializable
+data class MessageResponse(val ok: Boolean = false, val message: String? = null, val detail: String? = null)
+
 // ── Dashboard ────────────────────────────────────────────
 
 @Serializable

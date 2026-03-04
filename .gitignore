@@ -15,3 +15,4 @@ finance.db
 .DS_Store
 Thumbs.db
 DEPLOY-KEYS.md
+android/app/play-service-account.json

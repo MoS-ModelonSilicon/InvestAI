@@ -29,6 +29,7 @@ import com.investai.app.ui.theme.*
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
+    onForgotPassword: () -> Unit = {},
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -171,6 +172,21 @@ fun LoginScreen(
                         shape = RoundedCornerShape(12.dp),
                     )
                     Spacer(Modifier.height(16.dp))
+
+                    // Forgot password link (Login tab only)
+                    if (tab == 0) {
+                        TextButton(
+                            onClick = onForgotPassword,
+                            modifier = Modifier.align(Alignment.End),
+                        ) {
+                            Text(
+                                "Forgot password?",
+                                color = Primary,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                    }
 
                     // Error message
                     if (uiState.error != null) {
