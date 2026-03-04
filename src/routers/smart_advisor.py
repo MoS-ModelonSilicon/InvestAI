@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from src.services.smart_advisor import run_full_analysis, analyze_single_stock
+from src.services.company_dna import get_company_dna
 
 router = APIRouter(prefix="/api/advisor", tags=["smart-advisor"])
 
@@ -27,4 +28,13 @@ def advisor_stock(symbol: str):
     result = analyze_single_stock(symbol.upper())
     if not result:
         raise HTTPException(404, f"Could not analyze {symbol} -- insufficient price data")
+    return result
+
+
+@router.get("/company-dna/{symbol}")
+def company_dna(symbol: str):
+    """Buffett/Munger-style Company DNA: management, insiders, Berkshire Score."""
+    result = get_company_dna(symbol.upper())
+    if not result:
+        raise HTTPException(404, f"Could not fetch company data for {symbol}")
     return result

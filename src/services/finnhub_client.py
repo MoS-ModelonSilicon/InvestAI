@@ -106,3 +106,47 @@ def get_earnings_calendar(from_date: str, to_date: str) -> list[dict]:
     if data and "earningsCalendar" in data:
         return data["earningsCalendar"]
     return []
+
+
+def get_executives(symbol: str) -> list[dict]:
+    """Company executives: name, title, compensation, age, since."""
+    data = _get("/stock/executive", {"symbol": symbol})
+    if data and "executive" in data:
+        return data["executive"]
+    return []
+
+
+def get_insider_transactions(symbol: str) -> list[dict]:
+    """Insider buy/sell transactions with name, share count, transaction type."""
+    data = _get("/stock/insider-transactions", {"symbol": symbol})
+    if data and "data" in data:
+        return data["data"]
+    return []
+
+
+def get_insider_sentiment(symbol: str) -> dict | None:
+    """Monthly insider sentiment (MSPR: Monthly Share Purchase Ratio)."""
+    data = _get("/stock/insider-sentiment", {"symbol": symbol})
+    if data and "data" in data:
+        return data
+    return None
+
+
+def get_recommendation_trends(symbol: str) -> list[dict]:
+    """Analyst recommendation trends: strongBuy, buy, hold, sell, strongSell."""
+    data = _get("/stock/recommendation", {"symbol": symbol})
+    return data if isinstance(data, list) else []
+
+
+def get_peers(symbol: str) -> list[str]:
+    """List of peer/comparable company tickers."""
+    data = _get("/stock/peers", {"symbol": symbol})
+    return data if isinstance(data, list) else []
+
+
+def get_price_target(symbol: str) -> dict | None:
+    """Analyst price target consensus: high, low, mean, median."""
+    data = _get("/stock/price-target", {"symbol": symbol})
+    if data and data.get("targetMean"):
+        return data
+    return None

@@ -4416,3 +4416,128 @@ body {
         font-size: 0.78rem;
     }
 }
+
+
+/* ── Berkshire Score & Company DNA ────────────────── */
+
+.bk-grade {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 0.82rem;
+    letter-spacing: 0;
+}
+.bk-a { background: rgba(34,197,94,.2); color: #22c55e; }
+.bk-b { background: rgba(74,222,128,.15); color: #4ade80; }
+.bk-c { background: rgba(234,179,8,.15); color: #eab308; }
+.bk-d { background: rgba(249,115,22,.15); color: #f97316; }
+.bk-f { background: rgba(239,68,68,.15); color: #ef4444; }
+.bk-na { background: rgba(100,116,139,.1); color: var(--text-muted); }
+
+.bk-grade-lg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    font-weight: 900;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+.bk-grade-lg.bk-a { background: rgba(34,197,94,.2); color: #22c55e; }
+.bk-grade-lg.bk-b { background: rgba(74,222,128,.15); color: #4ade80; }
+.bk-grade-lg.bk-c { background: rgba(234,179,8,.15); color: #eab308; }
+.bk-grade-lg.bk-d { background: rgba(249,115,22,.15); color: #f97316; }
+.bk-grade-lg.bk-f { background: rgba(239,68,68,.15); color: #ef4444; }
+
+.adv-bk-legend {
+    font-size: .78rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.adv-bk-legend .bk-grade { width: 22px; height: 22px; font-size: .72rem; }
+
+/* DNA Modal */
+.dna-modal { max-width: 700px; max-height: 85vh; overflow-y: auto; }
+.dna-modal-body { padding: 16px 20px; }
+
+.dna-loading { display: flex; align-items: center; gap: 12px; padding: 40px 20px; justify-content: center; color: var(--text-muted); }
+
+.dna-divider { border-top: 1px solid var(--border); margin-top: 20px; padding-top: 16px; }
+.dna-divider h3 { font-size: 1rem; margin: 0; }
+
+/* Berkshire header */
+.dna-berkshire-header { margin-bottom: 16px; }
+.dna-bk-score { display: flex; align-items: center; gap: 14px; }
+.dna-bk-title { font-size: 1.1rem; font-weight: 700; }
+.dna-bk-verdict { font-size: .88rem; color: var(--text-muted); margin-top: 2px; }
+
+/* Breakdown bars */
+.dna-bk-breakdown { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+.dna-bk-item {}
+.dna-bk-bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.dna-bk-label { font-size: .85rem; font-weight: 600; }
+.dna-bk-pts { font-size: .82rem; font-weight: 700; }
+.dna-bk-bar { width: 100%; height: 6px; background: rgba(42,45,62,0.4); border-radius: 3px; overflow: hidden; }
+.dna-bk-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+.dna-bk-reasons { margin-top: 4px; }
+.dna-reason { font-size: .78rem; color: var(--text-muted); line-height: 1.5; padding-left: 8px; border-left: 2px solid var(--border); margin-top: 2px; }
+
+/* DNA Sections */
+.dna-section { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 14px; }
+.dna-section h4 { font-size: .92rem; margin: 0 0 10px 0; }
+
+/* Executives */
+.dna-exec-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(42,45,62,0.2); flex-wrap: wrap; }
+.dna-exec-row strong { min-width: 140px; font-size: .85rem; }
+.dna-exec-pos { font-size: .8rem; color: var(--text-muted); flex: 1; }
+.dna-exec-since { font-size: .75rem; color: var(--primary); background: rgba(99,102,241,.1); padding: 2px 8px; border-radius: 4px; }
+.dna-exec-comp { font-size: .75rem; color: var(--green); }
+
+/* Insider transactions */
+.dna-insider-row { display: grid; grid-template-columns: 1fr 90px 100px 90px; gap: 8px; padding: 5px 8px; border-radius: 6px; font-size: .82rem; align-items: center; }
+.dna-tx-buy { background: rgba(34,197,94,.06); }
+.dna-tx-sell { background: rgba(239,68,68,.06); }
+.dna-tx-other { background: rgba(100,116,139,.04); }
+.dna-insider-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dna-insider-type { font-weight: 600; }
+.dna-tx-buy .dna-insider-type { color: var(--green); }
+.dna-tx-sell .dna-insider-type { color: var(--red); }
+.dna-insider-shares { color: var(--text-muted); text-align: right; }
+.dna-insider-date { color: var(--text-muted); font-size: .75rem; text-align: right; }
+
+/* Analyst recommendation bar */
+.dna-analyst-bar { display: flex; height: 28px; border-radius: 6px; overflow: hidden; margin-bottom: 6px; }
+.dna-a-seg { display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; color: #fff; min-width: 0; transition: width .3s; }
+.dna-a-sb { background: #22c55e; }
+.dna-a-b { background: #4ade80; color: #1a1c2e; }
+.dna-a-h { background: #eab308; color: #1a1c2e; }
+.dna-a-s { background: #f97316; }
+.dna-a-ss { background: #ef4444; }
+.dna-analyst-labels { display: flex; justify-content: space-between; font-size: .72rem; }
+
+/* Price targets */
+.dna-pt-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.dna-pt-item { text-align: center; padding: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+.dna-pt-item span { display: block; font-size: .72rem; color: var(--text-muted); margin-bottom: 2px; }
+.dna-pt-item strong { font-size: .92rem; }
+
+/* Peers */
+.dna-peers { display: flex; gap: 6px; flex-wrap: wrap; }
+
+@media (max-width: 768px) {
+    .dna-modal { max-width: 95vw; }
+    .dna-insider-row { grid-template-columns: 1fr 80px 80px; font-size: .78rem; }
+    .dna-insider-date { display: none; }
+    .dna-pt-grid { grid-template-columns: repeat(3, 1fr); }
+    .dna-exec-row { font-size: .8rem; }
+}

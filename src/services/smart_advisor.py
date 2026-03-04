@@ -219,6 +219,96 @@ def _momentum_score(info: dict) -> int:
     return max(0, min(100, score))
 
 
+def _berkshire_lite(info: dict) -> int:
+    """Quick Berkshire-style quality score from fundamental data only (0-100).
+
+    Evaluates: moat (margins, ROE), financial strength (debt, FCF),
+    valuation (P/E, P/B), and dividend consistency.
+    No API calls — uses cached fundamentals.
+    """
+    score = 0
+
+    # Moat signals (max 30)
+    pm = info.get("profit_margin")
+    if pm is not None:
+        if pm >= 20:
+            score += 15
+        elif pm >= 15:
+            score += 10
+        elif pm >= 10:
+            score += 6
+
+    roe = info.get("return_on_equity")
+    if roe is not None:
+        if roe >= 20:
+            score += 15
+        elif roe >= 15:
+            score += 10
+        elif roe >= 10:
+            score += 5
+
+    # Financial fortress (max 30)
+    de = info.get("debt_to_equity")
+    if de is not None:
+        if de <= 0.3:
+            score += 12
+        elif de <= 0.8:
+            score += 8
+        elif de <= 1.5:
+            score += 4
+
+    cr = info.get("current_ratio")
+    if cr is not None and cr >= 1.5:
+        score += 5
+    elif cr is not None and cr >= 1.0:
+        score += 2
+
+    fcf = info.get("free_cash_flow")
+    if fcf is not None and fcf > 0:
+        score += 8
+
+    rg = info.get("revenue_growth")
+    if rg is not None and rg > 10:
+        score += 5
+    elif rg is not None and rg > 0:
+        score += 2
+
+    # Valuation (max 25)
+    pe = info.get("pe_ratio")
+    if pe is not None:
+        if 0 < pe <= 15:
+            score += 12
+        elif pe <= 20:
+            score += 8
+        elif pe <= 30:
+            score += 4
+
+    pb = info.get("price_to_book")
+    if pb is not None:
+        if 0 < pb <= 1.5:
+            score += 8
+        elif pb <= 3.0:
+            score += 4
+
+    tp = info.get("target_mean_price")
+    price = info.get("price")
+    if tp and price and tp > price:
+        upside = ((tp - price) / price) * 100
+        if upside > 20:
+            score += 5
+        elif upside > 10:
+            score += 3
+
+    # Dividend (max 10)
+    div = info.get("dividend_yield")
+    if div is not None and div > 2:
+        score += 10
+    elif div is not None and div > 0.5:
+        score += 5
+
+    return min(100, score)
+
+
 # ---------------------------------------------------------------------------
 # Step 3: Full scan + scoring
 # ---------------------------------------------------------------------------
@@ -268,6 +358,7 @@ def scan_and_score(period: str = "1y") -> list[dict]:
         f_score = _fundamental_score(info)
         m_score = _momentum_score(info)
         t_score = analysis["technical_score"]
+        b_score = _berkshire_lite(info)
 
         combined = round(t_score * 0.40 + f_score * 0.40 + m_score * 0.20)
 
@@ -281,6 +372,7 @@ def scan_and_score(period: str = "1y") -> list[dict]:
             "technical_score": t_score,
             "fundamental_score": f_score,
             "momentum_score": m_score,
+            "berkshire_score": b_score,
             "signal": analysis["verdict"],
             "confidence": analysis["confidence"],
             "rsi": analysis["rsi"],

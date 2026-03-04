@@ -232,3 +232,27 @@ def get_company_news(symbol: str, days_back: int = 7) -> list[dict]:
 
 def get_earnings_calendar(from_date: str, to_date: str) -> list[dict]:
     return fh.get_earnings_calendar(from_date, to_date)
+
+
+def get_executives(symbol: str) -> list[dict]:
+    return fh.get_executives(symbol)
+
+
+def get_insider_transactions(symbol: str) -> list[dict]:
+    return fh.get_insider_transactions(symbol)
+
+
+def get_insider_sentiment(symbol: str) -> dict | None:
+    return fh.get_insider_sentiment(symbol)
+
+
+def get_recommendation_trends(symbol: str) -> list[dict]:
+    return fh.get_recommendation_trends(symbol)
+
+
+def get_peers(symbol: str) -> list[str]:
+    return fh.get_peers(symbol)
+
+
+def get_price_target(symbol: str) -> dict | None:
+    return fh.get_price_target(symbol)

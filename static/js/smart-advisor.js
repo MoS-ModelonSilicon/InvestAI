@@ -83,6 +83,15 @@ function renderAdvisorReport(report) {
 
 /* ── Rankings Table ─────────────────────────────── */
 
+function _berkshireGrade(score) {
+    if (score == null) return { grade: "—", cls: "bk-na" };
+    if (score >= 80) return { grade: "A", cls: "bk-a" };
+    if (score >= 65) return { grade: "B", cls: "bk-b" };
+    if (score >= 50) return { grade: "C", cls: "bk-c" };
+    if (score >= 35) return { grade: "D", cls: "bk-d" };
+    return { grade: "F", cls: "bk-f" };
+}
+
 function renderAdvisorRankings(rankings) {
     const el = document.getElementById("adv-rankings-section");
     if (!rankings || !rankings.length) {
@@ -93,10 +102,12 @@ function renderAdvisorRankings(rankings) {
     const rows = rankings.slice(0, 20).map(r => {
         const sigCls = _signalClass(r.signal);
         const rsiCls = r.rsi != null ? (r.rsi > 70 ? "adv-warn" : r.rsi < 30 ? "adv-good" : "") : "";
+        const bk = _berkshireGrade(r.berkshire_score);
         return `<tr class="adv-rank-row" data-symbol="${r.symbol}" data-stock-name="${(r.name||"").replace(/"/g,'&quot;')}" data-stock-price="${r.entry_price}" onclick="showAdvisorDetail('${r.symbol}')">
             <td>${r.rank}</td>
             <td><strong>${r.symbol}</strong><br><span class="adv-subtext">${r.name}</span></td>
             <td><span class="adv-score-pill">${r.score}</span></td>
+            <td><span class="bk-grade ${bk.cls}" title="Berkshire Score: ${r.berkshire_score ?? '—'}/100">${bk.grade}</span></td>
             <td><span class="signal-badge ${sigCls}">${r.signal}</span></td>
             <td>${r.confidence}%</td>
             <td class="${rsiCls}">${r.rsi != null ? r.rsi.toFixed(0) : "—"}</td>
@@ -105,17 +116,28 @@ function renderAdvisorRankings(rankings) {
             <td>$${r.target_price.toFixed(2)}</td>
             <td>$${r.stop_loss.toFixed(2)}</td>
             <td>${r.risk_reward.toFixed(1)}x</td>
-            <td>${stockQuickActions(r.symbol, r.name, r.entry_price, {hideDetail: true})}</td>
+            <td>
+                <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();showCompanyDNA('${r.symbol}')" title="Company DNA">🧬</button>
+                ${stockQuickActions(r.symbol, r.name, r.entry_price, {hideDetail: true})}
+            </td>
         </tr>`;
     }).join("");
 
     el.innerHTML = `
         <div class="adv-section">
             <h3>Top 20 Ranked Stocks <span class="scr-result-count">${rankings.length} analyzed</span></h3>
+            <p class="adv-bk-legend">
+                <span class="bk-grade bk-a" title="Berkshire-grade">A</span> = Berkshire-Grade &nbsp;
+                <span class="bk-grade bk-b">B</span> = Strong &nbsp;
+                <span class="bk-grade bk-c">C</span> = Decent &nbsp;
+                <span class="bk-grade bk-d">D</span> = Speculative &nbsp;
+                <span class="bk-grade bk-f">F</span> = Not Buffett's Style &nbsp;
+                <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();showCompanyDNA(document.querySelector('.adv-rank-row')?.dataset.symbol || 'AAPL')" style="font-size:.75rem">🧬 = Company DNA</button>
+            </p>
             <div class="table-wrapper">
                 <table class="tx-table adv-table">
                     <thead><tr>
-                        <th>#</th><th>Stock</th><th>Score</th><th>Signal</th><th>Conf.</th>
+                        <th>#</th><th>Stock</th><th>Score</th><th title="Buffett/Munger Quality Grade">BRK</th><th>Signal</th><th>Conf.</th>
                         <th>RSI</th><th>MACD</th><th>Entry</th><th>Target</th><th>Stop</th><th>R/R</th><th></th>
                     </tr></thead>
                     <tbody>${rows}</tbody>
@@ -280,8 +302,173 @@ async function showAdvisorDetail(symbol) {
     try {
         const data = await api.get(`/api/advisor/stock/${symbol}`);
         _renderDetailModal(data);
+        // Load Company DNA in background
+        _loadDNAIntoModal(symbol);
     } catch (e) {
         alert(`Could not load analysis for ${symbol}`);
+    }
+}
+
+async function _loadDNAIntoModal(symbol) {
+    const container = document.getElementById("adv-dna-section");
+    if (!container) return;
+    container.innerHTML = '<div class="dna-loading"><div class="spinner"></div><span>Loading Company DNA...</span></div>';
+
+    try {
+        const dna = await api.get(`/api/advisor/company-dna/${symbol}`);
+        container.innerHTML = _renderDNA(dna);
+    } catch (e) {
+        container.innerHTML = '<p style="color:var(--text-muted);padding:8px;">Company DNA data not available for this stock.</p>';
+    }
+}
+
+function _renderDNA(dna) {
+    const bk = dna.berkshire_score;
+    const bkGrade = _berkshireGrade(bk.score);
+
+    // Berkshire Score breakdown
+    const breakdownHtml = Object.values(bk.breakdown).map(b => {
+        const pct = (b.score / b.max) * 100;
+        const color = pct >= 70 ? "var(--green)" : pct >= 50 ? "#eab308" : pct >= 30 ? "var(--red)" : "#64748b";
+        return `<div class="dna-bk-item">
+            <div class="dna-bk-bar-header">
+                <span class="dna-bk-label">${b.label}</span>
+                <span class="dna-bk-pts" style="color:${color}">${b.score}/${b.max}</span>
+            </div>
+            <div class="dna-bk-bar"><div class="dna-bk-fill" style="width:${pct}%;background:${color}"></div></div>
+            <div class="dna-bk-reasons">${b.reasons.map(r => `<div class="dna-reason">${r}</div>`).join("")}</div>
+        </div>`;
+    }).join("");
+
+    // Executives
+    let execHtml = "";
+    if (dna.executives && dna.executives.length > 0) {
+        const rows = dna.executives.slice(0, 6).map(e => `
+            <div class="dna-exec-row">
+                <strong>${e.name}</strong>
+                <span class="dna-exec-pos">${e.position}</span>
+                ${e.since ? `<span class="dna-exec-since">Since ${e.since}</span>` : ""}
+                ${e.compensation ? `<span class="dna-exec-comp">$${(e.compensation / 1000000).toFixed(1)}M</span>` : ""}
+            </div>`).join("");
+        execHtml = `<div class="dna-section"><h4>👥 Leadership Team</h4>${rows}</div>`;
+    }
+
+    // Insider transactions
+    let insiderHtml = "";
+    if (dna.insider_transactions && dna.insider_transactions.length > 0) {
+        const buys = dna.insider_transactions.filter(t => t.transaction_type === "Purchase").length;
+        const sells = dna.insider_transactions.filter(t => t.transaction_type === "Sale").length;
+        const txRows = dna.insider_transactions.slice(0, 8).map(t => {
+            const isBuy = t.transaction_type === "Purchase";
+            const cls = isBuy ? "dna-tx-buy" : t.transaction_type === "Sale" ? "dna-tx-sell" : "dna-tx-other";
+            return `<div class="dna-insider-row ${cls}">
+                <span class="dna-insider-name">${t.name}</span>
+                <span class="dna-insider-type">${t.transaction_type}</span>
+                <span class="dna-insider-shares">${t.change ? Math.abs(t.change).toLocaleString() : "—"} shares</span>
+                <span class="dna-insider-date">${t.filing_date}</span>
+            </div>`;
+        }).join("");
+        const sentiment = buys > sells ? `<span style="color:var(--green)">Net buying (${buys}B / ${sells}S)</span>` :
+                          sells > buys ? `<span style="color:var(--red)">Net selling (${buys}B / ${sells}S)</span>` :
+                          `<span>Balanced (${buys}B / ${sells}S)</span>`;
+        insiderHtml = `<div class="dna-section"><h4>📊 Insider Activity ${sentiment}</h4>${txRows}</div>`;
+    }
+
+    // Analyst recommendations
+    let analystHtml = "";
+    if (dna.analyst_recommendations) {
+        const r = dna.analyst_recommendations;
+        const total = r.strong_buy + r.buy + r.hold + r.sell + r.strong_sell;
+        if (total > 0) {
+            analystHtml = `<div class="dna-section"><h4>🎯 Analyst Consensus (${total} analysts)</h4>
+                <div class="dna-analyst-bar">
+                    <div class="dna-a-seg dna-a-sb" style="width:${(r.strong_buy/total)*100}%" title="Strong Buy: ${r.strong_buy}">${r.strong_buy > 0 ? r.strong_buy : ""}</div>
+                    <div class="dna-a-seg dna-a-b" style="width:${(r.buy/total)*100}%" title="Buy: ${r.buy}">${r.buy > 0 ? r.buy : ""}</div>
+                    <div class="dna-a-seg dna-a-h" style="width:${(r.hold/total)*100}%" title="Hold: ${r.hold}">${r.hold > 0 ? r.hold : ""}</div>
+                    <div class="dna-a-seg dna-a-s" style="width:${(r.sell/total)*100}%" title="Sell: ${r.sell}">${r.sell > 0 ? r.sell : ""}</div>
+                    <div class="dna-a-seg dna-a-ss" style="width:${(r.strong_sell/total)*100}%" title="Strong Sell: ${r.strong_sell}">${r.strong_sell > 0 ? r.strong_sell : ""}</div>
+                </div>
+                <div class="dna-analyst-labels">
+                    <span style="color:#22c55e">Strong Buy</span>
+                    <span style="color:#4ade80">Buy</span>
+                    <span style="color:#eab308">Hold</span>
+                    <span style="color:#f97316">Sell</span>
+                    <span style="color:#ef4444">Strong Sell</span>
+                </div>
+            </div>`;
+        }
+    }
+
+    // Price target
+    let ptHtml = "";
+    if (dna.price_target && dna.price_target.mean) {
+        const pt = dna.price_target;
+        const price = dna.price;
+        const upside = price ? (((pt.mean - price) / price) * 100).toFixed(1) : "—";
+        ptHtml = `<div class="dna-section"><h4>🎯 Price Targets</h4>
+            <div class="dna-pt-grid">
+                <div class="dna-pt-item"><span>Low</span><strong style="color:var(--red)">$${pt.low?.toFixed(2) ?? "—"}</strong></div>
+                <div class="dna-pt-item"><span>Mean</span><strong>$${pt.mean?.toFixed(2) ?? "—"}</strong></div>
+                <div class="dna-pt-item"><span>Median</span><strong>$${pt.median?.toFixed(2) ?? "—"}</strong></div>
+                <div class="dna-pt-item"><span>High</span><strong style="color:var(--green)">$${pt.high?.toFixed(2) ?? "—"}</strong></div>
+                <div class="dna-pt-item"><span>Upside</span><strong style="color:${parseFloat(upside) >= 0 ? 'var(--green)' : 'var(--red)'}">${upside}%</strong></div>
+            </div>
+        </div>`;
+    }
+
+    // Peers
+    let peersHtml = "";
+    if (dna.peers && dna.peers.length > 0) {
+        const peerBtns = dna.peers.map(p => `<button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();showCompanyDNA('${p}')">${p}</button>`).join("");
+        peersHtml = `<div class="dna-section"><h4>🏢 Comparable Companies</h4><div class="dna-peers">${peerBtns}</div></div>`;
+    }
+
+    return `
+        <div class="dna-berkshire-header">
+            <div class="dna-bk-score">
+                <span class="bk-grade-lg ${bkGrade.cls}">${bkGrade.grade}</span>
+                <div>
+                    <div class="dna-bk-title">Berkshire Score: ${bk.score}/100</div>
+                    <div class="dna-bk-verdict">${bk.verdict}</div>
+                </div>
+            </div>
+        </div>
+        <div class="dna-bk-breakdown">${breakdownHtml}</div>
+        ${execHtml}
+        ${insiderHtml}
+        ${analystHtml}
+        ${ptHtml}
+        ${peersHtml}
+    `;
+}
+
+async function showCompanyDNA(symbol) {
+    let overlay = document.getElementById("adv-dna-overlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "adv-dna-overlay";
+        overlay.className = "modal-overlay";
+        overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
+        document.body.appendChild(overlay);
+    }
+
+    overlay.innerHTML = `
+        <div class="modal dna-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>🧬 Company DNA — ${symbol}</h2>
+                <button class="modal-close" onclick="document.getElementById('adv-dna-overlay').style.display='none'">&times;</button>
+            </div>
+            <div class="dna-modal-body">
+                <div class="dna-loading"><div class="spinner"></div><span>Analyzing ${symbol} with Buffett & Munger principles...</span></div>
+            </div>
+        </div>`;
+    overlay.style.display = "flex";
+
+    try {
+        const dna = await api.get(`/api/advisor/company-dna/${symbol}`);
+        overlay.querySelector(".dna-modal-body").innerHTML = _renderDNA(dna);
+    } catch (e) {
+        overlay.querySelector(".dna-modal-body").innerHTML = '<p style="color:var(--red);padding:20px;">Could not load Company DNA for this stock.</p>';
     }
 }
 
@@ -326,6 +513,10 @@ function _renderDetailModal(data) {
                 <div class="adv-detail-reasoning"><strong>Analysis:</strong> ${data.reasoning || "N/A"}</div>
                 <div class="adv-detail-signals"><h4>Indicator Signals</h4>${signals}</div>
                 <div class="adv-detail-chart-wrap"><canvas id="adv-detail-chart"></canvas></div>
+                <div class="dna-divider">
+                    <h3>🧬 Company DNA — Buffett & Munger Analysis</h3>
+                </div>
+                <div id="adv-dna-section"></div>
             </div>
         </div>`;
 
