@@ -4,9 +4,18 @@ let adminSearchTimeout = null;
 
 async function loadAdminPanel() {
     try {
-        await Promise.all([loadAdminStats(), loadAdminUsers()]);
+        await loadAdminStats();
     } catch (e) {
-        console.error("Admin load error:", e);
+        console.error("Admin stats error:", e);
+        const c = document.getElementById("admin-stats");
+        if (c) c.innerHTML = `<div class="card" style="padding:20px;color:#ef4444">Failed to load stats: ${e.message}</div>`;
+    }
+    try {
+        await loadAdminUsers();
+    } catch (e) {
+        console.error("Admin users error:", e);
+        const tbody = document.getElementById("admin-users-body");
+        if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;text-align:center;padding:20px">Failed to load users: ${e.message}</td></tr>`;
     }
 }
 

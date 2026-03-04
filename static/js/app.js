@@ -1,3 +1,22 @@
+// ── Theme Toggle ─────────────────────────────────────────────
+(function initTheme() {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+})();
+(function initThemeToggle() {
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.addEventListener('click', () => {
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        if (isLight) {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            localStorage.setItem('theme', 'light');
+        }
+    });
+})();
+
 let categories = [];
 
 // Merged-page mapping: sub-pages → parent sidebar item
