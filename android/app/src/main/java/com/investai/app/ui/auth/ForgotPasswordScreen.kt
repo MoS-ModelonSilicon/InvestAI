@@ -108,7 +108,10 @@ fun ForgotPasswordScreen(
                             keyboardActions = KeyboardActions(
                                 onDone = {
                                     if (email.isNotBlank()) {
-                                        viewModel.forgotPassword(email) { step = 1 }
+                                        viewModel.forgotPassword(email) { returnedCode ->
+                                            if (returnedCode != null) code = returnedCode
+                                            step = 1
+                                        }
                                     }
                                 },
                             ),
@@ -129,7 +132,12 @@ fun ForgotPasswordScreen(
                         }
 
                         Button(
-                            onClick = { viewModel.forgotPassword(email) { step = 1 } },
+                            onClick = {
+                                viewModel.forgotPassword(email) { returnedCode ->
+                                    if (returnedCode != null) code = returnedCode
+                                    step = 1
+                                }
+                            },
                             enabled = email.isNotBlank() && !uiState.isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -229,7 +237,7 @@ fun ForgotPasswordScreen(
                         }
                         Spacer(Modifier.height(16.dp))
 
-                        TextButton(onClick = { viewModel.forgotPassword(email) {} }) {
+                        TextButton(onClick = { viewModel.forgotPassword(email) { returnedCode -> if (returnedCode != null) code = returnedCode } }) {
                             Text("Resend code", color = Primary, style = MaterialTheme.typography.bodySmall)
                         }
                     }

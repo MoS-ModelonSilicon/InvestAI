@@ -54,13 +54,13 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun forgotPassword(email: String, onCodeSent: () -> Unit = {}) {
+    fun forgotPassword(email: String, onCodeSent: (code: String?) -> Unit = {}) {
         viewModelScope.launch {
             _uiState.value = LoginUiState(isLoading = true)
             authRepo.forgotPassword(email).fold(
-                onSuccess = { msg ->
+                onSuccess = { (msg, code) ->
                     _uiState.value = LoginUiState(successMessage = msg)
-                    onCodeSent()
+                    onCodeSent(code)
                 },
                 onFailure = { e ->
                     _uiState.value = LoginUiState(error = e.message ?: "Request failed")

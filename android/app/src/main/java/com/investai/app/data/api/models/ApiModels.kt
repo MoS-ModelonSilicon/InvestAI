@@ -24,7 +24,7 @@ data class ForgotPasswordRequest(val email: String)
 data class ResetPasswordRequest(val email: String, val code: String, @SerialName("new_password") val newPassword: String)
 
 @Serializable
-data class MessageResponse(val ok: Boolean = false, val message: String? = null, val detail: String? = null)
+data class MessageResponse(val ok: Boolean = false, val message: String? = null, val detail: String? = null, val code: String? = null)
 
 // ── Dashboard ────────────────────────────────────────────
 

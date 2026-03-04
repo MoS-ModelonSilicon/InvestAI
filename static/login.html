@@ -260,8 +260,14 @@
                 const data = await res.json();
                 if (res.ok) {
                     _forgotEmail = email;
-                    suc.textContent = data.message || "Reset code sent!";
-                    setTimeout(() => showResetForm(), 1500);
+                    if (data.code) {
+                        // No email service — code returned directly
+                        document.getElementById("reset-code").value = data.code;
+                        suc.textContent = "Your reset code: " + data.code;
+                    } else {
+                        suc.textContent = data.message || "Reset code sent!";
+                    }
+                    setTimeout(() => showResetForm(), 1200);
                 } else {
                     err.textContent = data.detail || "Something went wrong";
                 }

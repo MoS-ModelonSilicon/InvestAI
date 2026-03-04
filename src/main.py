@@ -187,12 +187,13 @@ def forgot_password(body: ForgotPasswordBody):
         smtp_host = os.environ.get("SMTP_HOST")
         smtp_user = os.environ.get("SMTP_USER")
         smtp_pass = os.environ.get("SMTP_PASS")
+        email_sent = False
         if smtp_host and smtp_user:
             try:
                 import smtplib
                 from email.mime.text import MIMEText
                 msg = MIMEText(f"Your InvestAI password reset code is: {code}\n\nThis code expires in 15 minutes.")
-                msg["Subject"] = "InvestAI — Password Reset Code"
+                msg["Subject"] = "InvestAI \u2014 Password Reset Code"
                 msg["From"] = smtp_user
                 msg["To"] = user.email
                 with smtplib.SMTP(smtp_host, int(os.environ.get("SMTP_PORT", 587))) as s:
@@ -200,12 +201,16 @@ def forgot_password(body: ForgotPasswordBody):
                     s.login(smtp_user, smtp_pass or "")
                     s.send_message(msg)
                 logger.info(f"Reset code sent to {user.email}")
+                email_sent = True
             except Exception as e:
                 logger.warning(f"SMTP failed, code for {user.email}: {code} ({e})")
         else:
             logger.info(f"[NO SMTP] Password reset code for {user.email}: {code}")
 
-        return JSONResponse(content={"ok": True, "message": "If that email is registered, a reset code has been sent."})
+        if email_sent:
+            return JSONResponse(content={"ok": True, "message": "A reset code has been sent to your email."})
+        # No email service configured or sending failed — return code directly
+        return JSONResponse(content={"ok": True, "message": f"Your reset code is: {code}", "code": code})
     finally:
         db.close()
 

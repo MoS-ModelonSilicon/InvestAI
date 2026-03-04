@@ -69,12 +69,18 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun forgotPassword(email: String): Result<String> {
+    /**
+     * Returns a Pair(message, code?) — code is non-null when the server returns it directly
+     * (i.e. no email service configured).
+     */
+    suspend fun forgotPassword(email: String): Result<Pair<String, String?>> {
         return try {
             val response = api.forgotPassword(ForgotPasswordRequest(email = email))
             if (response.isSuccessful) {
-                val msg = response.body()?.message ?: "Reset code sent"
-                Result.success(msg)
+                val body = response.body()
+                val msg = body?.message ?: "Reset code sent"
+                val code = body?.code  // non-null when no email service configured
+                Result.success(Pair(msg, code))
             } else {
                 val detail = response.errorBody()?.string() ?: "Request failed"
                 Result.failure(Exception(detail))
