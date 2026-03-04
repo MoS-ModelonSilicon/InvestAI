@@ -139,6 +139,7 @@ function navigateTo(page, pushState = true) {
     if (page === "trading-advisor") loadTradingAdvisor();
     if (page === "picks-tracker") loadPicksTracker();
     if (page === "dca") loadDca();
+    if (page === "admin") loadAdminPanel();
 }
 
 async function loadCategories() {
