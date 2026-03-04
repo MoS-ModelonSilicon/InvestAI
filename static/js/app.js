@@ -14,7 +14,7 @@ document.querySelectorAll(".nav-link").forEach((link) => {
     });
 });
 
-function navigateTo(page) {
+function navigateTo(page, pushState = true) {
     document.querySelectorAll(".nav-link").forEach((l) => l.classList.remove("active"));
     const navPage = PAGE_TO_NAV[page] || page;
     const active = document.querySelector(`.nav-link[data-page="${navPage}"]`);
@@ -23,6 +23,10 @@ function navigateTo(page) {
     document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
     const pageEl = document.getElementById("page-" + page);
     if (pageEl) pageEl.classList.add("active");
+
+    if (pushState) {
+        history.pushState({ page }, "", `#${page}`);
+    }
 
     if (page === "dashboard") { loadDashboard(); startMarketRefresh(); }
     else { stopMarketRefresh(); }
@@ -75,6 +79,12 @@ function filterCategoriesByType() {
     if (stillExists) sel.value = currentVal;
 }
 
+// ── Browser back/forward button support ──────────────────────
+window.addEventListener("popstate", (e) => {
+    const page = (e.state && e.state.page) || location.hash.replace("#", "") || "dashboard";
+    navigateTo(page, false);
+});
+
 (async function init() {
     const today = new Date();
     const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1);
@@ -82,6 +92,13 @@ function filterCategoriesByType() {
     const dashTo = document.getElementById("dash-to");
     if (dashFrom) dashFrom.value = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, "0")}`;
     if (dashTo) dashTo.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+
+    // Restore page from URL hash or default to dashboard
+    const initialPage = location.hash.replace("#", "") || "dashboard";
+    history.replaceState({ page: initialPage }, "", `#${initialPage}`);
+    if (initialPage !== "dashboard") {
+        navigateTo(initialPage, false);
+    }
 
     startMarketRefresh();
 
