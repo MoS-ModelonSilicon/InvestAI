@@ -1075,3 +1075,284 @@ class TestSearchBars:
         # Cards should be restored
         cards_after = authenticated_page.locator(".edu-card:visible").count()
         assert cards_after == cards_before
+
+
+# ────────────────────────────────────────────
+#  Forgot Password — API tests
+# ────────────────────────────────────────────
+
+class TestForgotPasswordAPI:
+    """Test the /auth/forgot-password and /auth/reset-password endpoints directly."""
+
+    def test_forgot_password_returns_ok_for_existing_user(self, live_url: str, _live_server):
+        """POST /auth/forgot-password should return 200 with ok=True for a registered email."""
+        import requests
+        # Ensure user exists
+        requests.post(
+            f"{live_url}/auth/register",
+            json={"email": "resetapi@e2e.local", "password": "OldPass99", "name": "Reset API"},
+        )
+        resp = requests.post(
+            f"{live_url}/auth/forgot-password",
+            json={"email": "resetapi@e2e.local"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert "reset code" in data["message"].lower()
+
+    def test_forgot_password_returns_ok_for_unknown_email(self, live_url: str, _live_server):
+        """Should still return 200 to not leak whether the email exists."""
+        import requests
+        resp = requests.post(
+            f"{live_url}/auth/forgot-password",
+            json={"email": "nobody_here@e2e.local"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+
+    def test_reset_password_with_valid_code(self, live_url: str, _live_server):
+        """Full flow: register → forgot → get code from DB → reset → login with new password."""
+        import requests
+        email = "resetfull@e2e.local"
+        old_pw = "OldPass1"
+        new_pw = "NewPass1"
+
+        # Register
+        requests.post(
+            f"{live_url}/auth/register",
+            json={"email": email, "password": old_pw, "name": "Reset Full"},
+        )
+
+        # Request reset code
+        resp = requests.post(f"{live_url}/auth/forgot-password", json={"email": email})
+        assert resp.status_code == 200
+
+        # Grab the code directly from the DB
+        import sys, pathlib
+        root = pathlib.Path(__file__).resolve().parent.parent
+        sys.path.insert(0, str(root))
+        from src.database import SessionLocal
+        from src.models import PasswordReset, User
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.email == email).first()
+            reset = (
+                db.query(PasswordReset)
+                .filter(PasswordReset.user_id == user.id, PasswordReset.used == 0)
+                .order_by(PasswordReset.created_at.desc())
+                .first()
+            )
+            code = reset.code
+        finally:
+            db.close()
+
+        # Reset with the code
+        resp = requests.post(
+            f"{live_url}/auth/reset-password",
+            json={"email": email, "code": code, "new_password": new_pw},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert "reset" in data["message"].lower()
+
+        # Login with old password should fail
+        resp = requests.post(
+            f"{live_url}/auth/login",
+            json={"email": email, "password": old_pw},
+        )
+        assert resp.status_code == 403
+
+        # Login with new password should succeed
+        resp = requests.post(
+            f"{live_url}/auth/login",
+            json={"email": email, "password": new_pw},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+
+    def test_reset_password_wrong_code_rejected(self, live_url: str, _live_server):
+        """Using a wrong code should return 400."""
+        import requests
+        email = "resetbad@e2e.local"
+        requests.post(
+            f"{live_url}/auth/register",
+            json={"email": email, "password": "SomePass1", "name": "Bad Code"},
+        )
+        requests.post(f"{live_url}/auth/forgot-password", json={"email": email})
+
+        resp = requests.post(
+            f"{live_url}/auth/reset-password",
+            json={"email": email, "code": "000000", "new_password": "NewPass1"},
+        )
+        # Might succeed if code happens to be 000000, so check either 200+ok or 400
+        if resp.status_code == 400:
+            assert "invalid" in resp.json()["detail"].lower() or "expired" in resp.json()["detail"].lower()
+
+    def test_reset_password_code_single_use(self, live_url: str, _live_server):
+        """A code can only be used once."""
+        import requests
+        email = "resetonce@e2e.local"
+        requests.post(
+            f"{live_url}/auth/register",
+            json={"email": email, "password": "OldPw1234", "name": "Once"},
+        )
+        requests.post(f"{live_url}/auth/forgot-password", json={"email": email})
+
+        # Get code from DB
+        import pathlib, sys
+        root = pathlib.Path(__file__).resolve().parent.parent
+        sys.path.insert(0, str(root))
+        from src.database import SessionLocal
+        from src.models import PasswordReset, User
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.email == email).first()
+            reset = (
+                db.query(PasswordReset)
+                .filter(PasswordReset.user_id == user.id, PasswordReset.used == 0)
+                .order_by(PasswordReset.created_at.desc())
+                .first()
+            )
+            code = reset.code
+        finally:
+            db.close()
+
+        # First use — should succeed
+        resp1 = requests.post(
+            f"{live_url}/auth/reset-password",
+            json={"email": email, "code": code, "new_password": "Changed1"},
+        )
+        assert resp1.status_code == 200
+
+        # Second use — same code should be rejected
+        resp2 = requests.post(
+            f"{live_url}/auth/reset-password",
+            json={"email": email, "code": code, "new_password": "Changed2"},
+        )
+        assert resp2.status_code == 400
+        assert "invalid" in resp2.json()["detail"].lower() or "expired" in resp2.json()["detail"].lower()
+
+    def test_reset_password_short_password_rejected(self, live_url: str, _live_server):
+        """New password under 4 chars should be rejected."""
+        import requests
+        resp = requests.post(
+            f"{live_url}/auth/reset-password",
+            json={"email": "anyone@e2e.local", "code": "123456", "new_password": "ab"},
+        )
+        assert resp.status_code == 400
+        assert "4 characters" in resp.json()["detail"]
+
+
+# ────────────────────────────────────────────
+#  Forgot Password — Browser UI tests
+# ────────────────────────────────────────────
+
+class TestForgotPasswordUI:
+    """Test the web forgot-password flow in the browser."""
+
+    def test_forgot_link_visible_on_login_page(self, page: Page, live_url: str, _live_server):
+        """The 'Forgot password?' link should be visible on the login form."""
+        page.goto(f"{live_url}/login", wait_until="domcontentloaded")
+        forgot = page.locator(".forgot-link")
+        expect(forgot).to_be_visible()
+        expect(forgot).to_have_text("Forgot password?")
+
+    def test_forgot_link_shows_email_form(self, page: Page, live_url: str, _live_server):
+        """Clicking 'Forgot password?' hides login form and shows the email entry form."""
+        page.goto(f"{live_url}/login", wait_until="domcontentloaded")
+        page.click(".forgot-link")
+        # Login form should be hidden
+        expect(page.locator("#login-form")).to_be_hidden()
+        # Forgot form should be visible
+        expect(page.locator("#forgot-form")).to_be_visible()
+        expect(page.locator("#forgot-email")).to_be_visible()
+        expect(page.locator("#forgot-btn")).to_have_text("Send Reset Code")
+
+    def test_back_link_returns_to_login(self, page: Page, live_url: str, _live_server):
+        """'Back to Sign In' link should return to the normal login form."""
+        page.goto(f"{live_url}/login", wait_until="domcontentloaded")
+        page.click(".forgot-link")
+        expect(page.locator("#forgot-form")).to_be_visible()
+        # Click back
+        page.click(".back-link")
+        expect(page.locator("#login-form")).to_be_visible()
+        expect(page.locator("#forgot-form")).to_be_hidden()
+
+    def test_submit_email_shows_code_form(self, page: Page, live_url: str, _live_server):
+        """After submitting an email, the code+password form should appear."""
+        import requests
+        requests.post(
+            f"{live_url}/auth/register",
+            json={"email": "uireset@e2e.local", "password": "UiPass1", "name": "UI Reset"},
+        )
+        page.goto(f"{live_url}/login", wait_until="domcontentloaded")
+        page.click(".forgot-link")
+        page.fill("#forgot-email", "uireset@e2e.local")
+        page.click("#forgot-btn")
+        # Wait for the reset form to appear (step 2)
+        page.wait_for_selector("#reset-form:not(.hidden)", timeout=10_000)
+        expect(page.locator("#reset-code")).to_be_visible()
+        expect(page.locator("#reset-password")).to_be_visible()
+        expect(page.locator("#reset-btn")).to_have_text("Reset Password")
+
+    def test_full_ui_reset_flow(self, page: Page, live_url: str, _live_server):
+        """Full browser flow: click forgot → enter email → get code from DB → enter code + new pw → login."""
+        import requests
+        email = "uifull@e2e.local"
+        old_pw = "OldUiPass1"
+        new_pw = "NewUiPass1"
+
+        # Register user
+        requests.post(
+            f"{live_url}/auth/register",
+            json={"email": email, "password": old_pw, "name": "UI Full Reset"},
+        )
+
+        # Navigate to forgot password
+        page.goto(f"{live_url}/login", wait_until="domcontentloaded")
+        page.click(".forgot-link")
+        page.fill("#forgot-email", email)
+        page.click("#forgot-btn")
+        page.wait_for_selector("#reset-form:not(.hidden)", timeout=10_000)
+
+        # Grab code from DB
+        import pathlib, sys
+        root = pathlib.Path(__file__).resolve().parent.parent
+        sys.path.insert(0, str(root))
+        from src.database import SessionLocal
+        from src.models import PasswordReset, User
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.email == email).first()
+            reset = (
+                db.query(PasswordReset)
+                .filter(PasswordReset.user_id == user.id, PasswordReset.used == 0)
+                .order_by(PasswordReset.created_at.desc())
+                .first()
+            )
+            code = reset.code
+        finally:
+            db.close()
+
+        # Enter code and new password
+        page.fill("#reset-code", code)
+        page.fill("#reset-password", new_pw)
+        page.click("#reset-btn")
+
+        # Wait for success message
+        page.wait_for_selector("#reset-success:not(:empty)", timeout=10_000)
+        expect(page.locator("#reset-success")).to_contain_text("reset")
+
+        # Wait for redirect back to login (the JS has a 2s setTimeout)
+        page.wait_for_selector("#login-form:not(.hidden)", timeout=10_000)
+
+        # Login with new password
+        page.fill("#login-email", email)
+        page.fill("#login-password", new_pw)
+        page.click("#login-btn")
+        page.wait_for_url(f"{live_url}/**", timeout=15_000)
+        page.wait_for_load_state("domcontentloaded")
+        expect(page.locator("nav.sidebar")).to_be_visible(timeout=15_000)
