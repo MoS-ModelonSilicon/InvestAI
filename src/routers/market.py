@@ -23,8 +23,9 @@ def get_ticker_data():
 @router.get("/featured")
 def get_featured_stocks():
     quotes = fetch_live_quotes(FEATURED_SYMBOLS)
+    sparks = fetch_sparklines(FEATURED_SYMBOLS)
     for q in quotes:
-        q["sparkline"] = []
+        q["sparkline"] = sparks.get(q["symbol"], [])
     return quotes
 
 
@@ -36,10 +37,11 @@ def get_home_data():
     quote_map = {q["symbol"]: q for q in quotes}
 
     ticker = [quote_map[s] for s in TICKER_SYMBOLS if s in quote_map]
+    sparks = fetch_sparklines(FEATURED_SYMBOLS)
     featured = []
     for s in FEATURED_SYMBOLS:
         if s in quote_map:
-            entry = {**quote_map[s], "sparkline": []}
+            entry = {**quote_map[s], "sparkline": sparks.get(s, [])}
             featured.append(entry)
 
     return {"ticker": ticker, "featured": featured}
