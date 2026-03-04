@@ -1,5 +1,12 @@
 let categories = [];
 
+// Merged-page mapping: sub-pages → parent sidebar item
+const PAGE_TO_NAV = {
+    'value-scanner': 'screener',
+    'trading-advisor': 'smart-advisor',
+    'recommendations': 'autopilot',
+};
+
 document.querySelectorAll(".nav-link").forEach((link) => {
     link.addEventListener("click", (e) => {
         e.preventDefault();
@@ -9,7 +16,8 @@ document.querySelectorAll(".nav-link").forEach((link) => {
 
 function navigateTo(page) {
     document.querySelectorAll(".nav-link").forEach((l) => l.classList.remove("active"));
-    const active = document.querySelector(`.nav-link[data-page="${page}"]`);
+    const navPage = PAGE_TO_NAV[page] || page;
+    const active = document.querySelector(`.nav-link[data-page="${navPage}"]`);
     if (active) active.classList.add("active");
 
     document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
@@ -37,6 +45,7 @@ function navigateTo(page) {
     if (page === "value-scanner") loadValueScanner();
     if (page === "smart-advisor") loadSmartAdvisor();
     if (page === "trading-advisor") loadTradingAdvisor();
+    if (page === "picks-tracker") loadPicksTracker();
 }
 
 async function loadCategories() {
