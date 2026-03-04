@@ -8,8 +8,8 @@ from src.services import data_provider as dp
 from src.services.market_data import fetch_stock_info, _get_cached, _set_cache
 
 
-def calculate_portfolio(db: Session) -> dict:
-    holdings = db.query(Holding).all()
+def calculate_portfolio(db: Session, user_id: int) -> dict:
+    holdings = db.query(Holding).filter(Holding.user_id == user_id).all()
     if not holdings:
         return {
             "total_invested": 0,
@@ -90,9 +90,9 @@ def calculate_portfolio(db: Session) -> dict:
     }
 
 
-def get_portfolio_performance(db: Session) -> dict:
+def get_portfolio_performance(db: Session, user_id: int) -> dict:
     """Calculate time-weighted portfolio performance for charting."""
-    holdings = db.query(Holding).all()
+    holdings = db.query(Holding).filter(Holding.user_id == user_id).all()
     if not holdings:
         return {"dates": [], "portfolio": [], "benchmark": []}
 

@@ -74,6 +74,7 @@
                 Budgets</a></li>
         </ul>
         <div class="nav-logout">
+            <div class="nav-user-info" id="nav-user-info" style="padding:8px 16px;color:#8b8fa3;font-size:.8rem;margin-bottom:4px"></div>
             <a href="/auth/logout" class="nav-link logout-link">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Logout
@@ -356,7 +357,7 @@
             <div class="ta-section" id="ta-all-picks-section" style="display:none;">
                 <h3>All Scanned Stocks <span class="scr-result-count" id="ta-pick-count"></span></h3>
                 <div class="table-wrapper"><table class="tx-table ta-picks-table"><thead><tr>
-                    <th>#</th><th>Stock</th><th>Score</th><th>Signal</th><th>RSI</th><th>MACD</th><th>Entry</th><th>Target</th><th>Stop</th><th>R/R</th>
+                    <th>#</th><th>Stock</th><th>Score</th><th>Signal</th><th>RSI</th><th>MACD</th><th>Entry</th><th>Target</th><th>Stop</th><th>R/R</th><th></th>
                 </tr></thead><tbody id="ta-picks-body"></tbody></table></div>
             </div>
         </section>
@@ -470,10 +471,15 @@
                         <div id="ap-sleeves"></div>
                     </div>
                     <div class="ap-holdings-card">
-                        <h3>Holdings <span class="scr-result-count" id="ap-holdings-count"></span></h3>
+                        <h3>Holdings <span class="scr-result-count" id="ap-holdings-count"></span>
+                            <button class="bundle-buy-btn" style="margin-left:12px;font-size:.8rem;padding:5px 12px;" onclick="buyAutopilotBundle()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                Buy All
+                            </button>
+                        </h3>
                         <div class="table-wrapper">
                             <table class="tx-table ap-holdings-table">
-                                <thead><tr><th>Symbol</th><th>Sleeve</th><th class="text-right">Shares</th><th class="text-right">Buy</th><th class="text-right">Current</th><th class="text-right">G/L</th><th class="text-right">G/L %</th></tr></thead>
+                                <thead><tr><th>Symbol</th><th>Sleeve</th><th class="text-right">Shares</th><th class="text-right">Buy</th><th class="text-right">Current</th><th class="text-right">G/L</th><th class="text-right">G/L %</th><th></th></tr></thead>
                                 <tbody id="ap-holdings-body"></tbody>
                             </table>
                         </div>
@@ -621,6 +627,7 @@
     </div>
 
     <script src="/static/js/api.js"></script>
+    <script src="/static/js/context-menu.js"></script>
     <script src="/static/js/tooltips.js"></script>
     <script src="/static/js/pagination.js"></script>
     <script src="/static/js/dashboard.js"></script>
@@ -645,5 +652,18 @@
     <script src="/static/js/advisor.js"></script>
     <script src="/static/js/picks-tracker.js"></script>
     <script src="/static/js/app.js"></script>
+    <script>
+        // Load current user info into sidebar
+        (async () => {
+            try {
+                const res = await fetch("/auth/me");
+                if (res.ok) {
+                    const data = await res.json();
+                    const el = document.getElementById("nav-user-info");
+                    if (el) el.textContent = data.name || data.email;
+                }
+            } catch (e) {}
+        })();
+    </script>
 </body>
 </html>

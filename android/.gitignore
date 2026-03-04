@@ -1,0 +1,17 @@
+# Secrets
+keystore.properties
+keystore/
+*.jks
+*.keystore
+local.properties
+
+# Build outputs
+.gradle/
+build/
+app/build/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db

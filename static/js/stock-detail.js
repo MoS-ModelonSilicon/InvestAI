@@ -40,7 +40,7 @@ function renderStockDetail(info, history, news) {
     }
 
     let html = `
-    <div class="sd-header">
+    <div class="sd-header" data-symbol="${info.symbol}" data-stock-name="${(info.name||'').replace(/"/g,'&quot;')}" data-stock-price="${info.price||''}">
         <div class="sd-title-area">
             <div class="sd-symbol">${info.symbol}</div>
             <div class="sd-name">${info.name}</div>

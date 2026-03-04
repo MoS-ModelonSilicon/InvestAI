@@ -2,21 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.models import RiskProfile
+from src.models import RiskProfile, User
 from src.schemas.profile import ProfileAnswers, ProfileOut, AllocationOut
 from src.services.risk_profile import calculate_risk_score, get_allocation
+from src.auth import get_current_user
 
 router = APIRouter(prefix="/api/profile", tags=["profile"])
 
 
 @router.get("", response_model=ProfileOut | None)
-def get_current_profile(db: Session = Depends(get_db)):
-    profile = db.query(RiskProfile).order_by(RiskProfile.id.desc()).first()
+def get_current_profile(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    profile = db.query(RiskProfile).filter(RiskProfile.user_id == user.id).order_by(RiskProfile.id.desc()).first()
     return profile
 
 
 @router.post("", response_model=ProfileOut)
-def submit_profile(payload: ProfileAnswers, db: Session = Depends(get_db)):
+def submit_profile(payload: ProfileAnswers, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     score, label = calculate_risk_score(
         goal=payload.goal,
         timeline=payload.timeline,
@@ -30,6 +31,7 @@ def submit_profile(payload: ProfileAnswers, db: Session = Depends(get_db)):
 
     profile = RiskProfile(
         **payload.model_dump(),
+        user_id=user.id,
         risk_score=score,
         profile_label=label,
     )
@@ -40,8 +42,8 @@ def submit_profile(payload: ProfileAnswers, db: Session = Depends(get_db)):
 
 
 @router.get("/allocation", response_model=AllocationOut)
-def get_allocation_for_profile(db: Session = Depends(get_db)):
-    profile = db.query(RiskProfile).order_by(RiskProfile.id.desc()).first()
+def get_allocation_for_profile(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    profile = db.query(RiskProfile).filter(RiskProfile.user_id == user.id).order_by(RiskProfile.id.desc()).first()
     if not profile:
         raise HTTPException(404, "No risk profile found. Complete the wizard first.")
 

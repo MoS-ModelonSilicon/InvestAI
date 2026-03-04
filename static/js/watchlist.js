@@ -27,7 +27,7 @@ function renderWatchlist(items) {
         const ycSign = (item.year_change || 0) >= 0 ? "+" : "";
         const ycCls = (item.year_change || 0) >= 0 ? "stock-up" : "stock-down";
         html += `
-        <div class="watchlist-card" onclick="navigateToStock('${item.symbol}')">
+        <div class="watchlist-card" data-symbol="${item.symbol}" data-stock-name="${(item.name||"").replace(/"/g,'&quot;')}" data-stock-price="${item.price}" onclick="navigateToStock('${item.symbol}')">
             <div class="wl-card-top">
                 <div>
                     <div class="wl-symbol">${item.symbol}</div>
@@ -46,7 +46,10 @@ function renderWatchlist(items) {
             </div>
             <div class="wl-card-bottom">
                 <span class="wl-sector">${item.sector}</span>
-                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removeWatchlistItem(${item.id}, this)">Remove</button>
+                <span style="display:flex;gap:6px;">
+                    <button class="btn btn-sm" onclick="event.stopPropagation();openAddHoldingModal('${item.symbol}','${(item.name||"").replace(/'/g,"\\'")}',${item.price})" title="Add to portfolio">+ Buy</button>
+                    <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removeWatchlistItem(${item.id}, this)">Remove</button>
+                </span>
             </div>
         </div>`;
     });

@@ -159,7 +159,7 @@ function _renderPickCard(p) {
     if (p.boll_squeeze) edgeBadges += '<span class="ta-edge-badge ta-edge-squeeze">Squeeze</span>';
 
     return `
-    <div class="ta-pick-card" onclick="showTADetail('${p.symbol}')">
+    <div class="ta-pick-card" data-symbol="${p.symbol}" data-stock-name="${(p.name||"").replace(/"/g,'&quot;')}" data-stock-price="${p.entry}" onclick="showTADetail('${p.symbol}')">
         <div class="ta-pick-top">
             <div class="ta-pick-sym">
                 <strong>${p.symbol}</strong>
@@ -179,6 +179,10 @@ function _renderPickCard(p) {
         <div class="ta-pick-foot">
             <span class="ta-pick-sector">${p.sector}</span>
             <span class="ta-pick-score">Score ${p.score}</span>
+        </div>
+        <div class="ta-pick-actions" style="display:flex;gap:6px;margin-top:8px;" onclick="event.stopPropagation()">
+            <button class="btn btn-sm btn-primary" onclick="openAddHoldingModal('${p.symbol}','${(p.name||"").replace(/'/g,"\\\\'")}',${p.entry})" title="Add to portfolio">+ Buy</button>
+            <button class="btn btn-sm" onclick="addToWatchlistFromDetail('${p.symbol}','${(p.name||"").replace(/'/g,"\\\\'")}')" title="Watch">+ Watch</button>
         </div>
     </div>`;
 }
@@ -204,7 +208,7 @@ function _renderTAAllPicks(picks) {
         const rsiCls = p.rsi != null ? (p.rsi > 70 ? "ta-red" : p.rsi < 30 ? "ta-green" : "") : "";
         const macdTxt = p.macd_hist_positive ? "Bullish" : "Bearish";
         const macdCls = p.macd_hist_positive ? "ta-green" : "ta-red";
-        return `<tr class="ta-row" onclick="showTADetail('${p.symbol}')">
+        return `<tr class="ta-row" data-symbol="${p.symbol}" data-stock-name="${(p.name||"").replace(/"/g,'&quot;')}" data-stock-price="${p.entry}" onclick="showTADetail('${p.symbol}')">
             <td>${i + 1}</td>
             <td><strong>${p.symbol}</strong><br><span class="ta-sub">${p.name}</span></td>
             <td><span class="ta-score-pill">${p.score}</span></td>
@@ -215,6 +219,7 @@ function _renderTAAllPicks(picks) {
             <td>$${p.target.toFixed(2)}</td>
             <td>$${p.stop_loss.toFixed(2)}</td>
             <td>${p.risk_reward.toFixed(1)}x</td>
+            <td onclick="event.stopPropagation()">${stockQuickActions(p.symbol, p.name, p.entry, {hideDetail: true})}</td>
         </tr>`;
     }).join("");
 }

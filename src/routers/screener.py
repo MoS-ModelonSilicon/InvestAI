@@ -4,10 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.models import Watchlist
+from src.models import Watchlist, User
 from src.schemas.screener import StockResult, WatchlistItem
 from src.services.screener import screen_instruments
 from src.services.market_data import SECTORS, REGIONS
+from src.auth import get_current_user
 
 router = APIRouter(prefix="/api/screener", tags=["screener"])
 
@@ -57,14 +58,14 @@ def list_sectors():
 
 
 @router.get("/watchlist", response_model=list[WatchlistItem])
-def get_watchlist(db: Session = Depends(get_db)):
-    return db.query(Watchlist).order_by(Watchlist.added_at.desc()).all()
+def get_watchlist(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return db.query(Watchlist).filter(Watchlist.user_id == user.id).order_by(Watchlist.added_at.desc()).all()
 
 
 @router.get("/watchlist/live")
-def get_watchlist_live(db: Session = Depends(get_db)):
+def get_watchlist_live(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Watchlist with live prices and change data."""
-    items = db.query(Watchlist).order_by(Watchlist.added_at.desc()).all()
+    items = db.query(Watchlist).filter(Watchlist.user_id == user.id).order_by(Watchlist.added_at.desc()).all()
     from src.services.market_data import fetch_stock_info, format_market_cap
     result = []
     for item in items:
@@ -102,11 +103,11 @@ def get_watchlist_live(db: Session = Depends(get_db)):
 
 
 @router.post("/watchlist", response_model=WatchlistItem)
-def add_to_watchlist(symbol: str, name: str = "", db: Session = Depends(get_db)):
-    existing = db.query(Watchlist).filter(Watchlist.symbol == symbol.upper()).first()
+def add_to_watchlist(symbol: str, name: str = "", db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    existing = db.query(Watchlist).filter(Watchlist.user_id == user.id, Watchlist.symbol == symbol.upper()).first()
     if existing:
         raise HTTPException(400, "Already in watchlist")
-    item = Watchlist(symbol=symbol.upper(), name=name)
+    item = Watchlist(symbol=symbol.upper(), name=name, user_id=user.id)
     db.add(item)
     db.commit()
     db.refresh(item)
@@ -114,8 +115,8 @@ def add_to_watchlist(symbol: str, name: str = "", db: Session = Depends(get_db))
 
 
 @router.delete("/watchlist/{item_id}")
-def remove_from_watchlist(item_id: int, db: Session = Depends(get_db)):
-    item = db.query(Watchlist).filter(Watchlist.id == item_id).first()
+def remove_from_watchlist(item_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    item = db.query(Watchlist).filter(Watchlist.id == item_id, Watchlist.user_id == user.id).first()
     if not item:
         raise HTTPException(404, "Not found")
     db.delete(item)

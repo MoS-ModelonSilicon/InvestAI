@@ -3,16 +3,17 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.models import Alert
+from src.models import Alert, User
 from src.schemas.alerts import AlertCreate, AlertOut
 from src.services.market_data import fetch_stock_info
+from src.auth import get_current_user
 
 router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 
 
 @router.get("")
-def list_alerts(db: Session = Depends(get_db)):
-    alerts = db.query(Alert).order_by(Alert.created_at.desc()).all()
+def list_alerts(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    alerts = db.query(Alert).filter(Alert.user_id == user.id).order_by(Alert.created_at.desc()).all()
     result = []
     for a in alerts:
         info = fetch_stock_info(a.symbol)
@@ -46,19 +47,20 @@ def list_alerts(db: Session = Depends(get_db)):
 
 
 @router.get("/triggered")
-def triggered_alerts(db: Session = Depends(get_db)):
-    alerts = db.query(Alert).filter(Alert.triggered == 1).order_by(Alert.triggered_at.desc()).all()
+def triggered_alerts(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    alerts = db.query(Alert).filter(Alert.user_id == user.id, Alert.triggered == 1).order_by(Alert.triggered_at.desc()).all()
     return [{"id": a.id, "symbol": a.symbol, "name": a.name, "condition": a.condition,
              "target_price": a.target_price, "triggered_at": a.triggered_at} for a in alerts]
 
 
 @router.post("")
-def create_alert(payload: AlertCreate, db: Session = Depends(get_db)):
+def create_alert(payload: AlertCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     alert = Alert(
         symbol=payload.symbol.upper(),
         name=payload.name,
         condition=payload.condition,
         target_price=payload.target_price,
+        user_id=user.id,
     )
     db.add(alert)
     db.commit()
@@ -67,8 +69,8 @@ def create_alert(payload: AlertCreate, db: Session = Depends(get_db)):
 
 
 @router.delete("/{alert_id}")
-def delete_alert(alert_id: int, db: Session = Depends(get_db)):
-    a = db.query(Alert).filter(Alert.id == alert_id).first()
+def delete_alert(alert_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    a = db.query(Alert).filter(Alert.id == alert_id, Alert.user_id == user.id).first()
     if not a:
         raise HTTPException(404, "Alert not found")
     db.delete(a)
@@ -77,8 +79,8 @@ def delete_alert(alert_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{alert_id}/dismiss")
-def dismiss_alert(alert_id: int, db: Session = Depends(get_db)):
-    a = db.query(Alert).filter(Alert.id == alert_id).first()
+def dismiss_alert(alert_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    a = db.query(Alert).filter(Alert.id == alert_id, Alert.user_id == user.id).first()
     if not a:
         raise HTTPException(404, "Alert not found")
     a.active = 0

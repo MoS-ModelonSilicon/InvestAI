@@ -110,7 +110,7 @@ function renderCard(r, idx) {
     const ycCls = (r.year_change || 0) >= 0 ? "stock-up" : "stock-down";
 
     return `
-    <div class="scr-card" id="scr-card-${idx}">
+    <div class="scr-card" id="scr-card-${idx}" data-symbol="${r.symbol}" data-stock-name="${(r.name||"").replace(/"/g,'&quot;')}" data-stock-price="${r.price}">
         <div class="scr-card-main" onclick="toggleDetail(${idx})">
             <div class="scr-card-header">
                 <div>
@@ -136,8 +136,7 @@ function renderCard(r, idx) {
                 <span class="scr-card-sector">${r.sector}${r.region && r.region !== "US" ? ` <span class="region-badge">${r.region}</span>` : ""}</span>
                 <span class="scr-card-actions">
                     <button class="btn btn-sm" onclick="event.stopPropagation();navigateToStock('${r.symbol}')" title="Full detail">📈</button>
-                    <button class="btn btn-sm" onclick="event.stopPropagation();addToWLFromScreener('${r.symbol}','${(r.name||"").replace(/'/g,"\\'")}')">+ Watch</button>
-                </span>
+                    <button class="btn btn-sm" onclick="event.stopPropagation();addToWLFromScreener('${r.symbol}','${(r.name||"").replace(/'/g,"\\'")}')">+ Watch</button>                    <button class="btn btn-sm" onclick="event.stopPropagation();openAddHoldingModal('${r.symbol}','${(r.name||"").replace(/'/g,"\\'")}',${r.price})" title="Add to portfolio">+ Buy</button>                </span>
             </div>
         </div>
         <div class="scr-detail" id="scr-detail-${idx}" style="display:none;"></div>

@@ -3781,3 +3781,180 @@ body {
     .pk-stats-row { grid-template-columns: repeat(2, 1fr); }
     .pk-table { font-size: .78em; }
 }
+
+/* ── Universal Stock Context Menu ────────────────── */
+
+.ctx-menu {
+    position: fixed;
+    z-index: 10000;
+    min-width: 200px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    padding: 6px 0;
+    display: none;
+    backdrop-filter: blur(12px);
+}
+
+.ctx-menu-visible {
+    display: block;
+    animation: ctxFadeIn 0.12s ease-out;
+}
+
+@keyframes ctxFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.ctx-menu-header {
+    padding: 10px 14px 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.ctx-menu-symbol {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--primary);
+}
+
+.ctx-menu-name {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+}
+
+.ctx-menu-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+}
+
+.ctx-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 14px;
+    border: none;
+    background: none;
+    color: var(--text);
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: left;
+    font-family: inherit;
+}
+
+.ctx-menu-item:hover {
+    background: var(--bg-card-hover);
+    color: var(--primary-hover);
+}
+
+.ctx-menu-item svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.ctx-menu-item:hover svg {
+    opacity: 1;
+    stroke: var(--primary-hover);
+}
+
+/* ── Stock Quick Action Buttons ──────────────────── */
+
+.stock-quick-actions {
+    display: inline-flex;
+    gap: 4px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.sq-btn {
+    padding: 2px 6px !important;
+    font-size: 0.75rem !important;
+    line-height: 1.2 !important;
+    min-width: unset !important;
+    opacity: 0.7;
+    transition: opacity 0.15s, transform 0.15s;
+}
+
+.sq-btn:hover {
+    opacity: 1;
+    transform: scale(1.15);
+}
+
+/* ── Buy Bundle Modal ────────────────────────────── */
+
+.bundle-modal {
+    max-width: 700px;
+    width: 95%;
+}
+
+.bundle-body {
+    padding: 16px 20px;
+}
+
+.bundle-subtitle {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    margin-bottom: 12px;
+}
+
+.bundle-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.bundle-table input[type="number"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
+.bundle-table input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+}
+
+/* ── Buy All / Add All Bundle Button ─────────────── */
+
+.bundle-buy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.bundle-buy-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
+.bundle-buy-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Make right-clickable elements show a hint cursor */
+[data-symbol] {
+    cursor: context-menu;
+}

@@ -48,7 +48,7 @@ function renderComparison(data) {
 
     html += `<div class="comp-table"><div class="comp-header" style="grid-template-columns:${gridCols}"><span class="comp-label">Metric</span>`;
     data.stocks.forEach(s => {
-        html += `<span class="comp-sym" onclick="navigateToStock('${s.symbol}')" style="cursor:pointer">${s.symbol}<br><small class="text-muted">${s.name}</small></span>`;
+        html += `<span class="comp-sym" data-symbol="${s.symbol}" data-stock-name="${(s.name||"").replace(/"/g,'&quot;')}" data-stock-price="${s.price}" onclick="navigateToStock('${s.symbol}')" style="cursor:pointer">${s.symbol}<br><small class="text-muted">${s.name}</small></span>`;
     });
     html += `</div>`;
 

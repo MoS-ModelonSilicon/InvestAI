@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.models import Transaction, Budget
+from src.models import Transaction, Budget, User
 from src.schemas.dashboard import DashboardStats
+from src.auth import get_current_user
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -16,6 +17,7 @@ def dashboard(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     if not date_from:
         today = date.today()
@@ -24,6 +26,7 @@ def dashboard(
         date_to = date.today()
 
     txs = db.query(Transaction).filter(
+        Transaction.user_id == user.id,
         Transaction.date >= date_from,
         Transaction.date <= date_to,
     ).all()
@@ -55,7 +58,7 @@ def dashboard(
             month_map[key]["expenses"] += t.amount
     monthly_trend = sorted(month_map.values(), key=lambda x: x["month"])
 
-    budgets = db.query(Budget).all()
+    budgets = db.query(Budget).filter(Budget.user_id == user.id).all()
     current_month = date.today().strftime("%Y-%m")
     budget_status = []
     for b in budgets:

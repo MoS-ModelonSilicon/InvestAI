@@ -2,9 +2,12 @@ fastapi
 uvicorn[standard]
 sqlalchemy
 pydantic
+pydantic[email]
 requests
 aiofiles
 yfinance
+python-jose[cryptography]
+passlib[bcrypt]
 
 # Testing (E2E with real browser)
 pytest

@@ -5,6 +5,7 @@ let apSelectedProfile = null;
 let apAmount = 10000;
 let apPeriod = "1y";
 let apChart = null;
+let _apLastHoldings = [];
 
 const RISK_COLORS = { High: "#ef4444", Medium: "#f59e0b", Low: "#22c55e" };
 const RISK_ICONS = {
@@ -273,10 +274,12 @@ function renderHoldings(holdings) {
     const body = document.getElementById("ap-holdings-body");
     const count = document.getElementById("ap-holdings-count");
     count.textContent = `${holdings.length} holdings`;
+    _apLastHoldings = holdings;
 
     body.innerHTML = holdings.map((h) => {
         const glColor = h.gain_loss >= 0 ? "var(--green)" : "var(--red)";
-        return `<tr>
+        const safeName = (h.name || h.symbol).replace(/'/g, "\\'");
+        return `<tr data-symbol="${h.symbol}" data-stock-name="${(h.name||h.symbol).replace(/"/g,'&quot;')}" data-stock-price="${h.current_price}">
             <td><a href="#" onclick="navigateTo('stock-detail');loadStockDetail('${h.symbol}');return false;" class="stock-link">${h.symbol}</a></td>
             <td class="text-muted">${h.sleeve}</td>
             <td class="text-right">${h.shares.toFixed(2)}</td>
@@ -284,6 +287,7 @@ function renderHoldings(holdings) {
             <td class="text-right">${fmt(h.current_price)}</td>
             <td class="text-right" style="color:${glColor}">${h.gain_loss >= 0 ? "+" : ""}${fmt(h.gain_loss)}</td>
             <td class="text-right" style="color:${glColor}">${h.gain_loss_pct >= 0 ? "+" : ""}${h.gain_loss_pct.toFixed(2)}%</td>
+            <td class="text-right">${stockQuickActions(h.symbol, h.name || h.symbol, h.current_price, {hideDetail: true})}</td>
         </tr>`;
     }).join("");
 }
@@ -315,4 +319,18 @@ function toggleApMethodology() {
     const visible = content.style.display !== "none";
     content.style.display = visible ? "none" : "";
     arrow.style.transform = visible ? "" : "rotate(180deg)";
+}
+
+function buyAutopilotBundle() {
+    if (!_apLastHoldings || _apLastHoldings.length === 0) {
+        if (typeof showToast === "function") showToast("Run a simulation first", "info");
+        return;
+    }
+    const stocks = _apLastHoldings.map(h => ({
+        symbol: h.symbol,
+        name: h.name || h.symbol,
+        price: h.current_price || h.buy_price,
+        allocation_pct: null,
+    }));
+    buyStockBundle(stocks);
 }

@@ -218,7 +218,7 @@ function renderCandidates(candidates) {
         </div>`;
 
     candidates.forEach((c, i) => {
-        html += `<div class="vs-table-row" onclick="navigateToStock('${c.symbol}')">
+        html += `<div class="vs-table-row" data-symbol="${c.symbol}" data-stock-name="${(c.name||"").replace(/"/g,'&quot;')}" data-stock-price="${c.price || 0}" onclick="navigateToStock('${c.symbol}')">
             <div class="vs-col-rank">${pageOffset + i + 1}</div>
             <div class="vs-col-signal">${vsSignalBadge(c.signal)}</div>
             <div class="vs-col-ticker"><strong>${c.symbol}</strong></div>
@@ -232,9 +232,10 @@ function renderCandidates(candidates) {
             <div class="vs-col-fcfy">${c.fcf_yield != null ? c.fcf_yield.toFixed(1) + "%" : "—"}</div>
             <div class="vs-col-cr">${c.current_ratio != null ? c.current_ratio.toFixed(2) : "—"}</div>
             <div class="vs-col-checks">${vsCriteriaIcons(c.criteria)}</div>
-            <div class="vs-col-links">
+            <div class="vs-col-links" onclick="event.stopPropagation()">
                 <a href="https://finance.yahoo.com/quote/${c.symbol}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Yahoo Finance">YF</a>
                 <a href="https://finviz.com/quote.ashx?t=${c.symbol}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Finviz">FV</a>
+                ${stockQuickActions(c.symbol, c.name, c.price, {hideDetail: true})}
             </div>
         </div>`;
     });

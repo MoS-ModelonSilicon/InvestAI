@@ -1,7 +1,7 @@
 import enum
 from datetime import date as date_type, datetime
 
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from src.database import Base
@@ -12,16 +12,43 @@ class TransactionType(str, enum.Enum):
     EXPENSE = "expense"
 
 
+# ── User Model ───────────────────────────────────────────────
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    hashed_password = Column(String, nullable=False)
+    name = Column(String, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # relationships
+    transactions = relationship("Transaction", back_populates="owner")
+    categories = relationship("Category", back_populates="owner")
+    budgets = relationship("Budget", back_populates="owner")
+    risk_profiles = relationship("RiskProfile", back_populates="owner")
+    watchlist_items = relationship("Watchlist", back_populates="owner")
+    holdings = relationship("Holding", back_populates="owner")
+    alerts = relationship("Alert", back_populates="owner")
+
+
 # ── Finance Tracker Models ───────────────────────────────────
 
 class Category(Base):
     __tablename__ = "categories"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    name = Column(String, nullable=False)
     color = Column(String, default="#6366f1")
     type = Column(String, nullable=False, default="expense")
 
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_category_user_name"),
+    )
+
+    owner = relationship("User", back_populates="categories")
     transactions = relationship("Transaction", back_populates="category")
     budgets = relationship("Budget", back_populates="category")
 
@@ -30,12 +57,14 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     amount = Column(Float, nullable=False)
     type = Column(String, nullable=False)
     description = Column(String, default="")
     date = Column(Date, nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
 
+    owner = relationship("User", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
 
 
@@ -43,9 +72,15 @@ class Budget(Base):
     __tablename__ = "budgets"
 
     id = Column(Integer, primary_key=True, index=True)
-    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     monthly_limit = Column(Float, nullable=False)
 
+    __table_args__ = (
+        UniqueConstraint("user_id", "category_id", name="uq_budget_user_cat"),
+    )
+
+    owner = relationship("User", back_populates="budgets")
     category = relationship("Category", back_populates="budgets")
 
 
@@ -55,6 +90,7 @@ class RiskProfile(Base):
     __tablename__ = "risk_profiles"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     goal = Column(String, nullable=False)
     timeline = Column(String, nullable=False)
     investment_style = Column(String, nullable=False, default="both")
@@ -67,20 +103,30 @@ class RiskProfile(Base):
     profile_label = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    owner = relationship("User", back_populates="risk_profiles")
+
 
 class Watchlist(Base):
     __tablename__ = "watchlist"
 
     id = Column(Integer, primary_key=True, index=True)
-    symbol = Column(String, nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    symbol = Column(String, nullable=False)
     name = Column(String, default="")
     added_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "symbol", name="uq_watchlist_user_symbol"),
+    )
+
+    owner = relationship("User", back_populates="watchlist_items")
 
 
 class Holding(Base):
     __tablename__ = "holdings"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     symbol = Column(String, nullable=False)
     name = Column(String, default="")
     quantity = Column(Float, nullable=False)
@@ -89,11 +135,14 @@ class Holding(Base):
     notes = Column(String, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    owner = relationship("User", back_populates="holdings")
+
 
 class Alert(Base):
     __tablename__ = "alerts"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     symbol = Column(String, nullable=False)
     name = Column(String, default="")
     condition = Column(String, nullable=False)
@@ -102,3 +151,5 @@ class Alert(Base):
     triggered = Column(Integer, default=0)
     triggered_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    owner = relationship("User", back_populates="alerts")

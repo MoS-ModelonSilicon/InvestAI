@@ -1,45 +1,68 @@
-import hashlib
-import hmac
 import os
 import secrets
-import time
+from datetime import datetime, timedelta
 
+from fastapi import Depends, HTTPException
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
 
-ACCESS_KEY = os.environ.get("INVESTAI_ACCESS_KEY", "intel2026")
+from src.database import get_db
 
-_SECRET = os.environ.get("INVESTAI_SECRET", secrets.token_hex(32))
+# ── Config ────────────────────────────────────────────────────
+SECRET_KEY = os.environ.get("INVESTAI_SECRET", secrets.token_hex(32))
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_DAYS = 7
 COOKIE_NAME = "investai_session"
-SESSION_TTL = 60 * 60 * 24 * 7  # 7 days
 
-PUBLIC_PATHS = {"/login", "/auth/login", "/auth/logout"}
+PUBLIC_PATHS = {"/login", "/auth/login", "/auth/register", "/auth/logout"}
 
-
-def _make_token(timestamp: str) -> str:
-    msg = f"{ACCESS_KEY}:{timestamp}".encode()
-    return hmac.new(_SECRET.encode(), msg, hashlib.sha256).hexdigest()
+# ── Password hashing ─────────────────────────────────────────
+import bcrypt as _bcrypt
 
 
-def create_session_cookie() -> tuple[str, str]:
-    ts = str(int(time.time()))
-    token = _make_token(ts)
-    return f"{ts}:{token}", ts
+def hash_password(password: str) -> str:
+    return _bcrypt.hashpw(password.encode("utf-8"), _bcrypt.gensalt()).decode("utf-8")
 
 
-def verify_session(cookie_value: str) -> bool:
-    if not cookie_value:
-        return False
+def verify_password(plain: str, hashed: str) -> bool:
     try:
-        ts, token = cookie_value.split(":", 1)
-        if time.time() - int(ts) > SESSION_TTL:
-            return False
-        return hmac.compare_digest(token, _make_token(ts))
+        return _bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
     except Exception:
         return False
 
 
+# ── JWT helpers ───────────────────────────────────────────────
+def create_access_token(user_id: int, email: str) -> str:
+    expire = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+    payload = {"sub": str(user_id), "email": email, "exp": expire}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_token(token: str) -> dict | None:
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        return None
+
+
+# ── FastAPI dependency ────────────────────────────────────────
+def get_current_user(request: Request, db: Session = Depends(get_db)):
+    """Extract user from the JWT cookie. Returns the User ORM object."""
+    from src.models import User  # local import to avoid circular
+
+    user_id = getattr(request.state, "user_id", None)
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+
+# ── Middleware ────────────────────────────────────────────────
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         path = request.url.path
@@ -47,11 +70,18 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if path in PUBLIC_PATHS:
             return await call_next(request)
 
-        cookie = request.cookies.get(COOKIE_NAME, "")
-        if verify_session(cookie):
+        # Allow static files without auth
+        if path.startswith("/static/"):
             return await call_next(request)
 
-        if path.startswith("/api/") or path.startswith("/static/"):
+        cookie = request.cookies.get(COOKIE_NAME, "")
+        payload = decode_token(cookie) if cookie else None
+
+        if payload:
+            request.state.user_id = int(payload["sub"])
+            return await call_next(request)
+
+        if path.startswith("/api/"):
             return Response(status_code=401, content="Unauthorized")
 
         return RedirectResponse(url="/login", status_code=302)

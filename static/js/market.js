@@ -27,7 +27,7 @@ function renderTicker(quotes) {
         }
         previousPrices[q.symbol] = q.price;
 
-        return `<div class="ticker-item ${cls} ${flash}">
+        return `<div class="ticker-item ${cls} ${flash}" data-symbol="${q.symbol}" data-stock-name="${q.symbol}" data-stock-price="${q.price}">
             <span class="ticker-symbol">${q.symbol}</span>
             <span class="ticker-price">$${q.price.toFixed(2)}</span>
             <span class="ticker-change">${arrow} ${Math.abs(q.change_pct).toFixed(2)}%</span>
@@ -59,7 +59,7 @@ function renderFeaturedStocks(stocks) {
         const sign = up ? "+" : "";
         const volFmt = s.volume > 1e6 ? (s.volume / 1e6).toFixed(1) + "M" : (s.volume / 1e3).toFixed(0) + "K";
 
-        return `<div class="market-card ${cls}" onclick="navigateToStock('${s.symbol}')">
+        return `<div class="market-card ${cls}" data-symbol="${s.symbol}" data-stock-name="${s.name}" data-stock-price="${s.price}" onclick="navigateToStock('${s.symbol}')">
             <div class="market-card-top">
                 <div>
                     <div class="market-card-symbol">${s.symbol}</div>

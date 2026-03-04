@@ -2,6 +2,7 @@ let _advRisk = "balanced";
 let _advPeriod = "1y";
 let _advChart = null;
 let _advDetailChart = null;
+let _advLastHoldings = [];
 
 function setAdvRisk(r) {
     _advRisk = r;
@@ -92,7 +93,7 @@ function renderAdvisorRankings(rankings) {
     const rows = rankings.slice(0, 20).map(r => {
         const sigCls = _signalClass(r.signal);
         const rsiCls = r.rsi != null ? (r.rsi > 70 ? "adv-warn" : r.rsi < 30 ? "adv-good" : "") : "";
-        return `<tr class="adv-rank-row" onclick="showAdvisorDetail('${r.symbol}')">
+        return `<tr class="adv-rank-row" data-symbol="${r.symbol}" data-stock-name="${(r.name||"").replace(/"/g,'&quot;')}" data-stock-price="${r.entry_price}" onclick="showAdvisorDetail('${r.symbol}')">
             <td>${r.rank}</td>
             <td><strong>${r.symbol}</strong><br><span class="adv-subtext">${r.name}</span></td>
             <td><span class="adv-score-pill">${r.score}</span></td>
@@ -104,6 +105,7 @@ function renderAdvisorRankings(rankings) {
             <td>$${r.target_price.toFixed(2)}</td>
             <td>$${r.stop_loss.toFixed(2)}</td>
             <td>${r.risk_reward.toFixed(1)}x</td>
+            <td>${stockQuickActions(r.symbol, r.name, r.entry_price, {hideDetail: true})}</td>
         </tr>`;
     }).join("");
 
@@ -114,7 +116,7 @@ function renderAdvisorRankings(rankings) {
                 <table class="tx-table adv-table">
                     <thead><tr>
                         <th>#</th><th>Stock</th><th>Score</th><th>Signal</th><th>Conf.</th>
-                        <th>RSI</th><th>MACD</th><th>Entry</th><th>Target</th><th>Stop</th><th>R/R</th>
+                        <th>RSI</th><th>MACD</th><th>Entry</th><th>Target</th><th>Stop</th><th>R/R</th><th></th>
                     </tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
@@ -138,6 +140,7 @@ function renderAdvisorPortfolios(portfolios, backtest, selectedRisk) {
 
     const port = portfolios[selectedRisk];
     if (port && port.holdings && port.holdings.length) {
+        _advLastHoldings = port.holdings;
         holdingsHtml = _renderHoldingsTable(port.holdings);
     }
 
@@ -152,7 +155,12 @@ function renderAdvisorPortfolios(portfolios, backtest, selectedRisk) {
 
     el.innerHTML = `
         <div class="adv-section">
-            <h3>Portfolio Packages</h3>
+            <h3>Portfolio Packages
+                <button class="bundle-buy-btn" style="margin-left:12px;font-size:.8rem;padding:5px 12px;" onclick="buyAdvisorBundle()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Buy All
+                </button>
+            </h3>
             <div class="adv-port-tabs">${tabHtml}</div>
             <div id="adv-port-content">
                 ${holdingsHtml}
@@ -168,7 +176,7 @@ function renderAdvisorPortfolios(portfolios, backtest, selectedRisk) {
 function _renderHoldingsTable(holdings) {
     const rows = holdings.map(h => {
         const sigCls = _signalClass(h.signal);
-        return `<tr>
+        return `<tr data-symbol="${h.symbol}" data-stock-name="${(h.name||"").replace(/"/g,'&quot;')}" data-stock-price="${h.entry_price}">
             <td><strong>${h.symbol}</strong></td>
             <td>${h.name}</td>
             <td>${h.sector}</td>
@@ -179,6 +187,7 @@ function _renderHoldingsTable(holdings) {
             <td>$${h.stop_loss.toFixed(2)}</td>
             <td>${h.risk_reward.toFixed(1)}x</td>
             <td><span class="signal-badge ${sigCls}">${h.signal}</span></td>
+            <td>${stockQuickActions(h.symbol, h.name, h.entry_price, {hideDetail: false})}</td>
         </tr>`;
     }).join("");
 
@@ -186,7 +195,7 @@ function _renderHoldingsTable(holdings) {
         <table class="tx-table adv-table">
             <thead><tr>
                 <th>Symbol</th><th>Name</th><th>Sector</th><th>Alloc</th>
-                <th>Price</th><th>Entry</th><th>Target</th><th>Stop</th><th>R/R</th><th>Signal</th>
+                <th>Price</th><th>Entry</th><th>Target</th><th>Stop</th><th>R/R</th><th>Signal</th><th></th>
             </tr></thead>
             <tbody>${rows}</tbody>
         </table>
@@ -379,4 +388,18 @@ function _signalClass(signal) {
     if (signal === "Sell") return "signal-avoid";
     if (signal === "Strong Sell") return "signal-avoid";
     return "signal-hold";
+}
+
+function buyAdvisorBundle() {
+    if (!_advLastHoldings || _advLastHoldings.length === 0) {
+        if (typeof showToast === "function") showToast("Run analysis first to get holdings", "info");
+        return;
+    }
+    const stocks = _advLastHoldings.map(h => ({
+        symbol: h.symbol,
+        name: h.name || h.symbol,
+        price: h.entry_price || h.buy_price,
+        allocation_pct: h.allocation_pct,
+    }));
+    buyStockBundle(stocks);
 }

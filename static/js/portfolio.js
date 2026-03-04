@@ -63,7 +63,7 @@ function renderPortfolio(data) {
         const hcls = h.gain_loss >= 0 ? "stock-up" : "stock-down";
         const hsign = h.gain_loss >= 0 ? "+" : "";
         html += `
-            <div class="pf-h-row" onclick="navigateToStock('${h.symbol}')">
+            <div class="pf-h-row" data-symbol="${h.symbol}" data-stock-name="${(h.name||"").replace(/"/g,'&quot;')}" data-stock-price="${h.current_price}" onclick="navigateToStock('${h.symbol}')">
                 <span class="pf-h-symbol">${h.symbol}<br><small class="text-muted">${h.name}</small></span>
                 <span>${h.quantity}</span>
                 <span>${fmt(h.buy_price)}</span>

@@ -25,9 +25,10 @@ function renderNews(articles) {
         const date = article.published ? new Date(article.published * 1000) : null;
         const timeAgo = date ? getTimeAgo(date) : "";
         const thumb = article.thumbnail ? `<div class="news-thumb" style="background-image:url(${article.thumbnail})"></div>` : "";
+        const symbolAttr = article.symbol ? ` data-symbol="${article.symbol}" data-stock-name="${article.symbol}"` : "";
 
         html += `
-        <a href="${article.link}" target="_blank" class="news-card">
+        <a href="${article.link}" target="_blank" class="news-card"${symbolAttr}>
             ${thumb}
             <div class="news-body">
                 <div class="news-title">${article.title}</div>

@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.models import Category, Transaction
+from src.models import Category, Transaction, User
 from src.schemas.transactions import TransactionCreate, TransactionUpdate, TransactionOut
+from src.auth import get_current_user
 
 router = APIRouter(prefix="/api/transactions", tags=["transactions"])
 
@@ -20,8 +21,9 @@ def list_transactions(
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    q = db.query(Transaction)
+    q = db.query(Transaction).filter(Transaction.user_id == user.id)
     if type:
         q = q.filter(Transaction.type == type)
     if category_id:
@@ -34,11 +36,11 @@ def list_transactions(
 
 
 @router.post("", response_model=TransactionOut)
-def create_transaction(payload: TransactionCreate, db: Session = Depends(get_db)):
+def create_transaction(payload: TransactionCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     cat = db.query(Category).filter(Category.id == payload.category_id).first()
     if not cat:
         raise HTTPException(404, "Category not found")
-    tx = Transaction(**payload.model_dump())
+    tx = Transaction(**payload.model_dump(), user_id=user.id)
     db.add(tx)
     db.commit()
     db.refresh(tx)
@@ -46,8 +48,8 @@ def create_transaction(payload: TransactionCreate, db: Session = Depends(get_db)
 
 
 @router.put("/{tx_id}", response_model=TransactionOut)
-def update_transaction(tx_id: int, payload: TransactionUpdate, db: Session = Depends(get_db)):
-    tx = db.query(Transaction).filter(Transaction.id == tx_id).first()
+def update_transaction(tx_id: int, payload: TransactionUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    tx = db.query(Transaction).filter(Transaction.id == tx_id, Transaction.user_id == user.id).first()
     if not tx:
         raise HTTPException(404, "Transaction not found")
     for field, value in payload.model_dump(exclude_unset=True).items():
@@ -58,8 +60,8 @@ def update_transaction(tx_id: int, payload: TransactionUpdate, db: Session = Dep
 
 
 @router.delete("/{tx_id}")
-def delete_transaction(tx_id: int, db: Session = Depends(get_db)):
-    tx = db.query(Transaction).filter(Transaction.id == tx_id).first()
+def delete_transaction(tx_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    tx = db.query(Transaction).filter(Transaction.id == tx_id, Transaction.user_id == user.id).first()
     if not tx:
         raise HTTPException(404, "Transaction not found")
     db.delete(tx)

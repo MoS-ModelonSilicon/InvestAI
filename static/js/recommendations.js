@@ -1,4 +1,5 @@
 let allocChart = null;
+let _recsData = null;
 
 async function loadRecommendations() {
     const container = document.getElementById("recs-container");
@@ -18,6 +19,7 @@ async function loadRecommendations() {
 
 function renderRecommendations(data) {
     const container = document.getElementById("recs-container");
+    _recsData = data;
 
     const allocHtml = `
         <div class="recs-top">
@@ -39,17 +41,24 @@ function renderRecommendations(data) {
         </div>`;
 
     const filterTabs = `
-        <div class="rec-tabs">
-            <button class="rec-tab active" onclick="filterRecs('all', this)">All (${data.recommendations.length})</button>
-            <button class="rec-tab" onclick="filterRecs('Stock', this)">Stocks</button>
-            <button class="rec-tab" onclick="filterRecs('ETF', this)">ETFs</button>
+        <div class="rec-tabs" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;gap:4px;">
+                <button class="rec-tab active" onclick="filterRecs('all', this)">All (${data.recommendations.length})</button>
+                <button class="rec-tab" onclick="filterRecs('Stock', this)">Stocks</button>
+                <button class="rec-tab" onclick="filterRecs('ETF', this)">ETFs</button>
+            </div>
+            <button class="bundle-buy-btn" onclick="buyRecommendationsBundle()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Buy All as Bundle
+            </button>
         </div>`;
 
     const cards = data.recommendations.map((r) => {
         const riskColors = { Low: "var(--green)", Medium: "#eab308", High: "var(--red)" };
         const matchColor = r.match_score >= 75 ? "var(--green)" : r.match_score >= 50 ? "#eab308" : "var(--red)";
+        const safeName = (r.name || "").replace(/'/g, "\\'");
         return `
-        <div class="rec-card" data-asset-type="${r.asset_type}">
+        <div class="rec-card" data-asset-type="${r.asset_type}" data-symbol="${r.symbol}" data-stock-name="${(r.name||"").replace(/"/g,'&quot;')}" data-stock-price="${r.price}">
             <div class="rec-card-header">
                 <div>
                     <div class="rec-symbol">${r.symbol}</div>
@@ -69,6 +78,11 @@ function renderRecommendations(data) {
                 <div><span class="metric-label">Beta ${helpIcon("beta")}</span><span class="metric-value">${r.beta != null ? r.beta.toFixed(2) : "—"}</span></div>
             </div>
             <div class="rec-reason">${r.reason}</div>
+            <div class="rec-actions" style="display:flex;gap:8px;margin-top:10px;">
+                <button class="btn btn-sm btn-primary" onclick="openAddHoldingModal('${r.symbol}','${safeName}',${r.price})" title="Add to portfolio">+ Portfolio</button>
+                <button class="btn btn-sm" onclick="addToWatchlistFromDetail('${r.symbol}','${safeName}')" title="Add to watchlist">+ Watch</button>
+                <button class="btn btn-sm" onclick="navigateToStock('${r.symbol}')" title="View details">📈 Details</button>
+            </div>
         </div>`;
     }).join("");
 
@@ -100,4 +114,18 @@ function filterRecs(type, btn) {
     document.querySelectorAll(".rec-card").forEach((c) => {
         c.style.display = (type === "all" || c.dataset.assetType === type) ? "" : "none";
     });
+}
+
+function buyRecommendationsBundle() {
+    if (!_recsData || !_recsData.recommendations || _recsData.recommendations.length === 0) {
+        if (typeof showToast === "function") showToast("No recommendations to buy", "info");
+        return;
+    }
+    const stocks = _recsData.recommendations.map(r => ({
+        symbol: r.symbol,
+        name: r.name,
+        price: r.price,
+        allocation_pct: r.match_score,
+    }));
+    buyStockBundle(stocks);
 }

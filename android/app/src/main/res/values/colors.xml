@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#6366F1</color>
+    <color name="primary_hover">#818CF8</color>
+    <color name="surface">#0F1117</color>
+    <color name="surface_container">#1A1D2E</color>
+    <color name="surface_container_high">#222640</color>
+    <color name="surface_container_lowest">#141622</color>
+    <color name="outline_variant">#2A2D3E</color>
+    <color name="on_surface">#E4E4E7</color>
+    <color name="on_surface_variant">#8B8FA3</color>
+    <color name="gain">#22C55E</color>
+    <color name="gain_bg">#1A22C55E</color>
+    <color name="loss">#EF4444</color>
+    <color name="loss_bg">#1AEF4444</color>
+    <color name="blue_info">#3B82F6</color>
+    <color name="blue_bg">#1A3B82F6</color>
+    <color name="caution">#EAB308</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="splash_bg">#0F1117</color>
+</resources>
