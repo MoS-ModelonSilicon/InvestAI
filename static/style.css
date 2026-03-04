@@ -67,6 +67,28 @@
 .theme-toggle .icon-moon { display: block; }
 [data-theme="light"] .theme-toggle .icon-sun  { display: block; }
 [data-theme="light"] .theme-toggle .icon-moon { display: none; }
+/* Light theme overrides for hardcoded elements */
+[data-theme="light"] .help-tooltip-content {
+    background: #ffffff;
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+[data-theme="light"] .sidebar-overlay.open {
+    background: rgba(0, 0, 0, 0.2);
+}
+[data-theme="light"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.3);
+}
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+    background: var(--bg);
+    border-color: var(--border);
+    color: var(--text);
+}
+[data-theme="light"] input::placeholder {
+    color: #9ca3af;
+}
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
