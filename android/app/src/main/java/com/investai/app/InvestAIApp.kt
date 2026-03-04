@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -58,7 +59,7 @@ fun InvestAIApp(
                 NavigationBar(
                     containerColor = SurfaceContainerLowest,
                     contentColor = OnSurface,
-                    tonalElevation = androidx.compose.ui.unit.dp.times(0),
+                    tonalElevation = 0.dp,
                 ) {
                     bottomNavItems.forEach { item ->
                         val selected = navBackStackEntry?.destination?.hierarchy?.any {

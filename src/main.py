@@ -82,6 +82,8 @@ class RegisterBody(BaseModel):
 
 @app.post("/auth/register")
 def do_register(body: RegisterBody):
+    if len(body.password) < 4:
+        return JSONResponse(status_code=400, content={"detail": "Password must be at least 4 characters"})
     db: Session = next(get_db())
     try:
         existing = db.query(User).filter(User.email == body.email.lower().strip()).first()

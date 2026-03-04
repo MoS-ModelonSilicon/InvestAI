@@ -56,9 +56,8 @@ fun PortfolioScreen(
             selectedTabIndex = state.selectedTab,
             containerColor = Surface,
             contentColor = OnSurface,
-            indicator = { tabPositions ->
+            indicator = {
                 TabRowDefaults.SecondaryIndicator(
-                    Modifier.tabIndicatorOffset(tabPositions[state.selectedTab]),
                     color = Primary,
                 )
             },

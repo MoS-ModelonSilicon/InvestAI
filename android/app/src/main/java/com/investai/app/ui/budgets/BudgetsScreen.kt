@@ -71,8 +71,8 @@ fun BudgetsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         ProgressRing(
-                            progress = pct,
-                            color = if (overBudget) Loss else Primary,
+                            percent = (pct * 100).toDouble(),
+                            label = budget.categoryName,
                             size = 48.dp,
                             strokeWidth = 4.dp,
                         )

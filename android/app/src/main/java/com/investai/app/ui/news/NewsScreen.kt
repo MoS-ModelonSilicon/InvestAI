@@ -72,7 +72,7 @@ fun NewsScreen(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Primary,
                             )
-                            news.publishedAt?.let { time ->
+                            news.published.takeIf { it.isNotBlank() }?.let { time ->
                                 Text(
                                     time,
                                     style = MaterialTheme.typography.labelSmall,

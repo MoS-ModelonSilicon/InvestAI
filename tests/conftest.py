@@ -18,7 +18,9 @@ os.environ["NO_PROXY"] = "127.0.0.1,localhost"
 os.environ["no_proxy"] = "127.0.0.1,localhost"
 
 BASE_URL = "http://127.0.0.1:8091"
-ACCESS_KEY = "intel2026"
+TEST_USER_EMAIL = "testuser@e2e.local"
+TEST_USER_PASSWORD = "TestPass123"
+TEST_USER_NAME = "E2E Tester"
 SERVER_STARTUP_TIMEOUT = 30  # seconds
 
 
@@ -85,9 +87,16 @@ def browser_context_args():
 
 @pytest.fixture()
 def authenticated_page(page: Page, live_url: str) -> Page:
-    """Navigate to the site and log in, returning a page on the dashboard."""
+    """Register (if needed) and log in a test user, returning a page on the dashboard."""
+    import requests
+    # Ensure the test user exists (ignore 400 if already registered)
+    requests.post(
+        f"{live_url}/auth/register",
+        json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD, "name": TEST_USER_NAME},
+    )
     page.goto(f"{live_url}/login", wait_until="domcontentloaded", timeout=60_000)
-    page.fill("#access-key", ACCESS_KEY)
+    page.fill("#login-email", TEST_USER_EMAIL)
+    page.fill("#login-password", TEST_USER_PASSWORD)
     page.click("#login-btn")
     page.wait_for_url(f"{live_url}/", timeout=60_000)
     page.wait_for_load_state("domcontentloaded")

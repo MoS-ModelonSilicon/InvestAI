@@ -30,9 +30,9 @@ class TestSiteLoads:
 
     def test_login_page_loads(self, page: Page, live_url: str, _live_server):
         page.goto(f"{live_url}/login", wait_until="domcontentloaded")
-        expect(page.locator("h2")).to_have_text("Welcome")
-        expect(page.locator("#access-key")).to_be_visible()
-        expect(page.locator("#login-btn")).to_have_text("Unlock")
+        expect(page.locator(".tab-btn")).to_have_count(2)
+        expect(page.locator("#login-email")).to_be_visible()
+        expect(page.locator("#login-btn")).to_have_text("Sign In")
 
     def test_unauthenticated_redirect(self, page: Page, live_url: str, _live_server):
         page.goto(live_url, wait_until="domcontentloaded")
@@ -50,23 +50,30 @@ class TestSiteLoads:
 class TestLogin:
 
     def test_successful_login(self, page: Page, live_url: str, _live_server):
+        import requests
+        requests.post(
+            f"{live_url}/auth/register",
+            json={"email": "login_test@e2e.local", "password": "Pass1234", "name": "Login Tester"},
+        )
         page.goto(f"{live_url}/login", wait_until="domcontentloaded")
-        page.fill("#access-key", "intel2026")
+        page.fill("#login-email", "login_test@e2e.local")
+        page.fill("#login-password", "Pass1234")
         page.click("#login-btn")
         page.wait_for_url(f"{live_url}/", timeout=15_000)
         expect(page).to_have_title("InvestAI")
         expect(page.locator("nav.sidebar")).to_be_visible()
 
-    def test_wrong_key_shows_error(self, page: Page, live_url: str, _live_server):
+    def test_wrong_password_shows_error(self, page: Page, live_url: str, _live_server):
         page.goto(f"{live_url}/login", wait_until="domcontentloaded")
-        page.fill("#access-key", "wrongkey")
+        page.fill("#login-email", "nonexistent@e2e.local")
+        page.fill("#login-password", "wrongpassword")
         page.click("#login-btn")
-        page.wait_for_selector("#error-msg:not(:empty)", timeout=5_000)
-        expect(page.locator("#error-msg")).to_contain_text("Invalid access key")
+        page.wait_for_selector("#login-error:not(:empty)", timeout=5_000)
+        expect(page.locator("#login-error")).to_contain_text("Invalid")
 
     def test_logout_returns_to_login(self, authenticated_page: Page, live_url: str):
         authenticated_page.goto(f"{live_url}/auth/logout", wait_until="domcontentloaded")
-        expect(authenticated_page.locator("#access-key")).to_be_visible()
+        expect(authenticated_page.locator("#login-email")).to_be_visible()
 
 
 # ────────────────────────────────────────────
@@ -670,4 +677,172 @@ class TestILFundsFlow:
         assert len(html) > 20, (
             f"Kaspit highlight / best deals section is empty. "
             f"HTML: {html[:300]}"
+        )
+
+
+# ════════════════════════════════════════════
+#  Multi-User — registration, auth, isolation
+# ════════════════════════════════════════════
+
+import requests as _requests   # noqa: E402  (import here to keep existing order)
+
+
+class TestRegistration:
+    """Registration flow via the UI and API."""
+
+    def test_register_new_user_via_ui(self, page: Page, live_url: str, _live_server):
+        """Register a brand-new user through the browser form."""
+        import uuid
+        unique = uuid.uuid4().hex[:8]
+        page.goto(f"{live_url}/login", wait_until="domcontentloaded")
+        # Switch to the Register tab
+        page.locator(".tab-btn", has_text="Register").click()
+        page.wait_for_timeout(500)
+        page.fill("#reg-name", "UI Tester")
+        page.fill("#reg-email", f"uitester_{unique}@e2e.local")
+        page.fill("#reg-password", "UiPass99")
+        page.click("#reg-btn")
+        # After successful registration the JS sets window.location.href = "/"
+        page.wait_for_selector("nav.sidebar", timeout=30_000)
+        expect(page).to_have_title("InvestAI")
+
+    def test_duplicate_email_rejected(self, page: Page, live_url: str, _live_server):
+        """Registering the same email twice should show an error."""
+        _requests.post(
+            f"{live_url}/auth/register",
+            json={"email": "dup@e2e.local", "password": "Pass1234", "name": "First"},
+        )
+        page.goto(f"{live_url}/login", wait_until="domcontentloaded")
+        page.locator(".tab-btn", has_text="Register").click()
+        page.fill("#reg-name", "Second")
+        page.fill("#reg-email", "dup@e2e.local")
+        page.fill("#reg-password", "Pass1234")
+        page.click("#reg-btn")
+        page.wait_for_selector("#reg-error:not(:empty)", timeout=5_000)
+        expect(page.locator("#reg-error")).to_contain_text("already registered")
+
+    def test_register_short_password_rejected(self, page: Page, live_url: str, _live_server):
+        """A password shorter than 4 chars should be rejected by the API."""
+        resp = _requests.post(
+            f"{live_url}/auth/register",
+            json={"email": "short@e2e.local", "password": "ab", "name": "Short"},
+        )
+        assert resp.status_code in (400, 422), (
+            f"Expected 400/422 for short password, got {resp.status_code}"
+        )
+
+
+class TestAuthMe:
+    """JWT /auth/me endpoint returns the logged-in user's info."""
+
+    def test_me_returns_user_info(self, authenticated_page: Page, live_url: str):
+        data = authenticated_page.evaluate("""
+            async () => {
+                const r = await fetch('/auth/me');
+                return r.ok ? await r.json() : null;
+            }
+        """)
+        assert data is not None, "/auth/me did not return 200"
+        assert data.get("email"), f"/auth/me response missing email: {data}"
+
+    def test_me_unauthenticated_returns_redirect(self, live_url: str, _live_server):
+        resp = _requests.get(f"{live_url}/auth/me", allow_redirects=False)
+        assert resp.status_code in (401, 307, 302), (
+            f"Expected 401 or redirect for unauthenticated /auth/me, got {resp.status_code}"
+        )
+
+
+class TestMultiUserIsolation:
+    """
+    Core multi-user test: two users should NOT see each other's data.
+    Uses the API directly with session cookies for speed and reliability.
+    """
+
+    @staticmethod
+    def _session_for(base: str, email: str, password: str, name: str) -> _requests.Session:
+        """Register (idempotent) + login, return a requests.Session with the JWT cookie."""
+        s = _requests.Session()
+        s.post(f"{base}/auth/register", json={"email": email, "password": password, "name": name})
+        resp = s.post(f"{base}/auth/login", json={"email": email, "password": password})
+        assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+        return s
+
+    # ── watchlist isolation ──────────────────
+    def test_watchlist_isolation(self, live_url: str, _live_server):
+        """User A adds a symbol to watchlist; User B's watchlist must not contain it."""
+        import uuid
+        tag = uuid.uuid4().hex[:6]
+        s_a = self._session_for(live_url, f"alice_wl_{tag}@e2e.local", "Alice123", "Alice")
+        s_b = self._session_for(live_url, f"bob_wl_{tag}@e2e.local",   "Bob12345", "Bob")
+
+        # User A adds NVDA (symbol is a query param)
+        resp = s_a.post(f"{live_url}/api/screener/watchlist", params={"symbol": "NVDA"})
+        assert resp.status_code == 200, f"A add NVDA failed: {resp.text}"
+
+        # User B's watchlist should be empty (or at least not contain NVDA)
+        resp_b = s_b.get(f"{live_url}/api/screener/watchlist")
+        assert resp_b.status_code == 200
+        symbols_b = [item.get("symbol", "") for item in resp_b.json()]
+        assert "NVDA" not in symbols_b, (
+            f"User B can see User A's watchlist item NVDA! B's watchlist: {symbols_b}"
+        )
+
+    # ── holdings/portfolio isolation ─────────
+    def test_portfolio_isolation(self, live_url: str, _live_server):
+        """User A adds a GOOG holding; User B should not see it."""
+        import uuid
+        tag = uuid.uuid4().hex[:6]
+        s_a = self._session_for(live_url, f"alice_pf_{tag}@e2e.local", "Alice123", "Alice PF")
+        s_b = self._session_for(live_url, f"bob_pf_{tag}@e2e.local",   "Bob12345", "Bob PF")
+
+        s_a.post(f"{live_url}/api/portfolio/holdings", json={
+            "symbol": "GOOG", "name": "Alphabet", "quantity": 5,
+            "buy_price": 170.0, "buy_date": "2025-01-01",
+        })
+
+        resp_b = s_b.get(f"{live_url}/api/portfolio/holdings")
+        assert resp_b.status_code == 200
+        holdings = resp_b.json()
+        symbols_b = [h.get("symbol", "") for h in holdings] if isinstance(holdings, list) else []
+        assert "GOOG" not in symbols_b, (
+            f"User B can see User A's GOOG holding! B's portfolio: {symbols_b}"
+        )
+
+    # ── transactions isolation ───────────────
+    def test_transactions_isolation(self, live_url: str, _live_server):
+        """User A creates a transaction; User B should not see it."""
+        import uuid
+        tag = uuid.uuid4().hex[:6]
+        s_a = self._session_for(live_url, f"alice_tx_{tag}@e2e.local", "Alice123", "Alice TX")
+        s_b = self._session_for(live_url, f"bob_tx_{tag}@e2e.local",   "Bob12345", "Bob TX")
+
+        s_a.post(f"{live_url}/api/transactions", json={
+            "type": "expense", "amount": 42.0,
+            "date": "2025-06-01", "description": "Alice secret purchase",
+        })
+
+        resp_b = s_b.get(f"{live_url}/api/transactions")
+        assert resp_b.status_code == 200
+        descs = [t.get("description", "") for t in resp_b.json()]
+        assert "Alice secret purchase" not in descs, (
+            f"User B can see User A's transaction! B's txns: {descs}"
+        )
+
+    # ── alerts isolation ─────────────────────
+    def test_alerts_isolation(self, live_url: str, _live_server):
+        """User A creates an alert; User B should not see it."""
+        import uuid
+        tag = uuid.uuid4().hex[:6]
+        s_a = self._session_for(live_url, f"alice_al_{tag}@e2e.local", "Alice123", "Alice AL")
+        s_b = self._session_for(live_url, f"bob_al_{tag}@e2e.local",   "Bob12345", "Bob AL")
+
+        s_a.post(f"{live_url}/api/alerts", json={
+            "symbol": "AMC", "condition": "above", "target_price": 999.0,
+        })
+
+        resp_b = s_b.get(f"{live_url}/api/alerts")
+        assert resp_b.status_code == 200
+        symbols_b = [a.get("symbol", "") for a in resp_b.json()]
+        assert "AMC" not in symbols_b, (
+            f"User B can see User A's AMC alert! B's alerts: {symbols_b}"
         )

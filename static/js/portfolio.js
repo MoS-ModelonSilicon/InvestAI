@@ -43,11 +43,15 @@ function renderPortfolio(data) {
     <div class="pf-grid-2col">
         <div class="pf-section">
             <h3>Sector Allocation</h3>
-            <canvas id="pf-alloc-chart" height="200"></canvas>
+            <div class="pf-chart-wrap">
+                <canvas id="pf-alloc-chart"></canvas>
+            </div>
         </div>
         <div class="pf-section">
             <h3>Performance vs S&P 500</h3>
-            <canvas id="pf-perf-chart" height="200"></canvas>
+            <div class="pf-chart-wrap">
+                <canvas id="pf-perf-chart"></canvas>
+            </div>
             <div class="pf-perf-loading" id="pf-perf-loading" style="display:none;"><div class="spinner" style="width:20px;height:20px;border-width:2px;"></div> Loading performance data...</div>
         </div>
     </div>
@@ -149,7 +153,8 @@ function renderPerfChart(data) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 1.8,
             plugins: {
                 legend: { position: "top", labels: { color: "#8b8fa3", font: { size: 11 } } },
                 tooltip: { mode: "index", intersect: false, callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y > 0 ? "+" : ""}${ctx.parsed.y.toFixed(1)}%` } },

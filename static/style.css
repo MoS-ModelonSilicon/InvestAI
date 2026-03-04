@@ -1755,6 +1755,17 @@ body {
 
 .pf-section h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
 
+.pf-chart-wrap {
+    position: relative;
+    width: 100%;
+    max-height: 280px;
+    overflow: hidden;
+}
+
+.pf-chart-wrap canvas {
+    max-height: 280px;
+}
+
 .pf-perf-loading {
     display: flex;
     align-items: center;
