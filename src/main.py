@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
@@ -267,7 +267,7 @@ def reset_password(body: ResetPasswordBody):
 
 @app.get("/auth/logout")
 def do_logout():
-    resp = FileResponse("static/login.html")
+    resp = RedirectResponse(url="/login", status_code=302)
     resp.delete_cookie(key=COOKIE_NAME, path="/")
     return resp
 

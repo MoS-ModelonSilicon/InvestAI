@@ -15,6 +15,12 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Optional
 
+# ── Candle cache: daily candles barely change, avoid re-fetching every scan ──
+_candle_cache: dict[str, tuple[float, dict]] = {}
+_candle_cache_lock = threading.Lock()
+CANDLE_CACHE_TTL = 1800  # 30 min for daily candles
+CANDLE_CACHE_MAX = 500
+
 logger = logging.getLogger(__name__)
 
 # ── Suppress noisy yfinance / peewee / urllib3 loggers ──────
@@ -266,10 +272,31 @@ def get_metrics(symbol: str) -> Optional[dict]:
 
 
 def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optional[dict]:
+    # Check candle cache first (daily candles are stable)
+    if resolution == "D":
+        cache_key = f"{symbol}:{from_ts}:{to_ts}"
+        with _candle_cache_lock:
+            if cache_key in _candle_cache:
+                ts, data = _candle_cache[cache_key]
+                if time.time() - ts < CANDLE_CACHE_TTL:
+                    return data
+
     result = _try_yahoo_candles(symbol, resolution, from_ts, to_ts)
-    if result:
-        return result
-    return fh.get_candles(symbol, resolution, from_ts, to_ts)
+    if not result:
+        result = fh.get_candles(symbol, resolution, from_ts, to_ts)
+
+    # Cache daily candles
+    if result and resolution == "D":
+        cache_key = f"{symbol}:{from_ts}:{to_ts}"
+        with _candle_cache_lock:
+            _candle_cache[cache_key] = (time.time(), result)
+            # Evict if too large
+            if len(_candle_cache) > CANDLE_CACHE_MAX:
+                oldest = sorted(_candle_cache.items(), key=lambda x: x[1][0])
+                for k, _ in oldest[:100]:
+                    del _candle_cache[k]
+
+    return result
 
 
 def get_company_news(symbol: str, days_back: int = 7) -> list[dict]:

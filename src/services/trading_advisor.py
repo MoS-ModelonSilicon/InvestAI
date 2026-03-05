@@ -28,7 +28,7 @@ from src.services.market_data import (
 logger = logging.getLogger(__name__)
 
 CANDLE_LOOKBACK_DAYS = 420
-_MAX_WORKERS = 2 if _LOW_MEMORY else 4
+_MAX_WORKERS = 3 if _LOW_MEMORY else 8
 SCAN_CACHE_TTL = 1800  # 30 min
 
 # Benchmark candles for relative strength (cached per scan)
@@ -361,7 +361,13 @@ def _run_background_scan():
 
         fundamentals = fetch_batch(ALL_UNIVERSE, cached_only=True)
         fund_map = {d["symbol"]: d for d in fundamentals if d.get("price", 0) > 0}
-        symbols = list(fund_map.keys())
+
+        # Prioritize: scan large-cap / popular stocks first for faster initial picks
+        from src.services.market_data import WARM_PRIORITY
+        priority_set = set(WARM_PRIORITY)
+        priority_syms = [s for s in fund_map if s in priority_set]
+        rest_syms = [s for s in fund_map if s not in priority_set]
+        symbols = priority_syms + rest_syms
         total = len(symbols)
 
         with _scan_lock:
@@ -379,9 +385,11 @@ def _run_background_scan():
         from_ts = to_ts - CANDLE_LOOKBACK_DAYS * 86400
         all_picks: list[dict] = []
 
-        BATCH = 8
+        BATCH = 16
+        batch_num = 0
         for batch_start in range(0, len(symbols), BATCH):
             batch_syms = symbols[batch_start:batch_start + BATCH]
+            batch_num += 1
 
             def _fetch(sym):
                 try:
@@ -403,11 +411,13 @@ def _run_background_scan():
             # Cap stored picks to top 50 — API only shows 30, save memory
             all_picks = all_picks[:50]
 
-            momentum = _build_momentum_package(all_picks)
-            swing = _build_swing_package(all_picks)
-            oversold = _build_oversold_package(all_picks)
-            hidden = _build_hidden_gems_package(all_picks)
-            institutional = _build_institutional_package(all_picks)
+            # Rebuild packages on 1st batch (fast initial results), every 3rd batch, and last batch
+            if batch_num <= 2 or batch_num % 3 == 0 or batch_start + BATCH >= len(symbols):
+                momentum = _build_momentum_package(all_picks)
+                swing = _build_swing_package(all_picks)
+                oversold = _build_oversold_package(all_picks)
+                hidden = _build_hidden_gems_package(all_picks)
+                institutional = _build_institutional_package(all_picks)
 
             bull = sum(1 for p in all_picks if p["verdict"] in ("Strong Buy", "Buy"))
             bear = sum(1 for p in all_picks if p["verdict"] in ("Sell", "Strong Sell"))
@@ -416,13 +426,15 @@ def _run_background_scan():
 
             with _scan_lock:
                 _scan_cache["all_picks"] = list(all_picks)
-                _scan_cache["packages"] = {
-                    "hidden": hidden,
-                    "institutional": institutional,
-                    "momentum": momentum,
-                    "swing": swing,
-                    "oversold": oversold,
-                }
+                # Only update packages when they've been rebuilt
+                if batch_num <= 2 or batch_num % 3 == 0 or batch_start + BATCH >= len(symbols):
+                    _scan_cache["packages"] = {
+                        "hidden": hidden,
+                        "institutional": institutional,
+                        "momentum": momentum,
+                        "swing": swing,
+                        "oversold": oversold,
+                    }
                 _scan_cache["market_mood"] = {
                     "bullish": round(bull / total_so_far * 100),
                     "neutral": round(neut / total_so_far * 100),
@@ -473,9 +485,13 @@ def start_trading_advisor():
     from src.services.market_data import _warm_done
 
     def _loop():
-        logger.info("Trading advisor: waiting for cache warmer...")
-        _warm_done.wait()
-        logger.info("Trading advisor: cache warm, starting first scan")
+        logger.info("Trading advisor: waiting for cache warmer (phase 1 only)...")
+        # Wait up to 60s for phase 1 of cache warm, then proceed anyway
+        _warm_done.wait(timeout=60)
+        if _warm_done.is_set():
+            logger.info("Trading advisor: cache warm, starting first scan")
+        else:
+            logger.info("Trading advisor: timed out waiting for cache warm, starting scan with available data")
         while True:
             _ensure_scan_running()
             for _ in range(600):

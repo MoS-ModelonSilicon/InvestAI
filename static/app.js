@@ -38,7 +38,7 @@ const api = {
 const fmt = (n) => "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // ── Navigation ───────────────────────────────────────────────
-document.querySelectorAll(".nav-link").forEach((link) => {
+document.querySelectorAll(".nav-link[data-page]").forEach((link) => {
     link.addEventListener("click", (e) => {
         e.preventDefault();
         const page = link.dataset.page;

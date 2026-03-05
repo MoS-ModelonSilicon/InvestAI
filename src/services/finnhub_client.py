@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 API_KEY = os.environ.get("FINNHUB_API_KEY", "")
 BASE_URL = "https://finnhub.io/api/v1"
 
+if not API_KEY:
+    logger.info("FINNHUB_API_KEY not set — Finnhub disabled, using Yahoo only")
+
 _USE_PROXY = os.environ.get("USE_INTEL_PROXY", "").lower() in ("1", "true", "yes")
 PROXIES = {
     "http": "http://proxy-dmz.intel.com:911",
@@ -25,36 +28,41 @@ _RATE_LIMIT = 55
 
 
 def _rate_limit():
-    with _rate_lock:
-        now = time.time()
-        _call_times[:] = [t for t in _call_times if now - t < 60]
-        if len(_call_times) >= _RATE_LIMIT:
-            sleep_time = 60 - (now - _call_times[0]) + 0.5
-            if sleep_time > 0:
-                time.sleep(sleep_time)
-        _call_times.append(time.time())
+    while True:
+        with _rate_lock:
+            now = time.time()
+            _call_times[:] = [t for t in _call_times if now - t < 60]
+            if len(_call_times) < _RATE_LIMIT:
+                _call_times.append(now)
+                return  # slot acquired
+            sleep_time = 60 - (now - _call_times[0]) + 0.1
+        # Sleep OUTSIDE the lock so other threads aren't blocked
+        if sleep_time > 0:
+            time.sleep(sleep_time)
 
 
 def _get(endpoint: str, params: dict | None = None) -> dict | list | None:
     if not API_KEY:
-        logger.warning("FINNHUB_API_KEY not set")
         return None
-    _rate_limit()
     p = params or {}
     p["token"] = API_KEY
-    try:
-        resp = requests.get(f"{BASE_URL}{endpoint}", params=p, timeout=15, proxies=PROXIES)
-        if resp.status_code == 403:
+    for attempt in range(4):  # max 4 attempts (avoid recursive stack overflow)
+        _rate_limit()
+        try:
+            resp = requests.get(f"{BASE_URL}{endpoint}", params=p, timeout=15, proxies=PROXIES)
+            if resp.status_code == 403:
+                return None
+            if resp.status_code == 429:
+                wait = 5 * (attempt + 1)
+                logger.warning("Finnhub rate limit hit (attempt %d), sleeping %ds", attempt + 1, wait)
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            logger.warning("Finnhub %s error: %s", endpoint, e)
             return None
-        if resp.status_code == 429:
-            logger.warning("Finnhub rate limit hit, sleeping 5s")
-            time.sleep(5)
-            return _get(endpoint, params)
-        resp.raise_for_status()
-        return resp.json()
-    except Exception as e:
-        logger.warning("Finnhub %s error: %s", endpoint, e)
-        return None
+    return None
 
 
 def get_quote(symbol: str) -> dict | None:

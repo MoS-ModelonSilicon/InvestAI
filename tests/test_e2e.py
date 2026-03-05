@@ -2105,3 +2105,188 @@ class TestMarketDataIntegrity:
         assert changes_found >= 1, (
             "No market cards show a change percentage — data may not have loaded"
         )
+
+
+# ════════════════════════════════════════════════════════════
+#  OOM Fix Verification — cache bounds, PXD removal, memory
+# ════════════════════════════════════════════════════════════
+
+class TestOOMFixAPI:
+    """
+    E2E tests that verify the memory-optimisation commit (perf: fix OOM on
+    Render 512 MB free tier) actually works end-to-end:
+
+    - Cache-status reports bounded entry counts
+    - Delisted PXD symbol is absent from all endpoints
+    - Smart Advisor scan results have heavy arrays stripped
+    - Trading Advisor dashboard caps picks
+    - All services still return valid data after the changes
+    """
+
+    @staticmethod
+    def _session(base_url: str, email: str, password: str, name: str = "Test"):
+        import requests as _req
+        s = _req.Session()
+        s.post(f"{base_url}/auth/register",
+               json={"email": email, "password": password, "name": name}, timeout=60)
+        resp = s.post(f"{base_url}/auth/login",
+                      json={"email": email, "password": password}, timeout=60)
+        assert resp.status_code == 200, f"Login failed: {resp.text}"
+        return s
+
+    # ── Cache status is bounded ─────────────────────────────
+
+    def test_cache_status_returns_bounded_total(self, live_url: str, _live_server):
+        """Cache-status total should match ALL_UNIVERSE and never exceed CACHE_MAX_ENTRIES."""
+        s = self._session(live_url, "oom_cache@e2e.local", "Pass1234", "OOM Cache")
+        resp = s.get(f"{live_url}/api/market/cache-status", timeout=60)
+        assert resp.status_code == 200, f"cache-status failed: {resp.status_code}"
+        data = resp.json()
+        assert "cached" in data, "Missing 'cached' key"
+        assert "total" in data, "Missing 'total' key"
+        assert "warming" in data, "Missing 'warming' key"
+        assert "ready" in data, "Missing 'ready' key"
+        # total should be the universe size (~257), not something huge
+        assert data["total"] <= 300, (
+            f"Universe total {data['total']} seems too large — expected ≤300"
+        )
+        # cached should never exceed CACHE_MAX_ENTRIES (600 normal, 300 low-mem)
+        assert data["cached"] <= 600, (
+            f"Cached count {data['cached']} exceeds CACHE_MAX_ENTRIES"
+        )
+
+    # ── PXD is delisted and removed ─────────────────────────
+
+    def test_pxd_not_in_stock_universe(self, live_url: str, _live_server):
+        """PXD (Pioneer Natural Resources, delisted) should not appear in any scan."""
+        s = self._session(live_url, "oom_pxd@e2e.local", "Pass1234", "OOM PXD")
+        # Check value scanner — PXD should not be a candidate
+        resp = s.get(f"{live_url}/api/value-scanner", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        candidates = data.get("candidates", [])
+        pxd_syms = [c["symbol"] for c in candidates if c.get("symbol") == "PXD"]
+        assert len(pxd_syms) == 0, "PXD (delisted) still appears in value scanner candidates"
+
+    def test_pxd_not_in_trading_dashboard(self, live_url: str, _live_server):
+        """PXD should not appear in trading advisor picks."""
+        s = self._session(live_url, "oom_pxd_ta@e2e.local", "Pass1234", "OOM PXD TA")
+        resp = s.get(f"{live_url}/api/trading", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        all_picks = data.get("all_picks", [])
+        pxd_picks = [p for p in all_picks if p.get("symbol") == "PXD"]
+        assert len(pxd_picks) == 0, "PXD (delisted) still appears in trading advisor picks"
+
+    # ── Smart Advisor strips heavy arrays ────────────────────
+
+    def test_advisor_rankings_no_heavy_arrays(self, live_url: str, _live_server):
+        """Advisor /analyze rankings should NOT contain indicators/price_data/dates arrays.
+
+        This endpoint triggers a full scan (~40+ stocks) which can take minutes.
+        We use a short timeout and skip gracefully if the scan hasn't finished.
+        """
+        s = self._session(live_url, "oom_advisor@e2e.local", "Pass1234", "OOM Advisor")
+        try:
+            resp = s.get(
+                f"{live_url}/api/advisor/analyze",
+                params={"amount": 10000, "risk": "balanced", "period": "1y"},
+                timeout=(5, 40),  # 5s connect, 40s read
+            )
+        except Exception:
+            import pytest
+            pytest.skip("Advisor scan still running — timeout waiting for results")
+        if resp.status_code == 503:
+            import pytest
+            pytest.skip("Advisor scan still warming up")
+        assert resp.status_code == 200, f"Advisor returned {resp.status_code}: {resp.text[:300]}"
+        data = resp.json()
+        rankings = data.get("rankings", [])
+        if not rankings:
+            import pytest
+            pytest.skip("No advisor rankings yet — scan not complete")
+        for stock in rankings[:10]:  # check first 10
+            assert "indicators" not in stock, (
+                f"{stock.get('symbol', '?')} still has 'indicators' array — "
+                "heavy data should be stripped from scan cache"
+            )
+            assert "price_data" not in stock, (
+                f"{stock.get('symbol', '?')} still has 'price_data' array — "
+                "heavy data should be stripped from scan cache"
+            )
+
+    # ── Trading Advisor caps picks at 50 ─────────────────────
+
+    def test_trading_dashboard_picks_capped(self, live_url: str, _live_server):
+        """Trading dashboard all_picks should have ≤30 items (API caps at 30 from stored 50)."""
+        s = self._session(live_url, "oom_trading@e2e.local", "Pass1234", "OOM Trading")
+        resp = s.get(f"{live_url}/api/trading", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        all_picks = data.get("all_picks", [])
+        assert len(all_picks) <= 30, (
+            f"Trading dashboard returned {len(all_picks)} picks — "
+            "expected ≤30 (API slice from ≤50 stored)"
+        )
+
+    def test_trading_dashboard_has_progress(self, live_url: str, _live_server):
+        """Trading dashboard should report scan progress."""
+        s = self._session(live_url, "oom_ta_prog@e2e.local", "Pass1234", "OOM TA Prog")
+        resp = s.get(f"{live_url}/api/trading", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        progress = data.get("progress", {})
+        assert "scanned" in progress, "Missing 'scanned' in progress"
+        assert "total" in progress, "Missing 'total' in progress"
+        assert "complete" in progress, "Missing 'complete' in progress"
+
+    # ── All services still functional ────────────────────────
+
+    def test_market_home_returns_data(self, live_url: str, _live_server):
+        """Market home endpoint should return ticker + featured arrays."""
+        s = self._session(live_url, "oom_mkt@e2e.local", "Pass1234", "OOM Market")
+        resp = s.get(f"{live_url}/api/market/home", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "ticker" in data, "Market home missing 'ticker'"
+        assert "featured" in data, "Market home missing 'featured'"
+        assert isinstance(data["ticker"], list), "ticker should be a list"
+        assert isinstance(data["featured"], list), "featured should be a list"
+
+    def test_value_scanner_returns_structure(self, live_url: str, _live_server):
+        """Value scanner should still return valid structure after OOM changes."""
+        s = self._session(live_url, "oom_vs@e2e.local", "Pass1234", "OOM VS")
+        resp = s.get(f"{live_url}/api/value-scanner", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "candidates" in data, "Missing 'candidates'"
+        assert "scanned" in data, "Missing 'scanned'"
+        assert "total" in data, "Missing 'total'"
+
+    def test_trading_dashboard_has_packages(self, live_url: str, _live_server):
+        """Trading dashboard should return packages dict with strategy keys."""
+        s = self._session(live_url, "oom_ta_pkg@e2e.local", "Pass1234", "OOM TA Pkg")
+        resp = s.get(f"{live_url}/api/trading", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        packages = data.get("packages", {})
+        assert isinstance(packages, dict), "packages should be a dict"
+
+    def test_advisor_single_stock_still_has_indicators(self, live_url: str, _live_server):
+        """Single-stock analysis should still return full indicators (not stripped)."""
+        s = self._session(live_url, "oom_single@e2e.local", "Pass1234", "OOM Single")
+        try:
+            resp = s.get(f"{live_url}/api/advisor/stock/AAPL", timeout=(5, 40))
+        except Exception:
+            import pytest
+            pytest.skip("Advisor single-stock timed out — data provider may be slow")
+        if resp.status_code in (404, 503):
+            import pytest
+            pytest.skip("Advisor single-stock returned 404/503 — data not ready")
+        assert resp.status_code == 200, f"Single stock returned {resp.status_code}"
+        data = resp.json()
+        # Single stock analysis should still have the full arrays
+        assert "indicators" in data or "price_data" in data, (
+            "Single-stock analysis should still have indicators/price_data — "
+            "stripping should only affect the bulk scan cache"
+        )

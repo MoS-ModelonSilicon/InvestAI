@@ -6,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from typing import Optional
 
-from src.services import finnhub_client as fh
 from src.services import data_provider as dp
 
 logger = logging.getLogger(__name__)
@@ -192,16 +191,13 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
         return cached
 
     try:
-        # Prefer Yahoo (via data_provider) to avoid Finnhub rate limits,
-        # fall back to Finnhub if Yahoo fails.
+        # data_provider already tries Yahoo first, Finnhub fallback
         quote = dp.get_quote(symbol)
         if not quote or quote.get("c", 0) <= 0:
-            quote = fh.get_quote(symbol)
-            if not quote or quote.get("c", 0) <= 0:
-                return None
+            return None
 
-        profile = dp.get_profile(symbol) or fh.get_profile(symbol) or {}
-        metrics = (dp.get_metrics(symbol) or fh.get_metrics(symbol)) if full else {}
+        profile = dp.get_profile(symbol) or {}
+        metrics = dp.get_metrics(symbol) if full else {}
 
         price = quote["c"]
         prev_close = quote.get("pc", price)
@@ -390,7 +386,7 @@ def fetch_live_quotes(symbols: list[str]) -> list[dict]:
 
     def _fetch_one_quote(sym):
         try:
-            quote = fh.get_quote(sym) or dp.get_quote(sym)
+            quote = dp.get_quote(sym)
             if not quote or quote.get("c", 0) <= 0:
                 return None
             price = quote["c"]
@@ -457,7 +453,7 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
     result = {}
     for sym in symbols:
         try:
-            candles = fh.get_candles(sym, res, from_ts, to_ts) or dp.get_candles(sym, res, from_ts, to_ts)
+            candles = dp.get_candles(sym, res, from_ts, to_ts)
             if candles and candles.get("c"):
                 result[sym] = [round(v, 2) for v in candles["c"]]
             else:
@@ -478,26 +474,30 @@ def warm_cache():
         return
     _warming = True
 
-    # Phase 1 — priority symbols for homepage / quick screener
+    # Phase 1 — priority symbols for homepage / quick screener (parallel, small batches)
     logger.info("Cache warm phase 1: %d priority symbols", len(WARM_PRIORITY))
     t0 = time.time()
-    for sym in WARM_PRIORITY:
-        try:
-            fetch_stock_info(sym, full=True)
-        except Exception:
-            pass
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futures = {pool.submit(fetch_stock_info, sym, True): sym for sym in WARM_PRIORITY}
+        for fut in as_completed(futures):
+            try:
+                fut.result()
+            except Exception:
+                pass
     logger.info("Cache warm phase 1 done in %.1fs", time.time() - t0)
     _warm_done.set()
 
-    # Phase 2 — remaining universe for full screener coverage
+    # Phase 2 — remaining universe for full screener coverage (parallel, small batches)
     rest = [s for s in ALL_UNIVERSE if not _get_cached(f"info:{s}")]
     if rest:
         logger.info("Cache warm phase 2: %d remaining symbols", len(rest))
-        for sym in rest:
-            try:
-                fetch_stock_info(sym, full=True)
-            except Exception:
-                pass
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            futures = {pool.submit(fetch_stock_info, sym, True): sym for sym in rest}
+            for fut in as_completed(futures):
+                try:
+                    fut.result()
+                except Exception:
+                    pass
         logger.info("Cache warm phase 2 done in %.1fs total", time.time() - t0)
 
     _warming = False
