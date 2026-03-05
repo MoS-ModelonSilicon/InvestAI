@@ -2299,8 +2299,13 @@ class TestOOMFixAPI:
         assert resp.status_code == 200
         data = resp.json()
         assert "candidates" in data, "Missing 'candidates'"
-        assert "scanned" in data, "Missing 'scanned'"
-        assert "total" in data, "Missing 'total'"
+        # scanned/total live inside stats and progress sub-objects
+        assert "stats" in data, "Missing 'stats'"
+        assert "progress" in data, "Missing 'progress'"
+        stats = data["stats"]
+        progress = data["progress"]
+        assert "scanned" in stats, "Missing 'scanned' in stats"
+        assert "total" in progress, "Missing 'total' in progress"
 
     def test_trading_dashboard_has_packages(self, live_url: str, _live_server):
         """Trading dashboard should return packages dict with strategy keys."""
