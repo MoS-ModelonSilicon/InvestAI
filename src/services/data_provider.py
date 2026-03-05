@@ -5,13 +5,21 @@ Yahoo provides richer data and international support but gets blocked on cloud
 servers. Finnhub works everywhere but has rate limits and US-only on free tier.
 """
 
+import io
 import logging
 import os
+import sys
+import threading
 import time
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+# ── Suppress noisy yfinance / peewee / urllib3 loggers ──────
+for _mod in ("yfinance", "peewee", "urllib3.connectionpool"):
+    logging.getLogger(_mod).setLevel(logging.CRITICAL)
 
 _USE_PROXY = os.environ.get("USE_INTEL_PROXY", "").lower() in ("1", "true", "yes")
 _PROXIES = {
@@ -23,7 +31,32 @@ if _USE_PROXY:
     os.environ.setdefault("HTTP_PROXY", "http://proxy-dmz.intel.com:911")
     os.environ.setdefault("HTTPS_PROXY", "http://proxy-dmz.intel.com:912")
 
-_yahoo_disabled = False
+# Allow explicit disable via env: set DISABLE_YAHOO=1 for cloud deployments
+_yahoo_disabled = os.environ.get("DISABLE_YAHOO", "").lower() in ("1", "true", "yes")
+_yahoo_lock = threading.Lock()
+_yahoo_tested = False  # True once we've probed Yahoo at least once
+
+
+def _disable_yahoo(reason: str = ""):
+    """Thread-safe one-way switch to disable Yahoo for this process."""
+    global _yahoo_disabled
+    if not _yahoo_disabled:
+        with _yahoo_lock:
+            if not _yahoo_disabled:
+                _yahoo_disabled = True
+                logger.warning("Yahoo Finance disabled%s — Finnhub only",
+                               f": {reason}" if reason else "")
+
+
+@contextmanager
+def _suppress_stderr():
+    """Temporarily redirect stderr to swallow yfinance's noisy HTTP error prints."""
+    old = sys.stderr
+    sys.stderr = io.StringIO()
+    try:
+        yield
+    finally:
+        sys.stderr = old
 
 
 def _yf_ticker(symbol: str):
@@ -32,13 +65,36 @@ def _yf_ticker(symbol: str):
     return yf.Ticker(symbol)
 
 
+def _yahoo_probe() -> bool:
+    """Quick one-shot test: can we reach Yahoo Finance? Sets _yahoo_disabled on failure."""
+    global _yahoo_tested
+    if _yahoo_tested:
+        return not _yahoo_disabled
+    with _yahoo_lock:
+        if _yahoo_tested:
+            return not _yahoo_disabled
+        _yahoo_tested = True
+    try:
+        with _suppress_stderr():
+            t = _yf_ticker("AAPL")
+            price = float(t.fast_info.get("lastPrice", 0) or 0)
+        if price > 0:
+            logger.info("Yahoo Finance reachable (AAPL=%.2f)", price)
+            return True
+        _disable_yahoo("probe returned no price")
+        return False
+    except Exception as e:
+        _disable_yahoo(f"probe failed: {e}")
+        return False
+
+
 def _try_yahoo_quote(symbol: str) -> Optional[dict]:
-    global _yahoo_disabled
-    if _yahoo_disabled:
+    if _yahoo_disabled or not _yahoo_probe():
         return None
     try:
-        t = _yf_ticker(symbol)
-        info = t.fast_info
+        with _suppress_stderr():
+            t = _yf_ticker(symbol)
+            info = t.fast_info
         price = float(info.get("lastPrice", 0) or info.get("last_price", 0))
         prev = float(info.get("previousClose", 0) or info.get("previous_close", 0))
         if price <= 0:
@@ -55,20 +111,17 @@ def _try_yahoo_quote(symbol: str) -> Optional[dict]:
             "o": float(info.get("open", 0) or price),
         }
     except Exception as e:
-        err = str(e)
-        if "401" in err or "403" in err or "Unauthorized" in err:
-            logger.warning("Yahoo Finance blocked, disabling for this session")
-            _yahoo_disabled = True
+        _disable_yahoo(str(e)[:120])
         return None
 
 
 def _try_yahoo_profile(symbol: str) -> Optional[dict]:
-    global _yahoo_disabled
-    if _yahoo_disabled:
+    if _yahoo_disabled or not _yahoo_probe():
         return None
     try:
-        t = _yf_ticker(symbol)
-        info = t.info
+        with _suppress_stderr():
+            t = _yf_ticker(symbol)
+            info = t.info
         if not info or not info.get("shortName"):
             return None
         mcap = info.get("marketCap", 0) or 0
@@ -80,18 +133,17 @@ def _try_yahoo_profile(symbol: str) -> Optional[dict]:
             "exchange": info.get("exchange", ""),
         }
     except Exception as e:
-        if "401" in str(e) or "403" in str(e):
-            _yahoo_disabled = True
+        _disable_yahoo(str(e)[:120])
         return None
 
 
 def _try_yahoo_metrics(symbol: str) -> Optional[dict]:
-    global _yahoo_disabled
-    if _yahoo_disabled:
+    if _yahoo_disabled or not _yahoo_probe():
         return None
     try:
-        t = _yf_ticker(symbol)
-        info = t.info
+        with _suppress_stderr():
+            t = _yf_ticker(symbol)
+            info = t.info
         if not info:
             return None
         return {
@@ -116,17 +168,14 @@ def _try_yahoo_metrics(symbol: str) -> Optional[dict]:
             "targetLowPrice": info.get("targetLowPrice"),
         }
     except Exception as e:
-        if "401" in str(e) or "403" in str(e):
-            _yahoo_disabled = True
+        _disable_yahoo(str(e)[:120])
         return None
 
 
 def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optional[dict]:
-    global _yahoo_disabled
-    if _yahoo_disabled:
+    if _yahoo_disabled or not _yahoo_probe():
         return None
     try:
-        t = _yf_ticker(symbol)
         interval_map = {"1": "1m", "5": "5m", "15": "15m", "60": "1h", "D": "1d", "W": "1wk", "M": "1mo"}
         yf_interval = interval_map.get(resolution, "1d")
         period_secs = to_ts - from_ts
@@ -138,7 +187,9 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -
 
         start = datetime.fromtimestamp(from_ts).strftime("%Y-%m-%d")
         end = datetime.fromtimestamp(to_ts).strftime("%Y-%m-%d")
-        df = t.history(start=start, end=end, interval=yf_interval)
+        with _suppress_stderr():
+            t = _yf_ticker(symbol)
+            df = t.history(start=start, end=end, interval=yf_interval)
 
         if df is None or df.empty:
             return None
@@ -153,18 +204,17 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -
             "t": [int(ts.timestamp()) for ts in df.index],
         }
     except Exception as e:
-        if "401" in str(e) or "403" in str(e):
-            _yahoo_disabled = True
+        _disable_yahoo(str(e)[:120])
         return None
 
 
 def _try_yahoo_news(symbol: str, days_back: int = 7) -> Optional[list]:
-    global _yahoo_disabled
-    if _yahoo_disabled:
+    if _yahoo_disabled or not _yahoo_probe():
         return None
     try:
-        t = _yf_ticker(symbol)
-        news = t.news
+        with _suppress_stderr():
+            t = _yf_ticker(symbol)
+            news = t.news
         if not news:
             return None
         result = []
@@ -185,8 +235,7 @@ def _try_yahoo_news(symbol: str, days_back: int = 7) -> Optional[list]:
             })
         return result if result else None
     except Exception as e:
-        if "401" in str(e) or "403" in str(e):
-            _yahoo_disabled = True
+        _disable_yahoo(str(e)[:120])
         return None
 
 
