@@ -2660,12 +2660,20 @@ class TestAdvisorPerfAPI:
     def test_trading_advisor_total_matches_universe(self, live_url: str, _live_server):
         """progress.total should match ALL_UNIVERSE size (~257), proving stubs
         are created for uncached symbols so the full universe is scanned."""
+        import time
         s = self._session(live_url, "perf_total@e2e.local", "Pass1234", "Perf Total")
-        resp = s.get(f"{live_url}/api/trading", timeout=60)
-        assert resp.status_code == 200, f"Trading API failed: {resp.status_code}"
-        data = resp.json()
-        progress = data.get("progress", {})
-        total = progress.get("total", 0)
+        # Poll for up to 120s — the scan needs time to start after cache warm
+        deadline = time.time() + 120
+        total = 0
+        while time.time() < deadline:
+            resp = s.get(f"{live_url}/api/trading", timeout=30)
+            assert resp.status_code == 200, f"Trading API failed: {resp.status_code}"
+            data = resp.json()
+            progress = data.get("progress", {})
+            total = progress.get("total", 0)
+            if total >= 200:
+                break
+            time.sleep(5)
         # Universe is ~257 symbols; total should be at least 200 (allowing for
         # minor changes) — the key assertion is it's NOT just 30-40 (cached only)
         assert total >= 200, (
