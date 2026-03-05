@@ -239,14 +239,22 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -
             from_ts = to_ts - 7 * 86400
 
         start = datetime.fromtimestamp(from_ts).strftime("%Y-%m-%d")
-        end = datetime.fromtimestamp(to_ts).strftime("%Y-%m-%d")
+        end = (datetime.fromtimestamp(to_ts) + timedelta(days=1)).strftime("%Y-%m-%d")
         with _suppress_stderr():
             t = _yf_ticker(symbol)
             df = t.history(start=start, end=end, interval=yf_interval)
 
         if df is None or df.empty:
-            return None
+            # Fallback: use period= syntax for intraday, more reliable on some servers
+            if yf_interval in ("1h", "5m", "15m"):
+                period_str = "5d" if period_days <= 5 else f"{min(period_days, 30)}d"
+                with _suppress_stderr():
+                    df = t.history(period=period_str, interval=yf_interval)
+            if df is None or df.empty:
+                logger.debug("Yahoo candles empty for %s (%s)", symbol, yf_interval)
+                return None
 
+        _yahoo_success()
         return {
             "s": "ok",
             "c": [round(v, 2) for v in df["Close"].tolist()],

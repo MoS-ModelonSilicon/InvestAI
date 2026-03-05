@@ -440,7 +440,11 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
     cache_key = f"sparklines:{','.join(symbols)}:{period}:{interval}"
     cached = _get_cached(cache_key)
     if cached:
-        return cached
+        # Only serve cache if ALL symbols have data (avoid caching partial failures)
+        if all(len(v) > 0 for v in cached.values()) and len(cached) == len(symbols):
+            return cached
+        logger.info("Sparkline cache has gaps (%s empty), refreshing",
+                     [s for s, v in cached.items() if not v])
 
     period_map = {"1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "1y": 365}
     days = period_map.get(period, 5)
@@ -458,10 +462,35 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
                 result[sym] = [round(v, 2) for v in candles["c"]]
             else:
                 result[sym] = []
-        except Exception:
+                logger.warning("Sparkline: no candles for %s (res=%s)", sym, res)
+        except Exception as e:
             result[sym] = []
+            logger.warning("Sparkline: exception for %s: %s", sym, e)
 
-    _set_cache(cache_key, result)
+    # Retry empty symbols once with daily resolution as fallback
+    empty_syms = [s for s, v in result.items() if not v]
+    if empty_syms:
+        logger.info("Sparkline retry %d empty symbols with daily resolution: %s", len(empty_syms), empty_syms)
+        for sym in empty_syms:
+            try:
+                candles = dp.get_candles(sym, "D", from_ts, to_ts)
+                if candles and candles.get("c"):
+                    result[sym] = [round(v, 2) for v in candles["c"]]
+                    logger.info("Sparkline retry OK for %s: %d points (daily)", sym, len(result[sym]))
+            except Exception:
+                pass
+
+    # Only cache if ALL symbols have data; otherwise use short TTL so we retry soon
+    empty_count = sum(1 for v in result.values() if not v)
+    if empty_count == 0:
+        _set_cache(cache_key, result)
+    elif empty_count < len(symbols):
+        # Partial success: cache briefly (60s) to avoid hammering, but retry soon
+        with _cache_lock:
+            _cache[cache_key] = (time.time() - CACHE_TTL + 60, result)
+        logger.warning("Sparkline partial failure (%d/%d empty), short cache TTL", empty_count, len(symbols))
+    # If all empty, don't cache at all
+
     return result
 
 
