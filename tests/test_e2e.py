@@ -2642,16 +2642,20 @@ class TestAdvisorPerfAPI:
     @staticmethod
     def _session(base_url: str, email: str, password: str, name: str = "Test"):
         import requests as _req
+        import time as _time
         s = _req.Session()
         proxies = {"http": "http://proxy-dmz.intel.com:911",
                    "https": "http://proxy-dmz.intel.com:912"}
         px = proxies if "127.0.0.1" not in base_url and "localhost" not in base_url else None
         if px:
             s.proxies.update(px)
+        # Use a time-based suffix to avoid stale-registration collisions on live site
+        ts = str(int(_time.time()))[-6:]
+        unique_email = email.replace("@", f"{ts}@")
         s.post(f"{base_url}/auth/register",
-               json={"email": email, "password": password, "name": name}, timeout=60)
+               json={"email": unique_email, "password": password, "name": name}, timeout=60)
         resp = s.post(f"{base_url}/auth/login",
-                      json={"email": email, "password": password}, timeout=60)
+                      json={"email": unique_email, "password": password}, timeout=60)
         assert resp.status_code == 200, f"Login failed: {resp.text}"
         return s
 
@@ -2660,20 +2664,12 @@ class TestAdvisorPerfAPI:
     def test_trading_advisor_total_matches_universe(self, live_url: str, _live_server):
         """progress.total should match ALL_UNIVERSE size (~257), proving stubs
         are created for uncached symbols so the full universe is scanned."""
-        import time
         s = self._session(live_url, "perf_total@e2e.local", "Pass1234", "Perf Total")
-        # Poll for up to 120s — the scan needs time to start after cache warm
-        deadline = time.time() + 120
-        total = 0
-        while time.time() < deadline:
-            resp = s.get(f"{live_url}/api/trading", timeout=30)
-            assert resp.status_code == 200, f"Trading API failed: {resp.status_code}"
-            data = resp.json()
-            progress = data.get("progress", {})
-            total = progress.get("total", 0)
-            if total >= 200:
-                break
-            time.sleep(5)
+        resp = s.get(f"{live_url}/api/trading", timeout=60)
+        assert resp.status_code == 200, f"Trading API failed: {resp.status_code}"
+        data = resp.json()
+        progress = data.get("progress", {})
+        total = progress.get("total", 0)
         # Universe is ~257 symbols; total should be at least 200 (allowing for
         # minor changes) — the key assertion is it's NOT just 30-40 (cached only)
         assert total >= 200, (
@@ -2762,8 +2758,8 @@ class TestAdvisorPerfAPI:
         proving warm_cache phase 1 completed and _warm_done.set() was called."""
         import time
         s = self._session(live_url, "perf_warm@e2e.local", "Pass1234", "Perf Warm")
-        # Poll cache-status up to 90 seconds for ready=True
-        deadline = time.time() + 90
+        # Poll cache-status up to 180s for ready=True (Render cold start + Finnhub rate limits)
+        deadline = time.time() + 180
         ready = False
         while time.time() < deadline:
             try:
@@ -2777,7 +2773,7 @@ class TestAdvisorPerfAPI:
                 pass
             time.sleep(5)
         assert ready, (
-            "Cache warmer never set ready=True within 90s — "
+            "Cache warmer never set ready=True within 180s — "
             "_warm_done.set() may not be called or phase 1 is stuck"
         )
 
