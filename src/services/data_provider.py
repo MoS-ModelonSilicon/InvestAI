@@ -117,7 +117,7 @@ def _yahoo_probe() -> bool:
 
 
 def _try_yahoo_quote(symbol: str) -> Optional[dict]:
-    if _yahoo_disabled or not _yahoo_probe():
+    if not _yahoo_available() or not _yahoo_probe():
         return None
     try:
         with _suppress_stderr():
@@ -144,7 +144,7 @@ def _try_yahoo_quote(symbol: str) -> Optional[dict]:
 
 
 def _try_yahoo_profile(symbol: str) -> Optional[dict]:
-    if _yahoo_disabled or not _yahoo_probe():
+    if not _yahoo_available() or not _yahoo_probe():
         return None
     try:
         with _suppress_stderr():
@@ -166,7 +166,7 @@ def _try_yahoo_profile(symbol: str) -> Optional[dict]:
 
 
 def _try_yahoo_metrics(symbol: str) -> Optional[dict]:
-    if _yahoo_disabled or not _yahoo_probe():
+    if not _yahoo_available() or not _yahoo_probe():
         return None
     try:
         with _suppress_stderr():
@@ -201,7 +201,7 @@ def _try_yahoo_metrics(symbol: str) -> Optional[dict]:
 
 
 def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optional[dict]:
-    if _yahoo_disabled or not _yahoo_probe():
+    if not _yahoo_available() or not _yahoo_probe():
         return None
     try:
         interval_map = {"1": "1m", "5": "5m", "15": "15m", "60": "1h", "D": "1d", "W": "1wk", "M": "1mo"}
@@ -237,7 +237,7 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -
 
 
 def _try_yahoo_news(symbol: str, days_back: int = 7) -> Optional[list]:
-    if _yahoo_disabled or not _yahoo_probe():
+    if not _yahoo_available() or not _yahoo_probe():
         return None
     try:
         with _suppress_stderr():

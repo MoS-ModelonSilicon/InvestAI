@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # ── Memory-conscious settings for free-tier hosting (512 MB) ──
 _LOW_MEMORY = os.environ.get("LOW_MEMORY", "").lower() in ("1", "true", "yes")
 try:
-    threading.stack_size(1 * 1024 * 1024)  # 1 MB stacks instead of 8 MB default
+    threading.stack_size(2 * 1024 * 1024)  # 2 MB stacks (1 MB too small for yfinance/requests)
 except Exception:
     pass  # some platforms don't support stack_size
 
