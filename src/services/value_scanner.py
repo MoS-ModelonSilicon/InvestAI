@@ -26,7 +26,7 @@ from src.services.market_data import (
 )
 
 logger = logging.getLogger(__name__)
-_MAX_WORKERS = 3 if _LOW_MEMORY else 6
+_MAX_WORKERS = 2 if _LOW_MEMORY else 4
 
 EXCLUDED_SECTORS = {"Financial Services", "Real Estate"}
 

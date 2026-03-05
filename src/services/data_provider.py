@@ -43,24 +43,40 @@ _yahoo_disabled = _yahoo_force_disabled
 _yahoo_lock = threading.Lock()
 _yahoo_tested = False  # True once we've probed Yahoo at least once
 _yahoo_disabled_until = 0.0  # timestamp: retry Yahoo after this time
+_yahoo_fail_count = 0  # consecutive failures — used for exponential backoff
+_YAHOO_MAX_COOLDOWN = 3600  # cap at 1 hour
 
 
-def _disable_yahoo(reason: str = "", cooldown: int = 60):
-    """Temporarily disable Yahoo for `cooldown` seconds. Permanent only if env-forced."""
-    global _yahoo_disabled, _yahoo_disabled_until, _yahoo_tested
+def _disable_yahoo(reason: str = "", cooldown: int = 0):
+    """Temporarily disable Yahoo with exponential backoff. Permanent only if env-forced."""
+    global _yahoo_disabled, _yahoo_disabled_until, _yahoo_tested, _yahoo_fail_count
     if _yahoo_force_disabled:
         return  # already permanently off
     with _yahoo_lock:
+        _yahoo_fail_count += 1
+        # Exponential backoff: 60, 120, 240, 480, 960, capped at 3600
+        if cooldown <= 0:
+            cooldown = min(60 * (2 ** (_yahoo_fail_count - 1)), _YAHOO_MAX_COOLDOWN)
         _yahoo_disabled = True
         _yahoo_disabled_until = time.time() + cooldown
         _yahoo_tested = False  # allow re-probe after cooldown
-        logger.warning("Yahoo Finance paused %ds%s",
-                       cooldown, f": {reason}" if reason else "")
+        # Detect cloud-IP blocking (401/rate-limit on first probe) → go permanent
+        is_cloud_block = any(kw in reason.lower() for kw in (
+            "401", "unauthorized", "rate limit", "too many requests",
+        ))
+        if _yahoo_fail_count >= 3 and is_cloud_block:
+            cooldown = _YAHOO_MAX_COOLDOWN
+            _yahoo_disabled_until = time.time() + cooldown
+            logger.warning("Yahoo Finance likely blocked on this IP — disabled for %ds", cooldown)
+        else:
+            logger.warning("Yahoo Finance paused %ds (fail #%d)%s",
+                           cooldown, _yahoo_fail_count,
+                           f": {reason}" if reason else "")
 
 
 def _yahoo_available() -> bool:
     """Check if Yahoo is available, resetting after cooldown expires."""
-    global _yahoo_disabled, _yahoo_tested
+    global _yahoo_disabled, _yahoo_tested, _yahoo_fail_count
     if _yahoo_force_disabled:
         return False
     if _yahoo_disabled:
@@ -68,10 +84,18 @@ def _yahoo_available() -> bool:
             with _yahoo_lock:
                 _yahoo_disabled = False
                 _yahoo_tested = False
-                logger.info("Yahoo Finance cooldown expired, re-enabling")
+                logger.info("Yahoo Finance cooldown expired, re-enabling (fail_count=%d)",
+                            _yahoo_fail_count)
             return True
         return False
     return True
+
+
+def _yahoo_success():
+    """Reset failure counter on a successful Yahoo call."""
+    global _yahoo_fail_count
+    with _yahoo_lock:
+        _yahoo_fail_count = 0
 
 
 @contextmanager
@@ -108,6 +132,7 @@ def _yahoo_probe() -> bool:
             price = float(t.fast_info.get("lastPrice", 0) or 0)
         if price > 0:
             logger.info("Yahoo Finance reachable (AAPL=%.2f)", price)
+            _yahoo_success()
             return True
         _disable_yahoo("probe returned no price")
         return False

@@ -46,14 +46,14 @@ def _get(endpoint: str, params: dict | None = None) -> dict | list | None:
         return None
     p = params or {}
     p["token"] = API_KEY
-    for attempt in range(4):  # max 4 attempts (avoid recursive stack overflow)
+    for attempt in range(2):  # max 2 attempts — avoid long blocking waits on free tier
         _rate_limit()
         try:
             resp = requests.get(f"{BASE_URL}{endpoint}", params=p, timeout=15, proxies=PROXIES)
             if resp.status_code == 403:
                 return None
             if resp.status_code == 429:
-                wait = 5 * (attempt + 1)
+                wait = 10 * (attempt + 1)
                 logger.warning("Finnhub rate limit hit (attempt %d), sleeping %ds", attempt + 1, wait)
                 time.sleep(wait)
                 continue

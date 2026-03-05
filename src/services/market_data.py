@@ -468,36 +468,44 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
 # ── Background cache warming ────────────────────
 
 def warm_cache():
-    """Phase 1: priority symbols (fast). Phase 2: rest of universe (background)."""
+    """Phase 1: priority symbols (fast). Phase 2: rest of universe (background batches)."""
     global _warming
     if _warming:
         return
     _warming = True
 
-    # Phase 1 — priority symbols for homepage / quick screener (parallel, small batches)
+    # Phase 1 — priority symbols for homepage (small batches to stay under rate limits)
     logger.info("Cache warm phase 1: %d priority symbols", len(WARM_PRIORITY))
     t0 = time.time()
-    with ThreadPoolExecutor(max_workers=3) as pool:
-        futures = {pool.submit(fetch_stock_info, sym, True): sym for sym in WARM_PRIORITY}
-        for fut in as_completed(futures):
-            try:
-                fut.result()
-            except Exception:
-                pass
-    logger.info("Cache warm phase 1 done in %.1fs", time.time() - t0)
-    _warm_done.set()
-
-    # Phase 2 — remaining universe for full screener coverage (parallel, small batches)
-    rest = [s for s in ALL_UNIVERSE if not _get_cached(f"info:{s}")]
-    if rest:
-        logger.info("Cache warm phase 2: %d remaining symbols", len(rest))
-        with ThreadPoolExecutor(max_workers=3) as pool:
-            futures = {pool.submit(fetch_stock_info, sym, True): sym for sym in rest}
+    batch_size = 8
+    for i in range(0, len(WARM_PRIORITY), batch_size):
+        batch = WARM_PRIORITY[i:i+batch_size]
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = {pool.submit(fetch_stock_info, sym, True): sym for sym in batch}
             for fut in as_completed(futures):
                 try:
                     fut.result()
                 except Exception:
                     pass
+        if i + batch_size < len(WARM_PRIORITY):
+            time.sleep(2)  # breathe between batches to avoid rate-limit pileup
+    logger.info("Cache warm phase 1 done in %.1fs", time.time() - t0)
+    _warm_done.set()
+
+    # Phase 2 — remaining universe (sequential batches, no rush)
+    rest = [s for s in ALL_UNIVERSE if not _get_cached(f"info:{s}")]
+    if rest:
+        logger.info("Cache warm phase 2: %d remaining symbols", len(rest))
+        for i in range(0, len(rest), batch_size):
+            batch = rest[i:i+batch_size]
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                futures = {pool.submit(fetch_stock_info, sym, True): sym for sym in batch}
+                for fut in as_completed(futures):
+                    try:
+                        fut.result()
+                    except Exception:
+                        pass
+            time.sleep(3)  # larger pause between phase-2 batches
         logger.info("Cache warm phase 2 done in %.1fs total", time.time() - t0)
 
     _warming = False

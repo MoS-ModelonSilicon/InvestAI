@@ -28,7 +28,7 @@ from src.services.market_data import (
 logger = logging.getLogger(__name__)
 
 CANDLE_LOOKBACK_DAYS = 420
-_MAX_WORKERS = 3 if _LOW_MEMORY else 8
+_MAX_WORKERS = 2 if _LOW_MEMORY else 4
 SCAN_CACHE_TTL = 1800  # 30 min
 
 # Benchmark candles for relative strength (cached per scan)

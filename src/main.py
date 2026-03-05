@@ -333,12 +333,12 @@ def startup():
     import time as _time
 
     def _delayed_value_scanner():
-        _time.sleep(90)  # wait 90s after cache warmer starts
+        _time.sleep(180)  # wait 3 min after cache warmer starts
         from src.services.value_scanner import start_auto_scanner
         start_auto_scanner()
 
     def _delayed_trading_advisor():
-        _time.sleep(180)  # wait 3 min after cache warmer starts
+        _time.sleep(300)  # wait 5 min after cache warmer starts
         from src.services.trading_advisor import start_trading_advisor
         start_trading_advisor()
 
