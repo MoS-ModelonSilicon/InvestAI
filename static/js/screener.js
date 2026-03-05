@@ -65,6 +65,7 @@ async function runScreener(page) {
     if (v("scr-div-min")) params.set("dividend_yield_min", v("scr-div-min"));
     if (v("scr-beta-min")) params.set("beta_min", v("scr-beta-min"));
     if (v("scr-beta-max")) params.set("beta_max", v("scr-beta-max"));
+    if (v("scr-signal")) params.set("signal", v("scr-signal"));
     params.set("page", _scrPage);
     params.set("per_page", _scrPerPage);
 
@@ -283,7 +284,7 @@ function buildDetailPanel(r) {
 }
 
 function clearScreener() {
-    ["scr-asset-type", "scr-sector", "scr-region", "scr-mcap-min", "scr-mcap-max", "scr-pe-min", "scr-pe-max", "scr-div-min", "scr-beta-min", "scr-beta-max"]
+    ["scr-asset-type", "scr-sector", "scr-region", "scr-mcap-min", "scr-mcap-max", "scr-pe-min", "scr-pe-max", "scr-div-min", "scr-beta-min", "scr-beta-max", "scr-signal"]
         .forEach((id) => { const el = document.getElementById(id); if (el) el.value = ""; });
     const countEl = document.getElementById("scr-result-count");
     if (countEl) countEl.textContent = "";

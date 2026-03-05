@@ -252,6 +252,14 @@
                     <div class="form-group"><label>Div Yield Min (%) <span class="help-icon" data-help="dividend_yield" tabindex="0" role="button" aria-label="Help">?</span></label><input type="number" id="scr-div-min" placeholder="e.g. 2" step="0.1"></div>
                     <div class="form-group"><label>Beta Min <span class="help-icon" data-help="beta" tabindex="0" role="button" aria-label="Help">?</span></label><input type="number" id="scr-beta-min" placeholder="e.g. 0.5" step="0.1"></div>
                     <div class="form-group"><label>Beta Max</label><input type="number" id="scr-beta-max" placeholder="e.g. 1.5" step="0.1"></div>
+                    <div class="form-group"><label>Signal <span class="help-icon" data-help="signal" tabindex="0" role="button" aria-label="Help">?</span></label>
+                        <select id="scr-signal">
+                            <option value="">All Signals</option>
+                            <option value="Buy">▲ Buy</option>
+                            <option value="Hold">■ Hold</option>
+                            <option value="Avoid">▼ Avoid</option>
+                        </select>
+                    </div>
                     <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="runScreener()">Search</button>
                     <button class="btn btn-ghost" style="width:100%;margin-top:4px;" onclick="clearScreener()">Clear</button>
                     <div class="preset-buttons">

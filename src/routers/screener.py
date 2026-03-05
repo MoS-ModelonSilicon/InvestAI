@@ -25,6 +25,7 @@ def run_screener(
     dividend_yield_min: Optional[float] = None,
     beta_min: Optional[float] = None,
     beta_max: Optional[float] = None,
+    signal: Optional[str] = None,
     page: int = 1,
     per_page: int = 50,
 ):
@@ -39,6 +40,7 @@ def run_screener(
         dividend_yield_min=dividend_yield_min,
         beta_min=beta_min,
         beta_max=beta_max,
+        signal=signal,
     )
     total = len(all_results)
     start = (page - 1) * per_page

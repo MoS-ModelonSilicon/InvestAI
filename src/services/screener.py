@@ -247,6 +247,7 @@ def screen_instruments(
     dividend_yield_min: Optional[float] = None,
     beta_min: Optional[float] = None,
     beta_max: Optional[float] = None,
+    signal: Optional[str] = None,
 ) -> list[dict]:
     if asset_type == "ETF":
         universe = ETF_UNIVERSE
@@ -281,6 +282,8 @@ def screen_instruments(
             continue
 
         sig = _compute_signal(d)
+        if signal and sig["signal"].lower() != signal.lower():
+            continue
         risk = _build_risk_analysis(d)
         analyst = _build_analyst_view(d)
         summary_text = d.get("summary", "")
