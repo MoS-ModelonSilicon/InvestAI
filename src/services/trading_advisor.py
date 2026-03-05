@@ -359,11 +359,19 @@ def _run_background_scan():
     try:
         _fetch_benchmark()
 
+        # Use whatever is already cached, don't block on fetching fundamentals
         fundamentals = fetch_batch(ALL_UNIVERSE, cached_only=True)
         fund_map = {d["symbol"]: d for d in fundamentals if d.get("price", 0) > 0}
 
-        # Prioritize: scan large-cap / popular stocks first for faster initial picks
+        # For symbols not yet cached, create minimal fund_info stubs so we can
+        # still scan them — candles are what matter for technical analysis
         from src.services.market_data import WARM_PRIORITY
+        for sym in ALL_UNIVERSE:
+            if sym not in fund_map:
+                fund_map[sym] = {"symbol": sym, "name": sym, "sector": "N/A",
+                                 "price": 1, "market_cap": 0}
+
+        # Prioritize: scan popular stocks first for faster initial picks
         priority_set = set(WARM_PRIORITY)
         priority_syms = [s for s in fund_map if s in priority_set]
         rest_syms = [s for s in fund_map if s not in priority_set]
@@ -402,7 +410,14 @@ def _run_background_scan():
                 for fut in as_completed(futures):
                     sym, candles = fut.result()
                     if candles and candles.get("c"):
-                        pick = _analyze_stock(sym, candles, fund_map.get(sym, {}))
+                        # Enrich fund_info from cache if it was a stub
+                        fi = fund_map.get(sym, {})
+                        if fi.get("name") == sym:
+                            from src.services.market_data import _get_cached
+                            cached = _get_cached(f"info:{sym}")
+                            if cached:
+                                fi = cached
+                        pick = _analyze_stock(sym, candles, fi)
                         if pick:
                             all_picks.append(pick)
 

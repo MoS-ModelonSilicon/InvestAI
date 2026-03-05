@@ -38,20 +38,40 @@ if _USE_PROXY:
     os.environ.setdefault("HTTPS_PROXY", "http://proxy-dmz.intel.com:912")
 
 # Allow explicit disable via env: set DISABLE_YAHOO=1 for cloud deployments
-_yahoo_disabled = os.environ.get("DISABLE_YAHOO", "").lower() in ("1", "true", "yes")
+_yahoo_force_disabled = os.environ.get("DISABLE_YAHOO", "").lower() in ("1", "true", "yes")
+_yahoo_disabled = _yahoo_force_disabled
 _yahoo_lock = threading.Lock()
 _yahoo_tested = False  # True once we've probed Yahoo at least once
+_yahoo_disabled_until = 0.0  # timestamp: retry Yahoo after this time
 
 
-def _disable_yahoo(reason: str = ""):
-    """Thread-safe one-way switch to disable Yahoo for this process."""
-    global _yahoo_disabled
-    if not _yahoo_disabled:
-        with _yahoo_lock:
-            if not _yahoo_disabled:
-                _yahoo_disabled = True
-                logger.warning("Yahoo Finance disabled%s — Finnhub only",
-                               f": {reason}" if reason else "")
+def _disable_yahoo(reason: str = "", cooldown: int = 60):
+    """Temporarily disable Yahoo for `cooldown` seconds. Permanent only if env-forced."""
+    global _yahoo_disabled, _yahoo_disabled_until, _yahoo_tested
+    if _yahoo_force_disabled:
+        return  # already permanently off
+    with _yahoo_lock:
+        _yahoo_disabled = True
+        _yahoo_disabled_until = time.time() + cooldown
+        _yahoo_tested = False  # allow re-probe after cooldown
+        logger.warning("Yahoo Finance paused %ds%s",
+                       cooldown, f": {reason}" if reason else "")
+
+
+def _yahoo_available() -> bool:
+    """Check if Yahoo is available, resetting after cooldown expires."""
+    global _yahoo_disabled, _yahoo_tested
+    if _yahoo_force_disabled:
+        return False
+    if _yahoo_disabled:
+        if time.time() >= _yahoo_disabled_until:
+            with _yahoo_lock:
+                _yahoo_disabled = False
+                _yahoo_tested = False
+                logger.info("Yahoo Finance cooldown expired, re-enabling")
+            return True
+        return False
+    return True
 
 
 @contextmanager
@@ -72,8 +92,10 @@ def _yf_ticker(symbol: str):
 
 
 def _yahoo_probe() -> bool:
-    """Quick one-shot test: can we reach Yahoo Finance? Sets _yahoo_disabled on failure."""
+    """Quick one-shot test: can we reach Yahoo Finance? Retries after cooldown."""
     global _yahoo_tested
+    if not _yahoo_available():
+        return False
     if _yahoo_tested:
         return not _yahoo_disabled
     with _yahoo_lock:

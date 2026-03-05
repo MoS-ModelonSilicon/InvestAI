@@ -89,7 +89,7 @@ function updateMobileBottomNav(page) {
     // (user got there from sidebar "More")
 }
 
-document.querySelectorAll(".nav-link").forEach((link) => {
+document.querySelectorAll(".nav-link[data-page]").forEach((link) => {
     link.addEventListener("click", (e) => {
         e.preventDefault();
         navigateTo(link.dataset.page);
