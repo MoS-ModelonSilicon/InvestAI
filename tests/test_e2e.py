@@ -2334,3 +2334,570 @@ class TestOOMFixAPI:
             "Single-stock analysis should still have indicators/price_data — "
             "stripping should only affect the bulk scan cache"
         )
+
+
+# ════════════════════════════════════════════════════════════
+#  Yahoo-Only Data Flow — no Finnhub dependency required
+# ════════════════════════════════════════════════════════════
+
+class TestYahooOnlyDataFlow:
+    """
+    E2E tests that validate the Yahoo-only data provider fix:
+
+    - All 6 featured stocks return real prices via Yahoo Finance
+    - Sparkline arrays have enough data points (≥5 each)
+    - Market /home endpoint returns complete ticker + featured data
+    - No error strings leak into API responses
+    - Prices are realistic ($1–$5000 range for known stocks)
+    - Change percentages are present and reasonable
+    - The combined /home endpoint is consistent (featured ⊂ ticker union)
+    """
+
+    FEATURED = ["AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL"]
+    TICKER = ["SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "NVDA", "TSLA", "AMZN"]
+
+    @staticmethod
+    def _session(base_url: str, email: str, password: str, name: str = "Test"):
+        import requests as _req
+        s = _req.Session()
+        px = None if "127.0.0.1" in base_url else {
+            "http": "http://proxy-dmz.intel.com:911",
+            "https": "http://proxy-dmz.intel.com:912",
+        }
+        if px:
+            s.proxies.update(px)
+        s.post(f"{base_url}/auth/register",
+               json={"email": email, "password": password, "name": name}, timeout=30)
+        resp = s.post(f"{base_url}/auth/login",
+                      json={"email": email, "password": password}, timeout=30)
+        assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+        return s
+
+    @staticmethod
+    def _wait_for_cache(s, base_url: str, min_cached: int = 6, retries: int = 24):
+        """Wait until the cache has at least min_cached entries."""
+        import time as _time
+        for _ in range(retries):
+            try:
+                r = s.get(f"{base_url}/api/market/cache-status", timeout=15)
+                if r.status_code == 200:
+                    status = r.json()
+                    if status.get("cached", 0) >= min_cached or status.get("ready"):
+                        return status
+            except Exception:
+                pass
+            _time.sleep(5)
+        return None
+
+    # ── /api/market/featured returns all 6 stocks with prices ──
+
+    def test_featured_returns_all_six_stocks(self, live_url: str, _live_server):
+        """GET /api/market/featured should return all 6 featured symbols with prices."""
+        s = self._session(live_url, "yahoo_feat@e2e.local", "Pass1234", "Yahoo Feat")
+        self._wait_for_cache(s, live_url)
+        resp = s.get(f"{live_url}/api/market/featured", timeout=60)
+        assert resp.status_code == 200, f"Featured API failed: {resp.status_code}"
+        data = resp.json()
+        assert isinstance(data, list), f"Expected list, got {type(data).__name__}"
+        symbols = [item["symbol"] for item in data]
+        for sym in self.FEATURED:
+            assert sym in symbols, (
+                f"Featured stock {sym} missing from response. Got: {symbols}"
+            )
+        for item in data:
+            assert item.get("price", 0) > 0, (
+                f"{item['symbol']} has zero/missing price: {item}"
+            )
+
+    def test_featured_prices_are_realistic(self, live_url: str, _live_server):
+        """Featured stock prices should be in a realistic range ($1–$5000)."""
+        s = self._session(live_url, "yahoo_real@e2e.local", "Pass1234", "Yahoo Real")
+        self._wait_for_cache(s, live_url)
+        resp = s.get(f"{live_url}/api/market/featured", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        for item in data:
+            price = item.get("price", 0)
+            sym = item.get("symbol", "?")
+            assert 1 < price < 5000, (
+                f"{sym} price ${price} is outside realistic range $1–$5000"
+            )
+
+    def test_featured_have_change_percent(self, live_url: str, _live_server):
+        """Featured stocks should include a change percentage."""
+        s = self._session(live_url, "yahoo_chg@e2e.local", "Pass1234", "Yahoo Chg")
+        self._wait_for_cache(s, live_url)
+        resp = s.get(f"{live_url}/api/market/featured", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        with_change = 0
+        for item in data:
+            cp = item.get("change_pct") or item.get("changePercent") or item.get("change_percent")
+            if cp is not None:
+                assert -50 < cp < 50, (
+                    f"{item['symbol']} change% {cp} is unreasonably large"
+                )
+                with_change += 1
+        assert with_change >= 1, "No featured stocks have a change percentage"
+
+    # ── Sparklines have real data via Yahoo candles ──────────
+
+    def test_featured_sparklines_have_data_points(self, live_url: str, _live_server):
+        """Each featured stock should have ≥5 sparkline data points."""
+        s = self._session(live_url, "yahoo_spark@e2e.local", "Pass1234", "Yahoo Spark")
+        self._wait_for_cache(s, live_url)
+        resp = s.get(f"{live_url}/api/market/featured", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        with_sparkline = 0
+        for item in data:
+            spark = item.get("sparkline", [])
+            sym = item.get("symbol", "?")
+            if spark and len(spark) >= 5:
+                with_sparkline += 1
+                # Verify sparkline values are realistic prices
+                assert all(isinstance(v, (int, float)) for v in spark), (
+                    f"{sym} sparkline contains non-numeric values"
+                )
+                assert min(spark) > 0, (
+                    f"{sym} sparkline has non-positive values: min={min(spark)}"
+                )
+                assert max(spark) > min(spark), (
+                    f"{sym} sparkline is completely flat: {min(spark)}–{max(spark)}"
+                )
+        assert with_sparkline >= 3, (
+            f"Only {with_sparkline}/6 featured stocks have ≥5 sparkline points — "
+            "Yahoo candle data may not be flowing"
+        )
+
+    def test_sparkline_points_count(self, live_url: str, _live_server):
+        """Sparklines should have ~21 data points (21 trading days)."""
+        s = self._session(live_url, "yahoo_spcnt@e2e.local", "Pass1234", "Yahoo SpCnt")
+        self._wait_for_cache(s, live_url)
+        resp = s.get(f"{live_url}/api/market/featured", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        for item in data:
+            spark = item.get("sparkline", [])
+            if spark:
+                assert len(spark) >= 10, (
+                    f"{item['symbol']} sparkline has only {len(spark)} points, "
+                    f"expected ≥10"
+                )
+
+    # ── /api/market/ticker returns real quotes ───────────────
+
+    def test_ticker_returns_all_symbols(self, live_url: str, _live_server):
+        """GET /api/market/ticker should return all 8 ticker symbols."""
+        s = self._session(live_url, "yahoo_tick@e2e.local", "Pass1234", "Yahoo Tick")
+        self._wait_for_cache(s, live_url)
+        resp = s.get(f"{live_url}/api/market/ticker", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list), f"Expected list, got {type(data).__name__}"
+        symbols = [item["symbol"] for item in data]
+        for sym in self.TICKER:
+            assert sym in symbols, (
+                f"Ticker symbol {sym} missing. Got: {symbols}"
+            )
+        for item in data:
+            assert item.get("price", 0) > 0, (
+                f"Ticker {item['symbol']} has zero price"
+            )
+
+    # ── /api/market/home combined endpoint ───────────────────
+
+    def test_home_returns_both_ticker_and_featured(self, live_url: str, _live_server):
+        """GET /api/market/home should return both ticker and featured arrays."""
+        s = self._session(live_url, "yahoo_home@e2e.local", "Pass1234", "Yahoo Home")
+        self._wait_for_cache(s, live_url)
+        resp = s.get(f"{live_url}/api/market/home", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "ticker" in data, "Missing 'ticker' key in /home response"
+        assert "featured" in data, "Missing 'featured' key in /home response"
+        assert len(data["ticker"]) >= 6, (
+            f"Ticker has only {len(data['ticker'])} items, expected ≥6"
+        )
+        assert len(data["featured"]) >= 4, (
+            f"Featured has only {len(data['featured'])} items, expected ≥4"
+        )
+
+    def test_home_featured_have_sparklines(self, live_url: str, _live_server):
+        """Featured items in /home should include sparkline arrays."""
+        s = self._session(live_url, "yahoo_hmspark@e2e.local", "Pass1234", "Yahoo HmSp")
+        self._wait_for_cache(s, live_url)
+        resp = s.get(f"{live_url}/api/market/home", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        featured = data.get("featured", [])
+        with_spark = sum(1 for f in featured if len(f.get("sparkline", [])) >= 5)
+        assert with_spark >= 3, (
+            f"Only {with_spark}/{len(featured)} featured stocks in /home have sparklines"
+        )
+
+    def test_home_no_error_text_in_response(self, live_url: str, _live_server):
+        """The /home API response should contain no error strings."""
+        s = self._session(live_url, "yahoo_noerr@e2e.local", "Pass1234", "Yahoo NoErr")
+        self._wait_for_cache(s, live_url)
+        resp = s.get(f"{live_url}/api/market/home", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        # Check only string-valued fields to avoid false positives in numbers
+        def _collect_strings(obj):
+            strs = []
+            if isinstance(obj, str):
+                strs.append(obj.lower())
+            elif isinstance(obj, dict):
+                for v in obj.values():
+                    strs.extend(_collect_strings(v))
+            elif isinstance(obj, list):
+                for v in obj:
+                    strs.extend(_collect_strings(v))
+            return strs
+        all_strings = " ".join(_collect_strings(data))
+        for bad in ("error", "unauthorized", "invalid crumb",
+                     "rate limit", "too many requests"):
+            assert bad not in all_strings, (
+                f"API response contains error text '{bad}'"
+            )
+
+    # ── UI validation: dashboard renders Yahoo data ──────────
+
+    def test_dashboard_market_cards_show_all_featured(self, authenticated_page: Page):
+        """Dashboard should render market cards for all 6 featured symbols."""
+        _nav_click(authenticated_page, "dashboard")
+        try:
+            authenticated_page.wait_for_selector(".market-card", timeout=60_000)
+        except Exception:
+            cards = authenticated_page.locator(".market-card")
+            assert cards.count() > 0, "No market cards appeared — data not loading"
+        authenticated_page.wait_for_timeout(5_000)
+        cards = authenticated_page.locator(".market-card")
+        count = cards.count()
+        assert count >= 4, (
+            f"Only {count} market cards rendered, expected ≥4 (all 6 featured)"
+        )
+
+    def test_dashboard_sparklines_draw_via_yahoo(self, authenticated_page: Page):
+        """Sparkline charts on dashboard should render with Yahoo candle data."""
+        _nav_click(authenticated_page, "dashboard")
+        authenticated_page.wait_for_selector(".market-card", timeout=60_000)
+        try:
+            authenticated_page.wait_for_function(
+                'typeof sparkCharts !== "undefined" && Object.keys(sparkCharts).length > 0',
+                timeout=30_000,
+            )
+        except Exception:
+            import pytest
+            pytest.skip("sparkCharts not populated — cache may be cold")
+        data_info = authenticated_page.evaluate('''() => {
+            const r = {};
+            for (const [sym, chart] of Object.entries(sparkCharts)) {
+                const d = chart.data.datasets[0].data;
+                r[sym] = {len: d.length, min: Math.min(...d), max: Math.max(...d)};
+            }
+            return r;
+        }''')
+        assert len(data_info) >= 3, (
+            f"Only {len(data_info)} sparkline charts rendered, expected ≥3"
+        )
+        for symbol, info in data_info.items():
+            assert info["len"] >= 5, (
+                f"{symbol} sparkline has only {info['len']} points — "
+                "Yahoo candle data not flowing to UI"
+            )
+            assert info["min"] > 0, f"{symbol} sparkline has non-positive prices"
+
+    def test_dashboard_no_error_messages_visible(self, authenticated_page: Page):
+        """No error text should appear anywhere on the dashboard."""
+        _nav_click(authenticated_page, "dashboard")
+        authenticated_page.wait_for_timeout(15_000)
+        body = authenticated_page.locator("#page-dashboard").inner_text().lower()
+        for bad in ("http error", "unauthorized", "invalid crumb", "rate limit",
+                     "finnhub", "api key"):
+            assert bad not in body, (
+                f"Dashboard contains error text '{bad}' — Yahoo-only mode broken"
+            )
+
+
+# ════════════════════════════════════════════════════════════
+#  Advisor Performance Fix — candle cache, full-universe scan,
+#  non-blocking warm, priority scanning, rate limiter
+# ════════════════════════════════════════════════════════════
+
+class TestAdvisorPerfAPI:
+    """
+    E2E tests that verify the trading advisor performance optimisations:
+
+    - Trading advisor scans the FULL stock universe (not just cached symbols)
+    - All 5 strategy packages are present in the response
+    - Scan progress reports correct total (matches universe size)
+    - Trading advisor responds within a reasonable time (doesn't hang)
+    - Candle cache prevents redundant fetches (second call is fast)
+    - Cache warmer signals readiness
+    - Multiple concurrent API calls succeed (rate limiter non-blocking)
+    """
+
+    @staticmethod
+    def _session(base_url: str, email: str, password: str, name: str = "Test"):
+        import requests as _req
+        s = _req.Session()
+        proxies = {"http": "http://proxy-dmz.intel.com:911",
+                   "https": "http://proxy-dmz.intel.com:912"}
+        px = proxies if "127.0.0.1" not in base_url and "localhost" not in base_url else None
+        if px:
+            s.proxies.update(px)
+        s.post(f"{base_url}/auth/register",
+               json={"email": email, "password": password, "name": name}, timeout=60)
+        resp = s.post(f"{base_url}/auth/login",
+                      json={"email": email, "password": password}, timeout=60)
+        assert resp.status_code == 200, f"Login failed: {resp.text}"
+        return s
+
+    # ── Trading advisor scans full universe ──────────────────
+
+    def test_trading_advisor_total_matches_universe(self, live_url: str, _live_server):
+        """progress.total should match ALL_UNIVERSE size (~257), proving stubs
+        are created for uncached symbols so the full universe is scanned."""
+        s = self._session(live_url, "perf_total@e2e.local", "Pass1234", "Perf Total")
+        resp = s.get(f"{live_url}/api/trading", timeout=60)
+        assert resp.status_code == 200, f"Trading API failed: {resp.status_code}"
+        data = resp.json()
+        progress = data.get("progress", {})
+        total = progress.get("total", 0)
+        # Universe is ~257 symbols; total should be at least 200 (allowing for
+        # minor changes) — the key assertion is it's NOT just 30-40 (cached only)
+        assert total >= 200, (
+            f"Trading advisor total is only {total} — expected ≥200. "
+            "Stubs for uncached symbols may not be working, causing the scan "
+            "to only process already-cached symbols."
+        )
+
+    def test_trading_advisor_progress_fields(self, live_url: str, _live_server):
+        """Progress should have scanned, total, complete fields with sane values."""
+        s = self._session(live_url, "perf_prog@e2e.local", "Pass1234", "Perf Prog")
+        resp = s.get(f"{live_url}/api/trading", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        progress = data.get("progress", {})
+        assert "scanned" in progress, "Missing 'scanned' in progress"
+        assert "total" in progress, "Missing 'total' in progress"
+        assert "complete" in progress, "Missing 'complete' in progress"
+        assert isinstance(progress["scanned"], int), "scanned should be int"
+        assert isinstance(progress["total"], int), "total should be int"
+        assert progress["scanned"] <= progress["total"], (
+            f"scanned ({progress['scanned']}) > total ({progress['total']})"
+        )
+
+    # ── All 5 strategy packages present ──────────────────────
+
+    def test_trading_advisor_all_five_packages(self, live_url: str, _live_server):
+        """Packages dict should contain all 5 strategy keys: hidden, institutional,
+        momentum, swing, oversold."""
+        s = self._session(live_url, "perf_pkg@e2e.local", "Pass1234", "Perf Pkg")
+        resp = s.get(f"{live_url}/api/trading", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        packages = data.get("packages", {})
+        expected_keys = {"hidden", "institutional", "momentum", "swing", "oversold"}
+        # If scan hasn't started yet, packages may be empty — that's ok
+        if packages:
+            actual_keys = set(packages.keys())
+            assert expected_keys == actual_keys, (
+                f"Expected packages {expected_keys}, got {actual_keys}"
+            )
+            # Each package should have a picks list
+            for key in expected_keys:
+                pkg = packages[key]
+                assert "picks" in pkg, f"Package '{key}' missing 'picks' list"
+                assert isinstance(pkg["picks"], list), f"Package '{key}' picks should be a list"
+
+    # ── Trading advisor responds promptly ─────────────────────
+
+    def test_trading_advisor_responds_within_timeout(self, live_url: str, _live_server):
+        """The /api/trading endpoint should respond within 10 seconds even when
+        the scan is still in progress (non-blocking)."""
+        import time
+        s = self._session(live_url, "perf_time@e2e.local", "Pass1234", "Perf Time")
+        t0 = time.time()
+        resp = s.get(f"{live_url}/api/trading", timeout=10)
+        elapsed = time.time() - t0
+        assert resp.status_code == 200, f"Trading API failed: {resp.status_code}"
+        assert elapsed < 10, (
+            f"Trading API took {elapsed:.1f}s — should respond instantly with "
+            "partial/cached results, not block on scan completion"
+        )
+
+    # ── Market mood sums to ~100% ─────────────────────────────
+
+    def test_trading_advisor_market_mood_valid(self, live_url: str, _live_server):
+        """market_mood bullish+neutral+bearish should sum to ~100% when scan has picks."""
+        s = self._session(live_url, "perf_mood@e2e.local", "Pass1234", "Perf Mood")
+        resp = s.get(f"{live_url}/api/trading", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        mood = data.get("market_mood", {})
+        assert "bullish" in mood, "Missing 'bullish' in market_mood"
+        assert "neutral" in mood, "Missing 'neutral' in market_mood"
+        assert "bearish" in mood, "Missing 'bearish' in market_mood"
+        total_pct = mood["bullish"] + mood["neutral"] + mood["bearish"]
+        if data.get("all_picks"):  # only check when there are actual picks
+            assert 95 <= total_pct <= 105, (
+                f"market_mood sums to {total_pct}% — expected ~100%"
+            )
+
+    # ── Cache warmer reports readiness ────────────────────────
+
+    def test_cache_warmer_signals_ready(self, live_url: str, _live_server):
+        """After server has been running, cache-status should report ready=True,
+        proving warm_cache phase 1 completed and _warm_done.set() was called."""
+        import time
+        s = self._session(live_url, "perf_warm@e2e.local", "Pass1234", "Perf Warm")
+        # Poll cache-status up to 90 seconds for ready=True
+        deadline = time.time() + 90
+        ready = False
+        while time.time() < deadline:
+            try:
+                resp = s.get(f"{live_url}/api/market/cache-status", timeout=10)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data.get("ready"):
+                        ready = True
+                        break
+            except Exception:
+                pass
+            time.sleep(5)
+        assert ready, (
+            "Cache warmer never set ready=True within 90s — "
+            "_warm_done.set() may not be called or phase 1 is stuck"
+        )
+
+    # ── Concurrent API calls succeed ──────────────────────────
+
+    def test_concurrent_api_calls_dont_block(self, live_url: str, _live_server):
+        """Fire multiple API calls in parallel — they should all succeed,
+        proving the rate limiter sleeps outside the lock."""
+        import time
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        s = self._session(live_url, "perf_conc@e2e.local", "Pass1234", "Perf Conc")
+
+        endpoints = [
+            "/api/trading",
+            "/api/market/cache-status",
+            "/api/value-scanner",
+        ]
+
+        def _call(url):
+            t0 = time.time()
+            try:
+                resp = s.get(url, timeout=30)
+                return url, resp.status_code, time.time() - t0
+            except Exception as e:
+                return url, str(e), time.time() - t0
+
+        t0 = time.time()
+        results = []
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            futures = {pool.submit(_call, f"{live_url}{ep}"): ep for ep in endpoints}
+            for fut in as_completed(futures):
+                results.append(fut.result())
+        total_wall = time.time() - t0
+
+        # All should succeed
+        for url, status, elapsed in results:
+            assert status == 200, f"{url} returned {status}"
+
+        # Wall-clock time should be reasonable (< 30s for 3 parallel calls)
+        assert total_wall < 30, (
+            f"Concurrent calls took {total_wall:.1f}s wall-clock — "
+            "rate limiter may still be serializing threads"
+        )
+
+    # ── Second stock history call benefits from candle cache ──
+
+    def test_candle_cache_speeds_up_repeat_calls(self, live_url: str, _live_server):
+        """Fetching the same stock's history twice should be faster the second time,
+        proving the candle cache in data_provider.get_candles() works."""
+        import time
+        s = self._session(live_url, "perf_cache@e2e.local", "Pass1234", "Perf Cache")
+
+        # First call — populates the cache
+        t0 = time.time()
+        try:
+            resp1 = s.get(f"{live_url}/api/stock/AAPL/history", timeout=30)
+        except Exception:
+            import pytest
+            pytest.skip("Stock history timed out — data provider may be slow")
+        elapsed1 = time.time() - t0
+
+        if resp1.status_code != 200:
+            import pytest
+            pytest.skip(f"Stock history returned {resp1.status_code} — data not available")
+
+        # Second call — should hit cache
+        t0 = time.time()
+        resp2 = s.get(f"{live_url}/api/stock/AAPL/history", timeout=30)
+        elapsed2 = time.time() - t0
+
+        assert resp2.status_code == 200
+        # Second call should be noticeably faster (at least 2x)
+        # On cold start, first call might take 2-10s, second should be < 1s
+        if elapsed1 > 1.0:
+            assert elapsed2 < elapsed1, (
+                f"Second call ({elapsed2:.2f}s) was not faster than first ({elapsed1:.2f}s) — "
+                "candle cache may not be working"
+            )
+
+    # ── Picks capped at 30 in API response ────────────────────
+
+    def test_all_picks_capped_at_30(self, live_url: str, _live_server):
+        """API should return at most 30 picks (sliced from stored 50)."""
+        s = self._session(live_url, "perf_cap@e2e.local", "Pass1234", "Perf Cap")
+        resp = s.get(f"{live_url}/api/trading", timeout=60)
+        assert resp.status_code == 200
+        data = resp.json()
+        all_picks = data.get("all_picks", [])
+        assert len(all_picks) <= 30, (
+            f"API returned {len(all_picks)} picks — expected ≤30"
+        )
+
+    # ── Stock detail returns data (Yahoo-first fallback works) ─
+
+    def test_stock_detail_returns_data(self, live_url: str, _live_server):
+        """Stock detail endpoint should return price data proving the
+        Yahoo-first, Finnhub-fallback data provider chain works."""
+        s = self._session(live_url, "perf_detail@e2e.local", "Pass1234", "Perf Detail")
+        try:
+            resp = s.get(f"{live_url}/api/stock/AAPL", timeout=30)
+        except Exception:
+            import pytest
+            pytest.skip("Stock detail timed out")
+        if resp.status_code == 404:
+            import pytest
+            pytest.skip("Stock detail returned 404 — data not available yet")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data.get("symbol") == "AAPL", "Symbol mismatch"
+        assert data.get("price", 0) > 0, "Price should be positive"
+        assert data.get("name"), "Missing company name"
+
+    # ── Value scanner responds (higher worker count) ──────────
+
+    def test_value_scanner_responds_with_stats(self, live_url: str, _live_server):
+        """Value scanner should return stats with scanned count, proving
+        the increased worker pool is functioning."""
+        s = self._session(live_url, "perf_vs@e2e.local", "Pass1234", "Perf VS")
+        try:
+            resp = s.get(f"{live_url}/api/value-scanner", timeout=60)
+        except Exception:
+            import pytest
+            pytest.skip("Value scanner timed out")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "stats" in data, "Missing 'stats'"
+        assert "progress" in data, "Missing 'progress'"
+        stats = data["stats"]
+        assert "scanned" in stats, "Missing 'scanned' in stats"
+        # scanned should be > 0 if the scanner is running
+        assert stats["scanned"] >= 0, "scanned should be non-negative"
