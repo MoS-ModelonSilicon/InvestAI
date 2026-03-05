@@ -85,6 +85,18 @@ async function runScreener(page) {
 
         if (results.length === 0) {
             resultsEl.innerHTML = "";
+            // Check if cache is still warming — give a helpful message
+            try {
+                const cs = await api.get("/api/market/cache-status");
+                if (!cs.ready) {
+                    const pct = cs.total > 0 ? Math.round((cs.cached / cs.total) * 100) : 0;
+                    empty.innerHTML = `<p>Market data is still loading (${cs.cached}/${cs.total} symbols, ${pct}%). Please wait a moment and try again.</p>`;
+                } else {
+                    empty.innerHTML = `<p>No stocks match these filters. Try adjusting the criteria or using a different preset.</p>`;
+                }
+            } catch (e) {
+                empty.innerHTML = `<p>No stocks match these filters. Try adjusting the criteria or using a different preset.</p>`;
+            }
             empty.style.display = "block";
             if (countEl) countEl.textContent = "0 results";
             renderPagination("scr-pagination", data, "scrGoPage");

@@ -100,7 +100,7 @@ def _try_yahoo_metrics(symbol: str) -> Optional[dict]:
             "beta": info.get("beta"),
             "52WeekHigh": info.get("fiftyTwoWeekHigh"),
             "52WeekLow": info.get("fiftyTwoWeekLow"),
-            "dividendYieldIndicatedAnnual": (info.get("dividendYield") or 0) * 100 if info.get("dividendYield") else None,
+            "dividendYieldIndicatedAnnual": info.get("dividendYield"),
             "netProfitMarginTTM": info.get("profitMargins") and info["profitMargins"] * 100,
             "revenueGrowthTTMYoy": info.get("revenueGrowth") and info["revenueGrowth"] * 100,
             "epsGrowthTTMYoy": info.get("earningsGrowth") and info["earningsGrowth"] * 100,

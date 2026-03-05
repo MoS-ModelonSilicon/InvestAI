@@ -457,7 +457,7 @@ def warm_cache():
     t0 = time.time()
     for sym in WARM_PRIORITY:
         try:
-            fetch_stock_info(sym, full=False)
+            fetch_stock_info(sym, full=True)
         except Exception:
             pass
     logger.info("Cache warm phase 1 done in %.1fs", time.time() - t0)
@@ -469,7 +469,7 @@ def warm_cache():
         logger.info("Cache warm phase 2: %d remaining symbols", len(rest))
         for sym in rest:
             try:
-                fetch_stock_info(sym, full=False)
+                fetch_stock_info(sym, full=True)
             except Exception:
                 pass
         logger.info("Cache warm phase 2 done in %.1fs total", time.time() - t0)

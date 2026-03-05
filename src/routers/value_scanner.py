@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter
 
-from src.services.value_scanner import scan_value_stocks, EXCLUDED_SECTORS
+from src.services.value_scanner import scan_value_stocks, build_action_plan, EXCLUDED_SECTORS
 from src.services.market_data import SECTORS
 
 router = APIRouter(prefix="/api/value-scanner", tags=["value-scanner"])
@@ -23,6 +23,16 @@ def run_value_scanner(
         page=page,
         per_page=per_page,
     )
+
+
+@router.get("/action-plan")
+def get_action_plan(
+    amount: float = 10000,
+    sector: Optional[str] = None,
+    signal: Optional[str] = None,
+):
+    """Generate a portfolio action plan from current value scanner candidates."""
+    return build_action_plan(amount=amount, sector=sector, signal_filter=signal)
 
 
 @router.get("/sectors")

@@ -1,8 +1,13 @@
 """
 Playwright E2E test fixtures.
 
-Starts a live uvicorn server, authenticates via the login page,
-and hands each test a logged-in Playwright page pointed at the real site.
+Starts a live uvicorn server (or uses --live-url for a deployed site),
+authenticates via the login page, and hands each test a logged-in
+Playwright page pointed at the real site.
+
+Usage:
+    pytest tests/                                  # local server on :8091
+    pytest tests/ --live-url https://investai-utho.onrender.com   # deployed site
 """
 
 import os
@@ -17,11 +22,21 @@ from playwright.sync_api import Page, BrowserContext
 os.environ["NO_PROXY"] = "127.0.0.1,localhost"
 os.environ["no_proxy"] = "127.0.0.1,localhost"
 
-BASE_URL = "http://127.0.0.1:8091"
+LOCAL_URL = "http://127.0.0.1:8091"
 TEST_USER_EMAIL = "testuser@e2e.local"
 TEST_USER_PASSWORD = "TestPass123"
 TEST_USER_NAME = "E2E Tester"
 SERVER_STARTUP_TIMEOUT = 30  # seconds
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--live-url",
+        action="store",
+        default=None,
+        help="URL of the deployed site to test (e.g. https://investai-utho.onrender.com). "
+             "When set, skips local server startup.",
+    )
 
 
 def _port_is_open(port: int) -> bool:
@@ -31,10 +46,15 @@ def _port_is_open(port: int) -> bool:
 
 
 @pytest.fixture(scope="session")
-def _live_server():
-    """Start the FastAPI app on port 8091 for the entire test session."""
+def _live_server(request):
+    """Start the FastAPI app on port 8091, or use --live-url if provided."""
+    live_url = request.config.getoption("--live-url")
+    if live_url:
+        yield live_url.rstrip("/")
+        return
+
     if _port_is_open(8091):
-        yield BASE_URL
+        yield LOCAL_URL
         return
 
     proc = subprocess.Popen(
@@ -58,9 +78,15 @@ def _live_server():
         proc.kill()
         raise RuntimeError("Server did not start within timeout")
 
-    yield BASE_URL
+    yield LOCAL_URL
     proc.terminate()
     proc.wait(timeout=5)
+
+
+@pytest.fixture(scope="session")
+def is_remote(request) -> bool:
+    """True when testing a remote deployed site (not localhost)."""
+    return request.config.getoption("--live-url") is not None
 
 
 @pytest.fixture(scope="session")
@@ -85,20 +111,51 @@ def browser_context_args():
     }
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _wake_remote_server(request, _live_server):
+    """If targeting a remote Render site, ping it to wake it from cold sleep."""
+    live_url = request.config.getoption("--live-url")
+    if not live_url:
+        return
+    import requests as _req
+    proxies = {"http": "http://proxy-dmz.intel.com:911",
+               "https": "http://proxy-dmz.intel.com:912"}
+    for attempt in range(6):  # up to ~3 min of retries
+        try:
+            r = _req.get(f"{live_url.rstrip('/')}/login", proxies=proxies, timeout=60)
+            if r.status_code == 200:
+                return
+        except Exception:
+            pass
+        time.sleep(30)
+    raise RuntimeError(f"Remote site {live_url} did not wake up after retries")
+
+
 @pytest.fixture()
 def authenticated_page(page: Page, live_url: str) -> Page:
     """Register (if needed) and log in a test user, returning a page on the dashboard."""
     import requests
+    proxies = {"http": "http://proxy-dmz.intel.com:911",
+               "https": "http://proxy-dmz.intel.com:912"}
+    # Dynamically choose proxies: use proxy for remote, skip for local
+    px = proxies if "127.0.0.1" not in live_url and "localhost" not in live_url else None
     # Ensure the test user exists (ignore 400 if already registered)
-    requests.post(
-        f"{live_url}/auth/register",
-        json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD, "name": TEST_USER_NAME},
-    )
-    page.goto(f"{live_url}/login", wait_until="domcontentloaded", timeout=60_000)
+    for _ in range(3):
+        try:
+            requests.post(
+                f"{live_url}/auth/register",
+                json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD, "name": TEST_USER_NAME},
+                proxies=px,
+                timeout=60,
+            )
+            break
+        except Exception:
+            time.sleep(5)
+    page.goto(f"{live_url}/login", wait_until="domcontentloaded", timeout=120_000)
     page.fill("#login-email", TEST_USER_EMAIL)
     page.fill("#login-password", TEST_USER_PASSWORD)
     page.click("#login-btn")
-    page.wait_for_url(f"{live_url}/", timeout=60_000)
+    page.wait_for_url(f"{live_url}/", timeout=120_000)
     page.wait_for_load_state("domcontentloaded")
     return page
 
@@ -106,3 +163,20 @@ def authenticated_page(page: Page, live_url: str) -> Page:
 @pytest.fixture(scope="session")
 def live_url(_live_server: str) -> str:
     return _live_server
+
+
+def _api_session(base_url: str, email: str, password: str, name: str = "Test"):
+    """Register + login via API. Returns (requests.Session, proxies_dict)."""
+    import requests as _req
+    proxies = {"http": "http://proxy-dmz.intel.com:911",
+               "https": "http://proxy-dmz.intel.com:912"}
+    px = proxies if "127.0.0.1" not in base_url and "localhost" not in base_url else None
+    s = _req.Session()
+    if px:
+        s.proxies.update(px)
+    s.post(f"{base_url}/auth/register",
+           json={"email": email, "password": password, "name": name}, timeout=30)
+    resp = s.post(f"{base_url}/auth/login",
+                  json={"email": email, "password": password}, timeout=30)
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+    return s

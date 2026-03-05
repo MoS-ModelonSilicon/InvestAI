@@ -349,3 +349,232 @@ function toggleVSMethodology() {
         arrow.style.transform = "";
     }
 }
+
+// ── Action Plan Modal ──────────────────────────────────────
+let _vapData = null;
+
+async function openActionPlanModal() {
+    // Build query params matching current filters
+    const params = new URLSearchParams();
+    const sector = document.getElementById("vs-sector").value;
+    const signal = document.getElementById("vs-signal").value;
+    const amountInput = document.getElementById("vap-invest-amount");
+    const amount = amountInput ? parseFloat(amountInput.value) || 10000 : 10000;
+    params.set("amount", amount);
+    if (sector) params.set("sector", sector);
+    if (signal) params.set("signal", signal);
+
+    // Create or get overlay
+    let overlay = document.getElementById("vap-modal-overlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "vap-modal-overlay";
+        overlay.className = "modal-overlay";
+        overlay.onclick = (e) => { if (e.target === overlay) overlay.classList.remove("open"); };
+        document.body.appendChild(overlay);
+    }
+
+    // Show loading state
+    overlay.innerHTML = `
+        <div class="modal vap-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>📋 Action Plan</h2>
+                <button class="modal-close" onclick="document.getElementById('vap-modal-overlay').classList.remove('open')">&times;</button>
+            </div>
+            <div class="vap-body" style="padding:60px;text-align:center;">
+                <div class="spinner"></div>
+                <p style="margin-top:12px;color:var(--text-muted);">Generating your action plan...</p>
+            </div>
+        </div>`;
+    overlay.classList.add("open");
+
+    try {
+        const data = await api.get(`/api/value-scanner/action-plan?${params}`);
+        _vapData = data;
+        renderActionPlanModal(data, amount);
+    } catch (err) {
+        overlay.innerHTML = `
+            <div class="modal vap-modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h2>📋 Action Plan</h2>
+                    <button class="modal-close" onclick="document.getElementById('vap-modal-overlay').classList.remove('open')">&times;</button>
+                </div>
+                <div class="vap-body" style="padding:40px;text-align:center;">
+                    <p style="color:var(--red);">Failed to generate action plan. Try again later.</p>
+                </div>
+            </div>`;
+    }
+}
+
+function renderActionPlanModal(data, amount) {
+    const overlay = document.getElementById("vap-modal-overlay");
+    if (!overlay) return;
+
+    const summary = data.summary;
+    const plan = data.plan;
+
+    // Signal group icons & colors
+    const signalMeta = {
+        "Strong Buy": { icon: "🟢", cls: "vap-sig-strong", emoji: "▲▲" },
+        "Buy":        { icon: "🔵", cls: "vap-sig-buy",    emoji: "▲" },
+        "Watch":      { icon: "🟡", cls: "vap-sig-watch",  emoji: "●" },
+        "Consider":   { icon: "⚪", cls: "vap-sig-consider", emoji: "◐" },
+    };
+
+    // Build summary bar breakdown
+    let breakdownHTML = "";
+    for (const [sig, info] of Object.entries(summary.signal_breakdown)) {
+        const meta = signalMeta[sig] || signalMeta.Watch;
+        breakdownHTML += `
+            <div class="vap-breakdown-item ${meta.cls}">
+                <span class="vap-bd-icon">${meta.icon}</span>
+                <span class="vap-bd-label">${sig}</span>
+                <span class="vap-bd-count">${info.count} stocks</span>
+                <span class="vap-bd-pct">${info.allocation_pct}%</span>
+                <span class="vap-bd-dollars">$${info.allocation_dollars.toLocaleString()}</span>
+            </div>`;
+    }
+
+    // Build group sections
+    let groupsHTML = "";
+    for (const group of plan) {
+        const meta = signalMeta[group.signal] || signalMeta.Watch;
+
+        let stockRows = "";
+        for (const s of group.stocks) {
+            const mosFmt = s.mos !== null && s.mos !== undefined
+                ? `<span style="color:${s.mos >= 30 ? 'var(--green)' : s.mos >= 0 ? '#eab308' : 'var(--red)'}">${s.mos > 0 ? '+' : ''}${s.mos.toFixed(1)}%</span>`
+                : '<span style="color:var(--text-muted)">N/A</span>';
+
+            const strengthsHTML = s.strengths.map(st => `<span class="vap-tag vap-tag-green">✓ ${st}</span>`).join("");
+            const weaknessesHTML = s.weaknesses.map(w => `<span class="vap-tag vap-tag-red">✗ ${w}</span>`).join("");
+
+            stockRows += `
+                <div class="vap-stock-row">
+                    <div class="vap-stock-main">
+                        <div class="vap-stock-info">
+                            <strong class="vap-stock-sym" onclick="navigateToStock('${s.symbol}');document.getElementById('vap-modal-overlay').classList.remove('open');">${s.symbol}</strong>
+                            <span class="vap-stock-name">${s.name}</span>
+                            <span class="vap-stock-sector">${s.sector}</span>
+                        </div>
+                        <div class="vap-stock-metrics">
+                            <div class="vap-metric"><span class="vap-metric-label">Price</span><span class="vap-metric-val">$${s.price.toFixed(2)}</span></div>
+                            <div class="vap-metric"><span class="vap-metric-label">Quality</span><span class="vap-metric-val">${s.quality}</span></div>
+                            <div class="vap-metric"><span class="vap-metric-label">MOS</span><span class="vap-metric-val">${mosFmt}</span></div>
+                            <div class="vap-metric"><span class="vap-metric-label">P/E</span><span class="vap-metric-val">${s.pe_ratio != null ? s.pe_ratio.toFixed(1) : '—'}</span></div>
+                        </div>
+                        <div class="vap-stock-alloc">
+                            <div class="vap-alloc-bar"><div class="vap-alloc-fill" style="width:${Math.min(s.allocation_pct * 2, 100)}%"></div></div>
+                            <span class="vap-alloc-pct">${s.allocation_pct}%</span>
+                            <span class="vap-alloc-dollars">$${s.allocation_dollars.toLocaleString()}</span>
+                            <span class="vap-alloc-shares">≈ ${s.suggested_shares} shares</span>
+                        </div>
+                    </div>
+                    <div class="vap-stock-tags">
+                        ${strengthsHTML}${weaknessesHTML}
+                    </div>
+                </div>`;
+        }
+
+        groupsHTML += `
+            <div class="vap-group ${meta.cls}">
+                <div class="vap-group-header">
+                    <div class="vap-group-title">
+                        <span class="vap-group-icon">${meta.icon}</span>
+                        <h3>${group.signal}</h3>
+                        <span class="vap-group-badge">${group.stocks.length} stock${group.stocks.length > 1 ? 's' : ''}</span>
+                        <span class="vap-group-alloc">${group.group_allocation_pct}% · $${group.group_allocation_dollars.toLocaleString()}</span>
+                    </div>
+                    <div class="vap-group-action">${group.action}</div>
+                </div>
+                <div class="vap-group-strategy">
+                    <div class="vap-strategy-row">
+                        <span class="vap-strat-icon">📌</span>
+                        <span>${group.strategy}</span>
+                    </div>
+                    <div class="vap-strategy-row">
+                        <span class="vap-strat-icon">📊</span>
+                        <span><strong>Position limit:</strong> ${group.position_limit}</span>
+                    </div>
+                    <div class="vap-strategy-row">
+                        <span class="vap-strat-icon">⚠️</span>
+                        <span><strong>Risk:</strong> ${group.risk_note}</span>
+                    </div>
+                </div>
+                <div class="vap-group-stocks">${stockRows}</div>
+            </div>`;
+    }
+
+    const noStocks = summary.stocks_count === 0;
+
+    overlay.innerHTML = `
+        <div class="modal vap-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>📋 Action Plan</h2>
+                <button class="modal-close" onclick="document.getElementById('vap-modal-overlay').classList.remove('open')">&times;</button>
+            </div>
+            <div class="vap-body">
+                <div class="vap-invest-row">
+                    <label>Investment Amount</label>
+                    <div class="vap-invest-input-wrap">
+                        <span class="vap-dollar">$</span>
+                        <input type="number" id="vap-invest-amount" value="${amount}" min="100" max="10000000" step="100">
+                        <button class="btn btn-sm btn-primary" onclick="refreshActionPlan()">Update</button>
+                    </div>
+                </div>
+                ${!data.ready ? '<div class="vap-warning">⏳ Scan still in progress — plan may be incomplete. Re-open later for full results.</div>' : ''}
+                ${noStocks
+                    ? '<div class="vap-empty"><p>No candidates match the current filters. Adjust filters or wait for the scan to complete.</p></div>'
+                    : `
+                <div class="vap-summary-bar">
+                    <div class="vap-summary-stat">
+                        <span class="vap-sum-num">${summary.stocks_count}</span>
+                        <span class="vap-sum-label">Stocks</span>
+                    </div>
+                    <div class="vap-summary-stat">
+                        <span class="vap-sum-num">$${summary.allocated.toLocaleString()}</span>
+                        <span class="vap-sum-label">Allocated</span>
+                    </div>
+                    <div class="vap-summary-breakdown">${breakdownHTML}</div>
+                </div>
+                <div class="vap-groups">${groupsHTML}</div>
+                <div class="vap-actions">
+                    <button class="btn btn-ghost" onclick="document.getElementById('vap-modal-overlay').classList.remove('open')">Close</button>
+                    <button class="btn btn-primary" onclick="buyActionPlanBundle()">
+                        💰 Buy All ${summary.stocks_count} Stocks
+                    </button>
+                </div>
+                <div class="vap-disclaimer">This is for educational purposes only — not financial advice. Always do your own research.</div>
+                `}
+            </div>
+        </div>`;
+}
+
+function refreshActionPlan() {
+    openActionPlanModal();
+}
+
+function buyActionPlanBundle() {
+    if (!_vapData || !_vapData.plan) return;
+
+    const stocks = [];
+    for (const group of _vapData.plan) {
+        for (const s of group.stocks) {
+            stocks.push({
+                symbol: s.symbol,
+                name: s.name,
+                price: s.price,
+                allocation_pct: s.allocation_pct,
+            });
+        }
+    }
+
+    // Close action plan modal
+    const overlay = document.getElementById("vap-modal-overlay");
+    if (overlay) overlay.classList.remove("open");
+
+    // Open the existing bundle buy modal
+    if (typeof buyStockBundle === "function") {
+        buyStockBundle(stocks);
+    }
+}

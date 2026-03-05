@@ -516,3 +516,171 @@ def scan_value_stocks(
             "total_items": total_candidates,
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# Action Plan Builder
+# ---------------------------------------------------------------------------
+
+# Weight multipliers per signal (higher = bigger allocation)
+_SIGNAL_WEIGHTS = {
+    "Strong Buy": 4.0,
+    "Buy": 2.5,
+    "Watch": 1.0,
+    "Consider": 0.5,
+}
+
+# Strategy recommendations per signal
+_SIGNAL_STRATEGIES = {
+    "Strong Buy": {
+        "action": "Buy now",
+        "strategy": "Lump-sum entry — stock passes all Graham-Buffett criteria with high quality and strong margin of safety.",
+        "position_limit": "Up to 8% of portfolio",
+        "risk": "Low relative risk — strong fundamentals across all criteria.",
+    },
+    "Buy": {
+        "action": "Buy / Start DCA",
+        "strategy": "Solid value candidate. Consider dollar-cost averaging over 2–4 weeks to reduce timing risk.",
+        "position_limit": "Up to 5% of portfolio",
+        "risk": "Moderate — passes all criteria but margin of safety or quality could be stronger.",
+    },
+    "Watch": {
+        "action": "Add to watchlist",
+        "strategy": "Close to a buy. One criterion didn't pass. Set a price alert and wait for a better entry.",
+        "position_limit": "Up to 3% if you decide to enter",
+        "risk": "Higher — one weak spot. Monitor quarterly earnings for improvement.",
+    },
+    "Consider": {
+        "action": "Research more",
+        "strategy": "Has potential but multiple criteria need improvement. Dig deeper before committing capital.",
+        "position_limit": "Max 2% — speculative allocation only",
+        "risk": "Elevated — several fundamentals are below threshold. Not a classic value play yet.",
+    },
+}
+
+
+def build_action_plan(
+    amount: float = 10000,
+    sector: Optional[str] = None,
+    signal_filter: Optional[str] = None,
+) -> dict:
+    """
+    Build a portfolio action plan from current scan candidates.
+    Groups stocks by signal, assigns allocation weights based on
+    quality score and signal strength, calculates dollar amounts.
+    """
+    _ensure_scan_running()
+
+    with _scan_lock:
+        all_candidates = list(_scan_cache["candidates"])
+        complete = _scan_cache["complete"]
+        scanned = _scan_cache["scanned"]
+        total = _scan_cache["total"]
+
+    # Apply filters
+    if sector:
+        all_candidates = [c for c in all_candidates if c["sector"].lower() == sector.lower()]
+    if signal_filter:
+        all_candidates = [c for c in all_candidates if c["signal"] == signal_filter]
+
+    # Sort by quality within each signal
+    all_candidates.sort(key=lambda x: x["quality"], reverse=True)
+
+    # Build signal groups
+    groups = {}
+    for sig in ("Strong Buy", "Buy", "Watch", "Consider"):
+        members = [c for c in all_candidates if c["signal"] == sig]
+        if members:
+            groups[sig] = members
+
+    if not groups:
+        return {
+            "plan": [],
+            "summary": {
+                "total_investment": amount,
+                "allocated": 0,
+                "stocks_count": 0,
+                "signal_breakdown": {},
+            },
+            "ready": complete,
+        }
+
+    # Calculate raw weights: signal_weight * (quality / 100)
+    weighted_stocks = []
+    for sig, members in groups.items():
+        sig_w = _SIGNAL_WEIGHTS.get(sig, 1.0)
+        for c in members:
+            raw_weight = sig_w * (c["quality"] / 100.0)
+            weighted_stocks.append({**c, "_raw_weight": raw_weight})
+
+    total_raw = sum(s["_raw_weight"] for s in weighted_stocks)
+    if total_raw <= 0:
+        total_raw = 1  # avoid division by zero
+
+    # Normalize weights and compute dollar allocations
+    for s in weighted_stocks:
+        s["allocation_pct"] = round((s["_raw_weight"] / total_raw) * 100, 1)
+        s["allocation_dollars"] = round((s["_raw_weight"] / total_raw) * amount, 2)
+        if s["price"] and s["price"] > 0:
+            s["suggested_shares"] = round(s["allocation_dollars"] / s["price"], 2)
+        else:
+            s["suggested_shares"] = 0
+
+    # Build grouped plan
+    plan = []
+    signal_breakdown = {}
+    for sig in ("Strong Buy", "Buy", "Watch", "Consider"):
+        members = [s for s in weighted_stocks if s["signal"] == sig]
+        if not members:
+            continue
+        strategy_info = _SIGNAL_STRATEGIES[sig]
+        group_alloc_pct = round(sum(m["allocation_pct"] for m in members), 1)
+        group_alloc_dollars = round(sum(m["allocation_dollars"] for m in members), 2)
+        signal_breakdown[sig] = {
+            "count": len(members),
+            "allocation_pct": group_alloc_pct,
+            "allocation_dollars": group_alloc_dollars,
+        }
+
+        stocks_in_group = []
+        for m in members:
+            # Generate per-stock reasoning
+            strengths = [cr["detail"] for cr in m.get("criteria", []) if cr["passed"]]
+            weaknesses = [cr["detail"] for cr in m.get("criteria", []) if not cr["passed"]]
+
+            stocks_in_group.append({
+                "symbol": m["symbol"],
+                "name": m["name"],
+                "sector": m["sector"],
+                "price": m["price"],
+                "quality": m["quality"],
+                "mos": m["mos"],
+                "pe_ratio": m["pe_ratio"],
+                "allocation_pct": m["allocation_pct"],
+                "allocation_dollars": m["allocation_dollars"],
+                "suggested_shares": m["suggested_shares"],
+                "strengths": strengths[:3],
+                "weaknesses": weaknesses[:3],
+            })
+
+        plan.append({
+            "signal": sig,
+            "action": strategy_info["action"],
+            "strategy": strategy_info["strategy"],
+            "position_limit": strategy_info["position_limit"],
+            "risk_note": strategy_info["risk"],
+            "group_allocation_pct": group_alloc_pct,
+            "group_allocation_dollars": group_alloc_dollars,
+            "stocks": stocks_in_group,
+        })
+
+    return {
+        "plan": plan,
+        "summary": {
+            "total_investment": amount,
+            "allocated": round(sum(s["allocation_dollars"] for s in weighted_stocks), 2),
+            "stocks_count": len(weighted_stocks),
+            "signal_breakdown": signal_breakdown,
+        },
+        "ready": complete,
+    }
