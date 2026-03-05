@@ -430,17 +430,232 @@ class TestScreenerFlow:
         )
 
     def test_screener_preset_value_stocks(self, authenticated_page: Page):
-        """Clicking 'Value Stocks' preset and searching should return results."""
+        """Clicking 'Value Stocks' preset should auto-search and return stock cards."""
         _nav_click(authenticated_page, "screener")
         authenticated_page.wait_for_timeout(1000)
         authenticated_page.get_by_role("button", name="Value Stocks").click()
-        authenticated_page.wait_for_timeout(500)
-        authenticated_page.get_by_role("button", name="Search").first.click()
-        authenticated_page.wait_for_timeout(5000)
+        # Preset auto-calls runScreener(), wait for results
+        authenticated_page.wait_for_timeout(8000)
         count_el = authenticated_page.locator("#scr-result-count")
         count_text = count_el.inner_text()
-        assert count_text != "", (
-            "Result count is empty after Value Stocks preset search"
+        assert count_text != "", "Result count is empty after Value Stocks preset"
+        assert not count_text.startswith("0 results"), (
+            f"Value Stocks returned 0 results — expected some value stocks. "
+            f"Count text: '{count_text}'"
+        )
+
+    def test_screener_preset_value_stocks_shows_cards(self, authenticated_page: Page):
+        """Value Stocks preset should produce visible stock cards with symbols."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(1000)
+        authenticated_page.get_by_role("button", name="Value Stocks").click()
+        authenticated_page.wait_for_timeout(8000)
+        cards = authenticated_page.locator(".scr-card")
+        card_count = cards.count()
+        assert card_count > 0, "Value Stocks preset produced 0 stock cards"
+        # Verify first card has a symbol
+        first_symbol = cards.first.locator(".scr-card-symbol").inner_text()
+        assert len(first_symbol) >= 1, "First card has no symbol text"
+
+    def test_screener_preset_growth_tech(self, authenticated_page: Page):
+        """Growth Tech preset should return results in the Technology sector."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(1000)
+        authenticated_page.get_by_role("button", name="Growth Tech").click()
+        authenticated_page.wait_for_timeout(8000)
+        count_text = authenticated_page.locator("#scr-result-count").inner_text()
+        assert not count_text.startswith("0 results"), (
+            f"Growth Tech returned 0 results. Count: '{count_text}'"
+        )
+
+    def test_screener_preset_high_dividend(self, authenticated_page: Page):
+        """High Dividend preset should return results with dividend yield >= 3%."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(1000)
+        authenticated_page.get_by_role("button", name="High Dividend").click()
+        authenticated_page.wait_for_timeout(8000)
+        count_text = authenticated_page.locator("#scr-result-count").inner_text()
+        assert not count_text.startswith("0 results"), (
+            f"High Dividend returned 0 results. Count: '{count_text}'"
+        )
+
+    def test_screener_preset_all_etfs(self, authenticated_page: Page):
+        """All ETFs preset should return ETF results."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(1000)
+        authenticated_page.get_by_role("button", name="All ETFs").click()
+        authenticated_page.wait_for_timeout(8000)
+        count_text = authenticated_page.locator("#scr-result-count").inner_text()
+        assert not count_text.startswith("0 results"), (
+            f"All ETFs returned 0 results. Count: '{count_text}'"
+        )
+
+    def test_screener_card_has_metrics(self, authenticated_page: Page):
+        """Cards should display real metric values (P/E, Div %, Beta, Mkt Cap)."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(1000)
+        authenticated_page.get_by_role("button", name="Search").first.click()
+        authenticated_page.wait_for_timeout(8000)
+        cards = authenticated_page.locator(".scr-card")
+        assert cards.count() > 0, "No cards returned from search"
+        # Check first card has metric values (not all dashes)
+        metrics = cards.first.locator(".metric-value")
+        metric_count = metrics.count()
+        assert metric_count >= 3, f"Expected >=3 metrics, got {metric_count}"
+        has_real_value = False
+        for i in range(metric_count):
+            val = metrics.nth(i).inner_text().strip()
+            if val != "—":
+                has_real_value = True
+                break
+        assert has_real_value, "All metric values are dashes — metrics not populated"
+
+    def test_screener_card_has_signal_badge(self, authenticated_page: Page):
+        """Each screener card should show a signal badge (Buy/Hold/Avoid)."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(1000)
+        authenticated_page.get_by_role("button", name="Search").first.click()
+        authenticated_page.wait_for_timeout(8000)
+        badges = authenticated_page.locator(".scr-card:first-child .signal-badge")
+        assert badges.count() > 0, "No signal badge found on first card"
+        badge_text = badges.first.inner_text().strip().lower()
+        assert any(s in badge_text for s in ["buy", "hold", "avoid"]), (
+            f"Signal badge text '{badge_text}' is not Buy/Hold/Avoid"
+        )
+
+    def test_screener_clear_resets_filters(self, authenticated_page: Page):
+        """Clear button should reset all filters."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(1000)
+        # Apply a preset to set filters
+        authenticated_page.get_by_role("button", name="Value Stocks").click()
+        authenticated_page.wait_for_timeout(1000)
+        # Now clear
+        authenticated_page.get_by_role("button", name="Clear").click()
+        authenticated_page.wait_for_timeout(500)
+        pe_max = authenticated_page.locator("#scr-pe-max").input_value()
+        div_min = authenticated_page.locator("#scr-div-min").input_value()
+        assert pe_max == "", f"P/E max not cleared: '{pe_max}'"
+        assert div_min == "", f"Div min not cleared: '{div_min}'"
+
+
+class TestScreenerAPI:
+    """API-level screener tests — validates the fix for the dividend yield bug."""
+
+    @staticmethod
+    def _session(base_url: str, email: str, password: str, name: str):
+        """Register + login via API. Returns requests.Session."""
+        import requests as _req
+        s = _req.Session()
+        s.post(f"{base_url}/auth/register",
+               json={"email": email, "password": password, "name": name}, timeout=30)
+        resp = s.post(f"{base_url}/auth/login",
+                      json={"email": email, "password": password}, timeout=30)
+        assert resp.status_code == 200, f"Login failed: {resp.text}"
+        return s
+
+    @staticmethod
+    def _wait_cache(s, base_url: str):
+        """Poll until cache is ready."""
+        import time
+        for _ in range(20):
+            cs = s.get(f"{base_url}/api/market/cache-status", timeout=10).json()
+            if cs.get("ready"):
+                return
+            time.sleep(3)
+
+    def test_value_stocks_api_returns_results(self, live_url: str, _live_server):
+        """The Value Stocks filter (P/E <= 15, dividend >= 2%) should return results."""
+        s = self._session(live_url, "screener_api@e2e.local", "Pass1234", "Screener Tester")
+        self._wait_cache(s, live_url)
+        resp = s.get(
+            f"{live_url}/api/screener",
+            params={"asset_type": "Stock", "pe_max": 15, "dividend_yield_min": 2},
+            timeout=30,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] > 0, (
+            f"Value Stocks API returned 0 results. "
+            f"This was the original bug — dividend_yield was being doubled (*100) "
+            f"then discarded by the >20 safety check."
+        )
+
+    def test_dividend_yield_values_are_reasonable(self, live_url: str, _live_server):
+        """All returned dividend_yield values should be between 0 and 20%."""
+        s = self._session(live_url, "screener_div@e2e.local", "Pass1234", "Div Tester")
+        self._wait_cache(s, live_url)
+        resp = s.get(
+            f"{live_url}/api/screener",
+            params={"asset_type": "Stock", "dividend_yield_min": 0.1},
+            timeout=30,
+        )
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        assert len(items) > 0, "No stocks returned with dividend_yield_min=0.1"
+        for item in items:
+            dy = item["dividend_yield"]
+            assert dy is not None, f"{item['symbol']} has null dividend_yield"
+            assert 0 < dy <= 20, (
+                f"{item['symbol']} dividend_yield={dy} is outside valid range (0, 20]. "
+                f"If > 20, the *100 bug may have returned."
+            )
+
+    def test_pe_ratio_filter_is_respected(self, live_url: str, _live_server):
+        """All results with pe_max=15 should have P/E <= 15."""
+        s = self._session(live_url, "screener_pe@e2e.local", "Pass1234", "PE Tester")
+        self._wait_cache(s, live_url)
+        resp = s.get(
+            f"{live_url}/api/screener",
+            params={"asset_type": "Stock", "pe_max": 15},
+            timeout=30,
+        )
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        assert len(items) > 0, "No stocks returned with pe_max=15"
+        for item in items:
+            pe = item["pe_ratio"]
+            assert pe is not None, f"{item['symbol']} has null pe_ratio"
+            assert pe <= 15, (
+                f"{item['symbol']} P/E={pe} exceeds pe_max=15 filter"
+            )
+
+    def test_high_dividend_api_returns_results(self, live_url: str, _live_server):
+        """High Dividend filter (div >= 3%) should return results."""
+        s = self._session(live_url, "screener_hidiv@e2e.local", "Pass1234", "HiDiv Tester")
+        self._wait_cache(s, live_url)
+        resp = s.get(
+            f"{live_url}/api/screener",
+            params={"dividend_yield_min": 3},
+            timeout=30,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] > 0, "High Dividend filter (div>=3%) returned 0 results"
+
+    def test_cache_warming_provides_metrics(self, live_url: str, _live_server):
+        """After cache is ready, screener results should have populated metrics."""
+        s = self._session(live_url, "screener_cache@e2e.local", "Pass1234", "Cache Tester")
+        self._wait_cache(s, live_url)
+        resp = s.get(
+            f"{live_url}/api/screener",
+            params={"asset_type": "Stock", "per_page": 10},
+            timeout=30,
+        )
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        assert len(items) > 0, "Screener returned 0 stocks"
+        # At least some stocks should have non-null metrics
+        has_pe = sum(1 for i in items if i["pe_ratio"] is not None)
+        has_div = sum(1 for i in items if i["dividend_yield"] is not None)
+        has_beta = sum(1 for i in items if i["beta"] is not None)
+        assert has_pe > 0, (
+            f"No stocks have pe_ratio populated out of {len(items)} — "
+            f"cache warmer may be using full=False"
+        )
+        assert has_beta > 0, (
+            f"No stocks have beta populated out of {len(items)} — "
+            f"cache warmer may be using full=False"
         )
 
 
