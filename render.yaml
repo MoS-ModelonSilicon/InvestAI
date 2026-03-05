@@ -9,3 +9,5 @@ services:
         value: "3.12"
       - key: DISABLE_YAHOO
         value: "1"
+      - key: LOW_MEMORY
+        value: "1"

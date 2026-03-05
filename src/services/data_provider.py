@@ -60,7 +60,7 @@ def _suppress_stderr():
 
 
 def _yf_ticker(symbol: str):
-    """Get a yfinance Ticker — proxy picked up from HTTPS_PROXY env var by curl_cffi."""
+    """Get a yfinance Ticker -- lazy-imported to save memory when DISABLE_YAHOO=1."""
     import yfinance as yf
     return yf.Ticker(symbol)
 

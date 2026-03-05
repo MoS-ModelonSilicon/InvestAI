@@ -17,10 +17,11 @@ from src.services import data_provider as dp
 from src.services import technical_analysis as ta
 from src.services.market_data import (
     fetch_batch, fetch_stock_info, ALL_UNIVERSE,
-    _get_cached, _set_cache, format_market_cap,
+    _get_cached, _set_cache, format_market_cap, _LOW_MEMORY,
 )
 
 logger = logging.getLogger(__name__)
+_MAX_WORKERS = 2 if _LOW_MEMORY else 4
 
 PERIOD_DAYS = {"1m": 30, "3m": 90, "6m": 180, "1y": 365}
 
@@ -335,7 +336,7 @@ def scan_and_score(period: str = "1y") -> list[dict]:
         key=lambda d: _fundamental_score(d),
         reverse=True,
     )
-    top_symbols = [d["symbol"] for d in fund_sorted[:80]]
+    top_symbols = [d["symbol"] for d in fund_sorted[:40 if _LOW_MEMORY else 80]]
 
     to_ts = int(time.time())
     from_ts = to_ts - CANDLE_LOOKBACK_DAYS * 86400
@@ -347,7 +348,7 @@ def scan_and_score(period: str = "1y") -> list[dict]:
             return sym, None
 
     candle_map = {}
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
         futures = {pool.submit(_fetch_candles, s): s for s in top_symbols}
         for fut in as_completed(futures):
             sym, data = fut.result()
@@ -402,8 +403,15 @@ def scan_and_score(period: str = "1y") -> list[dict]:
     for i, r in enumerate(results):
         r["rank"] = i + 1
 
-    _set_cache(cache_key, results)
-    return results
+    # Strip heavy indicator/price arrays before caching — saves ~4-8 MB
+    # These are only needed for single-stock detail (analyze_single_stock)
+    lightweight = []
+    for r in results:
+        lr = {k: v for k, v in r.items() if k not in ("indicators", "price_data", "dates")}
+        lightweight.append(lr)
+
+    _set_cache(cache_key, lightweight)
+    return lightweight
 
 
 def _build_reasoning(analysis: dict, info: dict) -> str:

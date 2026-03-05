@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -10,9 +11,17 @@ from src.services import data_provider as dp
 
 logger = logging.getLogger(__name__)
 
+# ── Memory-conscious settings for free-tier hosting (512 MB) ──
+_LOW_MEMORY = os.environ.get("LOW_MEMORY", "").lower() in ("1", "true", "yes")
+try:
+    threading.stack_size(1 * 1024 * 1024)  # 1 MB stacks instead of 8 MB default
+except Exception:
+    pass  # some platforms don't support stack_size
+
 _cache: dict[str, tuple[float, dict]] = {}
 _cache_lock = threading.Lock()
 CACHE_TTL = 900  # 15 min
+CACHE_MAX_ENTRIES = 600 if not _LOW_MEMORY else 300  # cap to prevent unbounded growth
 
 _warming = False
 _warm_done = threading.Event()
@@ -39,7 +48,7 @@ STOCK_UNIVERSE = [
     "KHC", "GIS", "SJM", "HSY",
     # US: Energy
     "XOM", "CVX", "COP", "EOG", "SLB", "MPC", "PSX", "VLO", "OXY",
-    "PXD", "DVN", "HAL", "FANG", "KMI", "WMB", "OKE",
+    "DVN", "HAL", "FANG", "KMI", "WMB", "OKE",
     # US: Communication Services
     "DIS", "NFLX", "CMCSA", "T", "VZ", "TMUS", "GOOG", "CHTR", "EA",
     "TTWO", "MTCH",
@@ -135,7 +144,7 @@ for sym in STOCK_UNIVERSE:
 def get_region(symbol: str) -> str:
     return _REGION_MAP.get(symbol, "US")
 
-MAX_WORKERS = 5
+MAX_WORKERS = 2 if _LOW_MEMORY else 5
 
 WARM_PRIORITY = [
     "SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA",
@@ -158,6 +167,23 @@ def _get_cached(key: str) -> Optional[dict]:
 def _set_cache(key: str, data):
     with _cache_lock:
         _cache[key] = (time.time(), data)
+        # Evict expired entries when cache grows too large
+        if len(_cache) > CACHE_MAX_ENTRIES:
+            _evict_expired()
+
+
+def _evict_expired():
+    """Remove expired entries from cache. Must be called under _cache_lock."""
+    now = time.time()
+    expired = [k for k, (ts, _) in _cache.items() if now - ts >= CACHE_TTL]
+    for k in expired:
+        del _cache[k]
+    # If still too large, evict oldest entries
+    if len(_cache) > CACHE_MAX_ENTRIES:
+        by_age = sorted(_cache.items(), key=lambda x: x[1][0])
+        to_remove = len(_cache) - CACHE_MAX_ENTRIES + 50  # free 50 extra slots
+        for k, _ in by_age[:to_remove]:
+            del _cache[k]
 
 
 def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
@@ -485,6 +511,10 @@ def start_cache_warmer():
                 warm_cache()
             except Exception as e:
                 logger.error("Cache warmer error: %s", e)
+            # Evict stale cache entries between warm cycles
+            with _cache_lock:
+                _evict_expired()
+                logger.info("Cache size after eviction: %d entries", len(_cache))
             time.sleep(CACHE_TTL - 60)  # refresh 1 min before expiry
 
     t = threading.Thread(target=_loop, daemon=True, name="cache-warmer")

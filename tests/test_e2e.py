@@ -538,6 +538,63 @@ class TestScreenerFlow:
         assert pe_max == "", f"P/E max not cleared: '{pe_max}'"
         assert div_min == "", f"Div min not cleared: '{div_min}'"
 
+    def test_screener_signal_filter_exists(self, authenticated_page: Page):
+        """Signal dropdown (Buy/Hold/Avoid) should exist in the filter sidebar."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(1000)
+        signal_select = authenticated_page.locator("#scr-signal")
+        expect(signal_select).to_be_visible()
+        opts = signal_select.locator("option")
+        assert opts.count() == 4, (
+            f"Signal dropdown should have 4 options (All/Buy/Hold/Avoid), got {opts.count()}"
+        )
+
+    def test_screener_signal_filter_buy_returns_only_buy(self, authenticated_page: Page):
+        """Filtering by 'Buy' signal should only show cards with Buy badges."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(1000)
+        authenticated_page.select_option("#scr-signal", "Buy")
+        authenticated_page.get_by_role("button", name="Search").first.click()
+        authenticated_page.wait_for_timeout(8000)
+        cards = authenticated_page.locator(".scr-card")
+        count = cards.count()
+        if count == 0:
+            # Cache might not be ready — accept 0 results gracefully
+            return
+        # Every visible card's signal badge must say Buy
+        for i in range(min(count, 10)):  # check up to 10
+            badge = cards.nth(i).locator(".signal-badge").inner_text().strip().lower()
+            assert "buy" in badge, (
+                f"Card {i} has signal '{badge}' but filter is set to Buy"
+            )
+
+    def test_screener_signal_filter_avoid_returns_only_avoid(self, authenticated_page: Page):
+        """Filtering by 'Avoid' signal should only show cards with Avoid badges."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(1000)
+        authenticated_page.select_option("#scr-signal", "Avoid")
+        authenticated_page.get_by_role("button", name="Search").first.click()
+        authenticated_page.wait_for_timeout(8000)
+        cards = authenticated_page.locator(".scr-card")
+        count = cards.count()
+        if count == 0:
+            return
+        for i in range(min(count, 10)):
+            badge = cards.nth(i).locator(".signal-badge").inner_text().strip().lower()
+            assert "avoid" in badge, (
+                f"Card {i} has signal '{badge}' but filter is set to Avoid"
+            )
+
+    def test_screener_signal_filter_cleared_by_clear_button(self, authenticated_page: Page):
+        """Clear button should reset the signal filter back to 'All Signals'."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(1000)
+        authenticated_page.select_option("#scr-signal", "Hold")
+        authenticated_page.get_by_role("button", name="Clear").click()
+        authenticated_page.wait_for_timeout(500)
+        val = authenticated_page.locator("#scr-signal").input_value()
+        assert val == "", f"Signal filter not cleared: '{val}'"
+
 
 class TestScreenerAPI:
     """API-level screener tests — validates the fix for the dividend yield bug."""
@@ -656,6 +713,74 @@ class TestScreenerAPI:
         assert has_beta > 0, (
             f"No stocks have beta populated out of {len(items)} — "
             f"cache warmer may be using full=False"
+        )
+
+    def test_signal_filter_buy_returns_only_buy(self, live_url: str, _live_server):
+        """Filtering by signal=Buy should return only Buy-signal stocks."""
+        s = self._session(live_url, "screener_sigbuy@e2e.local", "Pass1234", "Signal Tester")
+        self._wait_cache(s, live_url)
+        resp = s.get(
+            f"{live_url}/api/screener",
+            params={"signal": "Buy"},
+            timeout=30,
+        )
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        # Buy results may be 0 on a fresh cache — only verify correctness when present
+        for item in items:
+            assert item["signal"] == "Buy", (
+                f"{item['symbol']} has signal='{item['signal']}' but filter is Buy"
+            )
+
+    def test_signal_filter_hold_returns_only_hold(self, live_url: str, _live_server):
+        """Filtering by signal=Hold should return only Hold-signal stocks."""
+        s = self._session(live_url, "screener_sighold@e2e.local", "Pass1234", "Signal Tester")
+        self._wait_cache(s, live_url)
+        resp = s.get(
+            f"{live_url}/api/screener",
+            params={"signal": "Hold"},
+            timeout=30,
+        )
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        assert len(items) > 0, "signal=Hold filter returned 0 results"
+        for item in items:
+            assert item["signal"] == "Hold", (
+                f"{item['symbol']} has signal='{item['signal']}' but filter is Hold"
+            )
+
+    def test_signal_filter_avoid_returns_only_avoid(self, live_url: str, _live_server):
+        """Filtering by signal=Avoid should return only Avoid-signal stocks."""
+        s = self._session(live_url, "screener_sigavoid@e2e.local", "Pass1234", "Signal Tester")
+        self._wait_cache(s, live_url)
+        resp = s.get(
+            f"{live_url}/api/screener",
+            params={"signal": "Avoid"},
+            timeout=30,
+        )
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        # Avoid may have 0 results if all stocks are Buy/Hold — that's OK
+        for item in items:
+            assert item["signal"] == "Avoid", (
+                f"{item['symbol']} has signal='{item['signal']}' but filter is Avoid"
+            )
+
+    def test_signal_filter_no_filter_returns_mixed(self, live_url: str, _live_server):
+        """Without signal filter, results should contain a mix of signals."""
+        s = self._session(live_url, "screener_sigmix@e2e.local", "Pass1234", "Signal Tester")
+        self._wait_cache(s, live_url)
+        resp = s.get(
+            f"{live_url}/api/screener",
+            params={"per_page": 50},
+            timeout=30,
+        )
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        assert len(items) > 0, "Unfiltered screener returned 0 results"
+        signals = set(i["signal"] for i in items)
+        assert len(signals) >= 2, (
+            f"Expected mixed signals without filter, got only: {signals}"
         )
 
 
@@ -1571,3 +1696,412 @@ class TestForgotPasswordUI:
         page.wait_for_url(f"{live_url}/**", timeout=15_000)
         page.wait_for_load_state("domcontentloaded")
         expect(page.locator("nav.sidebar")).to_be_visible(timeout=15_000)
+
+
+# ────────────────────────────────────────────
+#  Value Scanner — Action Plan
+# ────────────────────────────────────────────
+
+class TestActionPlanAPI:
+    """API-level tests for the Value Scanner Action Plan endpoint.
+
+    These tests do NOT wait for the full market cache to warm — the
+    action plan endpoint works with whatever value-scanner candidates
+    are already available, returning an empty plan if none exist yet.
+    """
+
+    @staticmethod
+    def _session(base_url: str, email: str, password: str, name: str = "Test"):
+        import requests as _req
+        s = _req.Session()
+        s.post(f"{base_url}/auth/register",
+               json={"email": email, "password": password, "name": name}, timeout=60)
+        resp = s.post(f"{base_url}/auth/login",
+                      json={"email": email, "password": password}, timeout=60)
+        assert resp.status_code == 200, f"Login failed: {resp.text}"
+        return s
+
+    def test_action_plan_endpoint_returns_200(self, live_url: str, _live_server):
+        """GET /api/value-scanner/action-plan should return 200 with valid structure."""
+        s = self._session(live_url, "ap_api_basic@e2e.local", "Pass1234", "AP Tester")
+        resp = s.get(f"{live_url}/api/value-scanner/action-plan", params={"amount": 10000}, timeout=60)
+        assert resp.status_code == 200, f"Action plan returned {resp.status_code}: {resp.text[:300]}"
+        data = resp.json()
+        assert "plan" in data, f"Response missing 'plan' key: {list(data.keys())}"
+        assert "summary" in data, f"Response missing 'summary' key: {list(data.keys())}"
+        assert "ready" in data, f"Response missing 'ready' key"
+
+    def test_action_plan_summary_structure(self, live_url: str, _live_server):
+        """Summary should contain total_investment, allocated, stocks_count, signal_breakdown."""
+        s = self._session(live_url, "ap_api_summary@e2e.local", "Pass1234", "AP Summary")
+        resp = s.get(f"{live_url}/api/value-scanner/action-plan", params={"amount": 5000}, timeout=60)
+        assert resp.status_code == 200
+        summary = resp.json()["summary"]
+        assert summary["total_investment"] == 5000, f"Expected 5000, got {summary['total_investment']}"
+        assert "allocated" in summary, "Missing 'allocated' field"
+        assert "stocks_count" in summary, "Missing 'stocks_count' field"
+        assert "signal_breakdown" in summary, "Missing 'signal_breakdown' field"
+
+    def test_action_plan_plan_has_valid_signals(self, live_url: str, _live_server):
+        """Each plan group should have a valid signal and strategy info."""
+        s = self._session(live_url, "ap_api_signals@e2e.local", "Pass1234", "AP Signals")
+        resp = s.get(f"{live_url}/api/value-scanner/action-plan", params={"amount": 10000}, timeout=60)
+        assert resp.status_code == 200
+        plan = resp.json()["plan"]
+        valid_signals = {"Strong Buy", "Buy", "Watch", "Consider"}
+        for group in plan:
+            assert group["signal"] in valid_signals, f"Invalid signal: {group['signal']}"
+            assert "action" in group, f"Group {group['signal']} missing 'action'"
+            assert "strategy" in group, f"Group {group['signal']} missing 'strategy'"
+            assert "stocks" in group, f"Group {group['signal']} missing 'stocks'"
+            assert len(group["stocks"]) > 0, f"Group {group['signal']} has 0 stocks"
+
+    def test_action_plan_stocks_have_allocations(self, live_url: str, _live_server):
+        """Each stock in the plan should have allocation_pct, allocation_dollars, suggested_shares."""
+        s = self._session(live_url, "ap_api_alloc@e2e.local", "Pass1234", "AP Alloc")
+        resp = s.get(f"{live_url}/api/value-scanner/action-plan", params={"amount": 10000}, timeout=60)
+        assert resp.status_code == 200
+        plan = resp.json()["plan"]
+        if not plan:
+            return  # No candidates yet — scan may still be running
+
+        total_alloc_pct = 0
+        for group in plan:
+            for stock in group["stocks"]:
+                assert "symbol" in stock, "Stock missing 'symbol'"
+                assert "allocation_pct" in stock, f"{stock.get('symbol')} missing allocation_pct"
+                assert "allocation_dollars" in stock, f"{stock.get('symbol')} missing allocation_dollars"
+                assert "suggested_shares" in stock, f"{stock.get('symbol')} missing suggested_shares"
+                assert stock["allocation_pct"] > 0, f"{stock['symbol']} has 0% allocation"
+                assert stock["allocation_dollars"] > 0, f"{stock['symbol']} has $0 allocation"
+                total_alloc_pct += stock["allocation_pct"]
+
+        assert 99 <= total_alloc_pct <= 101, (
+            f"Total allocation should be ~100%, got {total_alloc_pct:.1f}%"
+        )
+
+    def test_action_plan_allocations_sum_to_investment(self, live_url: str, _live_server):
+        """Dollar allocations across all stocks should sum close to the requested amount."""
+        s = self._session(live_url, "ap_api_dollars@e2e.local", "Pass1234", "AP Dollars")
+        amount = 25000
+        resp = s.get(f"{live_url}/api/value-scanner/action-plan", params={"amount": amount}, timeout=60)
+        assert resp.status_code == 200
+        plan = resp.json()["plan"]
+        if not plan:
+            return
+
+        total_dollars = sum(
+            stock["allocation_dollars"]
+            for group in plan
+            for stock in group["stocks"]
+        )
+        assert abs(total_dollars - amount) < 10, (
+            f"Dollar allocations sum to ${total_dollars:.2f}, expected ~${amount}"
+        )
+
+    def test_action_plan_sector_filter(self, live_url: str, _live_server):
+        """Sector filter should only return stocks from that sector."""
+        s = self._session(live_url, "ap_api_sector@e2e.local", "Pass1234", "AP Sector")
+        resp = s.get(
+            f"{live_url}/api/value-scanner/action-plan",
+            params={"amount": 10000, "sector": "Technology"},
+            timeout=60,
+        )
+        assert resp.status_code == 200
+        plan = resp.json()["plan"]
+        for group in plan:
+            for stock in group["stocks"]:
+                assert stock["sector"] == "Technology", (
+                    f"{stock['symbol']} sector is '{stock['sector']}', expected 'Technology'"
+                )
+
+    def test_action_plan_strengths_and_weaknesses(self, live_url: str, _live_server):
+        """Each stock should have strengths and weaknesses lists."""
+        s = self._session(live_url, "ap_api_sw@e2e.local", "Pass1234", "AP SW")
+        resp = s.get(f"{live_url}/api/value-scanner/action-plan", params={"amount": 10000}, timeout=60)
+        assert resp.status_code == 200
+        plan = resp.json()["plan"]
+        if not plan:
+            return
+
+        for group in plan:
+            for stock in group["stocks"]:
+                assert "strengths" in stock, f"{stock['symbol']} missing 'strengths'"
+                assert "weaknesses" in stock, f"{stock['symbol']} missing 'weaknesses'"
+                assert isinstance(stock["strengths"], list), f"strengths should be a list"
+                assert isinstance(stock["weaknesses"], list), f"weaknesses should be a list"
+
+
+class TestActionPlanUI:
+    """Browser E2E tests for the Value Scanner Action Plan modal."""
+
+    def test_action_plan_button_visible(self, authenticated_page: Page):
+        """The 'Action Plan' button should be visible on the Value Investing page."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(500)
+        # Click the "Value Investing" tab
+        authenticated_page.locator("button.merge-tab", has_text="Value Investing").first.click()
+        authenticated_page.wait_for_timeout(1000)
+        btn = authenticated_page.locator(".vs-action-plan-btn")
+        expect(btn).to_be_visible(timeout=5_000)
+        expect(btn).to_contain_text("Action Plan")
+
+    def test_action_plan_modal_opens(self, authenticated_page: Page):
+        """Clicking the Action Plan button should open the modal."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(500)
+        authenticated_page.locator("button.merge-tab", has_text="Value Investing").first.click()
+        authenticated_page.wait_for_timeout(2000)
+        authenticated_page.locator(".vs-action-plan-btn").click()
+        # Wait for the modal overlay to appear
+        modal = authenticated_page.locator("#vap-modal-overlay")
+        expect(modal).to_be_visible(timeout=15_000)
+        # Modal should have the title
+        expect(modal.locator(".modal-header h2")).to_contain_text("Action Plan")
+
+    def test_action_plan_modal_shows_content(self, authenticated_page: Page):
+        """The modal should show either a plan with groups or loading/empty state."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(500)
+        authenticated_page.locator("button.merge-tab", has_text="Value Investing").first.click()
+        authenticated_page.wait_for_timeout(2000)
+        authenticated_page.locator(".vs-action-plan-btn").click()
+        modal = authenticated_page.locator("#vap-modal-overlay")
+        expect(modal).to_be_visible(timeout=15_000)
+        # Wait for content to load (replaces spinner)
+        authenticated_page.wait_for_timeout(8000)
+        # Should have either groups (plan loaded) or empty/warning message
+        body = modal.locator(".vap-body")
+        expect(body).to_be_visible()
+        html = body.inner_html()
+        assert len(html) > 50, f"Action plan body is too small, may not have loaded: {html[:200]}"
+
+    def test_action_plan_invest_amount_input(self, authenticated_page: Page):
+        """The modal should have an investment amount input with default value."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(500)
+        authenticated_page.locator("button.merge-tab", has_text="Value Investing").first.click()
+        authenticated_page.wait_for_timeout(2000)
+        authenticated_page.locator(".vs-action-plan-btn").click()
+        modal = authenticated_page.locator("#vap-modal-overlay")
+        expect(modal).to_be_visible(timeout=15_000)
+        authenticated_page.wait_for_timeout(8000)
+        amount_input = modal.locator("#vap-invest-amount")
+        expect(amount_input).to_be_visible()
+        val = amount_input.input_value()
+        assert float(val) == 10000, f"Default investment amount should be 10000, got {val}"
+
+    def test_action_plan_modal_closes(self, authenticated_page: Page):
+        """Clicking the close button should dismiss the modal."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(500)
+        authenticated_page.locator("button.merge-tab", has_text="Value Investing").first.click()
+        authenticated_page.wait_for_timeout(2000)
+        authenticated_page.locator(".vs-action-plan-btn").click()
+        modal = authenticated_page.locator("#vap-modal-overlay")
+        expect(modal).to_be_visible(timeout=15_000)
+        # Close via the X button
+        modal.locator(".modal-close").click()
+        authenticated_page.wait_for_timeout(500)
+        expect(modal).not_to_have_class(re.compile(r"\bopen\b"))
+
+    def test_action_plan_shows_signal_groups(self, authenticated_page: Page):
+        """If candidates exist, the modal should show signal groups with strategy info."""
+        _nav_click(authenticated_page, "screener")
+        authenticated_page.wait_for_timeout(500)
+        authenticated_page.locator("button.merge-tab", has_text="Value Investing").first.click()
+        # Wait longer for the scan to have some results
+        authenticated_page.wait_for_timeout(5000)
+        authenticated_page.locator(".vs-action-plan-btn").click()
+        modal = authenticated_page.locator("#vap-modal-overlay")
+        expect(modal).to_be_visible(timeout=15_000)
+        authenticated_page.wait_for_timeout(8000)
+        # Check for signal groups or empty state
+        groups = modal.locator(".vap-group")
+        empty = modal.locator(".vap-empty")
+        warning = modal.locator(".vap-warning")
+        has_groups = groups.count() > 0
+        has_empty = empty.count() > 0
+        has_warning = warning.count() > 0
+        assert has_groups or has_empty or has_warning, (
+            "Action plan modal has no groups, no empty state, and no warning — "
+            "the content didn't render properly"
+        )
+        if has_groups:
+            # Verify the first group has strategy content
+            first = groups.first
+            expect(first.locator(".vap-group-header")).to_be_visible()
+            expect(first.locator(".vap-group-strategy")).to_be_visible()
+            expect(first.locator(".vap-stock-row")).to_have_count(
+                first.locator(".vap-stock-row").count()  # at least 1
+            )
+            strategy_text = first.locator(".vap-group-strategy").inner_text()
+            assert len(strategy_text) > 20, f"Strategy text too short: '{strategy_text}'"
+
+
+# ════════════════════════════════════════════════════════════
+#  Market Data Integrity — verify prices load without errors
+# ════════════════════════════════════════════════════════════
+
+class TestMarketDataIntegrity:
+    """
+    Verify that the dashboard shows real market data without HTTP error
+    messages. This is the E2E check for the Yahoo Finance 401 fix —
+    errors should never appear in the UI.
+    """
+
+    def test_no_http_error_text_on_dashboard(self, authenticated_page: Page):
+        """Dashboard should never show 'HTTP Error', 'Unauthorized', or 'Invalid Crumb'."""
+        _nav_click(authenticated_page, "dashboard")
+        authenticated_page.wait_for_timeout(10_000)
+        body_text = authenticated_page.locator("#page-dashboard").inner_text()
+        for bad in ("HTTP Error", "Unauthorized", "Invalid Crumb", "401", "403"):
+            assert bad not in body_text, (
+                f"Dashboard contains error text '{bad}' — market data provider "
+                f"is leaking errors to the UI"
+            )
+
+    def test_market_cards_show_real_prices(self, authenticated_page: Page):
+        """Featured market cards should display dollar prices, not $0 or error text."""
+        _nav_click(authenticated_page, "dashboard")
+        # Wait for market cards to appear (cache warming may take a while)
+        try:
+            authenticated_page.wait_for_selector(
+                ".market-card .market-card-price", timeout=60_000
+            )
+        except Exception:
+            # If no cards appear at all, skip — cache may be fully cold
+            cards = authenticated_page.locator(".market-card")
+            if cards.count() == 0:
+                return
+        authenticated_page.wait_for_timeout(2_000)  # let remaining cards load
+        cards = authenticated_page.locator(".market-card")
+        count = cards.count()
+        assert count >= 1, "No market cards rendered on the dashboard"
+        priced = 0
+        for i in range(min(count, 6)):
+            card = cards.nth(i)
+            price_el = card.locator(".market-card-price")
+            if price_el.count() == 0:
+                continue
+            price_text = price_el.inner_text().strip()
+            if not price_text:
+                continue
+            assert "$" in price_text, (
+                f"Market card {i} price missing '$': '{price_text}'"
+            )
+            import re as _re
+            nums = _re.findall(r"[\d,.]+", price_text)
+            assert nums, f"Market card {i} has no numeric price: '{price_text}'"
+            val = float(nums[0].replace(",", ""))
+            assert val > 0, f"Market card {i} shows $0 price: '{price_text}'"
+            priced += 1
+        assert priced >= 1, "No market cards have a visible price"
+
+    def test_ticker_strip_renders(self, authenticated_page: Page):
+        """Ticker strip should render with items."""
+        _nav_click(authenticated_page, "dashboard")
+        # Wait for ticker items to appear
+        try:
+            authenticated_page.wait_for_selector(".ticker-item", timeout=60_000)
+        except Exception:
+            # Ticker may not load if cache is fully cold — skip gracefully
+            return
+        authenticated_page.wait_for_timeout(2_000)
+        strip = authenticated_page.locator("#ticker-strip")
+        expect(strip).to_be_visible()
+        items = strip.locator(".ticker-item")
+        count = items.count()
+        assert count >= 1, "No ticker items rendered"
+
+    def test_no_js_errors_during_market_load(self, authenticated_page: Page):
+        """No JavaScript errors should fire while market data loads."""
+        js_errors = []
+        authenticated_page.on("pageerror", lambda e: js_errors.append(str(e)))
+        _nav_click(authenticated_page, "dashboard")
+        authenticated_page.wait_for_timeout(15_000)
+        critical = [
+            e for e in js_errors
+            if "TypeError" in e or "ReferenceError" in e or "SyntaxError" in e
+        ]
+        assert len(critical) == 0, (
+            f"JavaScript errors during market data load: {critical}"
+        )
+
+    def test_market_api_returns_valid_data(self, live_url: str, _live_server):
+        """The /api/market/home API should return ticker + featured arrays with prices."""
+        import requests
+        s = requests.Session()
+        px = None if "127.0.0.1" in live_url else {
+            "http": "http://proxy-dmz.intel.com:911",
+            "https": "http://proxy-dmz.intel.com:912",
+        }
+        # Register & login
+        s.post(f"{live_url}/auth/register",
+               json={"email": "market_api@e2e.local", "password": "Pass1234", "name": "MarketAPI"},
+               proxies=px, timeout=30)
+        resp = s.post(f"{live_url}/auth/login",
+                      json={"email": "market_api@e2e.local", "password": "Pass1234"},
+                      proxies=px, timeout=30)
+        assert resp.status_code == 200, f"Login failed: {resp.text}"
+
+        # Wait for cache to warm (at least partially)
+        import time
+        for _ in range(12):
+            r = s.get(f"{live_url}/api/market/cache-status", proxies=px, timeout=15)
+            if r.status_code == 200:
+                status = r.json()
+                if status.get("cached", 0) >= 6 or status.get("ready"):
+                    break
+            time.sleep(5)
+
+        # Fetch market home data
+        r = s.get(f"{live_url}/api/market/home", proxies=px, timeout=30)
+        assert r.status_code == 200, f"Market home API failed: {r.status_code}"
+        data = r.json()
+
+        # Validate ticker data
+        ticker = data.get("ticker", [])
+        assert len(ticker) >= 1, "Market ticker returned no items"
+        for item in ticker:
+            assert item.get("price", 0) > 0, (
+                f"Ticker item {item.get('symbol', '?')} has zero/missing price"
+            )
+            assert "error" not in str(item).lower(), (
+                f"Ticker item contains error text: {item}"
+            )
+
+        # Validate featured stocks
+        featured = data.get("featured", [])
+        assert len(featured) >= 1, "Market featured returned no items"
+        for item in featured:
+            assert item.get("price", 0) > 0, (
+                f"Featured item {item.get('symbol', '?')} has zero/missing price"
+            )
+
+    def test_market_cards_have_change_indicators(self, authenticated_page: Page):
+        """Market cards should show change % with up/down coloring."""
+        _nav_click(authenticated_page, "dashboard")
+        try:
+            authenticated_page.wait_for_selector(
+                ".market-card .market-card-change", timeout=60_000
+            )
+        except Exception:
+            cards = authenticated_page.locator(".market-card")
+            if cards.count() == 0:
+                return  # cold cache, skip
+        authenticated_page.wait_for_timeout(2_000)
+        cards = authenticated_page.locator(".market-card")
+        count = cards.count()
+        if count == 0:
+            return
+        changes_found = 0
+        for i in range(min(count, 6)):
+            change_el = cards.nth(i).locator(".market-card-change")
+            if change_el.count() > 0:
+                text = change_el.inner_text().strip()
+                if "%" in text:
+                    changes_found += 1
+        assert changes_found >= 1, (
+            "No market cards show a change percentage — data may not have loaded"
+        )

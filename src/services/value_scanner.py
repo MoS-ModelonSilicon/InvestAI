@@ -22,10 +22,11 @@ import time
 from typing import Optional
 
 from src.services.market_data import (
-    fetch_batch, fetch_stock_info, STOCK_UNIVERSE, format_market_cap,
+    fetch_batch, fetch_stock_info, STOCK_UNIVERSE, format_market_cap, _LOW_MEMORY,
 )
 
 logger = logging.getLogger(__name__)
+_MAX_WORKERS = 2 if _LOW_MEMORY else 4
 
 EXCLUDED_SECTORS = {"Financial Services", "Real Estate"}
 
@@ -364,7 +365,7 @@ def _run_background_scan():
                 except Exception:
                     return None
 
-            with ThreadPoolExecutor(max_workers=4) as pool:
+            with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
                 futures = {pool.submit(_fetch, s): s for s in batch}
                 for fut in as_completed(futures):
                     r = fut.result()

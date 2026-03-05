@@ -22,12 +22,13 @@ from src.services import data_provider as dp
 from src.services import technical_analysis as ta
 from src.services.market_data import (
     fetch_batch, fetch_stock_info, ALL_UNIVERSE,
-    _get_cached, _set_cache, format_market_cap,
+    _get_cached, _set_cache, format_market_cap, _LOW_MEMORY,
 )
 
 logger = logging.getLogger(__name__)
 
 CANDLE_LOOKBACK_DAYS = 420
+_MAX_WORKERS = 2 if _LOW_MEMORY else 4
 SCAN_CACHE_TTL = 1800  # 30 min
 
 # Benchmark candles for relative strength (cached per scan)
@@ -388,7 +389,7 @@ def _run_background_scan():
                 except Exception:
                     return sym, None
 
-            with ThreadPoolExecutor(max_workers=4) as pool:
+            with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
                 futures = {pool.submit(_fetch, s): s for s in batch_syms}
                 for fut in as_completed(futures):
                     sym, candles = fut.result()
@@ -398,6 +399,9 @@ def _run_background_scan():
                             all_picks.append(pick)
 
             all_picks.sort(key=lambda x: x["score"], reverse=True)
+
+            # Cap stored picks to top 50 — API only shows 30, save memory
+            all_picks = all_picks[:50]
 
             momentum = _build_momentum_package(all_picks)
             swing = _build_swing_package(all_picks)
