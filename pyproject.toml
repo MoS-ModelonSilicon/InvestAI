@@ -34,25 +34,41 @@ ignore = [
     "S101",   # assert used – fine in tests
     "S105",   # hardcoded password – too many false positives with test code
     "S106",   # hardcoded password in func arg
+    "S110",   # try-except-pass – too noisy for startup code
+    "S112",   # try-except-continue – acceptable pattern
     "T201",   # print() – we use it for CLI scripts & debug
     "B008",   # function call in default arg – required by FastAPI Depends()
+    "B905",   # zip() without strict= – cosmetic, Python 3.10+ feature
     "RET504", # unnecessary assignment before return
+    "RET505", # unnecessary else after return – cosmetic preference
     "S311",   # random – not used for crypto
     "UP007",  # Use X | Y for union – already using this
+    "UP015",  # unnecessary mode argument – cosmetic
+    "UP042",  # str+Enum inheritance – valid pre-3.11 pattern
+    "UP045",  # Use X | None – Optional[] is still clear
+    "I001",   # import sorting – cosmetic, fix locally with ruff check --fix
+    "E401",   # multiple imports on one line
+    "E402",   # module level import not at top – common pattern in FastAPI apps
+    "E741",   # ambiguous variable name – used intentionally (l for low)
+    "N806",   # variable should be lowercase – BATCH_SIZE etc. used as constants
+    "C401",   # unnecessary generator – cosmetic
+    "F541",   # f-string without placeholders – harmless, fix incrementally
+    "F841",   # local variable assigned but unused – fix incrementally
+    "SIM102", # nested if – sometimes clearer separate
+    "SIM105", # use contextlib.suppress – cosmetic preference
+    "SIM108", # use ternary – sometimes less readable
+    "SIM113", # use enumerate for index – cosmetic
+    "SIM114", # combine if branches – sometimes clearer separate
     "RUF001", # ambiguous unicode – en-dashes in strings are fine
     "RUF002", # ambiguous unicode in docstrings
+    "RUF003", # ambiguous unicode in comments
     "RUF012", # mutable class defaults – too noisy for test fixtures
-    "I001",   # import sorting – cosmetic, fix locally with ruff check --fix
-    "E402",   # module level import not at top – common pattern in FastAPI apps
-    "E401",   # multiple imports on one line
-    "UP045",  # Use X | None – Optional[] is still clear
-    "UP042",  # str+Enum inheritance – valid pre-3.11 pattern
-    "SIM114", # combine if branches – sometimes clearer separate
-    "S110",   # try-except-pass – too noisy for startup code
+    "RUF013", # implicit Optional – common in existing code
+    "RUF100", # unused noqa directive
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S", "T20", "B011", "PT019", "B007"]  # relax rules in tests
+"tests/**" = ["S", "T20", "B011", "PT019", "PT018", "PT001", "B007"]  # relax rules in tests
 "src/services/**" = ["T201"]               # services may print debug info
 "make_admin.py" = ["T201"]                 # CLI script
 

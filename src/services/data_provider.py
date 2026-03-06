@@ -369,9 +369,6 @@ def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optio
 
 
 def get_company_news(symbol: str, days_back: int = 7) -> list[dict]:
-    result = _try_yahoo_news(symbol, days_back)
-    if result:
-        return result
     return fh.get_company_news(symbol, days_back)
 
 
