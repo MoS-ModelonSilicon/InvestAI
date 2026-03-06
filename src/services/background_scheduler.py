@@ -24,6 +24,7 @@ TRADING_ADVISOR_INTERVAL = 1800  # 30 min
 MARKET_DATA_INTERVAL = 120       # 2 min  — lightweight (quotes + sparklines)
 NEWS_INTERVAL = 900              # 15 min — 8 Finnhub calls
 SMART_ADVISOR_INTERVAL = 900     # 15 min — heavy scan (40-80 candles)
+CACHE_SNAPSHOT_INTERVAL = 600    # 10 min — persist market cache to DB
 
 
 # ── Individual scan runners ──────────────────────────────────
@@ -88,6 +89,21 @@ def _run_smart_advisor_scan() -> bool:
         return False
 
 
+def _run_cache_snapshot() -> bool:
+    """Persist important market_data cache entries to the database."""
+    try:
+        from src.services.market_data import _cache, _cache_lock
+        from src.services.persistence import save_market_cache_snapshot
+        with _cache_lock:
+            snapshot = dict(_cache)
+        save_market_cache_snapshot(snapshot)
+        logger.info("Scheduler: cache snapshot saved (%d entries)", len(snapshot))
+        return True
+    except Exception:
+        logger.exception("Scheduler: cache snapshot failed")
+        return False
+
+
 # ── Main loop ────────────────────────────────────────────────
 def _scheduler_loop():
     """Blocking loop run inside a daemon thread."""
@@ -121,6 +137,7 @@ def _scheduler_loop():
     last_market = time.time()
     last_news = time.time()
     last_smart = time.time()
+    last_snapshot = time.time()
 
     while not _stop_event.is_set():
         now = time.time()
@@ -144,6 +161,10 @@ def _scheduler_loop():
         if now - last_trading >= TRADING_ADVISOR_INTERVAL:
             _run_trading_scan()
             last_trading = time.time()
+
+        if now - last_snapshot >= CACHE_SNAPSHOT_INTERVAL:
+            _run_cache_snapshot()
+            last_snapshot = time.time()
 
         # Sleep in small increments so stop_event is responsive
         _stop_event.wait(timeout=30)

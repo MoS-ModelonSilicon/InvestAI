@@ -9,6 +9,7 @@ python-jose[cryptography]==3.5.0
 bcrypt==5.0.0
 passlib[bcrypt]==1.7.4
 slowapi==0.1.9
+psycopg2-binary>=2.9.0
 
 # Testing (E2E with real browser)
 pytest==9.0.2

@@ -201,6 +201,16 @@ def evaluate_all_picks(pick_type: Optional[str] = None) -> dict:
     }
 
     _set_cache(cache_key, result)
+
+    # Persist to DB so picks survive restarts
+    try:
+        from src.services.persistence import save_scan
+        with _cache_lock:
+            snapshot = {k: v for k, (_, v) in _cache.items()}
+        save_scan("picks_tracker", snapshot)
+    except Exception:
+        logger.exception("Picks tracker: failed to persist results")
+
     return result
 
 

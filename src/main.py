@@ -27,6 +27,7 @@ Base.metadata.create_all(bind=engine)
 def _auto_migrate():
     """Add columns and indexes introduced after initial deploy (safe to re-run)."""
     from sqlalchemy import inspect, text
+    from src.database import _is_sqlite
     insp = inspect(engine)
     if "users" in insp.get_table_names():
         cols = {c["name"] for c in insp.get_columns("users")}
@@ -35,12 +36,18 @@ def _auto_migrate():
                 conn.execute(text("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0"))
             if "is_active" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1"))
-    # Add performance indexes for queries that filter by user_id and date
+    # Add performance indexes
     with engine.begin() as conn:
         try:
-            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_user_id ON transactions (user_id)"))
-            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_date ON transactions (date)"))
-            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_alerts_user_id ON alerts (user_id)"))
+            if _is_sqlite:
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_user_id ON transactions (user_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_date ON transactions (date)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_alerts_user_id ON alerts (user_id)"))
+            else:
+                # PostgreSQL: CREATE INDEX IF NOT EXISTS is supported
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_user_id ON transactions (user_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_date ON transactions (date)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_alerts_user_id ON alerts (user_id)"))
         except Exception:
             pass  # Indexes already exist or table not yet created
 
@@ -390,6 +397,15 @@ def startup():
     db.close()
 
     if not _testing:
+        # Restore cached data from DB before starting scanners
+        # This lets the API serve last-known data immediately
+        try:
+            from src.services.persistence import restore_all_caches
+            restore_all_caches()
+        except Exception:
+            import logging
+            logging.getLogger("investai").exception("Failed to restore caches from DB")
+
         from src.services.market_data import start_cache_warmer
         start_cache_warmer()
 

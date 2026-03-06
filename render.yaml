@@ -11,6 +11,8 @@ services:
         value: "1"
       - key: LOW_MEMORY
         value: "1"
+      - key: DATABASE_URL
+        sync: false   # set in Render dashboard (Supabase PostgreSQL URL)
       - key: ADMIN_EMAIL
         sync: false   # set in Render dashboard
       - key: ADMIN_PASSWORD

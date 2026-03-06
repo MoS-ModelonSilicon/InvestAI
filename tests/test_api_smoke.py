@@ -396,23 +396,26 @@ class TestAllEndpointsSmoke:
         assert r2.status_code == 200
         item_id = r2.json().get("id")
 
-    # ── Watchlist live (external API) ──
-        r3 = _authed_get("/api/screener/watchlist/live", self.c)
-        assert r3.status_code < 500
-
         if item_id:
             r4 = _authed_delete(f"/api/screener/watchlist/{item_id}", self.c)
             assert r4.status_code in (200, 204)
+
+    @pytest.mark.external
+    def test_watchlist_live(self):
+        r = _authed_get("/api/screener/watchlist/live", self.c)
+        assert r.status_code < 500
 
     # ── Market (may use cached external data) ──
     def test_market_ticker(self):
         r = _authed_get("/api/market/ticker", self.c)
         assert r.status_code != 500
 
+    @pytest.mark.external
     def test_market_featured(self):
         r = _authed_get("/api/market/featured", self.c)
         assert r.status_code != 500
 
+    @pytest.mark.external
     def test_market_home(self):
         r = _authed_get("/api/market/home", self.c)
         assert r.status_code != 500
@@ -422,10 +425,12 @@ class TestAllEndpointsSmoke:
         assert r.status_code == 200
 
     # ── Stock Detail (external API — may 404 without API key) ──
+    @pytest.mark.external
     def test_stock_detail(self):
         r = _authed_get("/api/stock/AAPL", self.c)
         assert r.status_code != 500
 
+    @pytest.mark.external
     def test_stock_full_combined_endpoint(self):
         """New /api/stock/{sym}/full should return info+history+news in one call."""
         r = _authed_get("/api/stock/AAPL/full", self.c)
@@ -436,6 +441,7 @@ class TestAllEndpointsSmoke:
             assert "history" in data, "Missing 'history' in /full response"
             assert "news" in data, "Missing 'news' in /full response"
 
+    @pytest.mark.external
     def test_stock_history_includes_sma50(self):
         """Stock history should now include server-computed sma50."""
         r = _authed_get("/api/stock/AAPL/history", self.c)
@@ -450,29 +456,35 @@ class TestAllEndpointsSmoke:
                 # 50th value should be a number
                 assert isinstance(data["sma50"][49], (int, float)), "sma50[49] should be numeric"
 
+    @pytest.mark.external
     def test_stock_history(self):
         r = _authed_get("/api/stock/AAPL/history", self.c)
         assert r.status_code != 500
 
+    @pytest.mark.external
     def test_stock_news(self):
         r = _authed_get("/api/stock/AAPL/news", self.c)
         assert r.status_code != 500
 
     # ── News (external API) ──
+    @pytest.mark.external
     def test_market_news(self):
         r = _authed_get("/api/news", self.c)
         assert r.status_code != 500
 
+    @pytest.mark.external
     def test_ticker_news(self):
         r = _authed_get("/api/news/AAPL", self.c)
         assert r.status_code != 500
 
     # ── Comparison (external API) ──
+    @pytest.mark.external
     def test_compare_stocks(self):
         r = _authed_get("/api/compare?symbols=AAPL,MSFT", self.c)
         assert r.status_code != 500
 
-    # ── Recommendations (needs profile) ──
+    # ── Recommendations (needs profile + may call external APIs) ──
+    @pytest.mark.external
     def test_recommendations(self):
         r = _authed_get("/api/recommendations", self.c)
         assert r.status_code != 500
@@ -484,10 +496,12 @@ class TestAllEndpointsSmoke:
         assert isinstance(r.json(), (list, dict))
 
     # ── Calendar (external API) ──
+    @pytest.mark.external
     def test_calendar_earnings(self):
         r = _authed_get("/api/calendar/earnings", self.c)
         assert r.status_code != 500
 
+    @pytest.mark.external
     def test_calendar_economic(self):
         r = _authed_get("/api/calendar/economic", self.c)
         assert r.status_code != 500
@@ -528,23 +542,28 @@ class TestAllEndpointsSmoke:
         assert r.status_code == 200
 
     # ── Smart Advisor (may depend on external data) ──
+    @pytest.mark.external
     def test_advisor_analyze(self):
         r = _authed_get("/api/advisor/analyze", self.c)
         assert r.status_code != 500
 
+    @pytest.mark.external
     def test_advisor_stock(self):
         r = _authed_get("/api/advisor/stock/AAPL", self.c)
         assert r.status_code != 500
 
+    @pytest.mark.external
     def test_advisor_company_dna(self):
         r = _authed_get("/api/advisor/company-dna/AAPL", self.c)
         assert r.status_code != 500
 
     # ── Trading Advisor (may depend on external data) ──
+    @pytest.mark.external
     def test_trading_dashboard(self):
         r = _authed_get("/api/trading", self.c)
         assert r.status_code != 500
 
+    @pytest.mark.external
     def test_trading_dashboard_has_updated_at(self):
         """Trading dashboard should include updated_at for client-side diffing."""
         r = _authed_get("/api/trading", self.c)
@@ -553,15 +572,18 @@ class TestAllEndpointsSmoke:
             assert "updated_at" in data, "Missing 'updated_at' in trading response"
             assert isinstance(data["updated_at"], (int, float)), "updated_at should be numeric"
 
+    @pytest.mark.external
     def test_trading_single_stock(self):
         r = _authed_get("/api/trading/AAPL", self.c)
         assert r.status_code != 500
 
     # ── Picks Tracker (may depend on external data) ──
+    @pytest.mark.external
     def test_picks_list(self):
         r = _authed_get("/api/picks", self.c)
         assert r.status_code != 500
 
+    @pytest.mark.external
     def test_picks_seed_watchlist(self):
         r = _authed_post("/api/picks/seed-watchlist", self.c)
         assert r.status_code != 500

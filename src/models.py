@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, UniqueConstraint, Text
 from sqlalchemy.orm import relationship
 
 from src.database import Base
@@ -188,3 +188,16 @@ class PasswordReset(Base):
     code = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     used = Column(Integer, default=0)
+
+
+class ScanResult(Base):
+    """Persisted scan/cache results that survive server restarts.
+
+    Stores JSON-serialized scan data keyed by a string identifier
+    (e.g. 'value_scan', 'trading_scan', 'market_cache').
+    """
+    __tablename__ = "scan_results"
+
+    key = Column(String, primary_key=True)
+    data = Column(Text, nullable=False)          # JSON string
+    updated_at = Column(DateTime, default=datetime.utcnow)

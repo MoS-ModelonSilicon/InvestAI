@@ -483,6 +483,15 @@ def _run_background_scan():
             len(local_packages.get("swing", {}).get("picks", [])),
             len(local_packages.get("oversold", {}).get("picks", [])),
         )
+
+        # Persist results to DB so they survive restarts
+        try:
+            from src.services.persistence import save_scan
+            with _scan_lock:
+                snapshot = dict(_scan_cache)
+            save_scan("trading_scan", snapshot)
+        except Exception:
+            logger.exception("Trading advisor: failed to persist results")
     except Exception:
         logger.exception("Trading advisor background scan failed")
         with _scan_lock:

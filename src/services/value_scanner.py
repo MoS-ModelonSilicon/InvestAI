@@ -394,6 +394,15 @@ def _run_background_scan():
 
         logger.info("Value scanner: background scan complete - %d candidates, %d rejected",
                      len(_scan_cache["candidates"]), len(_scan_cache["rejected"]))
+
+        # Persist results to DB so they survive restarts
+        try:
+            from src.services.persistence import save_scan
+            with _scan_lock:
+                snapshot = dict(_scan_cache)
+            save_scan("value_scan", snapshot)
+        except Exception:
+            logger.exception("Value scanner: failed to persist results")
     except Exception:
         logger.exception("Value scanner background scan failed")
         with _scan_lock:

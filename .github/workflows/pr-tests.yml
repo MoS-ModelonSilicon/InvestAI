@@ -58,7 +58,7 @@ jobs:
       - name: Run smoke tests
         run: |
           python -m pytest tests/test_api_smoke.py \
-            -m smoke \
+            -m "smoke and not external" \
             -v --tb=short \
             --junitxml=results/junit-smoke.xml \
             --timeout=30 \
