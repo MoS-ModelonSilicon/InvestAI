@@ -1,7 +1,8 @@
 # InvestAI — Security Audit & Testing Strategy
 
 > **Created:** 2026-03-06  
-> **Status:** Planning  
+> **Last Updated:** 2026-03-06  
+> **Status:** Scan Complete — Critical Fixes Deployed  
 > **Owner:** Yaron Klein (yaronklein1@gmail.com)
 
 ---
@@ -490,21 +491,104 @@ Fixes that take < 30 min each and have outsized impact:
 - [ ] Change `email: str` → `email: EmailStr` in RegisterBody (1 line)
 - [ ] Add `TransactionType` enum to schema (5 lines)
 - [ ] Pin dependency versions (run `pip freeze > requirements.txt`)
-- [ ] Set `INVESTAI_SECRET` on Render if missing
+- [x] ~~Set `INVESTAI_SECRET` on Render if missing~~ ✅ Set 2026-03-06
 
 ---
 
-## Appendix: Files Modified Per Fix
+## Appendix A: Files Modified Per Fix
 
 | Fix | Files |
 |-----|-------|
-| Secure cookie | `src/auth.py` |
-| Password policy | `src/main.py`, `src/routers/admin.py` |
-| Reset code leak | `src/main.py` |
-| Security headers | `src/main.py` |
-| XSS fix | `static/app.js`, all JS modules in `static/js/` |
-| Rate limiting | `src/main.py`, `requirements.txt` |
-| Schema validation | `src/schemas/transactions.py`, `src/schemas/portfolio.py`, `src/schemas/alerts.py` |
-| Email validation | `src/main.py` |
-| Pin deps | `requirements.txt` |
-| New tests | `tests/test_unit.py`, `tests/test_api.py`, `tests/test_security.py`, `tests/test_perf.py` |
+| Secure cookie | `src/main.py` (set_cookie calls) |
+| Password policy | `src/main.py` (register + reset, 4→8 chars) |
+| Reset code leak | `src/main.py` (removed code from response) |
+| Security headers | `src/main.py` (SecurityHeadersMiddleware) |
+| XSS fix | `static/app.js` (esc() helper + 12 innerHTML calls) |
+| Rate limiting | `src/main.py` + `requirements.txt` (slowapi) |
+| Disable OpenAPI | `src/main.py` (docs_url/redoc_url/openapi_url) |
+| Secure random | `src/main.py` (secrets.randbelow vs random.randint) |
+| INVESTAI_SECRET | Render env var (set via API) |
+
+---
+
+## Appendix B: Automated Scan Results (2026-03-06)
+
+### B.1 SAST — Bandit
+
+**Command:** `python -m bandit -r src/ -l --format txt`
+
+| Severity | Count | Issues |
+|----------|-------|--------|
+| High     | 0     | — |
+| Medium   | 0     | — |
+| Low      | 7     | B311 (random.randint ×1), B105 (hardcoded password pattern ×1), B110 (try-except-pass ×4), B112 (try-except-continue ×1) |
+
+**B311 (reset code)**: Fixed — now uses `secrets.randbelow(1000000)`
+
+### B.2 Dependency Audit — pip-audit
+
+**Command:** `python -m pip_audit -r requirements.txt`
+
+| Package | Version | CVE | Severity | Fix Available |
+|---------|---------|-----|----------|---------------|
+| ecdsa   | 0.19.1  | CVE-2024-23342 | Medium | ❌ No fix |
+
+**Status:** ecdsa is a transitive dependency of python-jose. No fix version available yet. Monitor or migrate to PyJWT.
+
+### B.3 Secret Scanning
+
+| Check | Result |
+|-------|--------|
+| DEPLOY-KEYS.md in .gitignore | ✅ Yes |
+| API keys in tracked files | ✅ None found |
+| API keys in git history | ✅ None found |
+| Secrets in environment | ✅ Properly isolated on Render |
+
+### B.4 Security Headers (Live — Pre-Fix)
+
+**Target:** `https://investai-utho.onrender.com`
+
+| Header | Status |
+|--------|--------|
+| X-Frame-Options | ❌ Missing |
+| X-Content-Type-Options | ❌ Missing |
+| X-XSS-Protection | ❌ Missing |
+| Strict-Transport-Security | ❌ Missing |
+| Content-Security-Policy | ❌ Missing |
+| Referrer-Policy | ❌ Missing |
+| Permissions-Policy | ❌ Missing |
+| X-Permitted-Cross-Domain-Policies | ❌ Missing |
+| Cross-Origin-Opener-Policy | ❌ Missing |
+| Cross-Origin-Resource-Policy | ❌ Missing |
+
+**Result: 0/10 headers present.** All 10 now added via `SecurityHeadersMiddleware`.
+
+### B.5 DAST — Live Endpoint Probing
+
+| Probe | Result | Severity |
+|-------|--------|----------|
+| OpenAPI /docs exposed | ✅ 200 (accessible) → Fixed (disabled in prod) | High |
+| Unauthenticated API access | ✅ Properly blocked (401) | — |
+| Reset code not leaked in response | ✅ Generic message returned | — |
+| Rate limiting on login | ❌ 15 rapid attempts accepted (no 429) → Fixed (slowapi) | High |
+| Cookie Secure flag | ❌ Missing → Fixed (secure=True) | Critical |
+| Cookie HttpOnly | ✅ Present | — |
+| Cookie SameSite | ✅ lax | — |
+| Stack trace in errors | ✅ No leak | — |
+| Stored XSS via transaction | ❌ Confirmed (onerror payload accepted/reflected) → Fixed (esc()) | Critical |
+| Password min length = 4 | ❌ Accepted 4-char password → Fixed (min 8) | High |
+| Email validation on register | ✅ Invalid email rejected (400) | — |
+| INVESTAI_SECRET on Render | ❌ Missing → Fixed (64-char random set) | High |
+
+### B.6 Fixes Deployed — Commit 46c243d
+
+All critical and high-severity fixes committed and pushed to `master`. Render deploy triggered.
+
+**Remaining items (Phase S2/S3):**
+- [ ] Pin dependency versions in requirements.txt
+- [ ] Migrate email: `str` → `EmailStr` in RegisterBody
+- [ ] Add TransactionType enum to schema
+- [ ] Hash PasswordReset.code with bcrypt before storing
+- [ ] Add DB indexes on Transaction(user_id, date)
+- [ ] Add CSRF protection (or migrate to Bearer tokens)
+- [ ] Replace ecdsa/python-jose with PyJWT
