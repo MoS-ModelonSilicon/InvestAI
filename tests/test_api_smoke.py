@@ -844,3 +844,150 @@ class TestDataIntegritySmoke:
     def test_il_funds_meta_has_data(self):
         r = _authed_get("/api/il-funds/meta", self.c)
         assert r.status_code == 200
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Trading Advisor — Double-Buffer Scan Integrity (deep / nightly)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+@pytest.mark.deep
+class TestTradingAdvisorDoubleBuffer:
+    """Verify the double-buffer scan pattern: old results are never wiped
+    while a new scan is in progress.  This was the root cause of stocks
+    disappearing from the Trading Advisor page after ~30 minutes."""
+
+    def test_dashboard_returns_stable_structure(self):
+        """get_dashboard() should always return the expected keys."""
+        from src.services.trading_advisor import get_dashboard
+        data = get_dashboard()
+        assert "packages" in data
+        assert "all_picks" in data
+        assert "market_mood" in data
+        assert "progress" in data
+        assert "updated_at" in data
+        # progress must have these sub-keys
+        p = data["progress"]
+        assert "scanned" in p
+        assert "total" in p
+        assert "complete" in p
+
+    def test_old_results_survive_rescan_trigger(self):
+        """Simulate a TTL expiry + rescan: the live cache must keep its old
+        picks while the new scan runs."""
+        import time as _time
+        from src.services import trading_advisor as ta
+
+        # Seed fake "last-good" results into the live cache
+        fake_pick = {
+            "symbol": "FAKE", "name": "Fake Corp", "sector": "Tech",
+            "price": 100, "score": 80, "raw_score": 2, "verdict": "Buy",
+            "confidence": "High",
+            "signals": [], "edge_signals": [], "signals_text": [],
+            "entry": 98, "target": 110, "stop_loss": 92, "risk_reward": 2.0,
+            "rsi": 55, "stoch_k": 60,
+            "macd_bullish_cross": True, "macd_hist_positive": True,
+            "above_sma50": True, "above_sma200": True, "golden_cross": True,
+            "vol_above_avg": False,
+            "boll_pct_b": 0.5, "boll_squeeze": False,
+            "has_divergence": False, "has_institutional_signal": False,
+            "vol_anomaly_score": 0, "quiet_accumulation": False,
+            "rs_outperforming": False, "rs_1m": None,
+            "ichimoku_bullish": False, "zscore": 0.1,
+            "fib_support": 95, "fib_resistance": 115,
+            "sparkline": [100, 101, 102],
+            "market_cap_fmt": "10B", "beta": 1.1, "dividend_yield": 0.02,
+        }
+        fake_pkg = {
+            "id": "momentum", "name": "Momentum Plays",
+            "subtitle": "test", "timeframe": "Days", "risk_level": "High",
+            "picks": [fake_pick],
+        }
+
+        with ta._scan_lock:
+            ta._scan_cache["all_picks"] = [fake_pick]
+            ta._scan_cache["packages"] = {"momentum": fake_pkg}
+            ta._scan_cache["market_mood"] = {"bullish": 50, "neutral": 30, "bearish": 20}
+            ta._scan_cache["scanned"] = 100
+            ta._scan_cache["total"] = 100
+            ta._scan_cache["complete"] = True
+            ta._scan_cache["updated_at"] = _time.time() - ta.SCAN_CACHE_TTL - 10  # expired
+
+        # Simulate what _ensure_scan_running does — mark progress only
+        with ta._scan_lock:
+            ta._scan_progress["complete"] = False
+            ta._scan_progress["scanned"] = 0
+            ta._scan_progress["total"] = 200
+
+        # Now get_dashboard should still return the OLD picks
+        data = ta.get_dashboard()
+        assert len(data["all_picks"]) == 1, "Old picks should still be visible during rescan"
+        assert data["all_picks"][0]["symbol"] == "FAKE"
+        assert data["packages"]["momentum"]["picks"][0]["symbol"] == "FAKE"
+        assert data["market_mood"]["bullish"] == 50
+
+        # Progress should show the NEW scan is running
+        assert data["progress"]["complete"] is False
+        assert data["progress"]["total"] == 200
+
+    def test_failed_scan_preserves_old_results(self):
+        """If a background scan crashes, old results must survive."""
+        import time as _time
+        from src.services import trading_advisor as ta
+
+        fake_pick = {
+            "symbol": "SAFE", "name": "Safe Corp", "sector": "Finance",
+            "price": 50, "score": 70, "raw_score": 1, "verdict": "Hold",
+            "confidence": "Medium",
+            "signals": [], "edge_signals": [], "signals_text": [],
+            "entry": 48, "target": 55, "stop_loss": 45, "risk_reward": 1.5,
+            "rsi": 50, "stoch_k": 50,
+            "macd_bullish_cross": False, "macd_hist_positive": False,
+            "above_sma50": True, "above_sma200": False, "golden_cross": False,
+            "vol_above_avg": False,
+            "boll_pct_b": 0.4, "boll_squeeze": False,
+            "has_divergence": False, "has_institutional_signal": False,
+            "vol_anomaly_score": 0, "quiet_accumulation": False,
+            "rs_outperforming": False, "rs_1m": None,
+            "ichimoku_bullish": False, "zscore": -0.2,
+            "fib_support": 46, "fib_resistance": 58,
+            "sparkline": [50, 51, 49],
+            "market_cap_fmt": "5B", "beta": 0.9, "dividend_yield": 0.03,
+        }
+
+        with ta._scan_lock:
+            ta._scan_cache["all_picks"] = [fake_pick]
+            ta._scan_cache["packages"] = {}
+            ta._scan_cache["market_mood"] = {"bullish": 30, "neutral": 50, "bearish": 20}
+            ta._scan_cache["scanned"] = 80
+            ta._scan_cache["total"] = 80
+            ta._scan_cache["complete"] = True
+            ta._scan_cache["updated_at"] = _time.time()
+
+        # Simulate a crashed scan — the except block sets progress complete
+        # but must NOT touch _scan_cache
+        with ta._scan_lock:
+            ta._scan_progress["complete"] = True
+
+        data = ta.get_dashboard()
+        assert len(data["all_picks"]) == 1
+        assert data["all_picks"][0]["symbol"] == "SAFE"
+        assert data["market_mood"]["bullish"] == 30
+
+    def test_scan_cache_not_wiped_by_ensure_scan(self):
+        """_ensure_scan_running must not clear all_picks or packages."""
+        import time as _time
+        from src.services import trading_advisor as ta
+
+        with ta._scan_lock:
+            ta._scan_cache["all_picks"] = [{"symbol": "KEEP", "score": 99}]
+            ta._scan_cache["packages"] = {"test": {"picks": [{"symbol": "KEEP"}]}}
+            ta._scan_cache["complete"] = True
+            ta._scan_cache["updated_at"] = _time.time()  # fresh — won't trigger rescan
+            ta._scan_running = False
+
+        ta._ensure_scan_running()
+
+        with ta._scan_lock:
+            assert len(ta._scan_cache["all_picks"]) == 1
+            assert ta._scan_cache["all_picks"][0]["symbol"] == "KEEP"
+            assert "test" in ta._scan_cache["packages"]

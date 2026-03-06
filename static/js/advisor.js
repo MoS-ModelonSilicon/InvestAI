@@ -72,7 +72,7 @@ function _renderTAProgress(progress) {
     el.innerHTML = `
         <div class="ta-progress-bar">
             <div class="ta-progress-fill" style="width:${pct}%"></div>
-            <span class="ta-progress-text">Scanning ${progress.scanned}/${progress.total} stocks...</span>
+            <span class="ta-progress-text">Refreshing data... ${progress.scanned}/${progress.total} stocks</span>
         </div>`;
 }
 

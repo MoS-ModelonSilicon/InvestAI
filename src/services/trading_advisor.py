@@ -35,6 +35,9 @@ _benchmark_lock = threading.Lock()
 _benchmark_closes: list[float] = []
 
 _scan_lock = threading.Lock()
+
+# "Live" cache — always holds the LAST COMPLETED scan results.
+# Never wiped mid-scan; only replaced atomically when a new scan finishes.
 _scan_cache: dict = {
     "all_picks": [],
     "packages": {},
@@ -44,6 +47,10 @@ _scan_cache: dict = {
     "complete": False,
     "updated_at": 0,
 }
+
+# Progress of the CURRENTLY RUNNING scan (separate from live results).
+_scan_progress: dict = {"scanned": 0, "total": 0, "complete": True}
+
 _scan_running = False
 
 
@@ -352,7 +359,9 @@ def _fetch_benchmark():
 
 
 def _run_background_scan():
-    """Scan universe in batches, progressively updating the cache."""
+    """Scan universe in batches.  Build results into local variables and only
+    swap them into the live _scan_cache atomically when the scan completes.
+    The old results stay visible the entire time a new scan is running."""
     global _scan_running
 
     try:
@@ -377,20 +386,24 @@ def _run_background_scan():
         symbols = priority_syms + rest_syms
         total = len(symbols)
 
+        # Update progress tracker (separate from live results)
         with _scan_lock:
-            _scan_cache["total"] = total
-            _scan_cache["scanned"] = 0
-            _scan_cache["complete"] = False
-            _scan_cache["updated_at"] = time.time()
+            _scan_progress["total"] = total
+            _scan_progress["scanned"] = 0
+            _scan_progress["complete"] = False
 
         if not symbols:
             with _scan_lock:
-                _scan_cache["complete"] = True
+                _scan_progress["complete"] = True
             return
 
         to_ts = int(time.time())
         from_ts = to_ts - CANDLE_LOOKBACK_DAYS * 86400
         all_picks: list[dict] = []
+
+        # Local copies — only promoted to _scan_cache at the end
+        local_packages: dict = {}
+        local_mood: dict = {"bullish": 0, "neutral": 0, "bearish": 0}
 
         BATCH = 16
         batch_num = 0
@@ -427,58 +440,61 @@ def _run_background_scan():
 
             # Rebuild packages on 1st batch (fast initial results), every 3rd batch, and last batch
             if batch_num <= 2 or batch_num % 3 == 0 or batch_start + BATCH >= len(symbols):
-                momentum = _build_momentum_package(all_picks)
-                swing = _build_swing_package(all_picks)
-                oversold = _build_oversold_package(all_picks)
-                hidden = _build_hidden_gems_package(all_picks)
-                institutional = _build_institutional_package(all_picks)
+                local_packages = {
+                    "hidden": _build_hidden_gems_package(all_picks),
+                    "institutional": _build_institutional_package(all_picks),
+                    "momentum": _build_momentum_package(all_picks),
+                    "swing": _build_swing_package(all_picks),
+                    "oversold": _build_oversold_package(all_picks),
+                }
 
             bull = sum(1 for p in all_picks if p["verdict"] in ("Strong Buy", "Buy"))
             bear = sum(1 for p in all_picks if p["verdict"] in ("Sell", "Strong Sell"))
             neut = len(all_picks) - bull - bear
             total_so_far = len(all_picks) or 1
+            local_mood = {
+                "bullish": round(bull / total_so_far * 100),
+                "neutral": round(neut / total_so_far * 100),
+                "bearish": round(bear / total_so_far * 100),
+            }
 
+            # Update progress only (live results stay unchanged)
             with _scan_lock:
-                _scan_cache["all_picks"] = list(all_picks)
-                # Only update packages when they've been rebuilt
-                if batch_num <= 2 or batch_num % 3 == 0 or batch_start + BATCH >= len(symbols):
-                    _scan_cache["packages"] = {
-                        "hidden": hidden,
-                        "institutional": institutional,
-                        "momentum": momentum,
-                        "swing": swing,
-                        "oversold": oversold,
-                    }
-                _scan_cache["market_mood"] = {
-                    "bullish": round(bull / total_so_far * 100),
-                    "neutral": round(neut / total_so_far * 100),
-                    "bearish": round(bear / total_so_far * 100),
-                }
-                _scan_cache["scanned"] = min(batch_start + BATCH, total)
-                _scan_cache["updated_at"] = time.time()
+                _scan_progress["scanned"] = min(batch_start + BATCH, total)
 
+        # ── Scan complete: atomically swap live cache ──
         with _scan_lock:
+            _scan_cache["all_picks"] = list(all_picks)
+            _scan_cache["packages"] = local_packages
+            _scan_cache["market_mood"] = local_mood
+            _scan_cache["scanned"] = total
+            _scan_cache["total"] = total
             _scan_cache["complete"] = True
             _scan_cache["updated_at"] = time.time()
+            _scan_progress["scanned"] = total
+            _scan_progress["complete"] = True
 
         logger.info(
             "Trading advisor scan complete: %d picks, hidden=%d inst=%d momentum=%d swing=%d oversold=%d",
             len(all_picks),
-            len(_scan_cache["packages"].get("hidden", {}).get("picks", [])),
-            len(_scan_cache["packages"].get("institutional", {}).get("picks", [])),
-            len(_scan_cache["packages"].get("momentum", {}).get("picks", [])),
-            len(_scan_cache["packages"].get("swing", {}).get("picks", [])),
-            len(_scan_cache["packages"].get("oversold", {}).get("picks", [])),
+            len(local_packages.get("hidden", {}).get("picks", [])),
+            len(local_packages.get("institutional", {}).get("picks", [])),
+            len(local_packages.get("momentum", {}).get("picks", [])),
+            len(local_packages.get("swing", {}).get("picks", [])),
+            len(local_packages.get("oversold", {}).get("picks", [])),
         )
     except Exception:
         logger.exception("Trading advisor background scan failed")
         with _scan_lock:
-            _scan_cache["complete"] = True
+            _scan_progress["complete"] = True
+            # Do NOT touch _scan_cache — keep the old good results
     finally:
         _scan_running = False
 
 
 def _ensure_scan_running():
+    """Start a background scan if none is running and the cache is stale.
+    Never wipes the live cache — old results stay visible."""
     global _scan_running
     with _scan_lock:
         if _scan_running:
@@ -487,8 +503,9 @@ def _ensure_scan_running():
         if _scan_cache["complete"] and age < SCAN_CACHE_TTL:
             return
         _scan_running = True
-        _scan_cache["complete"] = False
-        _scan_cache["scanned"] = 0
+        # Only update progress tracker, NOT the live results
+        _scan_progress["complete"] = False
+        _scan_progress["scanned"] = 0
 
     t = threading.Thread(target=_run_background_scan, daemon=True)
     t.start()
@@ -528,19 +545,48 @@ def start_trading_advisor():
 # ---------------------------------------------------------------------------
 
 def get_dashboard() -> dict:
-    """Return current scan results for the dashboard."""
+    """Return current scan results for the dashboard.
+
+    Always returns the LAST COMPLETED scan results.  If a new scan is
+    in progress, the progress bar reflects that, but the picks/packages
+    shown are from the previous successful scan — so they never go to 0.
+    """
     _ensure_scan_running()
 
     with _scan_lock:
+        # If we have completed results, show them with complete=True.
+        # If a rescan is running, overlay the rescan progress so users
+        # still see the progress bar, but the picks stay stable.
+        have_results = bool(_scan_cache["all_picks"])
+        rescan_running = not _scan_progress["complete"]
+
+        if have_results and rescan_running:
+            # Show old results + new scan progress
+            progress = {
+                "scanned": _scan_progress["scanned"],
+                "total": _scan_progress["total"],
+                "complete": False,
+            }
+        elif have_results:
+            # Completed scan — show final numbers
+            progress = {
+                "scanned": _scan_cache["scanned"],
+                "total": _scan_cache["total"],
+                "complete": True,
+            }
+        else:
+            # Very first scan still running, no old data yet
+            progress = {
+                "scanned": _scan_progress["scanned"],
+                "total": _scan_progress["total"],
+                "complete": False,
+            }
+
         return {
             "packages": _scan_cache["packages"],
             "all_picks": _scan_cache["all_picks"][:30],
             "market_mood": _scan_cache["market_mood"],
-            "progress": {
-                "scanned": _scan_cache["scanned"],
-                "total": _scan_cache["total"],
-                "complete": _scan_cache["complete"],
-            },
+            "progress": progress,
             "updated_at": _scan_cache.get("updated_at", 0),
         }
 
