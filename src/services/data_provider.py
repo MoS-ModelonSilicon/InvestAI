@@ -265,11 +265,18 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -
             "t": [int(ts.timestamp()) for ts in df.index],
         }
     except Exception as e:
-        _disable_yahoo(str(e)[:120])
+        err = str(e)[:120].lower()
+        # Only disable Yahoo globally for systemic errors (auth/rate-limit/network).
+        # Per-symbol errors (delisted ticker, bad data) should NOT kill Yahoo for others.
+        is_systemic = any(kw in err for kw in (
+            "401", "403", "429", "unauthorized", "rate limit", "too many requests",
+            "connection", "timeout", "ssl", "proxy", "dns", "refused",
+        ))
+        if is_systemic:
+            _disable_yahoo(str(e)[:120])
+        else:
+            logger.debug("Yahoo candles non-systemic error for %s: %s", symbol, err)
         return None
-
-
-def _try_yahoo_news(symbol: str, days_back: int = 7) -> Optional[list]:
     if not _yahoo_available() or not _yahoo_probe():
         return None
     try:
