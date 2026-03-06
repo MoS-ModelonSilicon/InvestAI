@@ -70,13 +70,15 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest-html pytest-json-report
+          pip install pytest-html pytest-json-report pytest-timeout
           playwright install chromium --with-deps
 
       - name: Run test suite
         id: run-tests
         continue-on-error: true   # don't fail the job yet — we want to collect results
+        shell: bash
         run: |
+          set -o pipefail
           SUITE="${{ github.event.inputs.test_suite || 'all' }}"
           COMMON_ARGS="--live-url ${{ env.LIVE_URL }} --junitxml=results/junit.xml --html=results/report.html --self-contained-html --json-report --json-report-file=results/report.json -v --tb=long --timeout=120"
 
