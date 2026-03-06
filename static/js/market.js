@@ -107,52 +107,44 @@ function renderSparkline(symbol, data, isUp) {
     const canvas = document.getElementById(`spark-${symbol}`);
     if (!canvas) return;
 
-    if (sparkCharts[symbol]) sparkCharts[symbol].destroy();
+    // Destroy old Chart.js instance if it exists (backward compat)
+    if (sparkCharts[symbol]) { sparkCharts[symbol].destroy(); sparkCharts[symbol] = null; }
+
+    // Lightweight canvas sparkline — no Chart.js overhead
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
 
     const color = isUp ? "rgba(34, 197, 94, 1)" : "rgba(239, 68, 68, 1)";
     const bgColor = isUp ? "rgba(34, 197, 94, 0.08)" : "rgba(239, 68, 68, 0.08)";
 
-    sparkCharts[symbol] = new Chart(canvas, {
-        type: "line",
-        data: {
-            labels: data.map((_, i) => i),
-            datasets: [{
-                data: data,
-                borderColor: color,
-                borderWidth: 2,
-                fill: true,
-                backgroundColor: bgColor,
-                pointRadius: 0,
-                pointHoverRadius: 4,
-                pointHoverBackgroundColor: color,
-                tension: 0.4,
-            }],
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    enabled: true,
-                    mode: "index",
-                    intersect: false,
-                    callbacks: { label: (ctx) => "$" + ctx.parsed.y.toFixed(2) },
-                    backgroundColor: "rgba(20,22,34,0.95)",
-                    titleColor: "#8b8fa3",
-                    bodyColor: "#e4e4e7",
-                    borderColor: "rgba(42,45,62,0.8)",
-                    borderWidth: 1,
-                    padding: 8,
-                },
-            },
-            scales: {
-                x: { display: false },
-                y: { display: false },
-            },
-            interaction: { mode: "index", intersect: false },
-        },
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const pad = 2;
+
+    ctx.beginPath();
+    data.forEach((v, i) => {
+        const x = (i / (data.length - 1)) * w;
+        const y = pad + (1 - (v - min) / range) * (h - 2 * pad);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
+    // Fill area
+    const lastX = w;
+    ctx.lineTo(lastX, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fillStyle = bgColor;
+    ctx.fill();
 }
 
 async function loadHome() {

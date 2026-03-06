@@ -2,6 +2,7 @@ let _taData = null;
 let _taDetailChart = null;
 let _taRefreshTimer = null;
 let _taActiveTab = "hidden";
+let _taLastUpdatedAt = 0;   // skip re-render if data unchanged
 
 async function loadTradingAdvisor() {
     _fetchTradingData();
@@ -13,6 +14,9 @@ async function loadTradingAdvisor() {
 async function _fetchTradingData() {
     try {
         const data = await api.get("/api/trading");
+        // Skip re-render if server data hasn't changed
+        if (data.updated_at && data.updated_at === _taLastUpdatedAt && _taData) return;
+        _taLastUpdatedAt = data.updated_at || 0;
         _taData = data;
         _renderTADashboard(data);
     } catch (e) {

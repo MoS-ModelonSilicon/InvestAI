@@ -3,6 +3,7 @@ let _advPeriod = "1y";
 let _advChart = null;
 let _advDetailChart = null;
 let _advLastHoldings = [];
+let _advLastData = null;    // cached analysis to avoid re-fetch on tab switch
 
 function setAdvRisk(r) {
     _advRisk = r;
@@ -26,6 +27,7 @@ async function runAdvisor() {
 
     try {
         const data = await api.get(`/api/advisor/analyze?amount=${amount}&risk=${_advRisk}&period=${_advPeriod}`);
+        _advLastData = data;  // cache for tab switching
         document.getElementById("adv-loading").style.display = "none";
         document.getElementById("adv-results").style.display = "";
         renderAdvisorResults(data);
@@ -285,15 +287,14 @@ function _renderBtChart(bt) {
     });
 }
 
-async function switchAdvPortfolio(risk, btn) {
+function switchAdvPortfolio(risk, btn) {
     document.querySelectorAll(".adv-port-tab").forEach(b => b.classList.remove("adv-tab-active"));
     btn.classList.add("adv-tab-active");
 
-    const amount = document.getElementById("adv-amount").value || 10000;
-    try {
-        const data = await api.get(`/api/advisor/analyze?amount=${amount}&risk=${risk}&period=${_advPeriod}`);
-        renderAdvisorPortfolios(data.portfolios, data.backtest, risk);
-    } catch (e) { /* ignore */ }
+    // Use cached data instead of re-fetching the entire analysis
+    if (_advLastData) {
+        renderAdvisorPortfolios(_advLastData.portfolios, _advLastData.backtest, risk);
+    }
 }
 
 /* ── Single Stock Detail Modal ───────────────────── */

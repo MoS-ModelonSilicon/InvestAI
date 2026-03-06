@@ -541,6 +541,7 @@ def get_dashboard() -> dict:
                 "total": _scan_cache["total"],
                 "complete": _scan_cache["complete"],
             },
+            "updated_at": _scan_cache.get("updated_at", 0),
         }
 
 

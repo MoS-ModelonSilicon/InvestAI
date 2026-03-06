@@ -17,12 +17,9 @@ async function loadStockDetail() {
     container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Loading stock data...</p></div>';
 
     try {
-        const info = await api.get(`/api/stock/${sym}`);
-        const [history, news] = await Promise.all([
-            api.get(`/api/stock/${sym}/history?period=1y&interval=1d`).catch(() => ({ dates: [], close: [] })),
-            api.get(`/api/stock/${sym}/news`).catch(() => []),
-        ]);
-        renderStockDetail(info, history, news);
+        // Single combined endpoint — 1 round trip instead of 3
+        const resp = await api.get(`/api/stock/${sym}/full`);
+        renderStockDetail(resp.info, resp.history, resp.news);
     } catch (e) {
         container.innerHTML = `<p style="color:var(--red);padding:20px;">Failed to load data for ${sym}.</p>`;
     }
@@ -165,13 +162,12 @@ function renderDetailChart(history) {
     const color = isUp ? "rgba(34, 197, 94, 1)" : "rgba(239, 68, 68, 1)";
     const bgColor = isUp ? "rgba(34, 197, 94, 0.08)" : "rgba(239, 68, 68, 0.08)";
 
-    // SMA 50
-    const sma50 = [];
-    for (let i = 0; i < closes.length; i++) {
-        if (i < 49) { sma50.push(null); continue; }
+    // SMA 50 — pre-computed server-side, fallback to client if missing
+    const sma50 = history.sma50 || closes.map((_, i) => {
+        if (i < 49) return null;
         const slice = closes.slice(i - 49, i + 1);
-        sma50.push(Math.round(slice.reduce((a, b) => a + b, 0) / 50 * 100) / 100);
-    }
+        return Math.round(slice.reduce((a, b) => a + b, 0) / 50 * 100) / 100;
+    });
 
     detailChart = new Chart(canvas, {
         type: "line",
