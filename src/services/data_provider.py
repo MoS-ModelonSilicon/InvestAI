@@ -228,77 +228,58 @@ def _try_yahoo_metrics(symbol: str) -> Optional[dict]:
 def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, force: bool = False) -> Optional[dict]:
     if not force and (not _yahoo_available() or not _yahoo_probe()):
         return None
+    try:
+        interval_map = {"1": "1m", "5": "5m", "15": "15m", "60": "1h", "D": "1d", "W": "1wk", "M": "1mo"}
+        yf_interval = interval_map.get(resolution, "1d")
+        period_secs = to_ts - from_ts
+        period_days = period_secs // 86400
 
-    # When called as last-resort (force=True), retry up to 2 times with brief delay
-    max_attempts = 2 if force else 1
-    last_err = None
+        if yf_interval in ("1m",) and period_days > 7:
+            period_days = 7
+            from_ts = to_ts - 7 * 86400
 
-    for attempt in range(max_attempts):
-        if attempt > 0:
-            time.sleep(1)  # brief pause between retries
-            logger.info("Yahoo candle retry #%d for %s", attempt + 1, symbol)
-        try:
-            interval_map = {"1": "1m", "5": "5m", "15": "15m", "60": "1h", "D": "1d", "W": "1wk", "M": "1mo"}
-            yf_interval = interval_map.get(resolution, "1d")
-            period_secs = to_ts - from_ts
-            period_days = period_secs // 86400
+        start = datetime.fromtimestamp(from_ts).strftime("%Y-%m-%d")
+        end = (datetime.fromtimestamp(to_ts) + timedelta(days=1)).strftime("%Y-%m-%d")
+        with _suppress_stderr():
+            t = _yf_ticker(symbol)
+            df = t.history(start=start, end=end, interval=yf_interval)
 
-            if yf_interval in ("1m",) and period_days > 7:
-                period_days = 7
-                from_ts = to_ts - 7 * 86400
-
-            start = datetime.fromtimestamp(from_ts).strftime("%Y-%m-%d")
-            end = (datetime.fromtimestamp(to_ts) + timedelta(days=1)).strftime("%Y-%m-%d")
+        if df is None or df.empty:
+            # Fallback: use period= syntax — more reliable on cloud/first-call
+            period_map_yf = {"1m": "5d", "5m": "5d", "15m": "5d", "1h": "5d", "1d": "1mo", "1wk": "3mo", "1mo": "1y"}
+            period_str = period_map_yf.get(yf_interval, "1mo")
             with _suppress_stderr():
-                t = _yf_ticker(symbol)
-                df = t.history(start=start, end=end, interval=yf_interval)
-
+                df = t.history(period=period_str, interval=yf_interval)
             if df is None or df.empty:
-                # Fallback: use period= syntax — more reliable on cloud/first-call
-                period_map_yf = {"1m": "5d", "5m": "5d", "15m": "5d", "1h": "5d", "1d": "1mo", "1wk": "3mo", "1mo": "1y"}
-                period_str = period_map_yf.get(yf_interval, "1mo")
-                with _suppress_stderr():
-                    df = t.history(period=period_str, interval=yf_interval)
-                if df is None or df.empty:
-                    logger.debug("Yahoo candles empty for %s (%s)", symbol, yf_interval)
-                    if attempt < max_attempts - 1:
-                        continue  # retry
-                    return None
+                logger.debug("Yahoo candles empty for %s (%s)", symbol, yf_interval)
+                return None
 
-            if not force:
-                _yahoo_success()
-            return {
-                "s": "ok",
-                "c": [round(v, 2) for v in df["Close"].tolist()],
-                "o": [round(v, 2) for v in df["Open"].tolist()],
-                "h": [round(v, 2) for v in df["High"].tolist()],
-                "l": [round(v, 2) for v in df["Low"].tolist()],
-                "v": [int(v) for v in df["Volume"].tolist()],
-                "t": [int(ts.timestamp()) for ts in df.index],
-            }
-        except Exception as e:
-            last_err = e
-            err = str(e)[:120].lower()
-            if attempt < max_attempts - 1:
-                logger.debug("Yahoo candle attempt %d failed for %s: %s", attempt + 1, symbol, err)
-                continue  # retry
-
-            # Only disable Yahoo globally for systemic errors (auth/rate-limit/network).
-            # Per-symbol errors (delisted ticker, bad data) should NOT kill Yahoo for others.
-            # When force=True (last-resort), never disable Yahoo globally — we're already
-            # in the fallback path and poisoning global state would hurt other callers.
-            if not force:
-                is_systemic = any(kw in err for kw in (
-                    "401", "403", "429", "unauthorized", "rate limit", "too many requests",
-                    "connection", "timeout", "ssl", "proxy", "dns", "refused",
-                ))
-                if is_systemic:
-                    _disable_yahoo(str(e)[:120])
+        if not force:
+            _yahoo_success()
+        return {
+            "s": "ok",
+            "c": [round(v, 2) for v in df["Close"].tolist()],
+            "o": [round(v, 2) for v in df["Open"].tolist()],
+            "h": [round(v, 2) for v in df["High"].tolist()],
+            "l": [round(v, 2) for v in df["Low"].tolist()],
+            "v": [int(v) for v in df["Volume"].tolist()],
+            "t": [int(ts.timestamp()) for ts in df.index],
+        }
+    except Exception as e:
+        err = str(e)[:120].lower()
+        # When force=True (last-resort), never disable Yahoo globally
+        if not force:
+            is_systemic = any(kw in err for kw in (
+                "401", "403", "429", "unauthorized", "rate limit", "too many requests",
+                "connection", "timeout", "ssl", "proxy", "dns", "refused",
+            ))
+            if is_systemic:
+                _disable_yahoo(str(e)[:120])
             else:
-                logger.warning("Yahoo candle last-resort failed for %s: %s", symbol, err)
-            return None
-
-    return None
+                logger.debug("Yahoo candles non-systemic error for %s: %s", symbol, err)
+        else:
+            logger.warning("Yahoo candle last-resort failed for %s: %s", symbol, err)
+        return None
     if not _yahoo_available() or not _yahoo_probe():
         return None
     try:
@@ -388,6 +369,54 @@ def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optio
                     del _candle_cache[k]
 
     return result
+
+
+def batch_download_candles(symbols: list[str], period: str = "1mo", interval: str = "1d") -> dict[str, dict]:
+    """Batch-download candles for multiple symbols in ONE HTTP call via yf.download().
+
+    This is the most reliable approach on cloud servers where per-symbol Yahoo calls
+    hit rate limits (429) or timeout. yf.download() uses a different backend path
+    and batches all symbols into a single request.
+
+    Returns {symbol: {"s":"ok","c":[...],"o":[...],...}} or empty dict on failure.
+    """
+    try:
+        import yfinance as yf
+        with _suppress_stderr():
+            df = yf.download(symbols, period=period, interval=interval, group_by="ticker",
+                             threads=False, progress=False, timeout=30)
+        if df is None or df.empty:
+            logger.warning("yf.download batch returned empty for %s", symbols)
+            return {}
+
+        result = {}
+        for sym in symbols:
+            try:
+                if len(symbols) == 1:
+                    sym_df = df
+                else:
+                    sym_df = df[sym] if sym in df.columns.get_level_values(0) else None
+                if sym_df is None or sym_df.empty:
+                    continue
+                sym_df = sym_df.dropna(subset=["Close"])
+                if sym_df.empty:
+                    continue
+                result[sym] = {
+                    "s": "ok",
+                    "c": [round(float(v), 2) for v in sym_df["Close"].tolist()],
+                    "o": [round(float(v), 2) for v in sym_df["Open"].tolist()],
+                    "h": [round(float(v), 2) for v in sym_df["High"].tolist()],
+                    "l": [round(float(v), 2) for v in sym_df["Low"].tolist()],
+                    "v": [int(v) for v in sym_df["Volume"].tolist()],
+                    "t": [int(ts.timestamp()) for ts in sym_df.index],
+                }
+            except Exception as e:
+                logger.debug("yf.download parse error for %s: %s", sym, e)
+        logger.info("yf.download batch: %d/%d symbols OK", len(result), len(symbols))
+        return result
+    except Exception as e:
+        logger.warning("yf.download batch failed: %s", str(e)[:120])
+        return {}
 
 
 def get_company_news(symbol: str, days_back: int = 7) -> list[dict]:
