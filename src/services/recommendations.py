@@ -1,4 +1,4 @@
-from src.services.market_data import fetch_batch, STOCK_UNIVERSE, ETF_UNIVERSE, format_market_cap
+from src.services.market_data import fetch_batch, STOCK_UNIVERSE, ETF_UNIVERSE
 from src.services.risk_profile import get_allocation
 
 

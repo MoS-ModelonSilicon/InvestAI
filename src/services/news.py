@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 
 from src.services import data_provider as dp
 from src.services.market_data import _get_cached, _set_cache

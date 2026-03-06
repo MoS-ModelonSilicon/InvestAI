@@ -1,5 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
-
 from fastapi import APIRouter
 
 from src.services.market_data import fetch_live_quotes, fetch_sparklines, get_cache_status

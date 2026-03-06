@@ -2816,7 +2816,7 @@ class TestAdvisorPerfAPI:
         total_wall = time.time() - t0
 
         # All should succeed
-        for url, status, elapsed in results:
+        for url, status, _elapsed in results:
             assert status == 200, f"{url} returned {status}"
 
         # Wall-clock time should be reasonable (< 30s for 3 parallel calls)

@@ -10,7 +10,7 @@ import logging
 import math
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from src.services import data_provider as dp
@@ -573,7 +573,7 @@ def backtest_portfolio(holdings: list[dict], period: str = "1y") -> dict:
         bt_holdings.append({"symbol": h["symbol"], "shares": shares, "invested": h["invested"]})
 
     portfolio_values = []
-    for i, date_str in enumerate(bench_dates):
+    for i, _date_str in enumerate(bench_dates):
         day_val = cash
         for bh in bt_holdings:
             prices = symbol_aligned.get(bh["symbol"])

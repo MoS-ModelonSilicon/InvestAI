@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.models import Holding, User
-from src.schemas.portfolio import HoldingCreate, HoldingOut, PortfolioSummary
+from src.schemas.portfolio import HoldingCreate
 from src.services.portfolio import calculate_portfolio, get_portfolio_performance
 from src.auth import get_current_user
 

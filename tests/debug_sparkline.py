@@ -1,6 +1,5 @@
 """Quick debug script to check sparkline data from the API."""
 import requests
-import json
 
 BASE = "http://127.0.0.1:8091"
 s = requests.Session()

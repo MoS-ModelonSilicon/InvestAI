@@ -17,7 +17,7 @@ import time
 import socket
 
 import pytest
-from playwright.sync_api import Page, BrowserContext
+from playwright.sync_api import Page
 
 os.environ["NO_PROXY"] = "127.0.0.1,localhost"
 os.environ["no_proxy"] = "127.0.0.1,localhost"
@@ -29,7 +29,7 @@ _PROXY_HTTPS = "http://proxy-dmz.intel.com:912" if _NEED_PROXY else None
 _PROXIES = {"http": _PROXY_HTTP, "https": _PROXY_HTTPS} if _NEED_PROXY else None
 
 LOCAL_URL = "http://127.0.0.1:8091"
-TEST_USER_EMAIL = "testuser@e2e.local"
+TEST_USER_EMAIL = "testuser-e2e@example.com"
 TEST_USER_PASSWORD = "TestPass123"
 TEST_USER_NAME = "E2E Tester"
 SERVER_STARTUP_TIMEOUT = 30  # seconds
@@ -124,7 +124,7 @@ def _wake_remote_server(request, _live_server):
     if not live_url:
         return
     import requests as _req
-    for attempt in range(6):  # up to ~3 min of retries
+    for _attempt in range(6):  # up to ~3 min of retries
         try:
             r = _req.get(f"{live_url.rstrip('/')}/login", proxies=_PROXIES, timeout=60)
             if r.status_code == 200:

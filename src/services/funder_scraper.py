@@ -4,7 +4,6 @@ Caches results for 1 hour to avoid hammering the site.
 """
 import json
 import logging
-import re
 import threading
 import time
 from typing import Optional

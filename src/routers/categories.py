@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/categories", tags=["categories"])
 def list_categories(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     # Return global categories (user_id IS NULL) + user's own categories
     return db.query(Category).filter(
-        or_(Category.user_id == None, Category.user_id == user.id)
+        or_(Category.user_id.is_(None), Category.user_id == user.id)
     ).order_by(Category.name).all()
 
 

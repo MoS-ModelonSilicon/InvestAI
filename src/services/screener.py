@@ -1,6 +1,6 @@
 from typing import Optional
 
-from src.services.market_data import fetch_batch, STOCK_UNIVERSE, ETF_UNIVERSE, format_market_cap, REGIONS, get_region
+from src.services.market_data import fetch_batch, STOCK_UNIVERSE, ETF_UNIVERSE, format_market_cap
 
 
 def _compute_signal(d: dict) -> dict:

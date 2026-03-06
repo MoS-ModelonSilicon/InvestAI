@@ -3,7 +3,6 @@ import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
 from typing import Optional
 
 from src.services import data_provider as dp

@@ -39,10 +39,20 @@ ignore = [
     "RET504", # unnecessary assignment before return
     "S311",   # random – not used for crypto
     "UP007",  # Use X | Y for union – already using this
+    "RUF001", # ambiguous unicode – en-dashes in strings are fine
+    "RUF002", # ambiguous unicode in docstrings
+    "RUF012", # mutable class defaults – too noisy for test fixtures
+    "I001",   # import sorting – cosmetic, fix locally with ruff check --fix
+    "E402",   # module level import not at top – common pattern in FastAPI apps
+    "E401",   # multiple imports on one line
+    "UP045",  # Use X | None – Optional[] is still clear
+    "UP042",  # str+Enum inheritance – valid pre-3.11 pattern
+    "SIM114", # combine if branches – sometimes clearer separate
+    "S110",   # try-except-pass – too noisy for startup code
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S", "T20", "B011"]          # relax security + print rules in tests
+"tests/**" = ["S", "T20", "B011", "PT019", "B007"]  # relax rules in tests
 "src/services/**" = ["T201"]               # services may print debug info
 "make_admin.py" = ["T201"]                 # CLI script
 

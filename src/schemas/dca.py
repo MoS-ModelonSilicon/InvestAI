@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from datetime import date, datetime
+from datetime import datetime
 
 
 # ── DCA Plan CRUD ────────────────────────────────────────────

@@ -8,7 +8,7 @@ import logging
 import os
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from src.services import data_provider as dp
@@ -112,7 +112,7 @@ def _evaluate_pick(pick: dict) -> dict:
         target_hit_first = False
         first_target = targets[0] if targets else None
 
-        for i, ts_val in enumerate(timestamps):
+        for i, _ts_val in enumerate(timestamps):
             h = highs[i]
             l = lows[i]
             if stop and l <= stop and not target_hit_first:

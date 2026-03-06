@@ -16,7 +16,6 @@ Advanced indicators inspired by quantitative trading research:
 - Relative strength vs benchmark -- O'Neil CANSLIM / sector rotation
 """
 
-import math
 from typing import Optional
 
 
@@ -699,7 +698,7 @@ def fibonacci_levels(closes: list[float], lookback: int = 120) -> dict:
 
     nearest_support = None
     nearest_resistance = None
-    for label, level in sorted(levels.items(), key=lambda x: x[1]):
+    for _label, level in sorted(levels.items(), key=lambda x: x[1]):
         if level < current and (nearest_support is None or level > nearest_support):
             nearest_support = level
         if level > current and nearest_resistance is None:

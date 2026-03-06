@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.models import Alert, User
-from src.schemas.alerts import AlertCreate, AlertOut
+from src.schemas.alerts import AlertCreate
 from src.services.market_data import fetch_stock_info
 from src.auth import get_current_user
 

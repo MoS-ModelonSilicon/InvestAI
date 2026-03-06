@@ -8,7 +8,6 @@ portfolio performance against the S&P 500 benchmark.
 
 import logging
 import math
-import time
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -308,7 +307,7 @@ def simulate(profile_id: str, amount: float = 10000,
     daily_returns = []
     prev_value = amount
 
-    for i, date_str in enumerate(trading_dates):
+    for i, _date_str in enumerate(trading_dates):
         day_total = cash
         for h in holdings:
             prices = all_symbol_prices.get(h["symbol"])

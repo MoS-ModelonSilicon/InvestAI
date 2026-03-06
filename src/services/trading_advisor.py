@@ -11,18 +11,17 @@ instantly available and progressively updated.
 """
 
 import logging
-import math
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from src.services import data_provider as dp
 from src.services import technical_analysis as ta
 from src.services.market_data import (
     fetch_batch, fetch_stock_info, ALL_UNIVERSE,
-    _get_cached, _set_cache, format_market_cap, _LOW_MEMORY,
+    format_market_cap, _LOW_MEMORY,
 )
 
 logger = logging.getLogger(__name__)

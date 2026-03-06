@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.models import Watchlist, User
-from src.schemas.screener import StockResult, WatchlistItem
+from src.schemas.screener import WatchlistItem
 from src.services.screener import screen_instruments
 from src.services.market_data import SECTORS, REGIONS
 from src.auth import get_current_user
