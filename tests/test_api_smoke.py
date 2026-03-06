@@ -1085,3 +1085,50 @@ class TestTradingAdvisorDoubleBuffer:
             assert len(ta._scan_cache["all_picks"]) == 1
             assert ta._scan_cache["all_picks"][0]["symbol"] == "KEEP"
             assert "test" in ta._scan_cache["packages"]
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Additional Scheduler Tasks — market data, news, smart advisor (deep)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+@pytest.mark.deep
+class TestSchedulerNewTasks:
+    """Verify the three new scheduler runners don't crash and wire up
+    correctly to the underlying service functions."""
+
+    def test_run_market_data_refresh(self):
+        """_run_market_data_refresh should call refresh_active_symbols."""
+        from src.services.background_scheduler import _run_market_data_refresh
+        result = _run_market_data_refresh()
+        assert result is True
+
+    def test_run_news_refresh(self):
+        """_run_news_refresh should call refresh_news_cache."""
+        from src.services.background_scheduler import _run_news_refresh
+        result = _run_news_refresh()
+        assert result is True
+
+    def test_run_smart_advisor_scan(self):
+        """_run_smart_advisor_scan should call scan_and_score."""
+        from src.services.background_scheduler import _run_smart_advisor_scan
+        result = _run_smart_advisor_scan()
+        assert result is True
+
+    def test_refresh_active_symbols_exists(self):
+        """market_data.refresh_active_symbols should be importable and callable."""
+        from src.services.market_data import refresh_active_symbols
+        refresh_active_symbols()
+
+    def test_refresh_news_cache_exists(self):
+        """news.refresh_news_cache should be importable and callable."""
+        from src.services.news import refresh_news_cache
+        refresh_news_cache()
+
+    def test_scheduler_intervals_defined(self):
+        """All five interval constants should be defined."""
+        from src.services import background_scheduler as bs
+        assert bs.MARKET_DATA_INTERVAL > 0
+        assert bs.NEWS_INTERVAL > 0
+        assert bs.SMART_ADVISOR_INTERVAL > 0
+        assert bs.VALUE_SCANNER_INTERVAL > 0
+        assert bs.TRADING_ADVISOR_INTERVAL > 0

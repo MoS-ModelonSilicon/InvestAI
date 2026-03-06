@@ -21,6 +21,9 @@ _stop_event = threading.Event()
 # ── Intervals (seconds) ──────────────────────────────────────
 VALUE_SCANNER_INTERVAL = 300    # 5 min
 TRADING_ADVISOR_INTERVAL = 1800  # 30 min
+MARKET_DATA_INTERVAL = 120       # 2 min  — lightweight (quotes + sparklines)
+NEWS_INTERVAL = 900              # 15 min — 8 Finnhub calls
+SMART_ADVISOR_INTERVAL = 900     # 15 min — heavy scan (40-80 candles)
 
 
 # ── Individual scan runners ──────────────────────────────────
@@ -50,6 +53,41 @@ def _run_trading_scan() -> bool:
         return False
 
 
+def _run_market_data_refresh() -> bool:
+    """Refresh live quotes + sparklines for homepage symbols."""
+    try:
+        from src.services.market_data import refresh_active_symbols
+        refresh_active_symbols()
+        return True
+    except Exception:
+        logger.exception("Scheduler: market data refresh failed")
+        return False
+
+
+def _run_news_refresh() -> bool:
+    """Pre-fetch news for the default symbols."""
+    try:
+        from src.services.news import refresh_news_cache
+        refresh_news_cache()
+        return True
+    except Exception:
+        logger.exception("Scheduler: news refresh failed")
+        return False
+
+
+def _run_smart_advisor_scan() -> bool:
+    """Pre-compute the smart advisor scan_and_score for the default period."""
+    try:
+        from src.services.smart_advisor import scan_and_score
+        logger.info("Scheduler: starting smart advisor scan")
+        scan_and_score("1y")
+        logger.info("Scheduler: smart advisor scan complete")
+        return True
+    except Exception:
+        logger.exception("Scheduler: smart advisor scan failed")
+        return False
+
+
 # ── Main loop ────────────────────────────────────────────────
 def _scheduler_loop():
     """Blocking loop run inside a daemon thread."""
@@ -62,21 +100,46 @@ def _scheduler_loop():
     else:
         logger.info("Background scheduler: timed out waiting for cache warm, starting anyway")
 
-    # Stagger initial scans — value scanner first (shorter / lighter)
-    _run_value_scan()
-    if _stop_event.wait(timeout=120):  # 2 min gap before heavier scan
+    # ── Initial staggered runs ──────────────────────────────
+    # Lightest → heaviest, with small gaps to avoid API rate-limit spikes
+    _run_market_data_refresh()                 # ~10 quote + 6 sparkline calls
+    if _stop_event.wait(timeout=10):
         return
-    _run_trading_scan()
+    _run_news_refresh()                        # 8 Finnhub calls
+    if _stop_event.wait(timeout=30):
+        return
+    _run_value_scan()                          # value scanner
+    if _stop_event.wait(timeout=60):
+        return
+    _run_trading_scan()                        # trading advisor
+    if _stop_event.wait(timeout=60):
+        return
+    _run_smart_advisor_scan()                  # smart advisor (heaviest)
 
     last_value = time.time()
     last_trading = time.time()
+    last_market = time.time()
+    last_news = time.time()
+    last_smart = time.time()
 
     while not _stop_event.is_set():
         now = time.time()
 
+        if now - last_market >= MARKET_DATA_INTERVAL:
+            _run_market_data_refresh()
+            last_market = time.time()
+
         if now - last_value >= VALUE_SCANNER_INTERVAL:
             _run_value_scan()
             last_value = time.time()
+
+        if now - last_news >= NEWS_INTERVAL:
+            _run_news_refresh()
+            last_news = time.time()
+
+        if now - last_smart >= SMART_ADVISOR_INTERVAL:
+            _run_smart_advisor_scan()
+            last_smart = time.time()
 
         if now - last_trading >= TRADING_ADVISOR_INTERVAL:
             _run_trading_scan()

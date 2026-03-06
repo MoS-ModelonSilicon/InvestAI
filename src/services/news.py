@@ -55,3 +55,23 @@ def get_market_news(symbols: list[str] = None) -> list[dict]:
 
     all_news.sort(key=lambda x: x.get("published", 0), reverse=True)
     return all_news[:30]
+
+
+# ── Scheduler-friendly pre-fetch ─────────────────────────────
+
+_DEFAULT_NEWS_SYMBOLS = ["SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA"]
+
+
+def refresh_news_cache():
+    """Pre-fetch news for the default 8 symbols so /api/news is instant.
+
+    Called by the background scheduler every ~15 min.  Each symbol that
+    already has a fresh cache entry is skipped by get_ticker_news().
+    """
+    logger.info("refresh_news_cache: pre-fetching news for %d symbols", len(_DEFAULT_NEWS_SYMBOLS))
+    for sym in _DEFAULT_NEWS_SYMBOLS:
+        try:
+            get_ticker_news(sym)
+        except Exception:
+            logger.exception("refresh_news_cache: failed for %s", sym)
+    logger.info("refresh_news_cache: done")

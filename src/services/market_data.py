@@ -540,6 +540,37 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
         _sparkline_lock.release()
 
 
+# ── Scheduler-friendly refresh for homepage symbols ──────────
+
+# Canonical list of symbols that appear on the homepage ticker + featured
+# cards.  Duplicated from routers/market.py to avoid a circular import.
+_ACTIVE_SYMBOLS = list(dict.fromkeys([
+    "SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "NVDA", "TSLA", "AMZN",
+]))
+_FEATURED_SYMBOLS = ["AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL"]
+
+
+def refresh_active_symbols():
+    """Pre-warm live quotes + sparklines for homepage symbols.
+
+    Called by the background scheduler every ~2 min so the first user
+    hitting /api/market/home sees instant results instead of waiting
+    for 10+ quote fetches.
+    """
+    logger.info("refresh_active_symbols: refreshing %d symbols", len(_ACTIVE_SYMBOLS))
+    try:
+        fetch_live_quotes(_ACTIVE_SYMBOLS)
+    except Exception:
+        logger.exception("refresh_active_symbols: quotes failed")
+
+    try:
+        fetch_sparklines(_FEATURED_SYMBOLS)
+    except Exception:
+        logger.exception("refresh_active_symbols: sparklines failed")
+
+    logger.info("refresh_active_symbols: done")
+
+
 # ── Background cache warming ────────────────────
 
 def warm_cache():
