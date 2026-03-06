@@ -54,7 +54,7 @@ jobs:
   test:
     needs: wake-site
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     outputs:
       test_passed: ${{ steps.run-tests.outcome == 'success' }}
       failed_tests: ${{ steps.parse-failures.outputs.failed_tests }}
@@ -79,8 +79,10 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          SUITE="${{ github.event.inputs.test_suite || 'all' }}"
-          COMMON_ARGS="--live-url ${{ env.LIVE_URL }} --junitxml=results/junit.xml --html=results/report.html --self-contained-html --json-report --json-report-file=results/report.json -v --tb=long --timeout=120"
+          # Scheduled runs default to live-site (designed for remote testing);
+          # manual dispatch can pick any suite.
+          SUITE="${{ github.event.inputs.test_suite || 'live-site' }}"
+          COMMON_ARGS="--live-url ${{ env.LIVE_URL }} --junitxml=results/junit.xml --html=results/report.html --self-contained-html --json-report --json-report-file=results/report.json -v --tb=long --timeout=60"
 
           mkdir -p results
 

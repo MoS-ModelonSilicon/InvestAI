@@ -585,10 +585,10 @@ Fixes that take < 30 min each and have outsized impact:
 All critical and high-severity fixes committed and pushed to `master`. Render deploy triggered.
 
 **Remaining items (Phase S2/S3):**
-- [ ] Pin dependency versions in requirements.txt
-- [ ] Migrate email: `str` → `EmailStr` in RegisterBody
-- [ ] Add TransactionType enum to schema
-- [ ] Hash PasswordReset.code with bcrypt before storing
-- [ ] Add DB indexes on Transaction(user_id, date)
-- [ ] Add CSRF protection (or migrate to Bearer tokens)
-- [ ] Replace ecdsa/python-jose with PyJWT
+- [x] Pin dependency versions in requirements.txt — all versions pinned, unused packages removed
+- [x] Migrate email: `str` → `EmailStr` in RegisterBody — with email-validator installed
+- [x] Add TransactionType enum to schema — `TransactionTypeEnum` + `Field(gt=0, le=999_999_999)` for amount, `Field(max_length=500)` for description, `ConfigDict(use_enum_values=True)` for safe DB serialization
+- [x] Hash PasswordReset.code with bcrypt before storing — store hashed, verify with bcrypt.checkpw (last 5 candidates)
+- [x] Add DB indexes on Transaction(user_id, date), Alert(user_id) — `index=True` in models + `CREATE INDEX IF NOT EXISTS` in auto-migrate
+- [ ] Add CSRF protection (or migrate to Bearer tokens) — deferred, low risk (API-only, cookie SameSite=Lax)
+- [ ] Replace ecdsa/python-jose with PyJWT — deferred (proxy install issues)

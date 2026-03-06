@@ -23,9 +23,9 @@ from src.routers import (
 
 Base.metadata.create_all(bind=engine)
 
-# ── Auto-migrate: add missing columns to existing tables ──────
+# ── Auto-migrate: add missing columns/indexes to existing tables ──
 def _auto_migrate():
-    """Add columns introduced after initial deploy (safe to re-run)."""
+    """Add columns and indexes introduced after initial deploy (safe to re-run)."""
     from sqlalchemy import inspect, text
     insp = inspect(engine)
     if "users" in insp.get_table_names():
@@ -35,6 +35,14 @@ def _auto_migrate():
                 conn.execute(text("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0"))
             if "is_active" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1"))
+    # Add performance indexes for queries that filter by user_id and date
+    with engine.begin() as conn:
+        try:
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_user_id ON transactions (user_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_date ON transactions (date)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_alerts_user_id ON alerts (user_id)"))
+        except Exception:
+            pass  # Indexes already exist or table not yet created
 
 _auto_migrate()
 
@@ -126,7 +134,7 @@ class LoginBody(BaseModel):
 
 
 class RegisterBody(BaseModel):
-    email: str
+    email: EmailStr
     password: str
     name: str = ""
 
@@ -233,7 +241,9 @@ def forgot_password(body: ForgotPasswordBody, request: Request):
             return JSONResponse(content={"ok": True, "message": "If that email is registered, a reset code has been sent."})
 
         code = f"{_secrets.randbelow(1000000):06d}"
-        reset = PasswordReset(user_id=user.id, code=code)
+        # Store hashed code — never plaintext in DB
+        from src.auth import hash_password as _hash_pw
+        reset = PasswordReset(user_id=user.id, code=_hash_pw(code))
         db.add(reset)
         db.commit()
 
@@ -282,17 +292,24 @@ def reset_password(body: ResetPasswordBody):
             return JSONResponse(status_code=400, content={"detail": "Invalid code or email"})
 
         cutoff = datetime.utcnow() - timedelta(minutes=15)
-        reset = (
+        # Reset codes are stored hashed — fetch all recent unused codes and verify
+        from src.auth import verify_password as _verify_pw
+        candidates = (
             db.query(PasswordReset)
             .filter(
                 PasswordReset.user_id == user.id,
-                PasswordReset.code == body.code.strip(),
                 PasswordReset.used == 0,
                 PasswordReset.created_at >= cutoff,
             )
             .order_by(PasswordReset.created_at.desc())
-            .first()
+            .limit(5)
+            .all()
         )
+        reset = None
+        for candidate in candidates:
+            if _verify_pw(body.code.strip(), candidate.code):
+                reset = candidate
+                break
         if not reset:
             return JSONResponse(status_code=400, content={"detail": "Invalid or expired reset code"})
 

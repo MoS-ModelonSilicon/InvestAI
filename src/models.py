@@ -60,11 +60,11 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     amount = Column(Float, nullable=False)
     type = Column(String, nullable=False)
     description = Column(String, default="")
-    date = Column(Date, nullable=False)
+    date = Column(Date, nullable=False, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
 
     owner = relationship("User", back_populates="transactions")
@@ -145,7 +145,7 @@ class Alert(Base):
     __tablename__ = "alerts"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     symbol = Column(String, nullable=False)
     name = Column(String, default="")
     condition = Column(String, nullable=False)

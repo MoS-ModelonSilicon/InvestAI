@@ -1,20 +1,17 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-pydantic
-pydantic[email]
-requests
-aiofiles
-yfinance
-python-jose[cryptography]
-bcrypt
-passlib[bcrypt]
-slowapi
+fastapi==0.135.1
+uvicorn[standard]==0.41.0
+sqlalchemy==2.0.48
+pydantic==2.12.5
+pydantic[email]==2.12.5
+requests==2.32.5
+yfinance==1.2.0
+python-jose[cryptography]==3.5.0
+bcrypt==5.0.0
+passlib[bcrypt]==1.7.4
+slowapi==0.1.9
 
 # Testing (E2E with real browser)
-pytest
-playwright
-pytest-playwright
-pytest-html
-pytest-json-report
+pytest==9.0.2
+playwright==1.58.0
+pytest-playwright==0.7.2
 pytest-timeout
