@@ -1605,3 +1605,132 @@ class TestScreenerFull:
                 # May or may not navigate to stock detail depending on result type
                 html = detail.inner_html()
                 assert len(html) > 0
+
+
+# ════════════════════════════════════════════════════════════
+#  SPARKLINE CHARTS — verify all market cards have visible charts
+# ════════════════════════════════════════════════════════════
+
+class TestSparklineCharts:
+    """Validate that sparkline charts render on every market card in the dashboard."""
+
+    EXPECTED_SYMBOLS = ["AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL"]
+
+    def _go_dashboard_and_wait(self, page: Page):
+        _nav(page, "dashboard")
+        # Wait for market cards to appear (API + render time)
+        page.wait_for_selector(".market-card", timeout=SLOW)
+        page.wait_for_timeout(API_WAIT)
+
+    def test_all_market_cards_present(self, authenticated_page: Page):
+        """Dashboard should display market cards for all featured symbols."""
+        self._go_dashboard_and_wait(authenticated_page)
+        cards = authenticated_page.locator(".market-card")
+        count = cards.count()
+        assert count >= len(self.EXPECTED_SYMBOLS), (
+            f"Expected at least {len(self.EXPECTED_SYMBOLS)} market cards, got {count}"
+        )
+        # Verify each expected symbol has a card
+        for sym in self.EXPECTED_SYMBOLS:
+            card = authenticated_page.locator(f'.market-card[data-symbol="{sym}"]')
+            assert card.count() > 0, f"Missing market card for {sym}"
+
+    def test_sparkline_canvas_exists_for_each_card(self, authenticated_page: Page):
+        """Each market card should contain a canvas element for the sparkline."""
+        self._go_dashboard_and_wait(authenticated_page)
+        for sym in self.EXPECTED_SYMBOLS:
+            canvas = authenticated_page.locator(f"canvas#spark-{sym}")
+            assert canvas.count() > 0, f"Missing sparkline canvas for {sym}"
+
+    def test_sparkline_charts_are_rendered(self, authenticated_page: Page):
+        """Sparkline canvases should have non-zero dimensions (Chart.js rendered)."""
+        self._go_dashboard_and_wait(authenticated_page)
+        # Give Chart.js extra time to render all sparklines
+        authenticated_page.wait_for_timeout(CHART_WAIT)
+
+        rendered = []
+        missing = []
+        for sym in self.EXPECTED_SYMBOLS:
+            canvas = authenticated_page.locator(f"canvas#spark-{sym}")
+            if canvas.count() == 0:
+                missing.append(sym)
+                continue
+            box = canvas.bounding_box()
+            if box and box["width"] > 0 and box["height"] > 0:
+                rendered.append(sym)
+            else:
+                missing.append(sym)
+
+        assert len(missing) == 0, (
+            f"Sparkline charts NOT rendered for: {missing}. "
+            f"Rendered OK: {rendered}"
+        )
+
+    def test_sparkline_canvases_have_drawn_pixels(self, authenticated_page: Page):
+        """Verify Chart.js actually drew on the canvas (not blank white)."""
+        self._go_dashboard_and_wait(authenticated_page)
+        authenticated_page.wait_for_timeout(CHART_WAIT)
+
+        blank = []
+        for sym in self.EXPECTED_SYMBOLS:
+            canvas = authenticated_page.locator(f"canvas#spark-{sym}")
+            if canvas.count() == 0:
+                blank.append(sym)
+                continue
+            # Check if canvas has any non-transparent pixels drawn
+            has_pixels = authenticated_page.evaluate("""(sym) => {
+                const c = document.getElementById('spark-' + sym);
+                if (!c) return false;
+                const ctx = c.getContext('2d');
+                if (!ctx) return false;
+                const data = ctx.getImageData(0, 0, c.width, c.height).data;
+                // Check if any pixel has non-zero alpha (something was drawn)
+                for (let i = 3; i < data.length; i += 4) {
+                    if (data[i] > 0) return true;
+                }
+                return false;
+            }""", sym)
+            if not has_pixels:
+                blank.append(sym)
+
+        assert len(blank) == 0, (
+            f"Sparkline canvases are BLANK (no drawn pixels) for: {blank}"
+        )
+
+    def test_sparkline_api_returns_data_for_all_symbols(self, live_url: str):
+        """The /api/market/home API should return sparkline arrays with >1 point for all featured stocks."""
+        import requests
+        proxies = {"http": "http://proxy-dmz.intel.com:911",
+                   "https": "http://proxy-dmz.intel.com:912"}
+        px = proxies if "127.0.0.1" not in live_url and "localhost" not in live_url else None
+
+        # Register + login via API to get a session
+        s = requests.Session()
+        if px:
+            s.proxies.update(px)
+        s.post(f"{live_url}/auth/register",
+               json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD, "name": TEST_USER_NAME},
+               timeout=60)
+        s.post(f"{live_url}/auth/login",
+               json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD},
+               timeout=60)
+
+        resp = s.get(f"{live_url}/api/market/home", timeout=60)
+        assert resp.status_code == 200, f"market/home returned {resp.status_code}"
+        data = resp.json()
+        featured = data.get("featured", [])
+        assert len(featured) >= len(self.EXPECTED_SYMBOLS), (
+            f"Expected {len(self.EXPECTED_SYMBOLS)} featured stocks, got {len(featured)}"
+        )
+
+        empty_sparklines = []
+        for stock in featured:
+            sym = stock.get("symbol", "?")
+            sparkline = stock.get("sparkline", [])
+            if len(sparkline) < 2:
+                empty_sparklines.append(f"{sym}({len(sparkline)}pts)")
+
+        assert len(empty_sparklines) == 0, (
+            f"Sparkline data MISSING for: {empty_sparklines}. "
+            f"All stocks should have >1 data point."
+        )

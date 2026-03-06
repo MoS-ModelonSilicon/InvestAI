@@ -14,6 +14,10 @@ $env:HTTPS_PROXY = "http://proxy-dmz.intel.com:912"
 $env:USE_INTEL_PROXY = "1"
 $env:NO_PROXY = "127.0.0.1,localhost"
 
+# ── Admin account (auto-created on first startup) ──
+$env:ADMIN_EMAIL    = "yaronklein1@gmail.com"
+$env:ADMIN_PASSWORD = "Inv3stAI!2026$ecure"
+
 # ── Kill any existing server on this port ──
 Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue |
     ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }

@@ -9,6 +9,7 @@ yfinance
 python-jose[cryptography]
 bcrypt
 passlib[bcrypt]
+slowapi
 
 # Testing (E2E with real browser)
 pytest

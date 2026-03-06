@@ -11,3 +11,7 @@ services:
         value: "1"
       - key: LOW_MEMORY
         value: "1"
+      - key: ADMIN_EMAIL
+        sync: false   # set in Render dashboard
+      - key: ADMIN_PASSWORD
+        sync: false   # set in Render dashboard

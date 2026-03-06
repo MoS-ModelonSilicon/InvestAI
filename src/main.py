@@ -4,6 +4,9 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from src.database import engine, get_db, Base
 from src.models import Category, User, PasswordReset
@@ -35,18 +38,49 @@ def _auto_migrate():
 
 _auto_migrate()
 
-app = FastAPI(title="InvestAI")
+import os as _os
+_is_production = _os.environ.get("RENDER") or _os.environ.get("PRODUCTION")
+app = FastAPI(
+    title="InvestAI",
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
+    openapi_url=None if _is_production else "/openapi.json",
+)
+
+# ── Rate limiting ─────────────────────────────────────────────
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
-class NoCacheStaticMiddleware(BaseHTTPMiddleware):
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add OWASP-recommended security headers to every response."""
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+        response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        if request.url.scheme == "https":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self'"
+        )
         if request.url.path.startswith("/static/"):
             response.headers["Cache-Control"] = "no-store, must-revalidate"
         return response
 
 
-app.add_middleware(NoCacheStaticMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(AuthMiddleware)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -98,9 +132,10 @@ class RegisterBody(BaseModel):
 
 
 @app.post("/auth/register")
-def do_register(body: RegisterBody):
-    if len(body.password) < 4:
-        return JSONResponse(status_code=400, content={"detail": "Password must be at least 4 characters"})
+@limiter.limit("3/minute")
+def do_register(body: RegisterBody, request: Request):
+    if len(body.password) < 8:
+        return JSONResponse(status_code=400, content={"detail": "Password must be at least 8 characters"})
     db: Session = next(get_db())
     try:
         existing = db.query(User).filter(User.email == body.email.lower().strip()).first()
@@ -123,6 +158,7 @@ def do_register(body: RegisterBody):
             httponly=True,
             samesite="lax",
             path="/",
+            secure=True,
         )
         return resp
     finally:
@@ -130,7 +166,8 @@ def do_register(body: RegisterBody):
 
 
 @app.post("/auth/login")
-def do_login(body: LoginBody):
+@limiter.limit("5/minute")
+def do_login(body: LoginBody, request: Request):
     db: Session = next(get_db())
     try:
         user = db.query(User).filter(User.email == body.email.lower().strip()).first()
@@ -147,6 +184,7 @@ def do_login(body: LoginBody):
             httponly=True,
             samesite="lax",
             path="/",
+            secure=True,
         )
         return resp
     finally:
@@ -182,9 +220,10 @@ class ResetPasswordBody(BaseModel):
 
 
 @app.post("/auth/forgot-password")
-def forgot_password(body: ForgotPasswordBody):
+@limiter.limit("3/minute")
+def forgot_password(body: ForgotPasswordBody, request: Request):
     """Generate a 6-digit reset code. Sends via email if SMTP is configured, otherwise logs it."""
-    import random, os, logging
+    import secrets as _secrets, os, logging
     logger = logging.getLogger("investai")
     db: Session = next(get_db())
     try:
@@ -193,7 +232,7 @@ def forgot_password(body: ForgotPasswordBody):
         if not user:
             return JSONResponse(content={"ok": True, "message": "If that email is registered, a reset code has been sent."})
 
-        code = f"{random.randint(0, 999999):06d}"
+        code = f"{_secrets.randbelow(1000000):06d}"
         reset = PasswordReset(user_id=user.id, code=code)
         db.add(reset)
         db.commit()
@@ -224,8 +263,8 @@ def forgot_password(body: ForgotPasswordBody):
 
         if email_sent:
             return JSONResponse(content={"ok": True, "message": "A reset code has been sent to your email."})
-        # No email service configured or sending failed — return code directly
-        return JSONResponse(content={"ok": True, "message": f"Your reset code is: {code}", "code": code})
+        # No email service — log code but never return it in response
+        return JSONResponse(content={"ok": True, "message": "If that email is registered, a reset code has been sent."})
     finally:
         db.close()
 
@@ -234,8 +273,8 @@ def forgot_password(body: ForgotPasswordBody):
 def reset_password(body: ResetPasswordBody):
     """Verify reset code and set a new password."""
     from datetime import datetime, timedelta
-    if len(body.new_password) < 4:
-        return JSONResponse(status_code=400, content={"detail": "Password must be at least 4 characters"})
+    if len(body.new_password) < 8:
+        return JSONResponse(status_code=400, content={"detail": "Password must be at least 8 characters"})
     db: Session = next(get_db())
     try:
         user = db.query(User).filter(User.email == body.email.lower().strip()).first()
@@ -306,6 +345,9 @@ def startup():
     admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     admin_password = os.environ.get("ADMIN_PASSWORD", "").strip()
     if admin_email:
+        if admin_password and len(admin_password) < 8:
+            logger.warning("ADMIN_PASSWORD is too short (min 8 chars) — skipping auto-create")
+            admin_password = ""
         user = db.query(User).filter(User.email == admin_email).first()
         if not user and admin_password:
             # Auto-create admin account if it doesn't exist

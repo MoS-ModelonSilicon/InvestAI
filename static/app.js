@@ -3,6 +3,14 @@ let categories = [];
 let trendChart = null;
 let catChart = null;
 
+// ── XSS escape helper ───────────────────────────────────────
+function esc(str) {
+    if (str == null) return "";
+    const div = document.createElement("div");
+    div.textContent = String(str);
+    return div.innerHTML;
+}
+
 // ── API helpers ──────────────────────────────────────────────
 const api = {
     async get(url) {
@@ -63,7 +71,7 @@ function populateCategoryFilters() {
     const filterCat = document.getElementById("filter-category");
     filterCat.innerHTML = '<option value="">All Categories</option>';
     categories.forEach((c) => {
-        filterCat.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        filterCat.innerHTML += `<option value="${c.id}">${esc(c.name)}</option>`;
     });
 }
 
@@ -74,7 +82,7 @@ function filterCategoriesByType() {
     sel.innerHTML = "";
     const filtered = categories.filter((c) => c.type === type);
     filtered.forEach((c) => {
-        sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        sel.innerHTML += `<option value="${c.id}">${esc(c.name)}</option>`;
     });
     const stillExists = filtered.find((c) => String(c.id) === currentVal);
     if (stillExists) sel.value = currentVal;
@@ -191,7 +199,7 @@ function renderBudgetBars(budgets) {
         const color = b.percentage > 90 ? "var(--red)" : b.percentage > 70 ? "#eab308" : b.color;
         return `
             <div class="budget-bar-row">
-                <div class="budget-bar-label">${b.category_name}</div>
+                <div class="budget-bar-label">${esc(b.category_name)}</div>
                 <div class="budget-bar-track">
                     <div class="budget-bar-fill" style="width: ${pct}%; background: ${color};"></div>
                 </div>
@@ -227,8 +235,8 @@ async function loadTransactions() {
     tbody.innerHTML = txs.map((t) => `
         <tr>
             <td>${new Date(t.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</td>
-            <td>${t.description || "<em style='color:var(--text-muted)'>No description</em>"}</td>
-            <td><span class="category-dot" style="background:${t.category.color}"></span>${t.category.name}</td>
+            <td>${t.description ? esc(t.description) : "<em style='color:var(--text-muted)'>No description</em>"}</td>
+            <td><span class="category-dot" style="background:${esc(t.category.color)}"></span>${esc(t.category.name)}</td>
             <td><span class="badge badge-${t.type}">${t.type}</span></td>
             <td class="text-right amount-${t.type}">${t.type === "income" ? "+" : "-"}${fmt(t.amount)}</td>
             <td class="text-right">
@@ -333,8 +341,8 @@ async function loadBudgets() {
             <div class="budget-card">
                 <div class="budget-card-header">
                     <div class="budget-card-title">
-                        <span class="category-dot" style="background:${b.category.color}"></span>
-                        ${b.category.name}
+                        <span class="category-dot" style="background:${esc(b.category.color)}"></span>
+                        ${esc(b.category.name)}
                     </div>
                     <button class="action-btn delete" onclick="deleteBudget(${b.id})" title="Remove budget">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -355,7 +363,7 @@ function openBudgetModal() {
     const sel = document.getElementById("budget-category");
     sel.innerHTML = "";
     categories.filter((c) => c.type === "expense").forEach((c) => {
-        sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        sel.innerHTML += `<option value="${c.id}">${esc(c.name)}</option>`;
     });
     document.getElementById("budget-limit").value = "";
     document.getElementById("budget-modal-overlay").classList.add("open");
