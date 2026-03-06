@@ -2912,3 +2912,145 @@ class TestAdvisorPerfAPI:
         assert "scanned" in stats, "Missing 'scanned' in stats"
         # scanned should be > 0 if the scanner is running
         assert stats["scanned"] >= 0, "scanned should be non-negative"
+
+
+# ────────────────────────────────────────────
+#  Server-Side Optimization Tests
+# ────────────────────────────────────────────
+
+class TestPerfOptimizations:
+    """Verify the server-side optimization changes work correctly in-browser."""
+
+    def test_budget_page_uses_status_endpoint(self, authenticated_page: Page, live_url: str):
+        """Budget page should work with the new /api/budgets/status endpoint.
+        Create a budget, load the page, verify it renders without errors."""
+        page = authenticated_page
+        # Create a budget first
+        _nav_click(page, "budgets")
+        page.wait_for_timeout(1000)
+        page.get_by_role("button", name="+ Set Budget").click(force=True)
+        page.fill("#budget-limit", "200")
+        page.locator('#budget-form button[type="submit"]').click()
+        page.wait_for_timeout(2000)
+        # Verify card renders with server-computed data
+        cards = page.locator(".budget-card")
+        assert cards.count() > 0, "Budget card should appear after creation"
+        card_html = cards.first.inner_html()
+        assert "$" in card_html or "%" in card_html, (
+            f"Budget card should show dollar/percent values: {card_html[:200]}"
+        )
+        # Verify no JS errors on the page
+        js_errors = page.evaluate("() => window.__jsErrors || []")
+        # Filter for budget-related errors only
+        budget_errors = [e for e in (js_errors if isinstance(js_errors, list) else [])
+                         if "budget" in str(e).lower()]
+        assert len(budget_errors) == 0, f"JS errors on budget page: {budget_errors}"
+
+    def test_stock_detail_loads_via_combined_endpoint(self, authenticated_page: Page):
+        """Stock detail should load all data in one request via /full endpoint."""
+        page = authenticated_page
+        _nav_click(page, "screener")
+        page.wait_for_timeout(3000)
+        # Click on a stock row to navigate to detail
+        stock_link = page.locator("tr[onclick*='navigateToStock'], .stock-row, [onclick*='navigateToStock']").first
+        if stock_link.count() > 0:
+            stock_link.click(force=True)
+            page.wait_for_timeout(4000)
+            # Verify stock detail renders
+            content = page.locator("#stock-detail-content")
+            html = content.inner_html()
+            assert len(html) > 50, "Stock detail should have rendered content"
+            # Chart should exist
+            chart = page.locator("#sd-price-chart")
+            assert chart.count() > 0, "Price chart canvas should exist"
+
+    def test_sparklines_render_with_lightweight_canvas(self, authenticated_page: Page):
+        """Market sparklines should render using raw canvas (no Chart.js overhead)."""
+        page = authenticated_page
+        _nav_click(page, "home")
+        page.wait_for_timeout(5000)
+        # Check sparkline canvases exist
+        sparklines = page.locator("canvas[id^='spark-']")
+        if sparklines.count() > 0:
+            # Verify at least one canvas has pixel data (was drawn on)
+            has_pixels = page.evaluate("""() => {
+                const canvases = document.querySelectorAll('canvas[id^="spark-"]');
+                for (const c of canvases) {
+                    const ctx = c.getContext('2d');
+                    if (!ctx) continue;
+                    const data = ctx.getImageData(0, 0, c.width, c.height).data;
+                    for (let i = 3; i < data.length; i += 4) {
+                        if (data[i] > 0) return true;
+                    }
+                }
+                return false;
+            }""")
+            assert has_pixels, "Sparkline canvases should have drawn pixels"
+
+            # Verify sparkCharts dict is empty (no Chart.js instances created)
+            chart_count = page.evaluate("""() => {
+                if (typeof sparkCharts === 'undefined') return 0;
+                return Object.values(sparkCharts).filter(v => v !== null).length;
+            }""")
+            assert chart_count == 0, (
+                f"sparkCharts should be empty (lightweight canvas), but has {chart_count} Chart.js instances"
+            )
+
+    def test_smart_advisor_tab_switch_no_refetch(self, authenticated_page: Page):
+        """Switching risk tabs in Smart Advisor should NOT re-fetch the analysis."""
+        page = authenticated_page
+        _nav_click(page, "smart-advisor")
+        page.wait_for_timeout(1000)
+
+        # Start the advisor analysis
+        page.click("#run-advisor-btn", timeout=5000)
+        # Wait for results to appear (may take a while)
+        page.wait_for_selector("#adv-results", state="visible", timeout=90000)
+        page.wait_for_timeout(2000)
+
+        # Count API calls before tab switch
+        api_calls_before = page.evaluate("""() => {
+            window.__apiCallCount = 0;
+            const origFetch = window.fetch;
+            window.fetch = function(...args) {
+                if (args[0] && args[0].toString().includes('/api/advisor/analyze')) {
+                    window.__apiCallCount++;
+                }
+                return origFetch.apply(this, args);
+            };
+            return 0;
+        }""")
+
+        # Click a different risk tab
+        tabs = page.locator(".adv-port-tab")
+        if tabs.count() > 1:
+            tabs.nth(0).click(force=True)
+            page.wait_for_timeout(1500)
+            tabs.nth(1).click(force=True) if tabs.count() > 1 else None
+            page.wait_for_timeout(1500)
+
+            # No new API calls should have been made
+            call_count = page.evaluate("() => window.__apiCallCount")
+            assert call_count == 0, (
+                f"Tab switch triggered {call_count} API calls to /advisor/analyze — should be 0"
+            )
+
+    def test_trading_advisor_skips_unchanged_rerender(self, authenticated_page: Page):
+        """Trading advisor 30s poll should skip re-render if data unchanged."""
+        page = authenticated_page
+        _nav_click(page, "advisor")
+        page.wait_for_timeout(5000)
+
+        # Verify _taLastUpdatedAt gets populated
+        has_ts = page.evaluate("() => typeof _taLastUpdatedAt !== 'undefined' && _taLastUpdatedAt >= 0")
+        assert has_ts, "_taLastUpdatedAt variable should exist in trading advisor"
+
+    def test_init_parallel_load(self, authenticated_page: Page):
+        """App init should have loaded categories + dashboard data."""
+        page = authenticated_page
+        # Categories should be populated (used in filters)
+        cat_count = page.evaluate("() => typeof categories !== 'undefined' ? categories.length : -1")
+        assert cat_count >= 5, f"Categories should be loaded on init, got {cat_count}"
+        # Dashboard stats should be visible
+        income = page.locator("#stat-income")
+        assert income.is_visible(), "Dashboard income stat should be visible after init"

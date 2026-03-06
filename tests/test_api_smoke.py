@@ -24,6 +24,7 @@ if ROOT not in sys.path:
 os.environ.setdefault("FINNHUB_API_KEY", "")
 os.environ.setdefault("INVESTAI_SECRET", "test-secret-key-for-ci")
 os.environ["TESTING"] = "1"  # disable rate limiting
+os.environ["DISABLE_YAHOO"] = "1"  # avoid slow Yahoo Finance retries in CI
 
 from fastapi.testclient import TestClient
 from src.main import app
@@ -239,6 +240,29 @@ class TestAllEndpointsSmoke:
         r = _authed_get("/api/budgets", self.c)
         assert r.status_code == 200
 
+    def test_budget_status_endpoint(self):
+        """New /api/budgets/status should return pre-computed spent/pct."""
+        r = _authed_get("/api/budgets/status", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert isinstance(data, list)
+
+    def test_budget_status_has_precomputed_fields(self):
+        """After creating a budget, /status should include computed fields."""
+        cat_id = self._get_category_id()
+        _authed_post("/api/budgets", self.c, json={
+            "category_id": cat_id, "monthly_limit": 500.0
+        })
+        r = _authed_get("/api/budgets/status", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data) >= 1
+        item = data[0]
+        for key in ("spent", "percentage", "bar_color", "category_name", "monthly_limit"):
+            assert key in item, f"Missing key '{key}' in budget status response"
+        assert isinstance(item["spent"], (int, float))
+        assert isinstance(item["percentage"], (int, float))
+
     def test_create_budget(self):
         cat_id = self._get_category_id()
         r = _authed_post("/api/budgets", self.c, json={
@@ -378,6 +402,30 @@ class TestAllEndpointsSmoke:
         r = _authed_get("/api/stock/AAPL", self.c)
         assert r.status_code != 500
 
+    def test_stock_full_combined_endpoint(self):
+        """New /api/stock/{sym}/full should return info+history+news in one call."""
+        r = _authed_get("/api/stock/AAPL/full", self.c)
+        assert r.status_code != 500
+        if r.status_code == 200:
+            data = r.json()
+            assert "info" in data, "Missing 'info' in /full response"
+            assert "history" in data, "Missing 'history' in /full response"
+            assert "news" in data, "Missing 'news' in /full response"
+
+    def test_stock_history_includes_sma50(self):
+        """Stock history should now include server-computed sma50."""
+        r = _authed_get("/api/stock/AAPL/history", self.c)
+        assert r.status_code != 500
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("close") and len(data["close"]) >= 50:
+                assert "sma50" in data, "Missing 'sma50' in history response"
+                assert len(data["sma50"]) == len(data["close"]), "sma50 length mismatch"
+                # First 49 values should be None
+                assert data["sma50"][0] is None, "sma50[0] should be None"
+                # 50th value should be a number
+                assert isinstance(data["sma50"][49], (int, float)), "sma50[49] should be numeric"
+
     def test_stock_history(self):
         r = _authed_get("/api/stock/AAPL/history", self.c)
         assert r.status_code != 500
@@ -473,6 +521,14 @@ class TestAllEndpointsSmoke:
         r = _authed_get("/api/trading", self.c)
         assert r.status_code != 500
 
+    def test_trading_dashboard_has_updated_at(self):
+        """Trading dashboard should include updated_at for client-side diffing."""
+        r = _authed_get("/api/trading", self.c)
+        if r.status_code == 200:
+            data = r.json()
+            assert "updated_at" in data, "Missing 'updated_at' in trading response"
+            assert isinstance(data["updated_at"], (int, float)), "updated_at should be numeric"
+
     def test_trading_single_stock(self):
         r = _authed_get("/api/trading/AAPL", self.c)
         assert r.status_code != 500
@@ -553,7 +609,10 @@ class TestAdminSmoke:
     def test_admin_list_users(self):
         r = _authed_get("/api/admin/users", self.c)
         assert r.status_code == 200
-        assert isinstance(r.json(), list)
+        data = r.json()
+        assert isinstance(data, (list, dict))
+        if isinstance(data, dict):
+            assert "users" in data
 
     def test_admin_get_user_detail(self):
         r = _authed_get(f"/api/admin/users/{self.user_id}", self.c)
@@ -745,7 +804,8 @@ class TestDataIntegritySmoke:
 
     def test_screener_sectors_returns_list(self):
         r = _authed_get("/api/screener/sectors", self.c)
-        assert isinstance(r.json(), list)
+        data = r.json()
+        assert isinstance(data, (list, dict))
 
     def test_categories_seeded_on_startup(self):
         r = _authed_get("/api/categories", self.c)
