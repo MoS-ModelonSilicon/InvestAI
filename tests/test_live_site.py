@@ -1739,3 +1739,45 @@ class TestSparklineCharts:
             f"Sparkline data MISSING for: {empty_sparklines}. "
             f"All stocks should have >1 data point."
         )
+    def test_sparkline_api_consistent_across_calls(self, live_url: str):
+        """Hit /api/market/home 3 times rapidly — every call must return sparklines for ALL symbols.
+
+        Regression test for the intermittent missing-chart bug where:
+        - Unstable cache keys (changing every second) caused cache misses
+        - Concurrent requests exhausted Finnhub rate limits
+        - Some symbols (often AAPL) randomly came back empty
+        """
+        import requests
+        import time
+
+        proxies = {"http": "http://proxy-dmz.intel.com:911",
+                   "https": "http://proxy-dmz.intel.com:912"}
+        px = proxies if "127.0.0.1" not in live_url and "localhost" not in live_url else None
+
+        # Register + login via API to get a session
+        s = requests.Session()
+        if px:
+            s.proxies.update(px)
+        s.post(f"{live_url}/auth/register",
+               json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD, "name": TEST_USER_NAME},
+               timeout=60)
+        s.post(f"{live_url}/auth/login",
+               json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD},
+               timeout=60)
+
+        failures = []
+        for call_num in range(1, 4):
+            resp = s.get(f"{live_url}/api/market/home", timeout=60)
+            assert resp.status_code == 200, f"Call #{call_num}: HTTP {resp.status_code}"
+            data = resp.json()
+            for stock in data.get("featured", []):
+                sym = stock.get("symbol", "?")
+                pts = len(stock.get("sparkline", []))
+                if pts < 2:
+                    failures.append(f"call#{call_num} {sym}={pts}pts")
+            time.sleep(2)  # small gap between calls
+
+        assert len(failures) == 0, (
+            f"Sparkline data was INCONSISTENT across rapid calls: {failures}. "
+            f"Cache/rate-limit fix may have regressed."
+        )

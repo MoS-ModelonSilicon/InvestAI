@@ -225,8 +225,8 @@ def _try_yahoo_metrics(symbol: str) -> Optional[dict]:
         return None
 
 
-def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optional[dict]:
-    if not _yahoo_available() or not _yahoo_probe():
+def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, force: bool = False) -> Optional[dict]:
+    if not force and (not _yahoo_available() or not _yahoo_probe()):
         return None
     try:
         interval_map = {"1": "1m", "5": "5m", "15": "15m", "60": "1h", "D": "1d", "W": "1wk", "M": "1mo"}
@@ -346,6 +346,13 @@ def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optio
     result = _try_yahoo_candles(symbol, resolution, from_ts, to_ts)
     if not result:
         result = fh.get_candles(symbol, resolution, from_ts, to_ts)
+
+    # Last resort: Finnhub candle endpoint may be restricted on free tier (403).
+    # Try Yahoo directly even when DISABLE_YAHOO is set — yfinance is installed
+    # and daily candles are its most reliable feature.
+    if not result and _yahoo_force_disabled:
+        logger.info("Finnhub candles failed for %s, trying Yahoo as last resort", symbol)
+        result = _try_yahoo_candles(symbol, resolution, from_ts, to_ts, force=True)
 
     # Cache daily candles
     if result and resolution == "D":
