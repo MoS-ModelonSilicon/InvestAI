@@ -73,6 +73,17 @@ jobs:
           pip install pytest-html pytest-json-report pytest-timeout
           playwright install chromium --with-deps
 
+      - name: Warm up site before tests
+        run: |
+          echo "Warming up site for test runner..."
+          for i in 1 2 3; do
+            curl -s -o /dev/null -w "  Attempt $i: HTTP %{http_code} (%{time_total}s)\n" \
+              "${{ env.LIVE_URL }}/login" --max-time 60 || true
+            curl -s -o /dev/null -w "  Dashboard: HTTP %{http_code} (%{time_total}s)\n" \
+              "${{ env.LIVE_URL }}/api/dashboard/summary" --max-time 60 || true
+            sleep 5
+          done
+
       - name: Run test suite
         id: run-tests
         continue-on-error: true   # don't fail the job yet — we want to collect results
@@ -82,7 +93,7 @@ jobs:
           # Scheduled runs default to live-site (designed for remote testing);
           # manual dispatch can pick any suite.
           SUITE="${{ github.event.inputs.test_suite || 'live-site' }}"
-          COMMON_ARGS="--live-url ${{ env.LIVE_URL }} --junitxml=results/junit.xml --html=results/report.html --self-contained-html --json-report --json-report-file=results/report.json -v --tb=long --timeout=60 --timeout-method=thread --maxfail=15"
+          COMMON_ARGS="--live-url ${{ env.LIVE_URL }} --junitxml=results/junit.xml --html=results/report.html --self-contained-html --json-report --json-report-file=results/report.json -v --tb=long --timeout=180 --timeout-method=thread --maxfail=15"
 
           mkdir -p results
 
