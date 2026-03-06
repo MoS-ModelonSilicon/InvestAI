@@ -348,8 +348,10 @@ def _run_background_scan():
 
         # Phase 2: Fetch remaining stocks in small batches
         BATCH_SIZE = 8
+        _vs_batch_num = 0
         for batch_start in range(0, len(needs_fetch), BATCH_SIZE):
             batch = needs_fetch[batch_start:batch_start + BATCH_SIZE]
+            _vs_batch_num += 1
 
             for sym in batch:
                 if sym in cached_map:
@@ -387,6 +389,17 @@ def _run_background_scan():
                 _scan_cache["scanned"] += len(batch)
                 _scan_cache["candidates"].sort(key=lambda x: x["quality"], reverse=True)
                 _scan_cache["updated_at"] = time.time()
+
+            # Persist intermediate results to DB periodically so they
+            # survive Render free-tier restarts before the scan completes
+            if _vs_batch_num <= 2 or _vs_batch_num % 5 == 0:
+                try:
+                    from src.services.persistence import save_scan
+                    with _scan_lock:
+                        snapshot = dict(_scan_cache)
+                    save_scan("value_scan", snapshot)
+                except Exception:
+                    logger.warning("Value scanner: failed to persist intermediate results")
 
         with _scan_lock:
             _scan_cache["complete"] = True

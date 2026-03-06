@@ -439,7 +439,9 @@ def _run_background_scan():
             all_picks = all_picks[:50]
 
             # Rebuild packages on 1st batch (fast initial results), every 3rd batch, and last batch
-            if batch_num <= 2 or batch_num % 3 == 0 or batch_start + BATCH >= len(symbols):
+            is_final = batch_start + BATCH >= len(symbols)
+            should_publish = batch_num <= 2 or batch_num % 3 == 0 or is_final
+            if should_publish:
                 local_packages = {
                     "hidden": _build_hidden_gems_package(all_picks),
                     "institutional": _build_institutional_package(all_picks),
@@ -458,17 +460,37 @@ def _run_background_scan():
                 "bearish": round(bear / total_so_far * 100),
             }
 
-            # Update progress only (live results stay unchanged)
-            with _scan_lock:
-                _scan_progress["scanned"] = min(batch_start + BATCH, total)
+            scanned_so_far = min(batch_start + BATCH, total)
 
-        # ── Scan complete: atomically swap live cache ──
+            # ── Publish intermediate results to live cache so users see
+            #    data immediately instead of waiting for the full scan.
+            #    On Render free tier, the instance may be killed before
+            #    the scan completes, so we also persist to DB periodically.
+            with _scan_lock:
+                _scan_progress["scanned"] = scanned_so_far
+
+            if should_publish and all_picks:
+                with _scan_lock:
+                    _scan_cache["all_picks"] = list(all_picks)
+                    _scan_cache["packages"] = local_packages
+                    _scan_cache["market_mood"] = local_mood
+                    _scan_cache["scanned"] = scanned_so_far
+                    _scan_cache["total"] = total
+                    _scan_cache["complete"] = is_final
+                    _scan_cache["updated_at"] = time.time()
+
+                # Persist intermediate results to DB every few batches
+                if batch_num <= 2 or batch_num % 6 == 0 or is_final:
+                    try:
+                        from src.services.persistence import save_scan
+                        with _scan_lock:
+                            snapshot = dict(_scan_cache)
+                        save_scan("trading_scan", snapshot)
+                    except Exception:
+                        logger.warning("Trading advisor: failed to persist intermediate results")
+
+        # ── Scan complete: finalize ──
         with _scan_lock:
-            _scan_cache["all_picks"] = list(all_picks)
-            _scan_cache["packages"] = local_packages
-            _scan_cache["market_mood"] = local_mood
-            _scan_cache["scanned"] = total
-            _scan_cache["total"] = total
             _scan_cache["complete"] = True
             _scan_cache["updated_at"] = time.time()
             _scan_progress["scanned"] = total
