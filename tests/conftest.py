@@ -22,6 +22,12 @@ from playwright.sync_api import Page, BrowserContext
 os.environ["NO_PROXY"] = "127.0.0.1,localhost"
 os.environ["no_proxy"] = "127.0.0.1,localhost"
 
+# Detect if we need Intel corporate proxy (local dev) or not (CI/GitHub Actions)
+_NEED_PROXY = os.environ.get("USE_INTEL_PROXY") == "1" and not os.environ.get("CI")
+_PROXY_HTTP = "http://proxy-dmz.intel.com:911" if _NEED_PROXY else None
+_PROXY_HTTPS = "http://proxy-dmz.intel.com:912" if _NEED_PROXY else None
+_PROXIES = {"http": _PROXY_HTTP, "https": _PROXY_HTTPS} if _NEED_PROXY else None
+
 LOCAL_URL = "http://127.0.0.1:8091"
 TEST_USER_EMAIL = "testuser@e2e.local"
 TEST_USER_PASSWORD = "TestPass123"
@@ -102,13 +108,13 @@ def browser_type_launch_args():
 @pytest.fixture(scope="session")
 def browser_context_args():
     """Playwright browser-context options (session-wide)."""
-    return {
-        "viewport": {"width": 1280, "height": 1024},
-        "proxy": {
+    opts = {"viewport": {"width": 1280, "height": 1024}}
+    if _NEED_PROXY:
+        opts["proxy"] = {
             "server": "http://proxy-dmz.intel.com:912",
             "bypass": "127.0.0.1,localhost",
-        },
-    }
+        }
+    return opts
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -118,11 +124,9 @@ def _wake_remote_server(request, _live_server):
     if not live_url:
         return
     import requests as _req
-    proxies = {"http": "http://proxy-dmz.intel.com:911",
-               "https": "http://proxy-dmz.intel.com:912"}
     for attempt in range(6):  # up to ~3 min of retries
         try:
-            r = _req.get(f"{live_url.rstrip('/')}/login", proxies=proxies, timeout=60)
+            r = _req.get(f"{live_url.rstrip('/')}/login", proxies=_PROXIES, timeout=60)
             if r.status_code == 200:
                 return
         except Exception:
@@ -135,10 +139,8 @@ def _wake_remote_server(request, _live_server):
 def authenticated_page(page: Page, live_url: str) -> Page:
     """Register (if needed) and log in a test user, returning a page on the dashboard."""
     import requests
-    proxies = {"http": "http://proxy-dmz.intel.com:911",
-               "https": "http://proxy-dmz.intel.com:912"}
-    # Dynamically choose proxies: use proxy for remote, skip for local
-    px = proxies if "127.0.0.1" not in live_url and "localhost" not in live_url else None
+    # Use proxy for remote sites when behind Intel proxy, skip for local
+    px = _PROXIES if "127.0.0.1" not in live_url and "localhost" not in live_url else None
     # Ensure the test user exists (ignore 400 if already registered)
     for _ in range(3):
         try:
@@ -168,9 +170,7 @@ def live_url(_live_server: str) -> str:
 def _api_session(base_url: str, email: str, password: str, name: str = "Test"):
     """Register + login via API. Returns (requests.Session, proxies_dict)."""
     import requests as _req
-    proxies = {"http": "http://proxy-dmz.intel.com:911",
-               "https": "http://proxy-dmz.intel.com:912"}
-    px = proxies if "127.0.0.1" not in base_url and "localhost" not in base_url else None
+    px = _PROXIES if "127.0.0.1" not in base_url and "localhost" not in base_url else None
     s = _req.Session()
     if px:
         s.proxies.update(px)

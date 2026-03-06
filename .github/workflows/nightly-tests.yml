@@ -1,0 +1,269 @@
+# ──────────────────────────────────────────────────────────────
+# InvestAI Nightly Regression Tests
+#
+# Runs every night at 2 AM UTC against the live Render site.
+# On failure: creates a GitHub Issue with full details.
+# Can also be triggered manually from the Actions tab.
+# ──────────────────────────────────────────────────────────────
+name: Nightly Tests
+
+on:
+  schedule:
+    - cron: '0 2 * * *'          # 2 AM UTC every day
+  workflow_dispatch:              # manual trigger from Actions tab
+    inputs:
+      test_suite:
+        description: 'Which test suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - smoke
+          - live-site
+          - e2e
+
+permissions:
+  contents: write                # for auto-fix commits
+  issues: write                  # for failure issue creation
+
+env:
+  LIVE_URL: https://investai-utho.onrender.com
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  # ── Step 1: Wake the Render site (free tier goes to sleep) ──
+  wake-site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping site to wake it
+        run: |
+          echo "Waking up ${{ env.LIVE_URL }}..."
+          for i in 1 2 3 4 5 6; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.LIVE_URL }}/login" --max-time 60) || true
+            echo "Attempt $i: HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "Site is awake!"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::warning::Site may still be waking up, proceeding anyway"
+
+  # ── Step 2: Run tests ──────────────────────────────────────
+  test:
+    needs: wake-site
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      test_passed: ${{ steps.run-tests.outcome == 'success' }}
+      failed_tests: ${{ steps.parse-failures.outputs.failed_tests }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest-html pytest-json-report
+          playwright install chromium --with-deps
+
+      - name: Run test suite
+        id: run-tests
+        continue-on-error: true   # don't fail the job yet — we want to collect results
+        run: |
+          SUITE="${{ github.event.inputs.test_suite || 'all' }}"
+          COMMON_ARGS="--live-url ${{ env.LIVE_URL }} --junitxml=results/junit.xml --html=results/report.html --self-contained-html --json-report --json-report-file=results/report.json -v --tb=long --timeout=120"
+
+          mkdir -p results
+
+          case "$SUITE" in
+            smoke)
+              python -m pytest tests/test_e2e.py -m smoke $COMMON_ARGS 2>&1 | tee results/output.log
+              ;;
+            live-site)
+              python -m pytest tests/test_live_site.py $COMMON_ARGS 2>&1 | tee results/output.log
+              ;;
+            e2e)
+              python -m pytest tests/test_e2e.py $COMMON_ARGS 2>&1 | tee results/output.log
+              ;;
+            *)
+              python -m pytest tests/ $COMMON_ARGS 2>&1 | tee results/output.log
+              ;;
+          esac
+        env:
+          CI: true               # tests can check this to skip proxy config
+
+      - name: Parse test failures
+        id: parse-failures
+        if: steps.run-tests.outcome == 'failure'
+        run: |
+          # Extract failed test names from JUnit XML
+          python -c "
+          import xml.etree.ElementTree as ET, json
+          tree = ET.parse('results/junit.xml')
+          failures = []
+          for tc in tree.iter('testcase'):
+              fail = tc.find('failure')
+              if fail is not None:
+                  failures.append({
+                      'class': tc.get('classname', ''),
+                      'name': tc.get('name', ''),
+                      'message': (fail.get('message', '') or '')[:500],
+                  })
+          print(f'Found {len(failures)} failure(s)')
+          # Output for next steps
+          with open('results/failures.json', 'w') as f:
+              json.dump(failures, f, indent=2)
+          # Set output (truncated for GitHub)
+          summary = ', '.join(f['name'] for f in failures[:10])
+          with open('$GITHUB_OUTPUT', 'a') as gh:
+              gh.write(f'failed_tests={summary}\n')
+              gh.write(f'failure_count={len(failures)}\n')
+          " 2>&1 || echo "Failed to parse JUnit XML"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ github.run_number }}
+          path: results/
+          retention-days: 30
+
+      - name: Set final status
+        if: steps.run-tests.outcome == 'failure'
+        run: exit 1
+
+  # ── Step 3: On failure → create Issue with details ─────────
+  notify-failure:
+    needs: test
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results-${{ github.run_number }}
+          path: results/
+
+      - name: Create or update GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Read failures
+            let failures = [];
+            try {
+              failures = JSON.parse(fs.readFileSync('results/failures.json', 'utf8'));
+            } catch (e) {
+              failures = [{name: 'unknown', message: 'Could not parse failure report'}];
+            }
+
+            // Read last 100 lines of log
+            let logTail = '';
+            try {
+              const log = fs.readFileSync('results/output.log', 'utf8');
+              const lines = log.split('\n');
+              logTail = lines.slice(-100).join('\n');
+            } catch (e) {
+              logTail = 'Could not read test log';
+            }
+
+            const failList = failures.map(f =>
+              `- **${f.class}::${f.name}**\n  \`${f.message}\``
+            ).join('\n');
+
+            const body = `## 🔴 Nightly Tests Failed
+
+            **Run:** [#${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            **Date:** ${new Date().toISOString().split('T')[0]}
+            **Failed:** ${failures.length} test(s)
+
+            ### Failed Tests
+            ${failList}
+
+            ### Log (last 100 lines)
+            <details>
+            <summary>Click to expand</summary>
+
+            \`\`\`
+            ${logTail}
+            \`\`\`
+            </details>
+
+            ### Artifacts
+            Download the full HTML report from the [Actions run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).
+
+            ---
+            *Auto-generated by nightly regression pipeline*
+            `.replace(/^            /gm, '');
+
+            // Check if an open "Nightly Test Failure" issue exists
+            const {data: issues} = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'nightly-failure',
+              state: 'open',
+              per_page: 1,
+            });
+
+            if (issues.length > 0) {
+              // Update existing issue
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body: body,
+              });
+              console.log(`Updated issue #${issues[0].number}`);
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🔴 Nightly tests failed (${failures.length} failure${failures.length > 1 ? 's' : ''})`,
+                body: body,
+                labels: ['nightly-failure', 'bug'],
+              });
+              console.log('Created new failure issue');
+            }
+
+  # ── Step 4: On success → close any open failure issues ─────
+  close-on-success:
+    needs: test
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close resolved failure issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const {data: issues} = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'nightly-failure',
+              state: 'open',
+            });
+            for (const issue of issues) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `## ✅ All tests passing now!\n\nClosed automatically by [run #${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+              });
+              console.log(`Closed issue #${issue.number}`);
+            }
