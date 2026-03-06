@@ -847,6 +847,100 @@ class TestDataIntegritySmoke:
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Background Scheduler — server-side scanning (deep / nightly)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+@pytest.mark.deep
+class TestBackgroundScheduler:
+    """Verify the background scheduler runs scans server-side,
+    decoupled from user requests."""
+
+    def test_run_full_scan_sets_results(self):
+        """trading_advisor.run_full_scan() should populate the cache."""
+        from src.services import trading_advisor as ta
+        import time as _time
+
+        # Reset cache to empty state
+        with ta._scan_lock:
+            ta._scan_cache["all_picks"] = []
+            ta._scan_cache["packages"] = {}
+            ta._scan_cache["complete"] = False
+            ta._scan_cache["updated_at"] = 0
+            ta._scan_running = False
+            ta._scan_progress["complete"] = True
+
+        # run_full_scan is synchronous — it will finish (possibly with 0
+        # picks in test env since no real market data), but must not crash
+        ta.run_full_scan()
+
+        with ta._scan_lock:
+            assert ta._scan_cache["complete"] is True
+            assert ta._scan_cache["updated_at"] > 0
+            assert ta._scan_running is False
+
+    def test_run_full_scan_skips_concurrent(self):
+        """run_full_scan() should skip when a scan is already in progress."""
+        from src.services import trading_advisor as ta
+
+        with ta._scan_lock:
+            ta._scan_running = True
+
+        # Should return immediately without error
+        ta.run_full_scan()
+
+        with ta._scan_lock:
+            ta._scan_running = False  # cleanup
+
+    def test_ensure_scan_only_fires_on_empty_cache(self):
+        """_ensure_scan_running() should be a no-op when cache has results."""
+        import time as _time
+        from src.services import trading_advisor as ta
+
+        # Seed cache with results (even if stale)
+        with ta._scan_lock:
+            ta._scan_cache["all_picks"] = [{"symbol": "TEST"}]
+            ta._scan_cache["complete"] = True
+            ta._scan_cache["updated_at"] = _time.time() - 99999  # very stale
+            ta._scan_running = False
+
+        ta._ensure_scan_running()
+
+        # Should NOT have started a scan — scheduler handles refreshes
+        with ta._scan_lock:
+            assert ta._scan_running is False
+            assert ta._scan_cache["all_picks"] == [{"symbol": "TEST"}]
+
+    def test_scheduler_stop_event(self):
+        """stop_background_scheduler() should signal the stop event."""
+        from src.services.background_scheduler import (
+            _stop_event, stop_background_scheduler,
+        )
+        _stop_event.clear()
+        assert not _stop_event.is_set()
+        stop_background_scheduler()
+        assert _stop_event.is_set()
+        _stop_event.clear()  # cleanup
+
+    def test_value_scanner_run_full_scan(self):
+        """value_scanner.run_full_scan() should populate the cache."""
+        from src.services import value_scanner as vs
+
+        with vs._scan_lock:
+            vs._scan_cache["candidates"] = []
+            vs._scan_cache["rejected"] = []
+            vs._scan_cache["complete"] = False
+            vs._scan_cache["updated_at"] = 0
+            vs._scan_running = False
+
+        vs.run_full_scan()
+
+        with vs._scan_lock:
+            assert vs._scan_cache["complete"] is True
+            assert vs._scan_cache["updated_at"] > 0
+            assert vs._scan_running is False
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # Trading Advisor — Double-Buffer Scan Integrity (deep / nightly)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

@@ -403,14 +403,19 @@ def _run_background_scan():
 
 
 def _ensure_scan_running():
-    """Start a background scan if one isn't running and cache is stale/empty."""
+    """Safety-net fallback: start a scan if cache is completely empty.
+
+    Only fires before the scheduler has run its first scan.  Once the
+    scheduler is producing results this is essentially a no-op.
+    """
     global _scan_running
     with _scan_lock:
         if _scan_running:
             return
-        age = time.time() - _scan_cache["updated_at"]
-        if _scan_cache["complete"] and age < SCAN_CACHE_TTL:
+        # If we already have results, let the scheduler handle refreshes
+        if _scan_cache["candidates"]:
             return
+        # No results at all — kick off a scan so the user isn't stuck
         _scan_running = True
         _scan_cache["complete"] = False
         _scan_cache["scanned"] = 0
@@ -419,33 +424,28 @@ def _ensure_scan_running():
     t.start()
 
 
+def run_full_scan():
+    """Entry point called by the background scheduler.
+
+    Runs a complete scan synchronously (blocking).  Safe to call from
+    any thread — guards against concurrent scans internally.
+    """
+    global _scan_running
+    with _scan_lock:
+        if _scan_running:
+            logger.info("Value scanner: scan already in progress, skipping")
+            return
+        _scan_running = True
+        _scan_cache["complete"] = False
+        _scan_cache["scanned"] = 0
+
+    _run_background_scan()
+
+
+# Kept for backward compat but no longer needed — scheduler handles repeats
 def start_auto_scanner():
-    """
-    Launch a daemon thread that pre-computes scan results automatically.
-    Waits for the cache warmer to finish, then runs the scan and
-    repeats periodically so results are always fresh.
-    """
-    from src.services.market_data import _warm_done
-
-    def _loop():
-        logger.info("Value auto-scanner: waiting for cache warmer...")
-        _warm_done.wait()
-        logger.info("Value auto-scanner: cache warm, starting first scan")
-        while True:
-            _ensure_scan_running()
-            # Wait for the current scan to finish
-            for _ in range(600):
-                with _scan_lock:
-                    if _scan_cache["complete"]:
-                        break
-                time.sleep(1)
-            logger.info("Value auto-scanner: scan ready (%d candidates). "
-                        "Next refresh in %ds",
-                        len(_scan_cache["candidates"]), SCAN_CACHE_TTL)
-            time.sleep(SCAN_CACHE_TTL)
-
-    t = threading.Thread(target=_loop, daemon=True, name="value-auto-scanner")
-    t.start()
+    """Legacy entry point.  Now a no-op; use background_scheduler instead."""
+    logger.info("start_auto_scanner() called — scanning is handled by background_scheduler")
 
 
 # ---------------------------------------------------------------------------

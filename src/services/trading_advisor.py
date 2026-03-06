@@ -492,18 +492,39 @@ def _run_background_scan():
         _scan_running = False
 
 
+def run_full_scan():
+    """Entry point called by the background scheduler.
+
+    Runs a complete scan synchronously (blocking).  Safe to call from
+    any thread — guards against concurrent scans internally.
+    """
+    global _scan_running
+    with _scan_lock:
+        if _scan_running:
+            logger.info("Trading advisor: scan already in progress, skipping")
+            return
+        _scan_running = True
+        _scan_progress["complete"] = False
+        _scan_progress["scanned"] = 0
+
+    _run_background_scan()
+
+
 def _ensure_scan_running():
-    """Start a background scan if none is running and the cache is stale.
-    Never wipes the live cache — old results stay visible."""
+    """Safety-net fallback: start a background scan if cache is empty.
+
+    Only used on first request before the scheduler has run.  Once the
+    scheduler is producing results this is essentially a no-op.
+    """
     global _scan_running
     with _scan_lock:
         if _scan_running:
             return
-        age = time.time() - _scan_cache["updated_at"]
-        if _scan_cache["complete"] and age < SCAN_CACHE_TTL:
+        # If we already have results, let the scheduler handle refreshes
+        if _scan_cache["all_picks"]:
             return
+        # No results at all — kick off a scan so the user isn't stuck
         _scan_running = True
-        # Only update progress tracker, NOT the live results
         _scan_progress["complete"] = False
         _scan_progress["scanned"] = 0
 
@@ -511,33 +532,10 @@ def _ensure_scan_running():
     t.start()
 
 
+# Kept for backward compat but no longer needed — scheduler handles repeats
 def start_trading_advisor():
-    """Launch the auto-scanning daemon. Called at app startup."""
-    from src.services.market_data import _warm_done
-
-    def _loop():
-        logger.info("Trading advisor: waiting for cache warmer (phase 1 only)...")
-        # Wait up to 60s for phase 1 of cache warm, then proceed anyway
-        _warm_done.wait(timeout=60)
-        if _warm_done.is_set():
-            logger.info("Trading advisor: cache warm, starting first scan")
-        else:
-            logger.info("Trading advisor: timed out waiting for cache warm, starting scan with available data")
-        while True:
-            _ensure_scan_running()
-            for _ in range(600):
-                with _scan_lock:
-                    if _scan_cache["complete"]:
-                        break
-                time.sleep(1)
-            logger.info(
-                "Trading advisor: scan ready (%d picks). Next refresh in %ds",
-                len(_scan_cache["all_picks"]), SCAN_CACHE_TTL,
-            )
-            time.sleep(SCAN_CACHE_TTL)
-
-    t = threading.Thread(target=_loop, daemon=True, name="trading-advisor")
-    t.start()
+    """Legacy entry point.  Now a no-op; use background_scheduler instead."""
+    logger.info("start_trading_advisor() called — scanning is handled by background_scheduler")
 
 
 # ---------------------------------------------------------------------------
@@ -547,11 +545,12 @@ def start_trading_advisor():
 def get_dashboard() -> dict:
     """Return current scan results for the dashboard.
 
-    Always returns the LAST COMPLETED scan results.  If a new scan is
-    in progress, the progress bar reflects that, but the picks/packages
-    shown are from the previous successful scan — so they never go to 0.
+    Pure read — never triggers a scan.  The background scheduler is
+    responsible for keeping results fresh.  If the server just started
+    and the scheduler hasn't run yet, _ensure_scan_running() kicks off
+    one scan as a safety net.
     """
-    _ensure_scan_running()
+    _ensure_scan_running()  # safety-net: only fires when cache is empty
 
     with _scan_lock:
         # If we have completed results, show them with complete=True.

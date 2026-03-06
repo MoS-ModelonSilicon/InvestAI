@@ -393,20 +393,7 @@ def startup():
         from src.services.market_data import start_cache_warmer
         start_cache_warmer()
 
-    # Stagger background scans to avoid memory spikes from concurrent fetching
-    if not _testing:
-        import time as _time
-
-        def _delayed_value_scanner():
-            _time.sleep(180)  # wait 3 min after cache warmer starts
-            from src.services.value_scanner import start_auto_scanner
-            start_auto_scanner()
-
-        def _delayed_trading_advisor():
-            _time.sleep(300)  # wait 5 min after cache warmer starts
-            from src.services.trading_advisor import start_trading_advisor
-            start_trading_advisor()
-
-        import threading
-        threading.Thread(target=_delayed_value_scanner, daemon=True, name="delay-vs").start()
-        threading.Thread(target=_delayed_trading_advisor, daemon=True, name="delay-ta").start()
+        # Single background scheduler handles all periodic scans
+        # (value scanner, trading advisor) on fixed server-side intervals
+        from src.services.background_scheduler import start_background_scheduler
+        start_background_scheduler()
