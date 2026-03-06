@@ -21,7 +21,24 @@ from src.routers import (
     autopilot, smart_advisor, trading_advisor, picks_tracker, dca, admin,
 )
 
-Base.metadata.create_all(bind=engine)
+import time as _time, logging as _logging
+_log = _logging.getLogger(__name__)
+
+def _init_db(retries: int = 3, delay: float = 2.0):
+    """Create tables with retry for transient connection issues."""
+    for attempt in range(1, retries + 1):
+        try:
+            Base.metadata.create_all(bind=engine)
+            _log.info("Database tables ready (attempt %d)", attempt)
+            return
+        except Exception as exc:
+            _log.warning("DB init attempt %d/%d failed: %s", attempt, retries, exc)
+            if attempt < retries:
+                _time.sleep(delay * attempt)
+            else:
+                _log.error("All DB init attempts failed — starting without tables")
+
+_init_db()
 
 # ── Auto-migrate: add missing columns/indexes to existing tables ──
 def _auto_migrate():
