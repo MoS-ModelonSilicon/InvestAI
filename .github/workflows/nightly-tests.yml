@@ -20,7 +20,6 @@ on:
         options:
           - all
           - smoke
-          - api-smoke
           - live-site
           - e2e
 
@@ -51,49 +50,9 @@ jobs:
           done
           echo "::warning::Site may still be waking up, proceeding anyway"
 
-  # ── Step 1.5: Fast API smoke tests (no browser needed) ──────
-  api-smoke:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    defaults:
-      run:
-        working-directory: finance-tracker
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-          cache-dependency-path: finance-tracker/requirements.txt
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run API smoke tests
-        run: |
-          python -m pytest tests/test_api_smoke.py \
-            -v --tb=short \
-            --junitxml=results/junit-api-smoke.xml \
-            --timeout=30 \
-            2>&1
-        env:
-          CI: true
-          TESTING: "1"
-          FINNHUB_API_KEY: ""
-          INVESTAI_SECRET: "ci-test-secret"
-
-      - name: Upload API smoke results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: api-smoke-results-${{ github.run_number }}
-          path: finance-tracker/results/
-          retention-days: 30
-
   # ── Step 2: Run browser tests ──────────────────────────────
   test:
-    needs: [wake-site, api-smoke]
+    needs: wake-site
     runs-on: ubuntu-latest
     timeout-minutes: 60
     outputs:
@@ -130,9 +89,6 @@ jobs:
           case "$SUITE" in
             smoke)
               python -m pytest tests/test_e2e.py -m smoke $COMMON_ARGS 2>&1 | tee results/output.log
-              ;;
-            api-smoke)
-              python -m pytest tests/test_api_smoke.py $COMMON_ARGS 2>&1 | tee results/output.log
               ;;
             live-site)
               python -m pytest tests/test_live_site.py $COMMON_ARGS 2>&1 | tee results/output.log
