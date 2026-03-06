@@ -83,6 +83,22 @@
 - **15 API routers**, **10 service modules**, **18 JS modules**
 - **Built entirely in one session** with Cursor + Claude
 
+- [x] **Security: Admin Credential Hardening** (2026-03-06)
+  - Replaced weak default admin credentials (`admin@test.com` / `admin123`) with secure ones
+  - Admin email set to `yaronklein1@gmail.com` with strong password (mixed case, numbers, symbols)
+  - Added minimum 8-character password validation in `src/main.py` startup auto-create flow
+  - Updated `run.ps1` local dev script with new secure credentials
+  - Added `ADMIN_EMAIL` / `ADMIN_PASSWORD` placeholders to `render.yaml` (`sync: false`)
+  - Updated Render production env vars via Render REST API
+  - Triggered Render redeploy to apply changes
+  - Documented new admin email in `DEPLOY-KEYS.md` (password intentionally omitted from docs)
+
+- [x] **DevOps: Render API Management** (2026-03-06)
+  - Established Render API access for automated deployments and env-var management
+  - API key and Service ID documented in `DEPLOY-KEYS.md`
+  - Can now read/update env vars and trigger deploys directly from Cursor terminal
+  - Deploy workflow documented: push to GitHub → trigger Render deploy via API
+
 ## Known Issues
 
 - yfinance rate limiting can temporarily affect data fetching (external API issue)
