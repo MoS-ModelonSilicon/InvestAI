@@ -13,7 +13,20 @@ Run:
 import os
 import sys
 import time
+import socket
 import pytest
+
+# ── Hard 10-second timeout on ALL outbound network I/O ────────
+# Prevents tests from hanging forever when endpoints call external
+# APIs (Finnhub, Yahoo, etc.) through a corporate proxy.
+socket.setdefaulttimeout(10)
+
+# ── Bypass corporate proxy for tests (direct connections fail fast) ──
+os.environ["NO_PROXY"] = "*"
+os.environ["no_proxy"] = "*"
+# Clear proxy env vars entirely — yfinance/requests may not respect NO_PROXY
+for _proxy_var in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"):
+    os.environ.pop(_proxy_var, None)
 
 # ── Ensure finance-tracker root is importable ──────────────────
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,6 +38,17 @@ os.environ.setdefault("FINNHUB_API_KEY", "")
 os.environ.setdefault("INVESTAI_SECRET", "test-secret-key-for-ci")
 os.environ["TESTING"] = "1"  # disable rate limiting
 os.environ["DISABLE_YAHOO"] = "1"  # avoid slow Yahoo Finance retries in CI
+
+# ── Monkey-patch requests to enforce a 5-second timeout ────────
+# Without this, internal requests.get() calls (from yfinance, finnhub,
+# market_data, etc.) will hang indefinitely behind a corporate proxy.
+import requests as _req
+_orig_send = _req.adapters.HTTPAdapter.send
+def _send_with_timeout(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None):
+    if timeout is None:
+        timeout = 5
+    return _orig_send(self, request, stream=stream, timeout=timeout, verify=verify, cert=cert, proxies=proxies)
+_req.adapters.HTTPAdapter.send = _send_with_timeout
 
 from fastapi.testclient import TestClient
 from src.main import app

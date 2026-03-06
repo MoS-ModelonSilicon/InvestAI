@@ -353,7 +353,9 @@ def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optio
     # Last resort: Finnhub candle endpoint may be restricted on free tier (403).
     # Try Yahoo directly even when DISABLE_YAHOO is set — yfinance is installed
     # and daily candles are its most reliable feature.
-    if not result and _yahoo_force_disabled:
+    # Skip this in TESTING mode to avoid hanging on external HTTP calls.
+    _testing = os.environ.get("TESTING") == "1"
+    if not result and _yahoo_force_disabled and not _testing:
         logger.info("Finnhub candles failed for %s, trying Yahoo as last resort", symbol)
         result = _try_yahoo_candles(symbol, resolution, from_ts, to_ts, force=True)
 

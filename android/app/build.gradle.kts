@@ -18,8 +18,8 @@ android {
         applicationId = "com.investai.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 11
-        versionName = "1.6.0"
+        versionCode = 12
+        versionName = "1.7.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -133,4 +133,16 @@ dependencies {
 
     // Charts
     implementation(libs.vico.compose.m3)
+
+    // Testing – Unit
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+
+    // Testing – Instrumented
+    androidTestImplementation(libs.androidx.test.ext)
+    androidTestImplementation(libs.androidx.test.espresso)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 }

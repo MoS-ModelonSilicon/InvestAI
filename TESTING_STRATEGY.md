@@ -1,496 +1,154 @@
-# InvestAI — Automated Testing & Self-Healing CI Strategy
+# InvestAI — Testing Strategy
 
-## Current State
+## Overview: Two-Tier Testing Pyramid
 
-| Asset | Details |
-|-------|---------|
-| **Test framework** | pytest + Playwright (browser E2E) |
-| **Test suites** | `test_e2e.py` (~25 classes, local+remote), `test_live_site.py` (~20 classes, remote) |
-| **Total test classes** | ~45, covering login, dashboard, transactions, budgets, screener, portfolio, alerts, DCA, etc. |
-| **Deployment** | Render (render.yaml), auto-deploy from git push |
-| **CI/CD** | **None** — tests run manually from terminal |
-| **Test modes** | Local server (`:8091`) or deployed site (`--live-url`) |
+```
+                     ┌──────────────────────────┐
+                     │    Nightly (Tier 2)       │  Full browser E2E + API
+                     │    ~227 Playwright tests  │  against live Render site
+                     │    + API smoke tests      │  Runs at 2 AM UTC daily
+                     ├──────────────────────────┤
+                     │    PR Gate (Tier 1)       │  Fast TestClient tests
+                     │    ~80 fast API tests     │  No browser, no ext API
+                     │    + lint + import check  │  Runs on every push/PR
+                     └──────────────────────────┘
+```
+
+Every push/PR runs fast smoke tests (~1-2 min) to prevent broken code from merging.
+Every night, the full Playwright E2E suite runs against the live site to catch regressions.
 
 ---
 
-## Proposed Architecture: 3-Layer Testing Pipeline
+## Tier 1 — PR / Commit Gate (~1-2 minutes)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    LAYER 1: TRIGGER                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌───────────┐  │
-│  │  Nightly  │  │ On Push  │  │ On PR    │  │  Manual   │  │
-│  │  (cron)   │  │ (CI)     │  │ (gate)   │  │ (button)  │  │
-│  └─────┬────┘  └─────┬────┘  └─────┬────┘  └─────┬─────┘  │
-└────────┼─────────────┼─────────────┼─────────────┼──────────┘
-         └─────────────┴─────────────┴─────────────┘
-                              │
-┌─────────────────────────────▼───────────────────────────────┐
-│                    LAYER 2: EXECUTE                         │
-│                                                             │
-│  ① Spin up server (local or use --live-url)                 │
-│  ② Run pytest suite (parallelized by class)                 │
-│  ③ Collect results → JUnit XML + HTML report + screenshots  │
-│  ④ Generate structured failure report (JSON)                │
-│                                                             │
-└─────────────────────────────┬───────────────────────────────┘
-                              │
-                     ┌────────▼────────┐
-                     │  All passed?    │──── YES ──→ ✅ Done, notify
-                     └────────┬────────┘
-                              │ NO
-┌─────────────────────────────▼───────────────────────────────┐
-│                    LAYER 3: AUTO-FIX                        │
-│                                                             │
-│  ① Parse failure report (test name, error, screenshot)      │
-│  ② Feed to AI agent (Copilot / Claude API / local LLM)     │
-│  ③ Agent reads relevant source files + test code            │
-│  ④ Agent generates a fix (code patch)                       │
-│  ⑤ Apply patch → re-run failed tests only                   │
-│  ⑥ If pass → auto-commit on branch `autofix/<date>`        │
-│  ⑦ Open PR for human review                                │
-│  ⑧ If fail → escalate (notification with full report)       │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+**Workflow:** `.github/workflows/pr-tests.yml`
+**Trigger:** Every `push` to `main` + every `pull_request` targeting `main`
+
+### Jobs
+
+| Job | What it does | Time |
+|-----|-------------|------|
+| `smoke-tests` | Runs `test_api_smoke.py` with FastAPI TestClient — no browser needed | ~60s |
+| `lint` | Syntax-checks all `.py` files + verifies `from src.main import app` | ~15s |
+
+### What Smoke Tests Cover
+
+- **All 74 API endpoints** return non-500 status codes
+- **Auth flows:** register, login, logout, me, forgot-password, reset-password
+- **Full CRUD:** transactions, budgets, alerts, portfolio, DCA plans, categories, watchlist
+- **Admin panel:** all 7 admin endpoints (stats, user list, detail, toggle-admin, toggle-active, reset-password, delete)
+- **User isolation:** one user's data is invisible to another
+- **Security:** auth required on `/api/*`, security headers, httponly cookies
+- **Data integrity:** response structures, seeded categories, profile allocation
+
+### Key Properties
+
+- Uses `FastAPI.TestClient` (in-process HTTP, zero network)
+- Ephemeral SQLite DB (fresh each run)
+- Zero external dependencies (no Finnhub, no Yahoo Finance, no browser)
+- All tests marked `@pytest.mark.smoke`
+
+**If this fails → PR is blocked from merging.**
 
 ---
 
-## Option A: GitHub Actions (Recommended for Cloud)
+## Tier 2 — Nightly Regression (~15-25 min)
 
-**Best for:** Repo hosted on GitHub, want free CI minutes, industry standard.
+**Workflow:** `.github/workflows/nightly-tests.yml`
+**Trigger:** Cron `0 2 * * *` (2 AM UTC daily) + manual `workflow_dispatch`
 
-### How it works
-- GitHub Actions runs on a schedule (cron) or on every push/PR
-- Uses Ubuntu runners with Playwright pre-installed
-- Tests against the live Render deployment or a spun-up local server
-- Uploads test artifacts (HTML reports, screenshots, JUnit XML)
+### Jobs
 
-### Pros
-- Free for public repos (2,000 min/month for private)
-- Native GitHub integration (PR checks, status badges, artifacts)
-- Playwright has first-class GitHub Actions support
-- Can trigger Render deploys and wait for them
-- Secrets management for API keys
+| Job | What it does |
+|-----|-------------|
+| `wake-site` | Pings Render to wake it from cold sleep |
+| `api-smoke` | Same Tier 1 smoke tests (catch regressions in test infra itself) |
+| `test` | Full Playwright E2E suite — all 227+ browser tests against live site |
+| `notify-failure` | Auto-creates a GitHub Issue with failure details + log excerpt |
+| `close-on-success` | Auto-closes any open `nightly-failure` issues |
 
-### Cons
-- Needs internet access from runner (Finnhub API, yfinance)
-- Intel proxy not relevant (runs in GitHub cloud)
-- Limited control over runner environment
+### What E2E Tests Cover (in addition to Tier 1)
 
-### Proposed Workflow
+- Real browser rendering (Chromium via Playwright)
+- Real external API calls (Finnhub, Yahoo Finance)
+- Sparkline chart rendering (canvas pixel validation)
+- Full user journeys (register → profile → portfolio → screener → advisor)
+- Mobile layout, theme toggle, search bars
+- Performance checks (page load times)
+- Advanced feature flows (DCA, autopilot, advisor, comparison, stock detail)
 
-```yaml
-# .github/workflows/nightly-tests.yml
-name: Nightly Regression
-
-on:
-  schedule:
-    - cron: '0 2 * * *'          # 2 AM UTC nightly
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:              # manual trigger button
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - run: pip install -r requirements.txt
-      - run: playwright install chromium
-      - name: Run E2E tests against live site
-        run: |
-          pytest tests/test_live_site.py \
-            --live-url https://investai-utho.onrender.com \
-            --junitxml=results/junit.xml \
-            --html=results/report.html \
-            -v --tb=long 2>&1 | tee results/output.log
-        env:
-          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results
-          path: results/
-```
+**If this fails → GitHub Issue auto-created with failure details.**
 
 ---
 
-## Option B: Local Scheduled Runner (Best for Intel Environment)
+## Test Files
 
-**Best for:** Behind corporate proxy, want to test locally, full control.
-
-### How it works
-- A PowerShell scheduled task runs nightly on your machine (or a shared server)
-- Starts the local server, runs tests, generates report
-- Sends results via email/Teams webhook/Discord
-- Can also test the live Render site
-
-### Pros
-- Works behind Intel proxy with no config changes
-- Zero cost, uses existing machine
-- Can test local code before pushing
-- Full access to all tools (Copilot, git, etc.)
-
-### Cons
-- Machine must be on/awake
-- Single point of failure
-- Harder to share results with team
-
-### Proposed Script
-
-```powershell
-# scripts/nightly-test.ps1
-param(
-    [string]$LiveUrl = "",    # empty = local server
-    [switch]$AutoFix
-)
-
-$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm"
-$resultsDir = "test-results/$timestamp"
-New-Item -Path $resultsDir -ItemType Directory -Force
-
-# Environment
-$env:HTTP_PROXY  = "http://proxy-dmz.intel.com:911"
-$env:HTTPS_PROXY = "http://proxy-dmz.intel.com:912"
-$env:NO_PROXY    = "127.0.0.1,localhost"
-$env:FINNHUB_API_KEY = "your-key-here"
-
-# Run tests
-$pytestArgs = @(
-    "tests/", "-v", "--tb=long",
-    "--junitxml=$resultsDir/junit.xml",
-    "--html=$resultsDir/report.html",
-    "--screenshot=on"
-)
-if ($LiveUrl) { $pytestArgs += "--live-url", $LiveUrl }
-
-python -m pytest @pytestArgs 2>&1 | Tee-Object "$resultsDir/output.log"
-$exitCode = $LASTEXITCODE
-
-# Parse results
-$failures = Select-String -Path "$resultsDir/output.log" -Pattern "FAILED" |
-    ForEach-Object { $_.Line }
-
-if ($exitCode -ne 0 -and $AutoFix) {
-    # Trigger AI auto-fix (see Layer 3)
-    python scripts/autofix_agent.py --results "$resultsDir" --max-attempts 3
-}
-
-# Notify (webhook, email, etc.)
-python scripts/notify.py --results "$resultsDir" --exit-code $exitCode
-```
-
-### Windows Task Scheduler Setup
-
-```powershell
-# Register as a nightly task (run once to set up)
-$action = New-ScheduledTaskAction `
-    -Execute "powershell.exe" `
-    -Argument "-File C:\...\finance-tracker\scripts\nightly-test.ps1 -AutoFix" `
-    -WorkingDirectory "C:\...\finance-tracker"
-
-$trigger = New-ScheduledTaskTrigger -Daily -At 2:00AM
-
-Register-ScheduledTask `
-    -TaskName "InvestAI-NightlyTests" `
-    -Action $action `
-    -Trigger $trigger `
-    -Description "Run E2E regression tests nightly"
-```
+| File | Purpose | Tier | Tests |
+|------|---------|------|-------|
+| `tests/test_api_smoke.py` | Fast API contract tests (TestClient) | 1 (PR) | ~80 |
+| `tests/test_e2e.py` | Browser E2E (Playwright, local or remote) | 2 (Nightly) | ~133 |
+| `tests/test_live_site.py` | Browser E2E for live deployment only | 2 (Nightly) | ~94 |
 
 ---
 
-## Option C: Hybrid (Recommended Overall)
+## CI Workflow Files
 
-Use **both** GitHub Actions AND local runner:
-
-| Trigger | Runner | Target | Purpose |
-|---------|--------|--------|---------|
-| On push/PR | GitHub Actions | Live Render site | Gate merges |
-| Nightly 2 AM | GitHub Actions | Live Render site | Catch regressions |
-| On-demand | Local (PowerShell) | Local server | Dev testing |
-| Weekly | Local | Live site | Deep regression + auto-fix |
+| File | Trigger | Runs |
+|------|---------|------|
+| `.github/workflows/pr-tests.yml` | Push to `main`, PRs | Tier 1 smoke + lint |
+| `.github/workflows/nightly-tests.yml` | Daily 2 AM UTC, manual | Tier 1 + Tier 2 full suite |
 
 ---
 
-## Layer 3: AI Auto-Fix Agent (The Self-Healing Part)
+## Endpoint Coverage: 74/74 (100%)
 
-This is the most innovative part. An AI agent reads test failures and attempts to fix them.
+Previously untested endpoints now covered by `test_api_smoke.py`:
+- All 7 admin endpoints (stats, users, toggle-admin, toggle-active, reset-password, delete)
+- `GET /api/alerts/triggered`
+- `POST /api/categories` + `DELETE /api/categories/{id}`
+- `DELETE /api/budgets/{id}`
+- `PUT /api/transactions/{id}`
+- `DELETE /api/alerts/{id}` + `POST /api/alerts/{id}/dismiss`
+- `DELETE /api/portfolio/holdings/{id}`
+- `DELETE /api/screener/watchlist/{id}`
+- `GET /api/calendar/economic`
+- `GET /api/news/{symbol}`
+- `GET /api/advisor/company-dna/{symbol}`
+- `GET /api/stock/{symbol}/history` + `/news`
+- `GET /api/trading/{symbol}`
+- `GET /api/value-scanner/sectors`
+- `PUT /api/dca/plans/{id}` + `DELETE /api/dca/plans/{id}`
+- `POST /api/picks/seed-watchlist`
 
-### Architecture
+---
 
-```
-test failure (JSON)
-       │
-       ▼
-┌──────────────────┐
-│  autofix_agent.py │
-│                    │
-│  1. Parse failure  │
-│  2. Map to source  │─── reads src/ files, test code, error traces
-│  3. Call AI API    │─── Claude API / OpenAI / local model
-│  4. Get patch      │
-│  5. Apply patch    │─── write changes to files
-│  6. Re-run tests   │─── pytest --lf (last failed only)
-│  7. If pass:       │
-│     - git commit   │
-│     - git push     │
-│     - open PR      │
-│  8. If fail:       │
-│     - revert       │
-│     - escalate     │
-└──────────────────┘
-```
-
-### Implementation Approaches
-
-#### Approach 1: Claude/OpenAI API Agent (Most Powerful)
-
-```python
-# scripts/autofix_agent.py (skeleton)
-"""
-AI-powered auto-fix agent.
-Reads test failures, uses an LLM to generate fixes, validates them.
-"""
-
-import json, subprocess, os, sys
-from pathlib import Path
-
-def parse_failures(junit_xml_path: str) -> list[dict]:
-    """Parse JUnit XML into structured failure records."""
-    import xml.etree.ElementTree as ET
-    tree = ET.parse(junit_xml_path)
-    failures = []
-    for tc in tree.iter("testcase"):
-        fail = tc.find("failure")
-        if fail is not None:
-            failures.append({
-                "test_class": tc.get("classname"),
-                "test_name": tc.get("name"),
-                "message": fail.get("message", ""),
-                "traceback": fail.text or "",
-            })
-    return failures
-
-def map_failure_to_files(failure: dict) -> list[str]:
-    """Heuristic: extract file paths from traceback."""
-    import re
-    paths = re.findall(r'File "([^"]+)"', failure["traceback"])
-    # Filter to project files only
-    return [p for p in paths if "finance-tracker" in p]
-
-def ask_ai_for_fix(failure: dict, source_files: dict[str, str]) -> str:
-    """Send failure context to AI, get back a unified diff."""
-    import anthropic  # or openai
-
-    prompt = f"""
-    A test is failing. Fix the SOURCE CODE (not the test) to make it pass.
-
-    **Test:** {failure['test_class']}::{failure['test_name']}
-    **Error:** {failure['message']}
-    **Traceback:**
-    {failure['traceback']}
-
-    **Relevant source files:**
-    {json.dumps(source_files, indent=2)}
-
-    Return ONLY a JSON object with file patches:
-    {{"patches": [{{"file": "path", "old": "exact old text", "new": "new text"}}]}}
-    """
-
-    client = anthropic.Anthropic()
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return response.content[0].text
-
-def apply_and_verify(patches, failed_test: str) -> bool:
-    """Apply patches, run the specific failed test, return True if it passes."""
-    # Apply patches...
-    result = subprocess.run(
-        [sys.executable, "-m", "pytest", failed_test, "-x", "--tb=short"],
-        capture_output=True, text=True
-    )
-    return result.returncode == 0
-
-def git_commit_and_pr(failures_fixed: list[str]):
-    """Commit fixes and create a PR."""
-    branch = f"autofix/{__import__('datetime').date.today()}"
-    subprocess.run(["git", "checkout", "-b", branch])
-    subprocess.run(["git", "add", "-A"])
-    subprocess.run(["git", "commit", "-m",
-                     f"🤖 Auto-fix: {len(failures_fixed)} test(s) repaired"])
-    subprocess.run(["git", "push", "origin", branch])
-    # Use gh CLI to open PR
-    subprocess.run(["gh", "pr", "create",
-                     "--title", f"🤖 Auto-fix {len(failures_fixed)} failures",
-                     "--body", "Automated fixes from nightly regression."])
-```
-
-#### Approach 2: Copilot Chat CLI Integration
-
-Use GitHub Copilot's CLI to generate fixes:
+## Running Tests Locally
 
 ```bash
-# For each failure, ask Copilot to fix it
-gh copilot suggest "fix this test failure: <error message>"
-```
+# Tier 1 — fast smoke (no server needed, ~60 seconds)
+pytest tests/test_api_smoke.py -m smoke -v
 
-#### Approach 3: Cursor/Windsurf Agent Rules
+# Tier 2 — full E2E against local server
+pytest tests/test_e2e.py -v
 
-Create an agent rule file that Cursor can use as a "fix test failures" workflow:
+# Tier 2 — full E2E against live site
+pytest tests/ --live-url https://investai-utho.onrender.com -v
 
-```markdown
-# .cursor/rules/autofix.mdc
-When test failures are detected:
-1. Read the JUnit XML at test-results/latest/junit.xml
-2. For each failure, read the traceback and identify the source file
-3. Fix the source code (not the test) to resolve the error
-4. Run only the previously-failed tests to verify
-5. If verified, commit with message "🤖 autofix: <test name>"
-```
+# Just admin tests
+pytest tests/test_api_smoke.py::TestAdminSmoke -v
 
----
-
-## Concrete Recommendation: What to Build
-
-### Phase 1 — Foundation (Week 1) ✅ Start Here
-
-| Task | Effort |
-|------|--------|
-| Add `pytest-html` and `pytest-json-report` to requirements.txt | 5 min |
-| Create GitHub Actions workflow for push/PR/nightly | 1 hour |
-| Add JUnit XML + HTML report generation | 15 min |
-| Add test result artifact upload | 15 min |
-| Create `scripts/nightly-test.ps1` for local scheduled runs | 30 min |
-
-### Phase 2 — Reporting & Notifications (Week 2)
-
-| Task | Effort |
-|------|--------|
-| Create `scripts/notify.py` — send results to Discord/Teams/email | 1 hour |
-| Add Slack/Discord webhook integration | 30 min |
-| Create a test dashboard (simple HTML page with historical results) | 2 hours |
-| Badge in README showing test status | 5 min |
-
-### Phase 3 — AI Auto-Fix Agent (Week 3-4)
-
-| Task | Effort |
-|------|--------|
-| Create `scripts/autofix_agent.py` with failure parser | 2 hours |
-| Integrate Claude/OpenAI API for fix generation | 3 hours |
-| Add patch application + verification loop | 2 hours |
-| Add git commit + PR creation | 1 hour |
-| Add safety guardrails (max changes, revert on fail, human review required) | 2 hours |
-
-### Phase 4 — Polish (Ongoing)
-
-| Task | Effort |
-|------|--------|
-| Flaky test detection (mark tests that fail intermittently) | 2 hours |
-| Test parallelization (`pytest-xdist`) | 1 hour |
-| Screenshot-on-failure for visual regression | 1 hour |
-| Historical trend tracking (pass rate over time) | 3 hours |
-
----
-
-## Test Categories & Run Schedule
-
-```
-┌─────────────────────┬──────────┬───────────┬──────────────┐
-│ Suite               │ Duration │ Schedule  │ Trigger      │
-├─────────────────────┼──────────┼───────────┼──────────────┤
-│ Smoke (5 key tests) │ ~1 min   │ Every PR  │ push/PR      │
-│ Core E2E            │ ~5 min   │ On merge  │ push to main │
-│ Full Regression     │ ~15 min  │ Nightly   │ cron 2AM     │
-│ Live Site Deep      │ ~20 min  │ Weekly    │ cron Sunday  │
-│ Performance/Load    │ ~10 min  │ Weekly    │ cron Sunday  │
-└─────────────────────┴──────────┴───────────┴──────────────┘
-```
-
-### Marking tests by tier:
-
-```python
-# conftest.py - add markers
-import pytest
-
-def pytest_configure(config):
-    config.addinivalue_line("markers", "smoke: critical path tests (~1 min)")
-    config.addinivalue_line("markers", "core: core feature E2E tests (~5 min)")
-    config.addinivalue_line("markers", "deep: deep regression tests (~15 min)")
-```
-
-```python
-# Usage in tests:
-@pytest.mark.smoke
-class TestLogin: ...
-
-@pytest.mark.core
-class TestDashboardFlow: ...
-
-@pytest.mark.deep
-class TestScreenerAPI: ...
-```
-
-```bash
-# Run by tier:
-pytest -m smoke              # PR gate
-pytest -m "smoke or core"    # on merge
-pytest                       # nightly (everything)
+# Just security checks
+pytest tests/test_api_smoke.py::TestSecuritySmoke -v
 ```
 
 ---
 
-## Safety Guardrails for Auto-Fix
+## Adding Tests for New Features
 
-The auto-fix agent must have strict guardrails:
+When adding a new feature/endpoint:
 
-1. **Never modify test files** — Only fix source code, not tests (tests define expected behavior)
-2. **Max 3 files changed per fix** — Prevents runaway changes
-3. **Max 50 lines changed** — Keeps patches small and reviewable
-4. **Always create a branch** — Never commit directly to `main`
-5. **Require PR approval** — Human must review before merge
-6. **Revert on secondary failure** — If fix breaks other tests, roll back
-7. **Rate limit** — Max 3 auto-fix attempts per nightly run
-8. **Audit log** — Record every AI prompt, response, and applied patch
+1. **Add an API smoke test** in `test_api_smoke.py` — verify endpoint returns correct status and basic structure. Mark with `@pytest.mark.smoke`.
 
----
+2. **Add a Playwright E2E test** in `test_e2e.py` or `test_live_site.py` — verify the UI renders correctly and user flow works end-to-end.
 
-## Required Dependencies to Add
-
-```
-# requirements-test.txt (new file, test-only deps)
-pytest
-playwright
-pytest-playwright
-pytest-html           # HTML reports
-pytest-json-report    # Machine-readable JSON results
-pytest-xdist          # Parallel test execution
-anthropic             # Claude API for auto-fix (Phase 3)
-```
-
----
-
-## Summary: Which Option to Pick?
-
-| Your Situation | Recommended |
-|----------------|-------------|
-| Repo is on GitHub, want standard CI | **Option A** (GitHub Actions) |
-| Behind Intel proxy, want local control | **Option B** (Local runner) |
-| Want the best of both worlds | **Option C** (Hybrid) ✅ |
-| Want AI auto-fix ASAP | Start with Phase 1 + Phase 3 |
-
-**My recommendation:** Start with **Option C (Hybrid)** — set up GitHub Actions for the cloud CI pipeline and keep the local PowerShell runner for development. Then add the AI auto-fix agent in Phase 3 for the self-healing loop. This gives you:
-
-- ✅ Nightly regression on live site (GitHub Actions)
-- ✅ PR gating (no broken code merges)
-- ✅ Local testing with Intel proxy (PowerShell script)
-- ✅ AI-powered auto-fix with human review (Claude API agent)
-- ✅ Full audit trail and safety guardrails
+3. PR gate catches API contract regressions; nightly catches rendering/integration issues.

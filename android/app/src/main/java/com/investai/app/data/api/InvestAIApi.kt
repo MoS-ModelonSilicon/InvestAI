@@ -99,6 +99,7 @@ interface InvestAIApi {
         @Query("asset_type") assetType: String? = null,
         @Query("sector") sector: String? = null,
         @Query("region") region: String? = null,
+        @Query("signal") signal: String? = null,
         @Query("market_cap_min") marketCapMin: Double? = null,
         @Query("market_cap_max") marketCapMax: Double? = null,
         @Query("pe_min") peMin: Double? = null,
@@ -123,6 +124,16 @@ interface InvestAIApi {
         @Query("page") page: Int = 1,
         @Query("per_page") perPage: Int = 20,
     ): ValueScannerResponse
+
+    @GET("api/value-scanner/action-plan")
+    suspend fun getValueScannerActionPlan(
+        @Query("amount") amount: Double = 10000.0,
+        @Query("sector") sector: String? = null,
+        @Query("signal") signal: String? = null,
+    ): ActionPlanResponse
+
+    @GET("api/value-scanner/sectors")
+    suspend fun getValueScannerSectors(): ValueScannerSectors
 
     // ── Recommendations ───────────────────────────────────
 
@@ -153,10 +164,16 @@ interface InvestAIApi {
     @GET("api/advisor/stock/{symbol}")
     suspend fun getAdvisorStockAnalysis(@Path("symbol") symbol: String): StockAnalysis
 
+    @GET("api/advisor/company-dna/{symbol}")
+    suspend fun getCompanyDna(@Path("symbol") symbol: String): CompanyDnaResponse
+
     // ── Trading Advisor ───────────────────────────────────
 
     @GET("api/trading")
     suspend fun getTradingDashboard(): TradingDashboard
+
+    @GET("api/trading/{symbol}")
+    suspend fun getTradingAnalysis(@Path("symbol") symbol: String): TradingStockAnalysis
 
     // ── Alerts ────────────────────────────────────────────
 
@@ -274,4 +291,7 @@ interface InvestAIApi {
 
     @GET("api/picks")
     suspend fun getPicks(@Query("type") type: String? = null): PicksResponse
+
+    @POST("api/picks/seed-watchlist")
+    suspend fun seedWatchlist(): SeedWatchlistResponse
 }

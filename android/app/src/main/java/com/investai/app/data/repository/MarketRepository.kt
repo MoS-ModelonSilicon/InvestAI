@@ -123,6 +123,136 @@ class MarketRepository @Inject constructor(
     suspend fun getScreenerSectors(): Result<ScreenerSectors> =
         runCatching { api.getScreenerSectors() }
 
+    // ── Value Scanner ──────────────────────────────────
+
+    suspend fun getValueScanner(
+        sector: String? = null,
+        signal: String? = null,
+        sortBy: String = "score",
+        page: Int = 1,
+    ): Result<ValueScannerResponse> = runCatching {
+        api.getValueScanner(sector = sector, signal = signal, sortBy = sortBy, page = page)
+    }
+
+    suspend fun getValueScannerActionPlan(
+        amount: Double = 10000.0,
+        sector: String? = null,
+        signal: String? = null,
+    ): Result<ActionPlanResponse> = runCatching {
+        api.getValueScannerActionPlan(amount = amount, sector = sector, signal = signal)
+    }
+
+    suspend fun getValueScannerSectors(): Result<ValueScannerSectors> =
+        runCatching { api.getValueScannerSectors() }
+
+    // ── Recommendations ────────────────────────────────
+
+    suspend fun getRecommendations(): Result<RecommendationsResponse> =
+        runCatching { api.getRecommendations() }
+
+    // ── Smart Advisor ──────────────────────────────────
+
+    suspend fun runAdvisorAnalysis(
+        amount: Double = 10000.0,
+        risk: String = "balanced",
+        period: String = "1y",
+    ): Result<AdvisorAnalysis> = runCatching {
+        api.runAdvisorAnalysis(amount = amount, risk = risk, period = period)
+    }
+
+    suspend fun getAdvisorStockAnalysis(symbol: String): Result<StockAnalysis> =
+        runCatching { api.getAdvisorStockAnalysis(symbol) }
+
+    suspend fun getCompanyDna(symbol: String): Result<CompanyDnaResponse> =
+        runCatching { api.getCompanyDna(symbol) }
+
+    // ── Trading Advisor ────────────────────────────────
+
+    suspend fun getTradingDashboard(): Result<TradingDashboard> =
+        runCatching { api.getTradingDashboard() }
+
+    suspend fun getTradingAnalysis(symbol: String): Result<TradingStockAnalysis> =
+        runCatching { api.getTradingAnalysis(symbol) }
+
+    // ── AutoPilot ──────────────────────────────────────
+
+    suspend fun getAutopilotProfiles(): Result<List<AutopilotProfile>> =
+        runCatching { api.getAutopilotProfiles() }
+
+    suspend fun simulateAutopilot(
+        profile: String,
+        amount: Double = 10000.0,
+        period: String = "1y",
+    ): Result<AutopilotSimulation> = runCatching {
+        api.simulateAutopilot(profile = profile, amount = amount, period = period)
+    }
+
+    // ── Calendar ───────────────────────────────────────
+
+    suspend fun getEarningsCalendar(): Result<List<EarningsEvent>> =
+        runCatching { api.getEarningsCalendar() }
+
+    suspend fun getEconomicCalendar(): Result<List<EconomicEvent>> =
+        runCatching { api.getEconomicCalendar() }
+
+    // ── Comparison ─────────────────────────────────────
+
+    suspend fun compareStocks(symbols: String): Result<ComparisonResponse> =
+        runCatching { api.compareStocks(symbols) }
+
+    // ── Israeli Funds ──────────────────────────────────
+
+    suspend fun getILFunds(
+        fundType: String? = null,
+        manager: String? = null,
+        kosherOnly: Boolean? = null,
+        sortBy: String = "fee",
+        maxFee: Double? = null,
+        minReturn: Double? = null,
+        page: Int = 1,
+    ): Result<ILFundsResponse> = runCatching {
+        api.getILFunds(
+            fundType = fundType, manager = manager, kosherOnly = kosherOnly,
+            sortBy = sortBy, maxFee = maxFee, minReturn = minReturn, page = page,
+        )
+    }
+
+    suspend fun getILFundsMeta(): Result<ILFundsMeta> =
+        runCatching { api.getILFundsMeta() }
+
+    // ── Picks Tracker ──────────────────────────────────
+
+    suspend fun getPicks(type: String? = null): Result<PicksResponse> =
+        runCatching { api.getPicks(type) }
+
+    suspend fun seedWatchlist(): Result<SeedWatchlistResponse> =
+        runCatching { api.seedWatchlist() }
+
+    // ── Risk Profile ───────────────────────────────────
+
+    suspend fun getProfile(): Result<ProfileResponse?> =
+        runCatching { api.getProfile() }
+
+    suspend fun submitProfile(answers: ProfileAnswers): Result<ProfileResponse> =
+        runCatching { api.submitProfile(answers) }
+
+    suspend fun getProfileAllocation(): Result<AllocationResponse> =
+        runCatching { api.getProfileAllocation() }
+
+    // ── Education ──────────────────────────────────────
+
+    suspend fun getEducation(): Result<EducationResponse> =
+        runCatching { api.getEducation() }
+
+    // ── Transactions ───────────────────────────────────
+
+    suspend fun getTransactions(
+        type: String? = null,
+        categoryId: Int? = null,
+    ): Result<List<Transaction>> = runCatching {
+        api.getTransactions(type = type, categoryId = categoryId)
+    }
+
     // ── Budgets ────────────────────────────────────────
 
     suspend fun getBudgets(): Result<List<Budget>> = runCatching { api.getBudgets() }

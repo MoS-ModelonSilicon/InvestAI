@@ -1,0 +1,9 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\yklein3\OneDrive - Intel Corporation\PycharmProjects\cursor\finance-tracker
+configfile: pytest.ini
+plugins: anyio-4.12.1, base-url-2.1.0, html-4.2.0, json-report-1.5.0, metadata-3.1.1, playwright-0.7.2
+collected 89 items
+
+tests\test_api_smoke.py .......................................
+EXIT: -1

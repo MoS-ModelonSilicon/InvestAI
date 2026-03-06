@@ -120,6 +120,14 @@ def fetch_all_funds(force_refresh: bool = False) -> list[dict]:
                 if time.time() - ts < CACHE_TTL:
                     return data
 
+    # In testing mode, skip live scraping — use static fallback directly
+    if os.environ.get("TESTING") == "1":
+        all_funds = _load_static_fallback()
+        if all_funds:
+            with _cache_lock:
+                _cache[cache_key] = (time.time(), all_funds)
+        return all_funds
+
     all_funds = []
     for page_key in PAGES:
         funds = _fetch_page(page_key)

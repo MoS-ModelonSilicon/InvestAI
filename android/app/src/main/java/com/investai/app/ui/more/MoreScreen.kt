@@ -10,6 +10,8 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -43,7 +45,10 @@ fun MoreScreen(
     onNavigate: (Screen) -> Unit,
     onLogout: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel(),
+    moreViewModel: MoreViewModel = hiltViewModel(),
 ) {
+    val isDarkMode by moreViewModel.isDarkMode.collectAsState()
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 12.dp),
@@ -56,6 +61,46 @@ fun MoreScreen(
                 color = OnSurface,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             )
+        }
+
+        // Theme toggle
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = if (isDarkMode) Icons.Filled.DarkMode else Icons.Filled.LightMode,
+                    contentDescription = null,
+                    tint = OnSurfaceVariant,
+                    modifier = Modifier.size(24.dp),
+                )
+                Spacer(Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Dark Mode",
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp,
+                        color = OnSurface,
+                    )
+                    Text(
+                        if (isDarkMode) "Dark theme active" else "Light theme active",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = OnSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = isDarkMode,
+                    onCheckedChange = { moreViewModel.toggleDarkMode() },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Primary,
+                        checkedTrackColor = Primary.copy(alpha = 0.3f),
+                    ),
+                )
+            }
+            HorizontalDivider(color = OutlineVariant, modifier = Modifier.padding(horizontal = 16.dp))
         }
 
         items(moreItems) { item ->

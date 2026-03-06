@@ -505,8 +505,10 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
         # Last-resort batch fallback: if per-symbol fetches failed for some symbols,
         # try yf.download() which batches all symbols in ONE HTTP call.
         # This avoids Yahoo rate-limiting that kills per-symbol Ticker.history() calls.
+        # Skip in TESTING mode to avoid hanging on external HTTP calls.
+        _testing = os.environ.get("TESTING") == "1"
         still_empty = [s for s in symbols if not result.get(s)]
-        if still_empty:
+        if still_empty and not _testing:
             logger.info("Sparkline: %d/%d still empty, trying batch yf.download()", len(still_empty), len(symbols))
             try:
                 batch = dp.batch_download_candles(still_empty, period="1mo", interval="1d")

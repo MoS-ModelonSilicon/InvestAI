@@ -1,12 +1,6 @@
 package com.investai.app.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -17,16 +11,24 @@ import com.investai.app.ui.auth.ForgotPasswordScreen
 import com.investai.app.ui.auth.LoginScreen
 import com.investai.app.ui.autopilot.AutoPilotScreen
 import com.investai.app.ui.budgets.BudgetsScreen
+import com.investai.app.ui.calendar.CalendarScreen
 import com.investai.app.ui.comparison.ComparisonScreen
+import com.investai.app.ui.education.EducationScreen
 import com.investai.app.ui.home.HomeScreen
+import com.investai.app.ui.ilfunds.ILFundsScreen
 import com.investai.app.ui.invest.InvestScreen
 import com.investai.app.ui.more.MoreScreen
 import com.investai.app.ui.news.NewsScreen
+import com.investai.app.ui.pickstracker.PicksTrackerScreen
 import com.investai.app.ui.portfolio.PortfolioScreen
 import com.investai.app.ui.recommendations.RecommendationsScreen
+import com.investai.app.ui.riskprofile.RiskProfileScreen
 import com.investai.app.ui.screener.ScreenerScreen
+import com.investai.app.ui.smartadvisor.SmartAdvisorScreen
 import com.investai.app.ui.stockdetail.StockDetailScreen
+import com.investai.app.ui.tradingadvisor.TradingAdvisorScreen
 import com.investai.app.ui.transactions.TransactionsScreen
+import com.investai.app.ui.valuescanner.ValueScannerScreen
 
 @Composable
 fun InvestAINavGraph(
@@ -144,42 +146,59 @@ fun InvestAINavGraph(
                 onBack = { navController.popBackStack() },
             )
         }
-        composable(Screen.ValueScanner.route) { PlaceholderScreen("Value Scanner") }
-        composable(Screen.SmartAdvisor.route) { PlaceholderScreen("Smart Advisor") }
-        composable(Screen.TradingAdvisor.route) { PlaceholderScreen("Trading Advisor") }
+        composable(Screen.ValueScanner.route) {
+            ValueScannerScreen(
+                onStockClick = { symbol -> navController.navigate(Screen.StockDetail.createRoute(symbol)) },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Screen.SmartAdvisor.route) {
+            SmartAdvisorScreen(
+                onStockClick = { symbol -> navController.navigate(Screen.StockDetail.createRoute(symbol)) },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Screen.TradingAdvisor.route) {
+            TradingAdvisorScreen(
+                onStockClick = { symbol -> navController.navigate(Screen.StockDetail.createRoute(symbol)) },
+                onBack = { navController.popBackStack() },
+            )
+        }
         composable(Screen.Comparison.route) {
             ComparisonScreen(
                 onStockClick = { symbol -> navController.navigate(Screen.StockDetail.createRoute(symbol)) },
                 onBack = { navController.popBackStack() },
             )
         }
-        composable(Screen.ILFunds.route) { PlaceholderScreen("IL Funds") }
+        composable(Screen.ILFunds.route) {
+            ILFundsScreen(onBack = { navController.popBackStack() })
+        }
         composable(Screen.News.route) {
             NewsScreen(onBack = { navController.popBackStack() })
         }
-        composable(Screen.Calendar.route) { PlaceholderScreen("Calendar") }
-        composable(Screen.PicksTracker.route) { PlaceholderScreen("Picks Tracker") }
-        composable(Screen.Education.route) { PlaceholderScreen("Education") }
-        composable(Screen.RiskProfile.route) { PlaceholderScreen("Risk Profile") }
+        composable(Screen.Calendar.route) {
+            CalendarScreen(
+                onStockClick = { symbol -> navController.navigate(Screen.StockDetail.createRoute(symbol)) },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Screen.PicksTracker.route) {
+            PicksTrackerScreen(
+                onStockClick = { symbol -> navController.navigate(Screen.StockDetail.createRoute(symbol)) },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Screen.Education.route) {
+            EducationScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Screen.RiskProfile.route) {
+            RiskProfileScreen(onBack = { navController.popBackStack() })
+        }
         composable(Screen.Transactions.route) {
             TransactionsScreen(onBack = { navController.popBackStack() })
         }
         composable(Screen.Budgets.route) {
             BudgetsScreen(onBack = { navController.popBackStack() })
         }
-    }
-}
-
-@Composable
-private fun PlaceholderScreen(title: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "$title — Coming Soon",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }

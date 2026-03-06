@@ -295,6 +295,69 @@ data class ValueStats(
     @SerialName("avg_score") val avgScore: Double = 0.0,
 )
 
+@Serializable
+data class ActionPlanResponse(
+    val plan: List<ActionPlanGroup> = emptyList(),
+    val summary: ActionPlanSummary? = null,
+    val ready: Boolean = false,
+)
+
+@Serializable
+data class ActionPlanGroup(
+    val signal: String = "",
+    val action: String = "",
+    val strategy: String = "",
+    @SerialName("position_limit") val positionLimit: String = "",
+    @SerialName("risk_note") val riskNote: String = "",
+    @SerialName("group_allocation_pct") val groupAllocationPct: Double = 0.0,
+    @SerialName("group_allocation_dollars") val groupAllocationDollars: Double = 0.0,
+    val stocks: List<ActionPlanStock> = emptyList(),
+)
+
+@Serializable
+data class ActionPlanStock(
+    val symbol: String = "",
+    val name: String = "",
+    val sector: String? = null,
+    val price: Double = 0.0,
+    val quality: Double = 0.0,
+    val mos: Double = 0.0,
+    @SerialName("pe_ratio") val peRatio: Double? = null,
+    @SerialName("allocation_pct") val allocationPct: Double = 0.0,
+    @SerialName("allocation_dollars") val allocationDollars: Double = 0.0,
+    @SerialName("suggested_shares") val suggestedShares: Double = 0.0,
+    val strengths: List<String> = emptyList(),
+    val weaknesses: List<String> = emptyList(),
+)
+
+@Serializable
+data class ActionPlanSummary(
+    @SerialName("total_investment") val totalInvestment: Double = 0.0,
+    val allocated: Double = 0.0,
+    @SerialName("stocks_count") val stocksCount: Int = 0,
+    @SerialName("signal_breakdown") val signalBreakdown: Map<String, SignalBreakdown> = emptyMap(),
+)
+
+@Serializable
+data class SignalBreakdown(
+    val count: Int = 0,
+    @SerialName("allocation_pct") val allocationPct: Double = 0.0,
+    @SerialName("allocation_dollars") val allocationDollars: Double = 0.0,
+)
+
+@Serializable
+data class ValueScannerSectors(
+    val sectors: List<String> = emptyList(),
+    val excluded: List<String> = emptyList(),
+)
+
+@Serializable
+data class SeedWatchlistResponse(
+    val added: Int = 0,
+    val skipped: Int = 0,
+    @SerialName("total_symbols") val totalSymbols: Int = 0,
+)
+
 // ── Alerts ───────────────────────────────────────────────
 
 @Serializable
@@ -441,6 +504,40 @@ data class StockAnalysis(
     val indicators: Map<String, Double> = emptyMap(),
 )
 
+// ── Company DNA ──────────────────────────────────────────
+
+@Serializable
+data class CompanyDnaResponse(
+    val symbol: String = "",
+    val name: String = "",
+    val sector: String? = null,
+    val price: Double = 0.0,
+    @SerialName("market_cap") val marketCap: Double? = null,
+    val executives: List<Executive> = emptyList(),
+    @SerialName("insider_transactions") val insiderTransactions: List<InsiderTransaction> = emptyList(),
+    @SerialName("analyst_recommendations") val analystRecommendations: Map<String, Int> = emptyMap(),
+    @SerialName("price_target") val priceTarget: Map<String, Double> = emptyMap(),
+    val peers: List<String> = emptyList(),
+    @SerialName("berkshire_score") val berkshireScore: Double = 0.0,
+    val fundamentals: Map<String, Double> = emptyMap(),
+)
+
+@Serializable
+data class Executive(
+    val name: String = "",
+    val title: String = "",
+    val pay: Double? = null,
+)
+
+@Serializable
+data class InsiderTransaction(
+    val name: String = "",
+    val share: Long = 0,
+    val change: Long = 0,
+    @SerialName("filing_date") val filingDate: String = "",
+    @SerialName("transaction_date") val transactionDate: String = "",
+)
+
 // ── Trading Advisor ──────────────────────────────────────
 
 @Serializable
@@ -468,6 +565,29 @@ data class TradingPick(
     val target: Double? = null,
     val stop: Double? = null,
     @SerialName("risk_reward") val riskReward: Double? = null,
+)
+
+@Serializable
+data class TradingStockAnalysis(
+    val symbol: String = "",
+    val name: String = "",
+    val sector: String? = null,
+    val action: TradingAction? = null,
+    val indicators: Map<String, @Serializable Double> = emptyMap(),
+)
+
+@Serializable
+data class TradingAction(
+    val verdict: String = "",
+    val score: Double = 0.0,
+    val confidence: String = "",
+    val entry: Double? = null,
+    val target: Double? = null,
+    @SerialName("stop_loss") val stopLoss: Double? = null,
+    @SerialName("risk_reward") val riskReward: Double? = null,
+    val timeframe: String = "",
+    val reasoning: String = "",
+    val signals: List<String> = emptyList(),
 )
 
 // ── Transactions ─────────────────────────────────────────
