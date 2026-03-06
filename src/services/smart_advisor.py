@@ -411,6 +411,15 @@ def scan_and_score(period: str = "1y") -> list[dict]:
         lightweight.append(lr)
 
     _set_cache(cache_key, lightweight)
+
+    # Persist to DB so results survive Render instance restarts
+    try:
+        from src.services.persistence import save_scan
+        save_scan(f"smart_advisor_scan:{period}", lightweight)
+        logger.info("Smart advisor: persisted scan results to DB (%d stocks)", len(lightweight))
+    except Exception:
+        logger.exception("Smart advisor: failed to persist scan results")
+
     return lightweight
 
 
@@ -745,6 +754,16 @@ def run_full_analysis(amount: float = 10000, risk: str = "balanced",
     }
 
     _set_cache(cache_key, result)
+
+    # Persist full analysis to DB so "Run Analysis" is instant after restart
+    try:
+        from src.services.persistence import save_scan
+        db_key = f"smart_advisor_full:{amount}:{risk}:{period}"
+        save_scan(db_key, result)
+        logger.info("Smart advisor: persisted full analysis to DB (key=%s)", db_key)
+    except Exception:
+        logger.exception("Smart advisor: failed to persist full analysis")
+
     return result
 
 

@@ -255,4 +255,24 @@ def restore_all_caches():
     except Exception:
         logger.exception("Failed to restore market data cache")
 
+    # 5. Restore smart advisor scan + full analysis into market_data._cache
+    try:
+        from src.services.market_data import _cache, _cache_lock
+        # Restore scan results (e.g. advisor:scan:1y)
+        scan_data = load_scan("smart_advisor_scan:1y")
+        if scan_data and isinstance(scan_data, list) and len(scan_data) > 0:
+            with _cache_lock:
+                _cache["advisor:scan:1y"] = (time.time(), scan_data)
+            logger.info("Restored smart advisor scan: %d stocks", len(scan_data))
+
+        # Restore full analysis for default params (advisor:full:10000:balanced:1y)
+        full_data = load_scan("smart_advisor_full:10000:balanced:1y")
+        if full_data and isinstance(full_data, dict) and full_data.get("rankings"):
+            with _cache_lock:
+                _cache["advisor:full:10000:balanced:1y"] = (time.time(), full_data)
+            logger.info("Restored smart advisor full analysis: %d rankings",
+                        len(full_data["rankings"]))
+    except Exception:
+        logger.exception("Failed to restore smart advisor cache")
+
     logger.info("Cache restoration complete")
