@@ -1,0 +1,130 @@
+# ──────────────────────────────────────────────────────────────
+# InvestAI PR / Commit Gate Tests
+#
+# A FAST (~1-2 min) subset that runs on every push and PR.
+# Uses FastAPI TestClient (no browser, no external API needed).
+# Prevents broken code from merging to main.
+# ──────────────────────────────────────────────────────────────
+name: PR Tests
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/**'
+      - 'static/**'
+      - 'tests/**'
+      - 'requirements.txt'
+      - 'pyproject.toml'
+      - '.github/workflows/pr-tests.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'src/**'
+      - 'static/**'
+      - 'tests/**'
+      - 'requirements.txt'
+      - 'pyproject.toml'
+      - '.github/workflows/pr-tests.yml'
+  workflow_dispatch:             # manual trigger
+
+permissions:
+  contents: read
+  checks: write
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  # ── Fast API smoke tests (no browser, no external API) ─────
+  smoke-tests:
+    name: "Smoke Tests (API)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run smoke tests
+        run: |
+          python -m pytest tests/test_api_smoke.py \
+            -m smoke \
+            -v --tb=short \
+            --junitxml=results/junit-smoke.xml \
+            --timeout=30 \
+            2>&1
+        env:
+          CI: true
+          TESTING: "1"
+          FINNHUB_API_KEY: ""
+          INVESTAI_SECRET: "ci-test-secret"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-results-${{ github.run_number }}
+          path: results/
+          retention-days: 7
+
+  # ── Python lint / import check ─────────────────────────────
+  lint:
+    name: "Ruff Lint & Format Check"
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Ruff lint
+        run: ruff check src/ tests/ --output-format=github
+
+      - name: Ruff format check
+        run: ruff format --check src/ tests/
+
+      - name: Verify app imports
+        run: python -c "from src.main import app; print('App imports OK')"
+        env:
+          FINNHUB_API_KEY: ""
+          INVESTAI_SECRET: "ci-test-secret"
+
+  # ── Type checking with mypy ────────────────────────────────
+  type-check:
+    name: "Mypy Type Check"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install types-requests
+
+      - name: Run mypy
+        run: mypy src/ --config-file=pyproject.toml
