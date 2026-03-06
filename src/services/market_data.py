@@ -436,6 +436,9 @@ def _batch_resolve_names(symbols: list[str]) -> dict[str, str]:
     return names
 
 
+_sparkline_lock = threading.Lock()  # prevent concurrent duplicate fetches
+
+
 def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h") -> dict[str, list[float]]:
     # Use daily resolution as primary — hourly is unreliable on both Yahoo and Finnhub free tier
     cache_key = f"sparklines:{','.join(symbols)}:daily"
@@ -450,53 +453,76 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
             logger.info("Sparkline cache partial (%d/%d filled), serving stale + refreshing gaps",
                         filled, len(symbols))
 
-    period_map = {"1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "1y": 365}
-    days = period_map.get(period, 5)
+    # Serialize sparkline fetches: if another thread is already fetching,
+    # wait for it then return the (now-cached) result instead of doubling API calls.
+    acquired = _sparkline_lock.acquire(timeout=30)
+    if not acquired:
+        logger.warning("Sparkline fetch lock timeout — returning cached/empty")
+        return cached if cached else {s: [] for s in symbols}
 
-    # Use 10 calendar days to ensure we get ~5 trading days even with weekends/holidays
-    to_ts = int(time.time())
-    from_ts = to_ts - max(days * 2, 10) * 86400
+    try:
+        # Re-check cache — another thread may have just populated it
+        cached = _get_cached(cache_key)
+        if cached:
+            filled = sum(1 for v in cached.values() if v)
+            if filled == len(symbols):
+                return cached
 
-    # Merge with existing cache so previously-successful symbols aren't lost
-    result = dict(cached) if cached else {}
+        period_map = {"1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "1y": 365}
+        days = period_map.get(period, 5)
 
-    # Fetch symbols that are missing or empty, using daily resolution (most reliable)
-    symbols_to_fetch = [s for s in symbols if not result.get(s)]
-    if not symbols_to_fetch and cached:
-        return cached
+        # Round timestamps to the nearest hour so data_provider candle cache
+        # (keyed by symbol:from_ts:to_ts) actually gets hits across page loads
+        # instead of creating a unique cache key every second.
+        now = int(time.time())
+        to_ts = (now // 3600) * 3600 + 3600   # end of current UTC hour
+        from_ts = to_ts - max(days * 2, 10) * 86400
 
-    # Fetch each symbol independently — isolate failures so one bad symbol
-    # doesn't kill Yahoo for the rest (each call handles its own fallback)
-    for sym in symbols_to_fetch:
-        try:
-            candles = dp.get_candles(sym, "D", from_ts, to_ts)
-            if candles and candles.get("c") and len(candles["c"]) > 1:
-                result[sym] = [round(v, 2) for v in candles["c"]]
-            else:
+        # Merge with existing cache so previously-successful symbols aren't lost
+        result = dict(cached) if cached else {}
+
+        # Fetch symbols that are missing or empty, using daily resolution (most reliable)
+        symbols_to_fetch = [s for s in symbols if not result.get(s)]
+        if not symbols_to_fetch and cached:
+            return cached
+
+        # Fetch each symbol independently — isolate failures so one bad symbol
+        # doesn't kill Yahoo for the rest (each call handles its own fallback)
+        for i, sym in enumerate(symbols_to_fetch):
+            try:
+                candles = dp.get_candles(sym, "D", from_ts, to_ts)
+                if candles and candles.get("c") and len(candles["c"]) > 1:
+                    result[sym] = [round(v, 2) for v in candles["c"]]
+                else:
+                    result[sym] = result.get(sym, [])
+                    logger.warning("Sparkline: no daily candles for %s", sym)
+            except Exception as e:
                 result[sym] = result.get(sym, [])
-                logger.warning("Sparkline: no daily candles for %s", sym)
-        except Exception as e:
-            result[sym] = result.get(sym, [])
-            logger.warning("Sparkline: exception for %s: %s", sym, e)
+                logger.warning("Sparkline: exception for %s: %s", sym, e)
+            # Small delay between symbols to smooth Finnhub rate-limit consumption
+            if i < len(symbols_to_fetch) - 1:
+                time.sleep(0.3)
 
-    # Ensure all requested symbols have a key
-    for sym in symbols:
-        if sym not in result:
-            result[sym] = []
+        # Ensure all requested symbols have a key
+        for sym in symbols:
+            if sym not in result:
+                result[sym] = []
 
-    # Cache strategy: always cache what we have; use shorter TTL for partial results
-    empty_count = sum(1 for s in symbols if not result.get(s))
-    if empty_count == 0:
-        _set_cache(cache_key, result)
-    elif empty_count < len(symbols):
-        # Partial success: cache for 5 minutes (not 60s) to reduce API hammering
-        # but still retry relatively soon
-        with _cache_lock:
-            _cache[cache_key] = (time.time() - CACHE_TTL + 300, result)
-        logger.warning("Sparkline partial (%d/%d empty), cached 5min", empty_count, len(symbols))
-    # If all empty, don't cache at all
+        # Cache strategy: always cache what we have; use shorter TTL for partial results
+        empty_count = sum(1 for s in symbols if not result.get(s))
+        if empty_count == 0:
+            _set_cache(cache_key, result)
+        elif empty_count < len(symbols):
+            # Partial success: cache for 5 minutes to reduce API hammering
+            # but still retry relatively soon
+            with _cache_lock:
+                _cache[cache_key] = (time.time() - CACHE_TTL + 300, result)
+            logger.warning("Sparkline partial (%d/%d empty), cached 5min", empty_count, len(symbols))
+        # If all empty, don't cache at all
 
-    return result
+        return result
+    finally:
+        _sparkline_lock.release()
 
 
 # ── Background cache warming ────────────────────
