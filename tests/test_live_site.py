@@ -18,6 +18,8 @@ import uuid
 
 from playwright.sync_api import Page, expect
 
+from conftest import TEST_USER_EMAIL, TEST_USER_PASSWORD, TEST_USER_NAME
+
 
 # ── Helpers ──────────────────────────────────────────────
 
@@ -1617,6 +1619,9 @@ class TestSparklineCharts:
     EXPECTED_SYMBOLS = ["AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL"]
 
     def _go_dashboard_and_wait(self, page: Page):
+        # Ensure we're on the dashboard (not stuck on login)
+        if "/login" in page.url:
+            page.wait_for_timeout(3000)
         _nav(page, "dashboard")
         # Wait for market cards to appear (API + render time)
         page.wait_for_selector(".market-card", timeout=SLOW)
