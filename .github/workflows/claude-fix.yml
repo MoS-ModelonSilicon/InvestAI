@@ -1,0 +1,293 @@
+# ──────────────────────────────────────────────────────────────
+# InvestAI — Claude Code Auto-Fix
+#
+# Automatically diagnoses and fixes CI failures using Claude Code.
+#
+# Triggers:
+#   1. CI Gate workflow fails (push/PR) → auto-fix PR
+#   2. Nightly Tests workflow fails     → auto-fix PR
+#   3. Issue labeled 'nightly-failure'  → auto-fix PR
+#   4. Manual dispatch                  → auto-fix PR
+#
+# Loop-prevention: skips branches starting with 'claude-fix/'
+# so that fix PRs don't trigger another fix cycle.
+# ──────────────────────────────────────────────────────────────
+name: Claude Auto-Fix
+
+on:
+  # ── Trigger when CI Gate or Nightly Tests complete with failure ──
+  workflow_run:
+    workflows: ["CI Gate", "Nightly Tests"]
+    types: [completed]
+
+  # ── Trigger when nightly failure issue is created/labeled ──
+  issues:
+    types: [labeled]
+
+  # ── Manual trigger ──
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to fix (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  auto-fix:
+    name: "Claude Auto-Fix"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Only run on: actual failures (not successes), nightly-failure label, or manual
+    # Skip branches that are already fix branches (prevent infinite loops)
+    if: >-
+      (github.event_name == 'workflow_run'
+       && github.event.workflow_run.conclusion == 'failure'
+       && !startsWith(github.event.workflow_run.head_branch, 'claude-fix/')) ||
+      (github.event_name == 'issues'
+       && github.event.label.name == 'nightly-failure') ||
+      github.event_name == 'workflow_dispatch'
+
+    steps:
+      # ── Checkout the failing branch ──────────────────────────
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Install Python + project dependencies ────────────────
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install Python dependencies
+        run: pip install -r requirements-dev.txt
+
+      # ── Install Claude Code CLI ──────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      # ── Gather failure context from the triggering event ─────
+      - name: Gather failure context
+        id: context
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = '';
+            let branchSuffix = 'manual';
+
+            if (context.eventName === 'workflow_run') {
+              const run = context.payload.workflow_run;
+              const runId = run.id;
+              branchSuffix = `ci-${runId}`;
+
+              report += `## CI Failure: ${run.name}\n\n`;
+              report += `- **Workflow:** ${run.name}\n`;
+              report += `- **Branch:** ${run.head_branch}\n`;
+              report += `- **Commit:** ${run.head_sha}\n`;
+              report += `- **Run:** #${runId}\n\n`;
+
+              // Get failed jobs
+              const {data: jobsData} = await github.rest.actions.listJobsForWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: runId,
+                filter: 'latest',
+              });
+
+              const failedJobs = jobsData.jobs.filter(j => j.conclusion === 'failure');
+              report += `### Failed Jobs (${failedJobs.length})\n\n`;
+
+              for (const job of failedJobs) {
+                report += `#### ${job.name}\n`;
+
+                // Get failed steps
+                const failedSteps = job.steps.filter(s => s.conclusion === 'failure');
+                for (const step of failedSteps) {
+                  report += `- **Failed step:** ${step.name}\n`;
+                }
+
+                // Download job logs
+                try {
+                  const {data: logData} = await github.rest.actions.downloadJobLogsForWorkflowRun({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    job_id: job.id,
+                  });
+                  // Keep last 150 lines to stay within prompt limits
+                  const logLines = logData.split('\n');
+                  const tail = logLines.slice(-150).join('\n');
+                  report += `\n**Log tail (${job.name}):**\n\`\`\`\n${tail}\n\`\`\`\n\n`;
+                } catch (e) {
+                  report += `\n(Could not download logs: ${e.message})\n\n`;
+                }
+              }
+
+            } else if (context.eventName === 'issues') {
+              const issue = context.payload.issue;
+              branchSuffix = `issue-${issue.number}`;
+              report += `## Nightly Test Failure (Issue #${issue.number})\n\n`;
+              report += issue.body || 'No failure details in issue body.';
+
+            } else {
+              // workflow_dispatch
+              const inputIssue = '${{ github.event.inputs.issue_number }}';
+              if (inputIssue) {
+                branchSuffix = `issue-${inputIssue}`;
+                const {data: issue} = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: parseInt(inputIssue),
+                });
+                report += `## Manual Fix for Issue #${inputIssue}\n\n`;
+                report += issue.body || 'No details in issue body.';
+              } else {
+                branchSuffix = `manual-${context.runNumber}`;
+                report += `## Manual Trigger — Full Diagnostics\n\n`;
+                report += `Run ruff, mypy, and smoke tests to find and fix any issues.\n`;
+              }
+            }
+
+            // Write context to file for Claude Code
+            fs.writeFileSync('failure_context.md', report);
+            core.setOutput('branch_suffix', branchSuffix);
+
+            // Log for debugging
+            console.log('--- Failure Context ---');
+            console.log(report.substring(0, 2000));
+
+      # ── Run Claude Code to diagnose and fix ──────────────────
+      - name: Run Claude Code
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CI: "true"
+        run: |
+          FAILURE_CONTEXT=$(cat failure_context.md)
+
+          claude -p "You are an AI engineer fixing CI failures in the InvestAI project.
+
+          FIRST: Read the CLAUDE.md file for full project context, rules, and conventions.
+
+          HERE ARE THE CI FAILURES:
+          ${FAILURE_CONTEXT}
+
+          YOUR TASK:
+          1. Diagnose the root cause from the error logs above
+          2. Fix the source code to resolve ALL failures
+          3. Verify your fix by running the relevant checks:
+             - For lint errors:  ruff check src/ tests/ && ruff format --check src/ tests/
+             - For type errors:  mypy src/ --config-file=pyproject.toml
+             - For test errors:  python -m pytest tests/test_api_smoke.py -m 'smoke and not external' --timeout=30
+          4. Only modify files under src/ and tests/ — do NOT touch workflow files or configs
+
+          RULES (from CLAUDE.md):
+          - Vanilla JS only in static/ (no frameworks)
+          - No raw SQL — use SQLAlchemy ORM
+          - No secrets in code
+          - Keep files under 400 lines
+          - Run ruff format after any Python changes" \
+            --allowedTools "Edit,Read,Write,Bash(ruff*),Bash(mypy*),Bash(python*),Bash(pip*),Bash(cat*),Bash(grep*),Bash(find*),Bash(head*),Bash(tail*),Bash(wc*)"
+
+      # ── Create fix branch and PR ─────────────────────────────
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No changes made by Claude Code"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected:"
+            git diff --stat
+          fi
+
+      - name: Create fix PR
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const suffix = '${{ steps.context.outputs.branch_suffix }}';
+            const fixBranch = `claude-fix/${suffix}`;
+
+            // Configure git
+            execSync('git config user.name "claude-auto-fix[bot]"');
+            execSync('git config user.email "claude-auto-fix[bot]@users.noreply.github.com"');
+
+            // Create branch, commit, push
+            execSync(`git checkout -b ${fixBranch}`);
+            execSync('git add -A');
+            execSync(`git commit -m "fix: auto-fix CI failures (${suffix})"`);
+            execSync(`git push origin ${fixBranch} --force`);
+
+            // Determine base branch
+            const baseBranch = context.eventName === 'workflow_run'
+              ? context.payload.workflow_run.head_branch
+              : 'master';
+
+            // Create PR
+            const {data: pr} = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🤖 Auto-fix: ${suffix}`,
+              head: fixBranch,
+              base: baseBranch,
+              body: [
+                '## Claude Auto-Fix',
+                '',
+                'This PR was automatically generated by Claude Code to fix CI failures.',
+                '',
+                '### Trigger',
+                context.eventName === 'workflow_run'
+                  ? `CI Gate failure — [Run #${context.payload.workflow_run.id}](${context.payload.workflow_run.html_url})`
+                  : context.eventName === 'issues'
+                  ? `Nightly failure — Issue #${context.payload.issue.number}`
+                  : `Manual dispatch — Run #${context.runNumber}`,
+                '',
+                '### What changed',
+                '```',
+                require('child_process').execSync('git diff HEAD~1 --stat').toString(),
+                '```',
+                '',
+                '> **Review carefully before merging.** Automated fixes should be validated.',
+              ].join('\n'),
+              draft: false,
+            });
+
+            console.log(`Created PR #${pr.number}: ${pr.html_url}`);
+
+            // If triggered by an issue, comment on it
+            if (context.eventName === 'issues') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                body: `🤖 Claude Auto-Fix created PR #${pr.number} to address this failure.\n\n${pr.html_url}`,
+              });
+            }
+
+      - name: No changes needed
+        if: steps.changes.outputs.has_changes == 'false'
+        run: |
+          echo "✅ Claude Code found no changes needed — the failure may require manual investigation."
+          echo "::warning::Claude Code did not produce any fixes. Manual investigation needed."
