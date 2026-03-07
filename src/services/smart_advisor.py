@@ -16,8 +16,13 @@ from typing import Optional
 from src.services import data_provider as dp
 from src.services import technical_analysis as ta
 from src.services.market_data import (
-    fetch_batch, fetch_stock_info, ALL_UNIVERSE,
-    _get_cached, _set_cache, format_market_cap, _LOW_MEMORY,
+    fetch_batch,
+    fetch_stock_info,
+    ALL_UNIVERSE,
+    _get_cached,
+    _set_cache,
+    format_market_cap,
+    _LOW_MEMORY,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,6 +38,7 @@ CANDLE_LOOKBACK_DAYS = 420
 # ---------------------------------------------------------------------------
 # Step 1: Fetch + compute technical indicators for a single stock
 # ---------------------------------------------------------------------------
+
 
 def _analyze_single(symbol: str, candle_data: Optional[dict]) -> Optional[dict]:
     """Run full technical analysis on one symbol's candle data."""
@@ -59,8 +65,14 @@ def _analyze_single(symbol: str, candle_data: Optional[dict]) -> Optional[dict]:
     obv_vals = ta.obv(closes, volumes)
 
     comp = ta.composite_score(
-        rsi_vals, macd_data, closes, sma50, sma200,
-        boll["pct_b"], stoch, obv_vals,
+        rsi_vals,
+        macd_data,
+        closes,
+        sma50,
+        sma200,
+        boll["pct_b"],
+        stoch,
+        obv_vals,
     )
 
     last_atr = ta._last_valid(atr_vals)
@@ -95,8 +107,10 @@ def _analyze_single(symbol: str, candle_data: Optional[dict]) -> Optional[dict]:
         "macd_signal": _macd_label(macd_data),
         "sma_trend": _sma_label(closes, sma50, sma200),
         "indicators": {
-            "sma_50": sma50, "sma_200": sma200,
-            "ema_12": ema12, "ema_26": ema26,
+            "sma_50": sma50,
+            "sma_200": sma200,
+            "ema_12": ema12,
+            "ema_26": ema26,
             "rsi": rsi_vals,
             "macd": macd_data,
             "bollinger": boll,
@@ -105,8 +119,11 @@ def _analyze_single(symbol: str, candle_data: Optional[dict]) -> Optional[dict]:
             "obv": obv_vals,
         },
         "price_data": {
-            "dates": dates, "close": closes, "high": highs,
-            "low": lows, "volume": volumes,
+            "dates": dates,
+            "close": closes,
+            "high": highs,
+            "low": lows,
+            "volume": volumes,
         },
     }
 
@@ -138,6 +155,7 @@ def _sma_label(closes, sma50, sma200) -> str:
 # ---------------------------------------------------------------------------
 # Step 2: Fundamental scoring (reuses cached market_data)
 # ---------------------------------------------------------------------------
+
 
 def _fundamental_score(info: dict) -> int:
     """Score 0-100 from cached fundamental data."""
@@ -314,6 +332,7 @@ def _berkshire_lite(info: dict) -> int:
 # Step 3: Full scan + scoring
 # ---------------------------------------------------------------------------
 
+
 def scan_and_score(period: str = "1y") -> list[dict]:
     """Scan all stocks, compute TA + fundamental scores, return ranked list."""
     cache_key = f"advisor:scan:{period}"
@@ -326,6 +345,7 @@ def scan_and_score(period: str = "1y") -> list[dict]:
     if len(fundamentals) < 20:
         logger.info("Advisor: only %d cached stocks, fetching priority symbols on-demand", len(fundamentals))
         from src.services.market_data import WARM_PRIORITY
+
         # Fetch only the priority ~38 symbols rather than the full 258 universe
         # to avoid Finnhub rate limits while still getting usable results
         fundamentals = fetch_batch(WARM_PRIORITY, cached_only=False)
@@ -336,7 +356,7 @@ def scan_and_score(period: str = "1y") -> list[dict]:
         key=lambda d: _fundamental_score(d),
         reverse=True,
     )
-    top_symbols = [d["symbol"] for d in fund_sorted[:40 if _LOW_MEMORY else 80]]
+    top_symbols = [d["symbol"] for d in fund_sorted[: 40 if _LOW_MEMORY else 80]]
 
     to_ts = int(time.time())
     from_ts = to_ts - CANDLE_LOOKBACK_DAYS * 86400
@@ -370,34 +390,36 @@ def scan_and_score(period: str = "1y") -> list[dict]:
 
         combined = round(t_score * 0.40 + f_score * 0.40 + m_score * 0.20)
 
-        results.append({
-            "rank": 0,
-            "symbol": sym,
-            "name": info.get("name", sym),
-            "sector": info.get("sector", "N/A"),
-            "price": analysis["current_price"],
-            "score": combined,
-            "technical_score": t_score,
-            "fundamental_score": f_score,
-            "momentum_score": m_score,
-            "berkshire_score": b_score,
-            "signal": analysis["verdict"],
-            "confidence": analysis["confidence"],
-            "rsi": analysis["rsi"],
-            "macd_signal": analysis["macd_signal"],
-            "sma_trend": analysis["sma_trend"],
-            "entry_price": analysis["entry_price"],
-            "target_price": analysis["target_price"],
-            "stop_loss": analysis["stop_loss"],
-            "risk_reward": analysis["risk_reward"],
-            "beta": info.get("beta"),
-            "dividend_yield": info.get("dividend_yield"),
-            "pe_ratio": info.get("pe_ratio"),
-            "market_cap": info.get("market_cap"),
-            "market_cap_fmt": format_market_cap(info.get("market_cap", 0)),
-            "signals": analysis["signals"],
-            "reasoning": _build_reasoning(analysis, info),
-        })
+        results.append(
+            {
+                "rank": 0,
+                "symbol": sym,
+                "name": info.get("name", sym),
+                "sector": info.get("sector", "N/A"),
+                "price": analysis["current_price"],
+                "score": combined,
+                "technical_score": t_score,
+                "fundamental_score": f_score,
+                "momentum_score": m_score,
+                "berkshire_score": b_score,
+                "signal": analysis["verdict"],
+                "confidence": analysis["confidence"],
+                "rsi": analysis["rsi"],
+                "macd_signal": analysis["macd_signal"],
+                "sma_trend": analysis["sma_trend"],
+                "entry_price": analysis["entry_price"],
+                "target_price": analysis["target_price"],
+                "stop_loss": analysis["stop_loss"],
+                "risk_reward": analysis["risk_reward"],
+                "beta": info.get("beta"),
+                "dividend_yield": info.get("dividend_yield"),
+                "pe_ratio": info.get("pe_ratio"),
+                "market_cap": info.get("market_cap"),
+                "market_cap_fmt": format_market_cap(info.get("market_cap", 0)),
+                "signals": analysis["signals"],
+                "reasoning": _build_reasoning(analysis, info),
+            }
+        )
 
     results.sort(key=lambda x: x["score"], reverse=True)
     for i, r in enumerate(results):
@@ -415,6 +437,7 @@ def scan_and_score(period: str = "1y") -> list[dict]:
     # Persist to DB so results survive Render instance restarts
     try:
         from src.services.persistence import save_scan
+
         save_scan(f"smart_advisor_scan:{period}", lightweight)
         logger.info("Smart advisor: persisted scan results to DB (%d stocks)", len(lightweight))
     except Exception:
@@ -448,16 +471,16 @@ def _build_reasoning(analysis: dict, info: dict) -> str:
 # Step 4: Build portfolio packages
 # ---------------------------------------------------------------------------
 
+
 def build_portfolios(rankings: list[dict], amount: float = 10000) -> dict:
     """Build 3 portfolio tiers from the ranked stock list."""
     buyable = [r for r in rankings if r["signal"] in ("Strong Buy", "Buy")]
     if len(buyable) < 5:
         buyable = rankings[:20]
 
-    conservative_pool = [
-        r for r in buyable
-        if (r.get("beta") or 1.0) < 1.3 and (r.get("dividend_yield") or 0) >= 0
-    ][:12]
+    conservative_pool = [r for r in buyable if (r.get("beta") or 1.0) < 1.3 and (r.get("dividend_yield") or 0) >= 0][
+        :12
+    ]
     if len(conservative_pool) < 4:
         conservative_pool = buyable[:8]
 
@@ -493,21 +516,23 @@ def build_portfolios(rankings: list[dict], amount: float = 10000) -> dict:
             pct = round(s["score"] / total_score * 100, 1)
             invested = round(amount * pct / 100, 2)
             shares = round(invested / s["price"], 4) if s["price"] > 0 else 0
-            holdings.append({
-                "symbol": s["symbol"],
-                "name": s["name"],
-                "sector": s["sector"],
-                "allocation_pct": pct,
-                "shares": shares,
-                "buy_price": s["price"],
-                "invested": invested,
-                "entry_price": s["entry_price"],
-                "target_price": s["target_price"],
-                "stop_loss": s["stop_loss"],
-                "risk_reward": s["risk_reward"],
-                "score": s["score"],
-                "signal": s["signal"],
-            })
+            holdings.append(
+                {
+                    "symbol": s["symbol"],
+                    "name": s["name"],
+                    "sector": s["sector"],
+                    "allocation_pct": pct,
+                    "shares": shares,
+                    "buy_price": s["price"],
+                    "invested": invested,
+                    "entry_price": s["entry_price"],
+                    "target_price": s["target_price"],
+                    "stop_loss": s["stop_loss"],
+                    "risk_reward": s["risk_reward"],
+                    "score": s["score"],
+                    "signal": s["signal"],
+                }
+            )
 
         return {"name": name, "risk": risk, "holdings": holdings}
 
@@ -522,6 +547,7 @@ def build_portfolios(rankings: list[dict], amount: float = 10000) -> dict:
 # Step 5: Backtest a portfolio
 # ---------------------------------------------------------------------------
 
+
 def backtest_portfolio(holdings: list[dict], period: str = "1y") -> dict:
     """Day-by-day backtest of a portfolio against S&P 500.
 
@@ -529,7 +555,9 @@ def backtest_portfolio(holdings: list[dict], period: str = "1y") -> dict:
     historical prices, then tracks portfolio value forward.
     """
     days = PERIOD_DAYS.get(period, 365)
-    to_ts = int(time.time())
+    # Round to nearest hour so candle cache keys stay stable across
+    # the 3 risk-profile backtests the scheduler runs per period.
+    to_ts = int(time.time()) // 3600 * 3600
     from_ts = to_ts - days * 86400
 
     bench_candles = dp.get_candles("SPY", "D", from_ts, to_ts)
@@ -563,10 +591,12 @@ def backtest_portfolio(holdings: list[dict], period: str = "1y") -> dict:
 
     symbol_aligned: dict[str, list] = {}
     for sym, candles in candle_map.items():
-        lookup = dict(zip(
-            [datetime.fromtimestamp(t).strftime("%Y-%m-%d") for t in candles["t"]],
-            candles["c"],
-        ))
+        lookup = dict(
+            zip(
+                [datetime.fromtimestamp(t).strftime("%Y-%m-%d") for t in candles["t"]],
+                candles["c"],
+            )
+        )
         aligned = []
         last_known = None
         for d in bench_dates:
@@ -655,6 +685,7 @@ def backtest_portfolio(holdings: list[dict], period: str = "1y") -> dict:
 # Step 6: Generate advisor report
 # ---------------------------------------------------------------------------
 
+
 def generate_report(rankings: list[dict], portfolios: dict) -> dict:
     """Build the plain-English advisor report."""
     total = len(rankings)
@@ -694,14 +725,9 @@ def generate_report(rankings: list[dict], portfolios: dict) -> dict:
                 f"entry zone near ${r['entry_price']:.2f}, target ${r['target_price']:.2f}"
             )
 
-    overbought = [
-        r for r in rankings
-        if r.get("rsi") and r["rsi"] > 70
-    ][:3]
+    overbought = [r for r in rankings if r.get("rsi") and r["rsi"] > 70][:3]
     for r in overbought:
-        top_actions.append(
-            f"Take profits on {r['symbol']} -- RSI overbought at {r['rsi']:.0f}"
-        )
+        top_actions.append(f"Take profits on {r['symbol']} -- RSI overbought at {r['rsi']:.0f}")
 
     risk_warnings = []
     sectors: dict[str, int] = {}
@@ -716,9 +742,7 @@ def generate_report(rankings: list[dict], portfolios: dict) -> dict:
         )
 
     if bull_pct > 75:
-        risk_warnings.append(
-            "Market appears extended with 75%+ bullish signals -- potential for mean reversion"
-        )
+        risk_warnings.append("Market appears extended with 75%+ bullish signals -- potential for mean reversion")
 
     if not risk_warnings:
         risk_warnings.append("No major risk concentration detected in current picks")
@@ -740,8 +764,7 @@ def generate_report(rankings: list[dict], portfolios: dict) -> dict:
 DEFAULT_AMOUNT = 10000
 
 
-def _scale_result_for_amount(base_result: dict, base_amount: int,
-                              target_amount: int) -> dict:
+def _scale_result_for_amount(base_result: dict, base_amount: int, target_amount: int) -> dict:
     """Scale a pre-computed analysis result to a different investment amount.
 
     Portfolio allocations are percentage-based, so we only need to scale
@@ -752,6 +775,7 @@ def _scale_result_for_amount(base_result: dict, base_amount: int,
         return base_result
 
     import copy
+
     result = copy.deepcopy(base_result)
     ratio = target_amount / base_amount
 
@@ -777,9 +801,9 @@ def _scale_result_for_amount(base_result: dict, base_amount: int,
     return result
 
 
-def run_full_analysis(amount: float = 10000, risk: str = "balanced",
-                      period: str = "1y", *,
-                      compute_if_missing: bool = True) -> dict | None:
+def run_full_analysis(
+    amount: float = 10000, risk: str = "balanced", period: str = "1y", *, compute_if_missing: bool = True
+) -> dict | None:
     """Run the complete advisor pipeline. Cached for 20 min.
 
     Args:
@@ -819,7 +843,10 @@ def run_full_analysis(amount: float = 10000, risk: str = "balanced",
 
     bt = {}
     if selected_portfolio.get("holdings"):
-        bt = backtest_portfolio(selected_portfolio["holdings"], period)
+        try:
+            bt = backtest_portfolio(selected_portfolio["holdings"], period)
+        except Exception:
+            logger.exception("backtest_portfolio failed for %s/%s — caching result without backtest", risk, period)
 
     report = generate_report(rankings, portfolios)
 
@@ -836,6 +863,7 @@ def run_full_analysis(amount: float = 10000, risk: str = "balanced",
     # Persist full analysis to DB so "Run Analysis" is instant after restart
     try:
         from src.services.persistence import save_scan
+
         db_key = f"smart_advisor_full:{int(amount)}:{risk}:{period}"
         save_scan(db_key, result)
         logger.info("Smart advisor: persisted full analysis to DB (key=%s)", db_key)
@@ -861,9 +889,7 @@ def analyze_single_stock(symbol: str) -> Optional[dict]:
     analysis["fundamental_score"] = _fundamental_score(info)
     analysis["momentum_score"] = _momentum_score(info)
     analysis["combined_score"] = round(
-        analysis["technical_score"] * 0.40
-        + analysis["fundamental_score"] * 0.40
-        + analysis["momentum_score"] * 0.20
+        analysis["technical_score"] * 0.40 + analysis["fundamental_score"] * 0.40 + analysis["momentum_score"] * 0.20
     )
     analysis["reasoning"] = _build_reasoning(analysis, info)
     return analysis

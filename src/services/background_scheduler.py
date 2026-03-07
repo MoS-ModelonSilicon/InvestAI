@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 _stop_event = threading.Event()
 
 # ── Intervals (seconds) ──────────────────────────────────────
-VALUE_SCANNER_INTERVAL = 300    # 5 min
+VALUE_SCANNER_INTERVAL = 300  # 5 min
 TRADING_ADVISOR_INTERVAL = 1800  # 30 min
-MARKET_DATA_INTERVAL = 120       # 2 min  — lightweight (quotes + sparklines)
-NEWS_INTERVAL = 900              # 15 min — 8 Finnhub calls
-SMART_ADVISOR_INTERVAL = 900     # 15 min — heavy scan (40-80 candles)
-CACHE_SNAPSHOT_INTERVAL = 600    # 10 min — persist market cache to DB
+MARKET_DATA_INTERVAL = 120  # 2 min  — lightweight (quotes + sparklines)
+NEWS_INTERVAL = 900  # 15 min — 8 Finnhub calls
+SMART_ADVISOR_INTERVAL = 900  # 15 min — heavy scan (40-80 candles)
+CACHE_SNAPSHOT_INTERVAL = 600  # 10 min — persist market cache to DB
 
 
 # ── Individual scan runners ──────────────────────────────────
@@ -32,6 +32,7 @@ def _run_value_scan() -> bool:
     """Run the value scanner's full scan.  Returns True on success."""
     try:
         from src.services.value_scanner import run_full_scan
+
         logger.info("Scheduler: starting value scan")
         run_full_scan()
         logger.info("Scheduler: value scan complete")
@@ -45,6 +46,7 @@ def _run_trading_scan() -> bool:
     """Run the trading advisor's full scan.  Returns True on success."""
     try:
         from src.services.trading_advisor import run_full_scan
+
         logger.info("Scheduler: starting trading advisor scan")
         run_full_scan()
         logger.info("Scheduler: trading advisor scan complete")
@@ -58,6 +60,7 @@ def _run_market_data_refresh() -> bool:
     """Refresh live quotes + sparklines for homepage symbols."""
     try:
         from src.services.market_data import refresh_active_symbols
+
         refresh_active_symbols()
         return True
     except Exception:
@@ -69,6 +72,7 @@ def _run_news_refresh() -> bool:
     """Pre-fetch news for the default symbols."""
     try:
         from src.services.news import refresh_news_cache
+
         refresh_news_cache()
         return True
     except Exception:
@@ -125,7 +129,9 @@ def _run_smart_advisor_scan() -> bool:
                 try:
                     logger.info(
                         "Scheduler: pre-computing full analysis %s/%s/%s",
-                        DEFAULT_AMOUNT, risk, period,
+                        DEFAULT_AMOUNT,
+                        risk,
+                        period,
                     )
                     result = run_full_analysis(amount=DEFAULT_AMOUNT, risk=risk, period=period)
                     if result and result.get("rankings"):
@@ -134,18 +140,25 @@ def _run_smart_advisor_scan() -> bool:
                         failed += 1
                         logger.warning(
                             "Scheduler: full analysis %s/%s returned empty result",
-                            risk, period,
+                            risk,
+                            period,
                         )
                 except Exception:
                     failed += 1
                     logger.exception(
                         "Scheduler: full analysis %s/%s FAILED — continuing with next combo",
-                        risk, period,
+                        risk,
+                        period,
                     )
+                # Small delay between combos to respect Finnhub rate limits
+                if _stop_event.wait(timeout=3):
+                    return False
 
         logger.info(
             "Scheduler: smart advisor warm-up complete — 1 scan, %d/%d analyses OK (%d failed)",
-            computed, len(PERIODS) * len(RISKS), failed,
+            computed,
+            len(PERIODS) * len(RISKS),
+            failed,
         )
         return True
     except Exception:
@@ -158,6 +171,7 @@ def _run_cache_snapshot() -> bool:
     try:
         from src.services.market_data import _cache, _cache_lock
         from src.services.persistence import save_market_cache_snapshot
+
         with _cache_lock:
             snapshot = dict(_cache)
         save_market_cache_snapshot(snapshot)
@@ -182,19 +196,19 @@ def _scheduler_loop():
 
     # ── Initial staggered runs ──────────────────────────────
     # Lightest → heaviest, with small gaps to avoid API rate-limit spikes
-    _run_market_data_refresh()                 # ~10 quote + 6 sparkline calls
+    _run_market_data_refresh()  # ~10 quote + 6 sparkline calls
     if _stop_event.wait(timeout=10):
         return
-    _run_news_refresh()                        # 8 Finnhub calls
+    _run_news_refresh()  # 8 Finnhub calls
     if _stop_event.wait(timeout=30):
         return
-    _run_value_scan()                          # value scanner
+    _run_value_scan()  # value scanner
     if _stop_event.wait(timeout=60):
         return
-    _run_trading_scan()                        # trading advisor
+    _run_trading_scan()  # trading advisor
     if _stop_event.wait(timeout=60):
         return
-    _run_smart_advisor_scan()                  # smart advisor (heaviest)
+    _run_smart_advisor_scan()  # smart advisor (heaviest)
 
     last_value = time.time()
     last_trading = time.time()
