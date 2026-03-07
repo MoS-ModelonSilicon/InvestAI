@@ -104,6 +104,16 @@ git push origin master
 | `ci:` | CI/CD pipeline changes | `ci: add ruff lint, mypy type-check, and pre-commit config` |
 | `security:` | Security fixes | `security: implement critical fixes from automated audit` |
 
+### Intel Network Proxy (REQUIRED)
+
+Git push will fail on the Intel corporate network without the proxy. **Always ensure this is set before pushing:**
+
+```bash
+git config --global http.proxy http://proxy-dmz.intel.com:911
+```
+
+This only needs to be set once per machine, but may be cleared by IT policy or reinstalls. If `git push` fails with `Failed to connect to github.com port 443`, re-run the command above.
+
 ### Deploy Cycle
 
 ```bash
@@ -114,7 +124,10 @@ TESTING=1 python -m pytest tests/test_api_smoke.py -v --tb=short
 git add -A
 git commit -m "fix: describe what changed"
 
-# 3. Push → Render auto-deploys
+# 3. Ensure proxy is set (Intel network)
+git config --global http.proxy http://proxy-dmz.intel.com:911
+
+# 4. Push → Render auto-deploys
 git push origin master
 ```
 

@@ -65,10 +65,16 @@ Render free tier sleeps after 15min inactivity. First request takes 30-60s.
 
 **Symptom**: External API calls timeout on corporate network
 
-**Required env vars**:
+**Required env vars** (for the running app):
 ```bash
 HTTP_PROXY=http://proxy-dmz.intel.com:911
 HTTPS_PROXY=http://proxy-dmz.intel.com:912
 NO_PROXY=localhost,127.0.0.1
 USE_INTEL_PROXY=1
 ```
+
+**Git push failing** (`Failed to connect to github.com port 443`):
+```bash
+git config --global http.proxy http://proxy-dmz.intel.com:911
+```
+This must be set on any Intel machine before `git push origin master` will work. It persists across sessions but may be cleared by IT policy or reinstalls.
