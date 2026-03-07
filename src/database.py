@@ -1,7 +1,7 @@
 import os
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 # ── Database URL ──────────────────────────────────────────────
 # Production (Render): set DATABASE_URL env var pointing to external PostgreSQL
@@ -19,7 +19,10 @@ _connect_args = {"check_same_thread": False} if _is_sqlite else {}
 
 engine = create_engine(DATABASE_URL, connect_args=_connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+
+
+class Base(DeclarativeBase):
+    pass
 
 
 def get_db():

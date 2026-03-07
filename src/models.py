@@ -1,8 +1,9 @@
 import enum
-from datetime import datetime
+from datetime import date, datetime
+from typing import Optional
 
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, UniqueConstraint, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
 
@@ -18,23 +19,23 @@ class TransactionType(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, nullable=False, index=True)
-    hashed_password = Column(String, nullable=False)
-    name = Column(String, default="")
-    is_admin = Column(Integer, default=0)  # 0 = regular user, 1 = admin
-    is_active = Column(Integer, default=1)  # 0 = disabled, 1 = active
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    email: Mapped[str] = mapped_column(unique=True, index=True)
+    hashed_password: Mapped[str]
+    name: Mapped[str] = mapped_column(default="")
+    is_admin: Mapped[int] = mapped_column(default=0)  # 0 = regular user, 1 = admin
+    is_active: Mapped[int] = mapped_column(default=1)  # 0 = disabled, 1 = active
+    created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
     # relationships
-    transactions = relationship("Transaction", back_populates="owner")
-    categories = relationship("Category", back_populates="owner")
-    budgets = relationship("Budget", back_populates="owner")
-    risk_profiles = relationship("RiskProfile", back_populates="owner")
-    watchlist_items = relationship("Watchlist", back_populates="owner")
-    holdings = relationship("Holding", back_populates="owner")
-    alerts = relationship("Alert", back_populates="owner")
-    dca_plans = relationship("DcaPlan", back_populates="owner")
+    transactions: Mapped[list["Transaction"]] = relationship(back_populates="owner")
+    categories: Mapped[list["Category"]] = relationship(back_populates="owner")
+    budgets: Mapped[list["Budget"]] = relationship(back_populates="owner")
+    risk_profiles: Mapped[list["RiskProfile"]] = relationship(back_populates="owner")
+    watchlist_items: Mapped[list["Watchlist"]] = relationship(back_populates="owner")
+    holdings: Mapped[list["Holding"]] = relationship(back_populates="owner")
+    alerts: Mapped[list["Alert"]] = relationship(back_populates="owner")
+    dca_plans: Mapped[list["DcaPlan"]] = relationship(back_populates="owner")
 
 
 # ── Finance Tracker Models ───────────────────────────────────
@@ -43,46 +44,46 @@ class User(Base):
 class Category(Base):
     __tablename__ = "categories"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    name = Column(String, nullable=False)
-    color = Column(String, default="#6366f1")
-    type = Column(String, nullable=False, default="expense")
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
+    name: Mapped[str]
+    color: Mapped[str] = mapped_column(default="#6366f1")
+    type: Mapped[str] = mapped_column(default="expense")
 
     __table_args__ = (UniqueConstraint("user_id", "name", name="uq_category_user_name"),)
 
-    owner = relationship("User", back_populates="categories")
-    transactions = relationship("Transaction", back_populates="category")
-    budgets = relationship("Budget", back_populates="category")
+    owner: Mapped[Optional["User"]] = relationship(back_populates="categories")
+    transactions: Mapped[list["Transaction"]] = relationship(back_populates="category")
+    budgets: Mapped[list["Budget"]] = relationship(back_populates="category")
 
 
 class Transaction(Base):
     __tablename__ = "transactions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    amount = Column(Float, nullable=False)
-    type = Column(String, nullable=False)
-    description = Column(String, default="")
-    date = Column(Date, nullable=False, index=True)
-    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    amount: Mapped[float]
+    type: Mapped[str]
+    description: Mapped[str] = mapped_column(default="")
+    date: Mapped[date] = mapped_column(index=True)
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
 
-    owner = relationship("User", back_populates="transactions")
-    category = relationship("Category", back_populates="transactions")
+    owner: Mapped["User"] = relationship(back_populates="transactions")
+    category: Mapped["Category"] = relationship(back_populates="transactions")
 
 
 class Budget(Base):
     __tablename__ = "budgets"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
-    monthly_limit = Column(Float, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
+    monthly_limit: Mapped[float]
 
     __table_args__ = (UniqueConstraint("user_id", "category_id", name="uq_budget_user_cat"),)
 
-    owner = relationship("User", back_populates="budgets")
-    category = relationship("Category", back_populates="budgets")
+    owner: Mapped["User"] = relationship(back_populates="budgets")
+    category: Mapped["Category"] = relationship(back_populates="budgets")
 
 
 # ── Investment Models ────────────────────────────────────────
@@ -91,98 +92,98 @@ class Budget(Base):
 class RiskProfile(Base):
     __tablename__ = "risk_profiles"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    goal = Column(String, nullable=False)
-    timeline = Column(String, nullable=False)
-    investment_style = Column(String, nullable=False, default="both")
-    initial_investment = Column(Float, nullable=False, default=0)
-    monthly_investment = Column(Float, nullable=False, default=0)
-    experience = Column(String, nullable=False)
-    risk_reaction = Column(String, nullable=False)
-    income_stability = Column(String, nullable=False)
-    risk_score = Column(Integer, nullable=False)
-    profile_label = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    goal: Mapped[str]
+    timeline: Mapped[str]
+    investment_style: Mapped[str] = mapped_column(default="both")
+    initial_investment: Mapped[float] = mapped_column(default=0)
+    monthly_investment: Mapped[float] = mapped_column(default=0)
+    experience: Mapped[str]
+    risk_reaction: Mapped[str]
+    income_stability: Mapped[str]
+    risk_score: Mapped[int]
+    profile_label: Mapped[str]
+    created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
-    owner = relationship("User", back_populates="risk_profiles")
+    owner: Mapped["User"] = relationship(back_populates="risk_profiles")
 
 
 class Watchlist(Base):
     __tablename__ = "watchlist"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    symbol = Column(String, nullable=False)
-    name = Column(String, default="")
-    added_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    symbol: Mapped[str]
+    name: Mapped[str] = mapped_column(default="")
+    added_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
     __table_args__ = (UniqueConstraint("user_id", "symbol", name="uq_watchlist_user_symbol"),)
 
-    owner = relationship("User", back_populates="watchlist_items")
+    owner: Mapped["User"] = relationship(back_populates="watchlist_items")
 
 
 class Holding(Base):
     __tablename__ = "holdings"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    symbol = Column(String, nullable=False)
-    name = Column(String, default="")
-    quantity = Column(Float, nullable=False)
-    buy_price = Column(Float, nullable=False)
-    buy_date = Column(Date, nullable=False)
-    notes = Column(String, default="")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    symbol: Mapped[str]
+    name: Mapped[str] = mapped_column(default="")
+    quantity: Mapped[float]
+    buy_price: Mapped[float]
+    buy_date: Mapped[date]
+    notes: Mapped[str] = mapped_column(default="")
+    created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
-    owner = relationship("User", back_populates="holdings")
+    owner: Mapped["User"] = relationship(back_populates="holdings")
 
 
 class Alert(Base):
     __tablename__ = "alerts"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    symbol = Column(String, nullable=False)
-    name = Column(String, default="")
-    condition = Column(String, nullable=False)
-    target_price = Column(Float, nullable=False)
-    active = Column(Integer, default=1)
-    triggered = Column(Integer, default=0)
-    triggered_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    symbol: Mapped[str]
+    name: Mapped[str] = mapped_column(default="")
+    condition: Mapped[str]
+    target_price: Mapped[float]
+    active: Mapped[int] = mapped_column(default=1)
+    triggered: Mapped[int] = mapped_column(default=0)
+    triggered_at: Mapped[Optional[datetime]] = mapped_column(default=None)
+    created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
-    owner = relationship("User", back_populates="alerts")
+    owner: Mapped["User"] = relationship(back_populates="alerts")
 
 
 class DcaPlan(Base):
     __tablename__ = "dca_plans"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    symbol = Column(String, nullable=False)
-    name = Column(String, default="")
-    monthly_budget = Column(Float, nullable=False)
-    dip_threshold = Column(Float, nullable=False, default=-15.0)
-    dip_multiplier = Column(Float, nullable=False, default=2.0)
-    is_long_term = Column(Integer, default=1)
-    notes = Column(String, default="")
-    active = Column(Integer, default=1)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    symbol: Mapped[str]
+    name: Mapped[str] = mapped_column(default="")
+    monthly_budget: Mapped[float]
+    dip_threshold: Mapped[float] = mapped_column(default=-15.0)
+    dip_multiplier: Mapped[float] = mapped_column(default=2.0)
+    is_long_term: Mapped[int] = mapped_column(default=1)
+    notes: Mapped[str] = mapped_column(default="")
+    active: Mapped[int] = mapped_column(default=1)
+    created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
     __table_args__ = (UniqueConstraint("user_id", "symbol", name="uq_dca_user_symbol"),)
 
-    owner = relationship("User", back_populates="dca_plans")
+    owner: Mapped["User"] = relationship(back_populates="dca_plans")
 
 
 class PasswordReset(Base):
     __tablename__ = "password_resets"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    code = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    used = Column(Integer, default=0)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    code: Mapped[str]
+    created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
+    used: Mapped[int] = mapped_column(default=0)
 
 
 class ScanResult(Base):
@@ -194,6 +195,6 @@ class ScanResult(Base):
 
     __tablename__ = "scan_results"
 
-    key = Column(String, primary_key=True)
-    data = Column(Text, nullable=False)  # JSON string
-    updated_at = Column(DateTime, default=datetime.utcnow)
+    key: Mapped[str] = mapped_column(primary_key=True)
+    data: Mapped[str] = mapped_column(Text)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)

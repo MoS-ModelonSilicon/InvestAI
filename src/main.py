@@ -116,7 +116,7 @@ limiter = Limiter(
     enabled=not _testing,  # disable rate limiting during pytest
 )
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

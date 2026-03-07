@@ -13,7 +13,7 @@ Buffett & Munger's investing principles:
 """
 
 import logging
-from typing import Optional
+from typing import Any, Optional, cast
 
 from src.services import data_provider as dp
 from src.services.market_data import fetch_stock_info, _get_cached, _set_cache
@@ -354,7 +354,7 @@ def get_company_dna(symbol: str) -> Optional[dict]:
     cache_key = f"company_dna:{symbol}"
     cached = _get_cached(cache_key)
     if isinstance(cached, dict):
-        return cached
+        return cast(dict[str, Any], cached)
 
     info = fetch_stock_info(symbol)
     if not info:

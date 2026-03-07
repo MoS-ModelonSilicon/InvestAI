@@ -9,7 +9,7 @@ portfolio performance against the S&P 500 benchmark.
 import logging
 import math
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Any, Optional, cast
 
 from src.services import data_provider as dp
 from src.services.market_data import _get_cached, _set_cache
@@ -252,7 +252,7 @@ def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict
     cache_key = f"autopilot:{profile_id}:{amount}:{period}"
     cached = _get_cached(cache_key)
     if isinstance(cached, dict):
-        return cached
+        return cast(dict[str, Any], cached)
 
     profile = PROFILES.get(profile_id)
     if not profile:
@@ -277,7 +277,7 @@ def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict
     holdings = []
     all_symbol_prices = {}  # symbol -> aligned price list
 
-    for sleeve in profile["sleeves"]:  # type: ignore[attr-defined]
+    for sleeve in cast(list[dict[str, Any]], profile["sleeves"]):
         if not sleeve["symbols"]:
             continue
         sleeve_capital = amount * (sleeve["pct"] / 100.0)

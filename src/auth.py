@@ -1,6 +1,7 @@
 import os
 import secrets
 from datetime import datetime, timedelta
+from typing import cast
 
 from fastapi import Depends, HTTPException
 from jose import JWTError, jwt
@@ -84,11 +85,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         path = request.url.path
 
         if path in PUBLIC_PATHS:
-            return await call_next(request)
+            return cast(Response, await call_next(request))
 
         # Allow static files without auth
         if path.startswith("/static/"):
-            return await call_next(request)
+            return cast(Response, await call_next(request))
 
         cookie = request.cookies.get(COOKIE_NAME, "")
         payload = decode_token(cookie) if cookie else None
@@ -109,7 +110,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 db.close()
 
             request.state.user_id = int(payload["sub"])
-            return await call_next(request)
+            return cast(Response, await call_next(request))
 
         if path.startswith("/api/"):
             return Response(status_code=401, content="Unauthorized")

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Any, cast
 
 from src.services import data_provider as dp
 from src.services.market_data import _get_cached, _set_cache
@@ -10,7 +11,7 @@ def get_earnings_calendar(symbols: list[str]) -> list[dict]:
     cached = _get_cached(cache_key)
     if cached is not None:
         if isinstance(cached, list):
-            return cached
+            return cast(list[dict[str, Any]], cached)
         return []
 
     from_date = datetime.now().strftime("%Y-%m-%d")

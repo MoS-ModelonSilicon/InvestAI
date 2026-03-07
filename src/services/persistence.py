@@ -14,7 +14,7 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional, cast
 
 from src.database import SessionLocal
 from src.models import ScanResult
@@ -54,17 +54,20 @@ def save_scan(key: str, data) -> bool:
         db.close()
 
 
-def load_scan(key: str) -> Optional[dict | list]:
+def load_scan(key: str) -> Optional[dict[str, Any] | list[Any]]:
     """Load a previously saved scan result.  Returns None if not found."""
     db = SessionLocal()
     try:
         row = db.query(ScanResult).filter(ScanResult.key == key).first()
         if row:
-            data = json.loads(row.data)
-            if not isinstance(data, (dict, list)):
-                return None
-            logger.debug("Loaded scan result: %s (saved %s)", key, row.updated_at)
-            return data
+            data: Any = json.loads(row.data)
+            if isinstance(data, dict):
+                logger.debug("Loaded scan result: %s (saved %s)", key, row.updated_at)
+                return cast(dict[str, Any], data)
+            if isinstance(data, list):
+                logger.debug("Loaded scan result: %s (saved %s)", key, row.updated_at)
+                return cast(list[Any], data)
+            return None
         return None
     except Exception:
         logger.exception("Failed to load scan result: %s", key)
@@ -73,7 +76,7 @@ def load_scan(key: str) -> Optional[dict | list]:
         db.close()
 
 
-def load_scan_with_age(key: str) -> tuple[Optional[dict | list], float]:
+def load_scan_with_age(key: str) -> tuple[Optional[dict[str, Any] | list[Any]], float]:
     """Load a scan result and return (data, age_in_seconds).
 
     Returns (None, 0) if not found.
@@ -82,9 +85,13 @@ def load_scan_with_age(key: str) -> tuple[Optional[dict | list], float]:
     try:
         row = db.query(ScanResult).filter(ScanResult.key == key).first()
         if row:
-            data = json.loads(row.data)
-            age = (datetime.utcnow() - row.updated_at).total_seconds()
-            return data, age
+            data: Any = json.loads(row.data)
+            age = (datetime.utcnow() - row.updated_at).total_seconds() if row.updated_at else 0.0
+            if isinstance(data, dict):
+                return cast(dict[str, Any], data), age
+            if isinstance(data, list):
+                return cast(list[Any], data), age
+            return None, 0
         return None, 0
     except Exception:
         logger.exception("Failed to load scan result: %s", key)
@@ -93,7 +100,7 @@ def load_scan_with_age(key: str) -> tuple[Optional[dict | list], float]:
         db.close()
 
 
-def load_scans_by_prefix(prefix: str) -> dict[str, dict]:
+def load_scans_by_prefix(prefix: str) -> dict[str, Any]:
     """Load all scan results whose key starts with prefix.
 
     Returns {key: data} dict.
@@ -101,7 +108,7 @@ def load_scans_by_prefix(prefix: str) -> dict[str, dict]:
     db = SessionLocal()
     try:
         rows = db.query(ScanResult).filter(ScanResult.key.like(f"{prefix}%")).all()
-        result = {}
+        result: dict[str, Any] = {}
         for row in rows:
             try:
                 result[row.key] = json.loads(row.data)

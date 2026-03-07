@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Any
+from typing import Any, cast
 from datetime import datetime, timedelta
 
 import requests
@@ -65,7 +65,7 @@ def _get(endpoint: str, params: dict[str, Any] | None = None) -> dict[str, Any] 
             resp.raise_for_status()
             result = resp.json()
             if isinstance(result, dict):
-                return result
+                return cast(dict[str, Any], result)
             return None
         except Exception as e:
             logger.warning("Finnhub %s error: %s", endpoint, e)
@@ -90,7 +90,7 @@ def _get_list(endpoint: str, params: dict[str, Any] | None = None) -> list[Any]:
                 return []
             resp.raise_for_status()
             result = resp.json()
-            return result if isinstance(result, list) else []
+            return cast(list[Any], result) if isinstance(result, list) else []
         except Exception as e:
             logger.warning("Finnhub %s error: %s", endpoint, e)
             return []
@@ -118,7 +118,7 @@ def get_metrics(symbol: str) -> dict[str, Any] | None:
     data = _get("/stock/metric", {"symbol": symbol, "metric": "all"})
     if data and data.get("metric"):
         metric_val = data["metric"]
-        return metric_val if isinstance(metric_val, dict) else None
+        return cast(dict[str, Any], metric_val) if isinstance(metric_val, dict) else None
     return None
 
 
@@ -141,14 +141,14 @@ def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> dict[
 def get_company_news(symbol: str, days_back: int = 7) -> list[dict[str, Any]]:
     to_date = datetime.now().strftime("%Y-%m-%d")
     from_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
-    return _get_list("/company-news", {"symbol": symbol, "from": from_date, "to": to_date})
+    return cast(list[dict[str, Any]], _get_list("/company-news", {"symbol": symbol, "from": from_date, "to": to_date}))
 
 
 def get_earnings_calendar(from_date: str, to_date: str) -> list[dict[str, Any]]:
     data = _get("/calendar/earnings", {"from": from_date, "to": to_date})
     if data and "earningsCalendar" in data:
         val = data["earningsCalendar"]
-        return val if isinstance(val, list) else []
+        return cast(list[dict[str, Any]], val) if isinstance(val, list) else []
     return []
 
 
@@ -157,7 +157,7 @@ def get_executives(symbol: str) -> list[dict[str, Any]]:
     data = _get("/stock/executive", {"symbol": symbol})
     if data and "executive" in data:
         val = data["executive"]
-        return val if isinstance(val, list) else []
+        return cast(list[dict[str, Any]], val) if isinstance(val, list) else []
     return []
 
 
@@ -166,7 +166,7 @@ def get_insider_transactions(symbol: str) -> list[dict[str, Any]]:
     data = _get("/stock/insider-transactions", {"symbol": symbol})
     if data and "data" in data:
         val = data["data"]
-        return val if isinstance(val, list) else []
+        return cast(list[dict[str, Any]], val) if isinstance(val, list) else []
     return []
 
 
@@ -180,12 +180,12 @@ def get_insider_sentiment(symbol: str) -> dict[str, Any] | None:
 
 def get_recommendation_trends(symbol: str) -> list[dict[str, Any]]:
     """Analyst recommendation trends: strongBuy, buy, hold, sell, strongSell."""
-    return _get_list("/stock/recommendation", {"symbol": symbol})
+    return cast(list[dict[str, Any]], _get_list("/stock/recommendation", {"symbol": symbol}))
 
 
 def get_peers(symbol: str) -> list[str]:
     """List of peer/comparable company tickers."""
-    return _get_list("/stock/peers", {"symbol": symbol})
+    return cast(list[str], _get_list("/stock/peers", {"symbol": symbol}))
 
 
 def get_price_target(symbol: str) -> dict[str, Any] | None:

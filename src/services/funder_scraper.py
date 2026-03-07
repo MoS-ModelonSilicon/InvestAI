@@ -7,7 +7,7 @@ import json
 import logging
 import threading
 import time
-from typing import Optional
+from typing import Any, Optional, cast
 
 import requests
 
@@ -57,7 +57,7 @@ def _extract_json_var(html: str, var_name: str) -> Optional[dict]:
             break
     try:
         result = json.loads(html[start:end])
-        return result if isinstance(result, dict) else None
+        return cast(dict[str, Any], result) if isinstance(result, dict) else None
     except json.JSONDecodeError:
         return None
 
@@ -113,7 +113,7 @@ def _load_static_fallback() -> list[dict]:
     try:
         with open(_STATIC_FILE, encoding="utf-8") as f:
             data = json.load(f)
-            return data if isinstance(data, list) else []
+            return cast(list[dict[str, Any]], data) if isinstance(data, list) else []
     except Exception:
         return []
 

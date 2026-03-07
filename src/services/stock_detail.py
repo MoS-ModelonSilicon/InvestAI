@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional, cast
 
 from src.services import data_provider as dp
 from src.services.market_data import fetch_stock_info, _get_cached, _set_cache
@@ -19,7 +19,7 @@ def get_price_history(symbol: str, period: str = "1y", interval: str = "1d") -> 
     cache_key = f"history:{symbol}:{period}:{interval}"
     cached = _get_cached(cache_key)
     if isinstance(cached, dict):
-        return cached
+        return cast(dict[str, Any], cached)
 
     period_map = {"1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825}
     days = period_map.get(period, 365)

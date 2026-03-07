@@ -11,7 +11,7 @@ import math
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional, cast
 
 from src.services import data_provider as dp
 from src.services import technical_analysis as ta
@@ -338,7 +338,7 @@ def scan_and_score(period: str = "1y") -> list[dict]:
     cache_key = f"advisor:scan:{period}"
     cached = _get_cached(cache_key)
     if isinstance(cached, list):
-        return cached
+        return cast(list[dict[str, Any]], cached)
 
     # Try cached data first; if cache isn't warm enough, fetch a smaller set
     fundamentals = fetch_batch(ALL_UNIVERSE, cached_only=True)
@@ -826,7 +826,7 @@ def run_full_analysis(
     cache_key = f"advisor:full:{amount}:{risk}:{period}"
     cached = _get_cached(cache_key)
     if isinstance(cached, dict):
-        return cached
+        return cast(dict[str, Any], cached)
 
     # If the user requested a non-default amount, try to scale from
     # the pre-computed default-amount result (instant, no API calls)

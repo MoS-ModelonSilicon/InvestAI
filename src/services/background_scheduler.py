@@ -199,6 +199,7 @@ def _run_smart_advisor_scan() -> bool:
                 except Exception:
                     failed += 1
                     import traceback
+
                     _advisor_diag[combo_key] = f"EXCEPTION: {traceback.format_exc()[-200:]}"
                     logger.exception(
                         "Scheduler: full analysis %s/%s FAILED — continuing with next combo",

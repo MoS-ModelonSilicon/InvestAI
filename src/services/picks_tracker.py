@@ -9,7 +9,7 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional, cast
 
 from src.services import data_provider as dp
 
@@ -42,7 +42,7 @@ def load_picks() -> list[dict]:
         return []
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-        return data if isinstance(data, list) else []
+        return cast(list[dict[str, Any]], data) if isinstance(data, list) else []
 
 
 def _parse_date(d: str) -> datetime:
@@ -149,7 +149,7 @@ def evaluate_all_picks(pick_type: Optional[str] = None) -> dict:
     cached = _get_cached(cache_key)
     if cached:
         if isinstance(cached, dict):
-            return cached
+            return cast(dict[str, Any], cached)
 
     picks = load_picks()
     if pick_type:

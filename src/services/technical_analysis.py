@@ -17,7 +17,7 @@ Advanced indicators inspired by quantitative trading research:
 """
 
 from collections.abc import Sequence
-from typing import Optional
+from typing import Any, Optional, cast
 
 
 # ---------------------------------------------------------------------------
@@ -361,7 +361,7 @@ def _find_swing_points(data: "Sequence[Optional[float]]", window: int = 5) -> li
     return points
 
 
-def detect_divergence(closes: list[float], oscillator: list[Optional[float]], lookback: int = 60) -> dict:
+def detect_divergence(closes: list[float], oscillator: list[Optional[float]], lookback: int = 60) -> dict[str, Any]:
     """
     Detect bullish and bearish divergences between price and an oscillator.
 
@@ -490,7 +490,7 @@ def zscore(closes: list[float], period: int = 50) -> list[Optional[float]]:
 # ---------------------------------------------------------------------------
 
 
-def volume_anomaly(closes: list[float], volumes: list[float], period: int = 20) -> dict:
+def volume_anomaly(closes: list[float], volumes: list[float], period: int = 20) -> dict[str, Any]:
     """
     Detect institutional-grade volume anomalies.
 
@@ -598,7 +598,7 @@ def ichimoku(
     """
     n = len(closes)
 
-    def _midpoint(h, l, period, idx):
+    def _midpoint(h: list[float], l: list[float], period: int, idx: int) -> Optional[float]:
         if idx < period - 1:
             return None
         seg_h = h[idx - period + 1 : idx + 1]
@@ -608,10 +608,12 @@ def ichimoku(
     tenkan = [_midpoint(highs, lows, tenkan_p, i) for i in range(n)]
     kijun = [_midpoint(highs, lows, kijun_p, i) for i in range(n)]
 
-    senkou_a_raw = []
+    senkou_a_raw: list[Optional[float]] = []
     for i in range(n):
-        if tenkan[i] is not None and kijun[i] is not None:
-            senkou_a_raw.append(round((tenkan[i] + kijun[i]) / 2, 4))
+        t_val = tenkan[i]
+        k_val = kijun[i]
+        if t_val is not None and k_val is not None:
+            senkou_a_raw.append(round((t_val + k_val) / 2, 4))
         else:
             senkou_a_raw.append(None)
     senkou_a = [None] * kijun_p + senkou_a_raw[: n - kijun_p] if n > kijun_p else [None] * n
@@ -630,7 +632,7 @@ def ichimoku(
     }
 
 
-def ichimoku_signal(closes: list[float], ichi: dict) -> dict:
+def ichimoku_signal(closes: list[float], ichi: dict[str, list[Optional[float]]]) -> dict[str, Any]:
     """Interpret Ichimoku Cloud state. Returns {signal, strength, detail}."""
     n = len(closes)
     if n < 52:
@@ -696,7 +698,7 @@ def ichimoku_signal(closes: list[float], ichi: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def fibonacci_levels(closes: list[float], lookback: int = 120) -> dict:
+def fibonacci_levels(closes: list[float], lookback: int = 120) -> dict[str, Any]:
     """
     Auto-detect major swing high/low and compute Fibonacci retracement levels.
     Returns {swing_high, swing_low, levels: {0.236, 0.382, 0.5, 0.618, 0.786}}
@@ -746,7 +748,7 @@ def fibonacci_levels(closes: list[float], lookback: int = 120) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def relative_strength(closes: list[float], benchmark_closes: list[float]) -> dict:
+def relative_strength(closes: list[float], benchmark_closes: list[float]) -> dict[str, float | bool | str | None]:
     """
     Compute relative strength metrics vs a benchmark.
     Both lists must be aligned by date and same length.
@@ -826,7 +828,7 @@ def _score_rsi(rsi_vals: list[Optional[float]]) -> tuple[float, str]:
     return 0, f"RSI {v:.0f} -- neutral"
 
 
-def _score_macd(macd_data: dict) -> tuple[float, str]:
+def _score_macd(macd_data: dict[str, list[Optional[float]]]) -> tuple[float, str]:
     """Score MACD crossover: -2 to +2."""
     line = macd_data["line"]
     sig = macd_data["signal"]
@@ -904,7 +906,7 @@ def _score_bollinger(pct_b_vals: list[Optional[float]]) -> tuple[float, str]:
     return 0, f"Bollinger %B {v:.2f} -- mid-range"
 
 
-def _score_stochastic(stoch_data: dict) -> tuple[float, str]:
+def _score_stochastic(stoch_data: dict[str, list[Optional[float]]]) -> tuple[float, str]:
     """Score Stochastic %K/%D."""
     k = _last_valid(stoch_data["k"])
     d = _last_valid(stoch_data["d"])
@@ -948,23 +950,23 @@ def _score_obv(obv_vals: list[float], closes: list[float]) -> tuple[float, str]:
 
 
 def composite_score(
-    rsi_vals,
-    macd_data,
-    closes,
-    sma50,
-    sma200,
-    boll_pct_b,
-    stoch_data,
-    obv_vals,
+    rsi_vals: list[Optional[float]],
+    macd_data: dict[str, list[Optional[float]]],
+    closes: list[float],
+    sma50: list[Optional[float]],
+    sma200: list[Optional[float]],
+    boll_pct_b: list[Optional[float]],
+    stoch_data: dict[str, list[Optional[float]]],
+    obv_vals: list[float],
     *,
-    adx_data=None,
-    rsi_div=None,
-    macd_div=None,
-    vol_anomaly=None,
-    ichimoku_sig=None,
-    zscore_vals=None,
-    rs_data=None,
-) -> dict:
+    adx_data: Optional[dict[str, list[Optional[float]]]] = None,
+    rsi_div: Optional[dict[str, Any]] = None,
+    macd_div: Optional[dict[str, Any]] = None,
+    vol_anomaly: Optional[dict[str, Any]] = None,
+    ichimoku_sig: Optional[dict[str, Any]] = None,
+    zscore_vals: Optional[list[Optional[float]]] = None,
+    rs_data: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
     """
     Advanced weighted composite of all indicators.
 
@@ -1199,12 +1201,12 @@ def composite_score(
         verdict = "Strong Sell"
 
     all_scores: list[float] = [rsi_s, macd_s, sma_s, boll_s, stoch_s, obv_s]
-    all_scores += [float(e["score"]) for e in edge_signals]  # type: ignore[arg-type]
+    all_scores += [float(cast(float, e["score"])) for e in edge_signals]
     bullish = sum(1 for s in all_scores if s > 0)
     total_sigs = len(all_scores) or 1
     confidence = round(bullish / total_sigs * 100)
 
-    signals = []
+    signals: list[dict[str, object]] = []
     for score_val, detail, name in [
         (rsi_s, rsi_d, "RSI"),
         (macd_s, macd_d, "MACD"),

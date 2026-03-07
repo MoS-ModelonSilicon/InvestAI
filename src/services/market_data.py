@@ -3,7 +3,7 @@ import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from src.services import data_provider as dp
 
@@ -445,10 +445,10 @@ def _evict_expired():
             del _cache[k]
 
 
-def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
+def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict[str, Any]]:
     cached = _get_cached(f"info:{symbol}")
     if isinstance(cached, dict):
-        return cached
+        return cast(dict[str, Any], cached)
 
     try:
         # data_provider already tries Yahoo first, Finnhub fallback
@@ -494,7 +494,7 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
 
         result = {
             "symbol": symbol,  # Always use the requested symbol, not Finnhub's ticker
-                               # which may include exchange suffixes (e.g. RY.TO, TTE.PA)
+            # which may include exchange suffixes (e.g. RY.TO, TTE.PA)
             "name": profile.get("name", symbol),
             "sector": profile.get("finnhubIndustry", "N/A"),
             "industry": profile.get("finnhubIndustry", "N/A"),

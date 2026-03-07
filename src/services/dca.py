@@ -283,7 +283,7 @@ def suggest_monthly_budget(db: Session, user_id: int) -> dict:
     current_dca_total = sum(p.monthly_budget for p in plans)
 
     # Defaults if no risk profile
-    monthly_investment = 500
+    monthly_investment: float = 500
     risk_label = "moderate"
     timeline = "5-10 years"
     goal = "growth"

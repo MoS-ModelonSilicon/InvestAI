@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+from typing import Any, cast
 
 from sqlalchemy.orm import Session
 
@@ -23,8 +24,8 @@ def calculate_portfolio(db: Session, user_id: int) -> dict:
         }
 
     enriched = []
-    total_invested = 0
-    total_value = 0
+    total_invested: float = 0
+    total_value: float = 0
     sector_map: dict[str, float] = {}
     best = None
     worst = None
@@ -101,7 +102,7 @@ def get_portfolio_performance(db: Session, user_id: int) -> dict:
     cache_key = "portfolio_perf"
     cached = _get_cached(cache_key)
     if isinstance(cached, dict):
-        return cached
+        return cast(dict[str, Any], cached)
 
     earliest = min(h.buy_date for h in holdings)
     start_ts = int(datetime.combine(earliest, datetime.min.time()).timestamp())
@@ -123,8 +124,8 @@ def get_portfolio_performance(db: Session, user_id: int) -> dict:
 
     portfolio_values = []
     for i, date_str in enumerate(dates):
-        total = 0
-        invested = 0
+        total: float = 0
+        invested: float = 0
         for h in holdings:
             candles = symbol_candles.get(h.symbol)
             if not candles or not candles.get("c"):

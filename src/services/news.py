@@ -1,4 +1,5 @@
 import logging
+from typing import Any, cast
 
 from src.services import data_provider as dp
 from src.services.market_data import _get_cached, _set_cache
@@ -6,12 +7,12 @@ from src.services.market_data import _get_cached, _set_cache
 logger = logging.getLogger(__name__)
 
 
-def get_ticker_news(symbol: str) -> list[dict]:
+def get_ticker_news(symbol: str) -> list[dict[str, Any]]:
     cache_key = f"news:{symbol}"
     cached = _get_cached(cache_key)
     if cached is not None:
         if isinstance(cached, list):
-            return cached
+            return cast(list[dict[str, Any]], cached)
         return []
 
     try:
@@ -43,7 +44,7 @@ def get_ticker_news(symbol: str) -> list[dict]:
         return []
 
 
-def get_market_news(symbols: list[str] | None = None) -> list[dict]:
+def get_market_news(symbols: list[str] | None = None) -> list[dict[str, Any]]:
     if not symbols:
         symbols = ["SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA"]
 

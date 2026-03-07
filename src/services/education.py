@@ -208,7 +208,7 @@ EDUCATION_CONTENT = [
 ]
 
 
-def get_all_content() -> list[dict]:
+def get_all_content() -> list[dict[str, object]]:
     return EDUCATION_CONTENT
 
 
