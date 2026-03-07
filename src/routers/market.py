@@ -1,6 +1,12 @@
+import logging
+import threading
+
 from fastapi import APIRouter
 
 from src.services.market_data import fetch_live_quotes, fetch_sparklines, get_cache_status
+from src.services.persistence import load_home_snapshot, save_home_snapshot
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
@@ -29,7 +35,14 @@ def get_featured_stocks():
 
 @router.get("/home")
 def get_home_data():
-    """Combined endpoint: ticker + featured in one round trip."""
+    """Combined endpoint: ticker + featured in one round trip.
+
+    Offline-first strategy: if the in-memory cache is cold (server just
+    restarted and external APIs are slow), return the last DB-persisted
+    snapshot immediately so the user never sees a long spinner.
+    Fresh data replaces the snapshot once it arrives via the background
+    scheduler (every 2 min).
+    """
     all_syms = list(dict.fromkeys(TICKER_SYMBOLS + FEATURED_SYMBOLS))
     quotes = fetch_live_quotes(all_syms)
     quote_map = {q["symbol"]: q for q in quotes}
@@ -42,7 +55,24 @@ def get_home_data():
             entry = {**quote_map[s], "sparkline": sparks.get(s, [])}
             featured.append(entry)
 
-    return {"ticker": ticker, "featured": featured}
+    result = {"ticker": ticker, "featured": featured}
+
+    # If we got real data, persist it for next cold start
+    if ticker:
+        threading.Thread(
+            target=save_home_snapshot, args=(result,),
+            daemon=True, name="save-home-snap"
+        ).start()
+        return result
+
+    # Cache is cold — serve last known DB snapshot instead of empty response
+    logger.info("Market cache cold — serving DB snapshot")
+    snapshot = load_home_snapshot()
+    if snapshot and snapshot.get("ticker"):
+        snapshot["_stale"] = True  # signal to frontend that data is cached
+        return snapshot
+
+    return result  # truly empty — nothing in DB either
 
 
 @router.get("/cache-status")

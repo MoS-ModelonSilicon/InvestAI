@@ -137,6 +137,20 @@ PERSIST_PREFIXES = (
 )
 
 
+def load_home_snapshot() -> Optional[dict]:
+    """Load the last persisted /api/market/home response from the DB.
+
+    Returns the full {ticker, featured} dict, or None.
+    Used as an instant fallback when the in-memory cache is cold.
+    """
+    return load_scan("market_home_snapshot")
+
+
+def save_home_snapshot(data: dict) -> bool:
+    """Persist the /api/market/home response to the DB for instant cold-start."""
+    return save_scan("market_home_snapshot", data)
+
+
 def save_market_cache_snapshot(cache: dict) -> bool:
     """Persist important entries from market_data._cache to the DB.
 
@@ -169,6 +183,12 @@ def restore_market_cache() -> dict[str, tuple[float, dict]]:
 
     Returns a dict in the same format as market_data._cache:
     {key: (timestamp, data)}
+
+    Quote/sparkline entries get their timestamps bumped to *now* so they
+    are treated as fresh cache hits immediately after a server restart.
+    Without this, restored entries whose original ts is > 5 min old would
+    be skipped by fetch_live_quotes() and the user would still wait for
+    external API calls.
     """
     try:
         snapshot = load_scan("market_cache_snapshot")
@@ -177,12 +197,19 @@ def restore_market_cache() -> dict[str, tuple[float, dict]]:
 
         restored = {}
         now = time.time()
+        # Prefixes whose entries should be stamped "now" so they survive
+        # the short QUOTE_CACHE_TTL / CACHE_TTL checks on first access.
+        REFRESH_PREFIXES = ("quote:", "live_quotes:", "sparklines:")
         for k, entry in snapshot.items():
             ts = entry.get("ts", 0)
             data = entry.get("data")
             # Only restore entries less than 2 hours old
             if data and now - ts < 7200:
-                restored[k] = (ts, data)
+                # Bump timestamp for volatile entries so they're usable
+                if any(k.startswith(p) for p in REFRESH_PREFIXES):
+                    restored[k] = (now, data)
+                else:
+                    restored[k] = (ts, data)
 
         logger.info("Restored %d market cache entries from DB", len(restored))
         return restored
