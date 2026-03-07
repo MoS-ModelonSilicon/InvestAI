@@ -3054,3 +3054,128 @@ class TestPerfOptimizations:
         # Dashboard stats should be visible
         income = page.locator("#stat-income")
         assert income.is_visible(), "Dashboard income stat should be visible after init"
+
+
+# ════════════════════════════════════════════════════════════
+#  Smart Advisor — Cache Key Fix E2E (fcdf3be)
+#  Verifies that "Run Analysis" returns pre-computed results
+#  instantly instead of recomputing from scratch.
+# ════════════════════════════════════════════════════════════
+
+class TestSmartAdvisorCacheHit:
+    """E2E tests verifying the advisor cache key fix.
+
+    After fcdf3be, run_full_analysis() normalises amount to int so the
+    scheduler-written cache (int key) is found by the API endpoint
+    (which receives float from FastAPI query parsing).
+    """
+
+    @staticmethod
+    def _session(base_url, email, password, name="Test"):
+        import requests as _req
+        import time as _time
+        s = _req.Session()
+        proxies = {"http": "http://proxy-dmz.intel.com:911",
+                   "https": "http://proxy-dmz.intel.com:912"}
+        px = proxies if "127.0.0.1" not in base_url and "localhost" not in base_url else None
+        if px:
+            s.proxies.update(px)
+        ts = str(int(_time.time()))[-6:]
+        unique_email = email.replace("@", f"{ts}@")
+        s.post(f"{base_url}/auth/register",
+               json={"email": unique_email, "password": password, "name": name}, timeout=60)
+        resp = s.post(f"{base_url}/auth/login",
+                      json={"email": unique_email, "password": password}, timeout=60)
+        assert resp.status_code == 200, f"Login failed: {resp.text}"
+        return s
+
+    @pytest.mark.external
+    def test_advisor_analyze_returns_under_5s(self, live_url: str, _live_server):
+        """If the scheduler has pre-computed results, /api/advisor/analyze
+        should return in under 5 seconds (cache hit, not a full rescan)."""
+        import time as _time
+        s = self._session(live_url, "cache_hit@e2e.local", "Pass1234", "Cache Hit")
+
+        # First call may trigger computation if cache is cold — allow it
+        try:
+            s.get(f"{live_url}/api/advisor/analyze?amount=10000&risk=balanced&period=1y",
+                  timeout=(5, 120))
+        except Exception:
+            pass  # OK if first call is slow or times out
+
+        # Second call MUST be a cache hit — should be very fast
+        start = _time.time()
+        resp = s.get(
+            f"{live_url}/api/advisor/analyze?amount=10000&risk=balanced&period=1y",
+            timeout=(5, 30),
+        )
+        elapsed = _time.time() - start
+
+        if resp.status_code == 503:
+            pytest.skip("Advisor data not ready yet (503)")
+
+        assert resp.status_code == 200, (
+            f"Advisor returned {resp.status_code}: {resp.text[:200]}"
+        )
+        assert elapsed < 5.0, (
+            f"Second advisor call took {elapsed:.1f}s — expected <5s (cache hit). "
+            "Cache key normalization may be broken (int vs float mismatch)."
+        )
+
+    @pytest.mark.external
+    def test_advisor_analyze_has_rankings(self, live_url: str, _live_server):
+        """Advisor response should contain rankings with score and symbol."""
+        s = self._session(live_url, "cache_rank@e2e.local", "Pass1234", "Cache Rank")
+        try:
+            resp = s.get(
+                f"{live_url}/api/advisor/analyze?amount=10000&risk=balanced&period=1y",
+                timeout=(5, 120),
+            )
+        except Exception:
+            pytest.skip("Advisor timed out — data provider may be slow")
+
+        if resp.status_code == 503:
+            pytest.skip("Advisor data not ready yet (503)")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        rankings = data.get("rankings", [])
+        if not rankings:
+            pytest.skip("No rankings yet — scan not complete")
+
+        first = rankings[0]
+        assert "symbol" in first, "Ranking entry missing 'symbol'"
+        assert "score" in first, "Ranking entry missing 'score'"
+        assert isinstance(first["score"], (int, float)), "Score should be numeric"
+
+    @pytest.mark.external
+    def test_advisor_float_and_int_amount_same_result(self, live_url: str, _live_server):
+        """Calling with amount=10000 and amount=10000.0 should return the
+        same cached result (not trigger two separate computations)."""
+        s = self._session(live_url, "cache_eq@e2e.local", "Pass1234", "Cache Eq")
+
+        try:
+            r1 = s.get(
+                f"{live_url}/api/advisor/analyze?amount=10000&risk=balanced&period=1y",
+                timeout=(5, 120),
+            )
+            r2 = s.get(
+                f"{live_url}/api/advisor/analyze?amount=10000.0&risk=balanced&period=1y",
+                timeout=(5, 30),
+            )
+        except Exception:
+            pytest.skip("Advisor timed out")
+
+        if r1.status_code == 503 or r2.status_code == 503:
+            pytest.skip("Advisor data not ready (503)")
+
+        if r1.status_code == 200 and r2.status_code == 200:
+            d1 = r1.json()
+            d2 = r2.json()
+            # Rankings should be identical (same cache entry)
+            syms1 = [r["symbol"] for r in d1.get("rankings", [])]
+            syms2 = [r["symbol"] for r in d2.get("rankings", [])]
+            assert syms1 == syms2, (
+                "amount=10000 and amount=10000.0 returned different rankings — "
+                "cache key normalization may be broken"
+            )

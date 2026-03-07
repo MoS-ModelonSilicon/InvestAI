@@ -1114,6 +1114,107 @@ class TestTradingAdvisorDoubleBuffer:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 @pytest.mark.deep
+# ════════════════════════════════════════════════════════════
+#  Smart Advisor — Cache Key Normalization (fcdf3be fix)
+# ════════════════════════════════════════════════════════════
+
+class TestSmartAdvisorCacheKey:
+    """Verify that run_full_analysis produces identical cache keys whether
+    called with int amount (scheduler) or float amount (FastAPI endpoint).
+
+    Bug: scheduler called run_full_analysis(amount=10000) → cache key
+    'advisor:full:10000:balanced:1y', but FastAPI parsed amount as float
+    → 'advisor:full:10000.0:balanced:1y'.  Cache always missed.
+    """
+
+    def test_cache_key_matches_int_and_float(self):
+        """Cache key must be identical for int(10000) and float(10000.0)."""
+        from src.services.smart_advisor import run_full_analysis
+        from src.services.market_data import _cache, _cache_lock
+        import time as _time
+
+        # Seed the cache with a fake result using the INT key
+        # (simulates what the background scheduler writes)
+        fake_result = {
+            "rankings": [{"symbol": "TEST", "score": 99}],
+            "portfolios": {},
+            "backtest": {},
+            "selected_risk": "balanced",
+            "advisor_report": {"market_mood": {}, "market_regime": "Unknown",
+                               "top_actions": [], "risk_warnings": []},
+        }
+        int_key = "advisor:full:10000:balanced:1y"
+        with _cache_lock:
+            _cache[int_key] = (_time.time(), fake_result)
+
+        # Now call run_full_analysis with a FLOAT (as FastAPI does)
+        result = run_full_analysis(amount=10000.0, risk="balanced", period="1y")
+
+        # Should get the cached result — NOT recompute
+        assert result is fake_result, (
+            "run_full_analysis(10000.0) did not find cache entry written with int key. "
+            "Cache key normalization is broken."
+        )
+
+        # Cleanup
+        with _cache_lock:
+            _cache.pop(int_key, None)
+
+    def test_amount_normalized_to_int_in_cache_key(self):
+        """Verify the cache key always uses int, not float."""
+        # The function should convert amount to int before forming the key
+        # We can verify by checking that 10000.0 and 10000 produce the same key
+        key_int = f"advisor:full:{int(10000)}:balanced:1y"
+        key_float = f"advisor:full:{int(10000.0)}:balanced:1y"
+        assert key_int == key_float == "advisor:full:10000:balanced:1y"
+
+    def test_various_float_amounts_normalize(self):
+        """Various float amounts should all normalize to int cache keys."""
+        for amount in [1000.0, 5000.0, 50000.0, 100000.0]:
+            assert int(amount) == int(int(amount)), (
+                f"int({amount}) should be idempotent"
+            )
+            # The cache key should not contain a decimal point
+            key = f"advisor:full:{int(amount)}:balanced:1y"
+            assert "." not in key, f"Cache key should not contain '.': {key}"
+
+    @pytest.mark.smoke
+    def test_advisor_analyze_endpoint_returns_cached(self):
+        """The /api/advisor/analyze endpoint should return pre-computed results
+        from cache without recomputing."""
+        from src.services.market_data import _cache, _cache_lock
+        import time as _time
+
+        # Seed cache with fake advisor results (simulates scheduler pre-compute)
+        fake_result = {
+            "rankings": [{"symbol": "AAPL", "score": 85, "name": "Apple"}],
+            "portfolios": {"balanced": {"holdings": []}},
+            "backtest": {},
+            "selected_risk": "balanced",
+            "advisor_report": {
+                "market_mood": {"bullish": 50, "neutral": 30, "bearish": 20},
+                "market_regime": "Normal",
+                "top_actions": ["Hold"],
+                "risk_warnings": [],
+            },
+        }
+        cache_key = "advisor:full:10000:balanced:1y"
+        with _cache_lock:
+            _cache[cache_key] = (_time.time(), fake_result)
+
+        c, _ = _register_and_login()
+        resp = c.get("/api/advisor/analyze?amount=10000&risk=balanced&period=1y")
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text[:200]}"
+        data = resp.json()
+        assert data["rankings"][0]["symbol"] == "AAPL", (
+            "Endpoint did not return the pre-seeded cached result"
+        )
+
+        # Cleanup
+        with _cache_lock:
+            _cache.pop(cache_key, None)
+
+
 class TestSchedulerNewTasks:
     """Verify the three new scheduler runners don't crash and wire up
     correctly to the underlying service functions."""

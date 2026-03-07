@@ -112,7 +112,7 @@ Logout → delete cookie
 ## Deployment Architecture
 
 ```
-GitHub (main branch)
+GitHub (master branch)
        │ push
        ▼
 Render (auto-deploy)

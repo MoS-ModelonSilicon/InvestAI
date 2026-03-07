@@ -76,6 +76,48 @@ $env:INVESTAI_ACCESS_KEY="yourkey"
 python -m uvicorn src.main:app --reload --host 0.0.0.0
 ```
 
+## Git Workflow
+
+### Branch
+
+Single branch: `master`. Render auto-deploys on every push to `master`.
+
+### Commit Convention
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) via CLI:
+
+```bash
+git add -A
+git commit -m "type: concise description"
+git push origin master
+```
+
+**Prefixes used in this repo:**
+
+| Prefix | When to use | Example |
+|--------|------------|----------|
+| `feat:` | New feature or capability | `feat: server-side background scheduler for all periodic scans` |
+| `fix:` | Bug fix | `fix: cache key mismatch — advisor 'Run Analysis' now returns instant results` |
+| `perf:` | Performance improvement | `perf: move heavy client-side work to server-side` |
+| `test:` | Adding or updating tests | `test: add smoke + E2E tests for perf optimizations` |
+| `docs:` | Documentation only | `docs: update AGENTS.md for improved clarity` |
+| `ci:` | CI/CD pipeline changes | `ci: add ruff lint, mypy type-check, and pre-commit config` |
+| `security:` | Security fixes | `security: implement critical fixes from automated audit` |
+
+### Deploy Cycle
+
+```bash
+# 1. Run smoke tests
+TESTING=1 python -m pytest tests/test_api_smoke.py -v --tb=short
+
+# 2. Commit
+git add -A
+git commit -m "fix: describe what changed"
+
+# 3. Push → Render auto-deploys
+git push origin master
+```
+
 ## Key Context Files
 
 - `.claude/skills/` — Reusable workflows (debugging, code review, new features)

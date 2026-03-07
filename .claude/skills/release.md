@@ -10,8 +10,8 @@
 
 ## Deploy to Render
 
-1. Push to `main` branch on GitHub
-2. Render auto-deploys from `main`
+1. Push to `master` branch on GitHub
+2. Render auto-deploys from `master`
 3. Watch build logs in Render dashboard
 4. First request after deploy triggers:
    - Database auto-migration (new tables/columns)

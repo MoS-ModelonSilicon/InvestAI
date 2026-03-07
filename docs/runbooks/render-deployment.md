@@ -2,7 +2,7 @@
 
 ## Normal Deploy
 
-1. Push to `main` on GitHub
+1. Push to `master` on GitHub
 2. Render auto-deploys (build → install deps → start server)
 3. First request triggers startup sequence (migrations, cache restore, warmer)
 
