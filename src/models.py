@@ -30,14 +30,14 @@ class User(Base):
     created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
     # relationships
-    transactions: Mapped[list["Transaction"]] = relationship(back_populates="owner")
-    categories: Mapped[list["Category"]] = relationship(back_populates="owner")
-    budgets: Mapped[list["Budget"]] = relationship(back_populates="owner")
-    risk_profiles: Mapped[list["RiskProfile"]] = relationship(back_populates="owner")
-    watchlist_items: Mapped[list["Watchlist"]] = relationship(back_populates="owner")
-    holdings: Mapped[list["Holding"]] = relationship(back_populates="owner")
-    alerts: Mapped[list["Alert"]] = relationship(back_populates="owner")
-    dca_plans: Mapped[list["DcaPlan"]] = relationship(back_populates="owner")
+    transactions: Mapped[list[Transaction]] = relationship(back_populates="owner")
+    categories: Mapped[list[Category]] = relationship(back_populates="owner")
+    budgets: Mapped[list[Budget]] = relationship(back_populates="owner")
+    risk_profiles: Mapped[list[RiskProfile]] = relationship(back_populates="owner")
+    watchlist_items: Mapped[list[Watchlist]] = relationship(back_populates="owner")
+    holdings: Mapped[list[Holding]] = relationship(back_populates="owner")
+    alerts: Mapped[list[Alert]] = relationship(back_populates="owner")
+    dca_plans: Mapped[list[DcaPlan]] = relationship(back_populates="owner")
 
 
 # ── Finance Tracker Models ───────────────────────────────────
@@ -54,9 +54,9 @@ class Category(Base):
 
     __table_args__ = (UniqueConstraint("user_id", "name", name="uq_category_user_name"),)
 
-    owner: Mapped[Optional["User"]] = relationship(back_populates="categories")
-    transactions: Mapped[list["Transaction"]] = relationship(back_populates="category")
-    budgets: Mapped[list["Budget"]] = relationship(back_populates="category")
+    owner: Mapped[Optional[User]] = relationship(back_populates="categories")
+    transactions: Mapped[list[Transaction]] = relationship(back_populates="category")
+    budgets: Mapped[list[Budget]] = relationship(back_populates="category")
 
 
 class Transaction(Base):
@@ -70,8 +70,8 @@ class Transaction(Base):
     date: Mapped[date] = mapped_column(index=True)
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
 
-    owner: Mapped["User"] = relationship(back_populates="transactions")
-    category: Mapped["Category"] = relationship(back_populates="transactions")
+    owner: Mapped[User] = relationship(back_populates="transactions")
+    category: Mapped[Category] = relationship(back_populates="transactions")
 
 
 class Budget(Base):
@@ -84,8 +84,8 @@ class Budget(Base):
 
     __table_args__ = (UniqueConstraint("user_id", "category_id", name="uq_budget_user_cat"),)
 
-    owner: Mapped["User"] = relationship(back_populates="budgets")
-    category: Mapped["Category"] = relationship(back_populates="budgets")
+    owner: Mapped[User] = relationship(back_populates="budgets")
+    category: Mapped[Category] = relationship(back_populates="budgets")
 
 
 # ── Investment Models ────────────────────────────────────────
@@ -108,7 +108,7 @@ class RiskProfile(Base):
     profile_label: Mapped[str]
     created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
-    owner: Mapped["User"] = relationship(back_populates="risk_profiles")
+    owner: Mapped[User] = relationship(back_populates="risk_profiles")
 
 
 class Watchlist(Base):
@@ -122,7 +122,7 @@ class Watchlist(Base):
 
     __table_args__ = (UniqueConstraint("user_id", "symbol", name="uq_watchlist_user_symbol"),)
 
-    owner: Mapped["User"] = relationship(back_populates="watchlist_items")
+    owner: Mapped[User] = relationship(back_populates="watchlist_items")
 
 
 class Holding(Base):
@@ -138,7 +138,7 @@ class Holding(Base):
     notes: Mapped[str] = mapped_column(default="")
     created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
-    owner: Mapped["User"] = relationship(back_populates="holdings")
+    owner: Mapped[User] = relationship(back_populates="holdings")
 
 
 class Alert(Base):
@@ -155,7 +155,7 @@ class Alert(Base):
     triggered_at: Mapped[Optional[datetime]] = mapped_column(default=None)
     created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
-    owner: Mapped["User"] = relationship(back_populates="alerts")
+    owner: Mapped[User] = relationship(back_populates="alerts")
 
 
 class DcaPlan(Base):
@@ -175,7 +175,7 @@ class DcaPlan(Base):
 
     __table_args__ = (UniqueConstraint("user_id", "symbol", name="uq_dca_user_symbol"),)
 
-    owner: Mapped["User"] = relationship(back_populates="dca_plans")
+    owner: Mapped[User] = relationship(back_populates="dca_plans")
 
 
 class PasswordReset(Base):
