@@ -840,6 +840,28 @@ def run_full_analysis(
 
     # No cache hit — heavy computation required
     if not compute_if_missing:
+        # Last resort: try loading from DB (survives cache TTL expiry and
+        # covers the gap between startup and first scheduler completion).
+        try:
+            from src.services.persistence import load_scan
+
+            db_key = f"smart_advisor_full:{int(amount)}:{risk}:{period}"
+            db_data = load_scan(db_key)
+            if db_data and isinstance(db_data, dict) and db_data.get("rankings"):
+                _set_cache(cache_key, db_data)
+                logger.info("run_full_analysis: restored %s from DB (on-demand fallback)", cache_key)
+                return db_data
+            # Also try scaling from the default-amount DB entry
+            if amount != DEFAULT_AMOUNT:
+                db_base_key = f"smart_advisor_full:{DEFAULT_AMOUNT}:{risk}:{period}"
+                db_base = load_scan(db_base_key)
+                if db_base and isinstance(db_base, dict) and db_base.get("rankings"):
+                    scaled = _scale_result_for_amount(db_base, DEFAULT_AMOUNT, amount)
+                    _set_cache(cache_key, scaled)
+                    logger.info("run_full_analysis: restored+scaled %s from DB", cache_key)
+                    return scaled
+        except Exception:
+            logger.exception("run_full_analysis: DB fallback failed for %s", cache_key)
         logger.info("run_full_analysis: cache miss for %s (compute_if_missing=False) — returning None", cache_key)
         return None
 

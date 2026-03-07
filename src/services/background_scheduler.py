@@ -158,8 +158,10 @@ def _run_smart_advisor_scan() -> bool:
                             period,
                         )
                 except Exception:
-                    failed += 1                    import traceback
-                    _advisor_diag[f"{risk}/{period}"] = f"EXCEPTION: {traceback.format_exc()[-200:]}"                    logger.exception(
+                    failed += 1
+                    import traceback
+                    _advisor_diag[f"{risk}/{period}"] = f"EXCEPTION: {traceback.format_exc()[-200:]}"
+                    logger.exception(
                         "Scheduler: full analysis %s/%s FAILED — continuing with next combo",
                         risk,
                         period,
@@ -209,7 +211,12 @@ def _scheduler_loop():
         logger.info("Background scheduler: timed out waiting for cache warm, starting anyway")
 
     # ── Initial staggered runs ──────────────────────────────
-    # Lightest → heaviest, with small gaps to avoid API rate-limit spikes
+    # Smart advisor FIRST — it's the most user-visible feature and the
+    # DB-restored data has a limited TTL.  Run it before lighter scans
+    # that may exhaust API rate limits or block for a long time.
+    _run_smart_advisor_scan()  # smart advisor (heaviest but most important)
+    if _stop_event.wait(timeout=10):
+        return
     _run_market_data_refresh()  # ~10 quote + 6 sparkline calls
     if _stop_event.wait(timeout=10):
         return
@@ -220,9 +227,6 @@ def _scheduler_loop():
     if _stop_event.wait(timeout=60):
         return
     _run_trading_scan()  # trading advisor
-    if _stop_event.wait(timeout=60):
-        return
-    _run_smart_advisor_scan()  # smart advisor (heaviest)
 
     last_value = time.time()
     last_trading = time.time()

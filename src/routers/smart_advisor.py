@@ -10,9 +10,11 @@ router = APIRouter(prefix="/api/advisor", tags=["smart-advisor"])
 @router.get("/debug")
 def advisor_debug():
     """Show which advisor combos are cached (for diagnosing scheduler issues)."""
+    from src.services.background_scheduler import _advisor_diag
+
     PERIODS = ["1y", "6m", "3m", "1m"]
     RISKS = ["balanced", "conservative", "aggressive"]
-    status: dict = {"scans": {}, "combos": {}}
+    status: dict = {"scans": {}, "combos": {}, "scheduler_diag": dict(_advisor_diag)}
     for p in PERIODS:
         val = _get_cached(f"advisor:scan:{p}")
         status["scans"][p] = len(val) if isinstance(val, list) else None

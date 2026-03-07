@@ -304,7 +304,11 @@ def restore_all_caches():
         PERIODS = ["1y", "6m", "3m", "1m"]
         RISKS = ["balanced", "conservative", "aggressive"]
         DEFAULT_AMOUNT = 10000
-        now = time.time()
+        # Use a timestamp 15 minutes in the future so restored advisor data
+        # survives the full CACHE_TTL (20 min) without expiring before the
+        # scheduler has a chance to refresh it.  This gives effectively
+        # 35 min of validity instead of 20.
+        restore_ts = time.time() + 900  # now + 15 min
 
         # Restore scan results for all 4 periods
         scans_restored = 0
@@ -312,7 +316,7 @@ def restore_all_caches():
             scan_data = load_scan(f"smart_advisor_scan:{period}")
             if scan_data and isinstance(scan_data, list) and len(scan_data) > 0:
                 with _cache_lock:
-                    _cache[f"advisor:scan:{period}"] = (now, scan_data)
+                    _cache[f"advisor:scan:{period}"] = (restore_ts, scan_data)
                 scans_restored += 1
         if scans_restored:
             logger.info("Restored %d smart advisor scan period keys", scans_restored)
@@ -323,7 +327,7 @@ def restore_all_caches():
             if scan_1y and isinstance(scan_1y, list):
                 with _cache_lock:
                     for period in PERIODS:
-                        _cache[f"advisor:scan:{period}"] = (now, scan_1y)
+                        _cache[f"advisor:scan:{period}"] = (restore_ts, scan_1y)
                 logger.info("Replicated 1y scan to all period keys")
 
         # Restore full analysis for ALL 12 risk x period combos
@@ -335,7 +339,7 @@ def restore_all_caches():
                 full_data = load_scan(db_key)
                 if full_data and isinstance(full_data, dict) and full_data.get("rankings"):
                     with _cache_lock:
-                        _cache[cache_key] = (now, full_data)
+                        _cache[cache_key] = (restore_ts, full_data)
                     analyses_restored += 1
         if analyses_restored:
             logger.info("Restored %d smart advisor full analysis combos", analyses_restored)
