@@ -205,10 +205,10 @@
                             <tbody id="bundle-stocks-body">${rows}</tbody>
                         </table>
                     </div>
-                    <div class="form-actions" style="margin-top:16px;">
-                        <button type="button" class="btn btn-ghost" onclick="document.getElementById('bundle-modal-overlay').classList.remove('open')">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="executeBundleBuy()">Add Selected to Portfolio</button>
-                    </div>
+                </div>
+                <div class="bundle-footer">
+                    <button type="button" class="btn btn-ghost" onclick="document.getElementById('bundle-modal-overlay').classList.remove('open')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="executeBundleBuy()">Add Selected to Portfolio</button>
                 </div>
             </div>`;
 
