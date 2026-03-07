@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 _stop_event = threading.Event()
 
+# Diagnostic: record last scheduler run details for each advisor combo
+_advisor_diag: dict[str, str] = {}
+
 # ── Intervals (seconds) ──────────────────────────────────────
 VALUE_SCANNER_INTERVAL = 300  # 5 min
 TRADING_ADVISOR_INTERVAL = 1800  # 30 min
@@ -141,18 +144,22 @@ def _run_smart_advisor_scan() -> bool:
                         period=period,
                         precomputed_rankings=rankings,
                     )
+                    combo_key = f"{risk}/{period}"
                     if result and result.get("rankings"):
                         computed += 1
+                        has_bt = bool(result.get("backtest", {}).get("dates"))
+                        _advisor_diag[combo_key] = f"OK rankings={len(result['rankings'])} bt={has_bt}"
                     else:
                         failed += 1
+                        _advisor_diag[combo_key] = f"EMPTY result={bool(result)} keys={list(result.keys()) if result else 'None'}"
                         logger.warning(
                             "Scheduler: full analysis %s/%s returned empty result",
                             risk,
                             period,
                         )
                 except Exception:
-                    failed += 1
-                    logger.exception(
+                    failed += 1                    import traceback
+                    _advisor_diag[f"{risk}/{period}"] = f"EXCEPTION: {traceback.format_exc()[-200:]}"                    logger.exception(
                         "Scheduler: full analysis %s/%s FAILED — continuing with next combo",
                         risk,
                         period,

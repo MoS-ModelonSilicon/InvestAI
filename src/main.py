@@ -191,6 +191,8 @@ def health_check():
     """Public health endpoint — returns git commit for deploy verification."""
     from src.services.market_data import _warm_done, _cache
 
+    from src.services.background_scheduler import _advisor_diag
+
     # Show which of the 12 advisor combos are cached
     advisor_combos = {}
     for risk in ["balanced", "conservative", "aggressive"]:
@@ -204,6 +206,7 @@ def health_check():
         "cache_ready": _warm_done.is_set(),
         "cache_entries": len(_cache),
         "advisor_combos": advisor_combos,
+        "advisor_diag": dict(_advisor_diag) if _advisor_diag else "not_run_yet",
     }
 
 
