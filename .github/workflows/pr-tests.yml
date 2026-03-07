@@ -1,47 +1,34 @@
 # ──────────────────────────────────────────────────────────────
-# InvestAI PR / Commit Gate Tests
+# InvestAI Commit Gate — Smoke Tests + Lint + Deploy
 #
-# A FAST (~1-2 min) subset that runs on every push and PR.
-# Uses FastAPI TestClient (no browser, no external API needed).
-# Prevents broken code from merging to main.
+# Runs on every push to master (if src/static/tests changed).
+# Smoke tests are REQUIRED — if they fail, deploy is skipped.
+# Flow: push → smoke tests → if pass → Render deploy hook
 # ──────────────────────────────────────────────────────────────
-name: PR Tests
+name: CI Gate
 
 on:
   push:
     branches: [master]
-    paths:
-      - 'src/**'
-      - 'static/**'
-      - 'tests/**'
-      - 'requirements.txt'
-      - 'pyproject.toml'
-      - '.github/workflows/pr-tests.yml'
   pull_request:
     branches: [master]
-    paths:
-      - 'src/**'
-      - 'static/**'
-      - 'tests/**'
-      - 'requirements.txt'
-      - 'pyproject.toml'
-      - '.github/workflows/pr-tests.yml'
   workflow_dispatch:             # manual trigger
 
 permissions:
   contents: read
   checks: write
+  deployments: write
 
 env:
   PYTHON_VERSION: '3.12'
 
 jobs:
-  # ── Fast API smoke tests (no browser, no external API) ─────
+  # ── Fast API smoke tests (REQUIRED — blocks deploy) ────────
   smoke-tests:
     name: "Smoke Tests (API)"
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    continue-on-error: true          # advisory — rate-limit bug in slowapi/TestClient
+    # NO continue-on-error — this is a blocking gate
 
     steps:
       - uses: actions/checkout@v4
@@ -131,3 +118,31 @@ jobs:
 
       - name: Run mypy
         run: mypy src/ --config-file=pyproject.toml
+
+  # ── Deploy to Render (only if smoke tests pass) ─────────────
+  deploy:
+    name: "Deploy to Render"
+    needs: [smoke-tests, lint]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger Render deploy
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK }}" ]; then
+            echo "⚠️ RENDER_DEPLOY_HOOK secret not set — skipping deploy trigger."
+            echo "Render auto-deploys on push. Set RENDER_DEPLOY_HOOK to gate deploys on CI."
+            echo ""
+            echo "To enable gated deploys:"
+            echo "1. In Render dashboard → Settings → disable 'Auto-Deploy'"
+            echo "2. Copy the Deploy Hook URL from Render → Settings"
+            echo "3. Add it as GitHub secret: RENDER_DEPLOY_HOOK"
+            exit 0
+          fi
+          echo "🚀 Smoke tests passed! Triggering Render deploy..."
+          curl -s -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}" \
+            -H "Content-Type: application/json" \
+            -o /dev/null -w "HTTP %{http_code}"
+          echo ""
+          echo "✅ Deploy triggered. Check https://dashboard.render.com for status."

@@ -117,19 +117,36 @@ This only needs to be set once per machine, but may be cleared by IT policy or r
 ### Deploy Cycle
 
 ```bash
-# 1. Run smoke tests
-TESTING=1 python -m pytest tests/test_api_smoke.py -v --tb=short
-
-# 2. Commit
+# 1. Commit
 git add -A
 git commit -m "fix: describe what changed"
 
-# 3. Ensure proxy is set (Intel network)
+# 2. Ensure proxy is set (Intel network)
 git config --global http.proxy http://proxy-dmz.intel.com:911
 
-# 4. Push → Render auto-deploys
+# 3. Push → GitHub CI runs smoke tests automatically
 git push origin master
+
+# 4. Check CI status at:
+#    https://github.com/MoS-ModelonSilicon/InvestAI/actions
+#    ✅ Smoke tests pass → Render deploy is triggered
+#    ❌ Smoke tests fail → Deploy is skipped, check logs and fix
 ```
+
+### CI Pipeline (`.github/workflows/pr-tests.yml`)
+
+| Job | Blocking? | Purpose |
+|-----|-----------|---------|
+| `smoke-tests` | **YES** | API smoke tests with TestClient — must pass |
+| `lint` | **YES** | Ruff lint + import verification |
+| `type-check` | No | Mypy advisory only |
+| `deploy` | — | Triggers Render deploy hook (only runs if smoke-tests + lint pass) |
+
+**To fully gate deploys on CI (recommended):**
+1. In Render dashboard → Settings → disable "Auto-Deploy"
+2. Copy the Deploy Hook URL from Render → Settings
+3. Add it as GitHub secret: `RENDER_DEPLOY_HOOK`
+4. Now deploys ONLY happen when smoke tests pass
 
 ## Key Context Files
 
