@@ -10,7 +10,9 @@ def get_ticker_news(symbol: str) -> list[dict]:
     cache_key = f"news:{symbol}"
     cached = _get_cached(cache_key)
     if cached is not None:
-        return cached
+        if isinstance(cached, list):
+            return cached
+        return []
 
     try:
         raw = dp.get_company_news(symbol, days_back=7)
@@ -39,7 +41,7 @@ def get_ticker_news(symbol: str) -> list[dict]:
         return []
 
 
-def get_market_news(symbols: list[str] = None) -> list[dict]:
+def get_market_news(symbols: list[str] | None = None) -> list[dict]:
     if not symbols:
         symbols = ["SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA"]
 

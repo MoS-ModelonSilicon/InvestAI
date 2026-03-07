@@ -333,7 +333,7 @@ def get_company_dna(symbol: str) -> Optional[dict]:
     """
     cache_key = f"company_dna:{symbol}"
     cached = _get_cached(cache_key)
-    if cached:
+    if isinstance(cached, dict):
         return cached
 
     info = fetch_stock_info(symbol)

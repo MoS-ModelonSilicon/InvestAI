@@ -60,6 +60,8 @@ def load_scan(key: str) -> Optional[dict | list]:
         row = db.query(ScanResult).filter(ScanResult.key == key).first()
         if row:
             data = json.loads(row.data)
+            if not isinstance(data, (dict, list)):
+                return None
             logger.debug("Loaded scan result: %s (saved %s)", key, row.updated_at)
             return data
         return None
@@ -277,7 +279,7 @@ def restore_all_caches():
     try:
         restored = restore_market_cache()
         if restored:
-            from src.services.market_data import _cache, _cache_lock  # type: ignore[assignment]
+            from src.services.market_data import _cache, _cache_lock
             with _cache_lock:
                 _cache.update(restored)
             logger.info("Restored %d market data cache entries", len(restored))
@@ -286,7 +288,7 @@ def restore_all_caches():
 
     # 5. Restore ALL smart advisor scan + full analysis combos into market_data._cache
     try:
-        from src.services.market_data import _cache, _cache_lock  # type: ignore[assignment]
+        from src.services.market_data import _cache, _cache_lock
         PERIODS = ["1y", "6m", "3m", "1m"]
         RISKS = ["balanced", "conservative", "aggressive"]
         DEFAULT_AMOUNT = 10000

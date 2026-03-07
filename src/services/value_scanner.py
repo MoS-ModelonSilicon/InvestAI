@@ -213,14 +213,14 @@ def _compute_margin_of_safety(d: dict) -> Optional[float]:
         return None
 
     mos = round((intrinsic - price) / intrinsic * 100, 1)
-    return mos
+    return float(mos)
 
 
 def _compute_fcf_yield(d: dict) -> Optional[float]:
     fcf = d.get("free_cash_flow")
     mcap = d.get("market_cap", 0)
     if fcf is not None and mcap > 0:
-        return round((fcf / mcap) * 100, 2)
+        return float(round((fcf / mcap) * 100, 2))
     return None
 
 

@@ -24,12 +24,12 @@ import bcrypt as _bcrypt
 
 
 def hash_password(password: str) -> str:
-    return _bcrypt.hashpw(password.encode("utf-8"), _bcrypt.gensalt()).decode("utf-8")
+    return str(_bcrypt.hashpw(password.encode("utf-8"), _bcrypt.gensalt()).decode("utf-8"))
 
 
 def verify_password(plain: str, hashed: str) -> bool:
     try:
-        return _bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+        return bool(_bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8")))
     except Exception:
         return False
 
@@ -38,12 +38,13 @@ def verify_password(plain: str, hashed: str) -> bool:
 def create_access_token(user_id: int, email: str) -> str:
     expire = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
     payload = {"sub": str(user_id), "email": email, "exp": expire}
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return str(jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM))
 
 
 def decode_token(token: str) -> dict | None:
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        result = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return dict(result) if result else None
     except JWTError:
         return None
 

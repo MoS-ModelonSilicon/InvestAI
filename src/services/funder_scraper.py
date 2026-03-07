@@ -8,7 +8,7 @@ import threading
 import time
 from typing import Optional
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,8 @@ def _extract_json_var(html: str, var_name: str) -> Optional[dict]:
             end = i + 1
             break
     try:
-        return json.loads(html[start:end])
+        result = json.loads(html[start:end])
+        return result if isinstance(result, dict) else None
     except json.JSONDecodeError:
         return None
 
@@ -105,7 +106,8 @@ def _load_static_fallback() -> list[dict]:
     """Load pre-scraped fund data shipped with the app."""
     try:
         with open(_STATIC_FILE, encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            return data if isinstance(data, list) else []
     except Exception:
         return []
 

@@ -186,7 +186,7 @@ def _evict_expired():
 
 def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
     cached = _get_cached(f"info:{symbol}")
-    if cached:
+    if isinstance(cached, dict):
         return cached
 
     try:
@@ -196,7 +196,7 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
             return None
 
         profile = dp.get_profile(symbol) or {}
-        metrics: dict = dp.get_metrics(symbol) if full else {}
+        metrics: dict = dp.get_metrics(symbol) if full else None  # type: ignore[assignment]
         if metrics is None:
             metrics = {}
 
@@ -358,7 +358,7 @@ def fetch_live_quotes(symbols: list[str]) -> list[dict]:
         if cache_key in _cache:
             ts, data = _cache[cache_key]
             if time.time() - ts < QUOTE_CACHE_TTL:
-                return data
+                return data  # type: ignore[no-any-return]
 
     results = []
     _names = _batch_resolve_names(symbols)
@@ -445,7 +445,8 @@ _sparkline_lock = threading.Lock()  # prevent concurrent duplicate fetches
 def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h") -> dict[str, list[float]]:
     # Use daily resolution as primary — hourly is unreliable on both Yahoo and Finnhub free tier
     cache_key = f"sparklines:{','.join(symbols)}:daily"
-    cached = _get_cached(cache_key)
+    cached_raw = _get_cached(cache_key)
+    cached: dict[str, list[float]] | None = cached_raw if isinstance(cached_raw, dict) else None
     if cached:
         # Serve cache if it has data for all symbols OR if it's reasonably full
         filled = sum(1 for v in cached.values() if v)
@@ -465,7 +466,8 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
 
     try:
         # Re-check cache — another thread may have just populated it
-        cached = _get_cached(cache_key)
+        cached_raw2 = _get_cached(cache_key)
+        cached = cached_raw2 if isinstance(cached_raw2, dict) else None
         if cached:
             filled = sum(1 for v in cached.values() if v)
             if filled == len(symbols):

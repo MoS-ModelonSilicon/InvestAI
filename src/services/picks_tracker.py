@@ -43,7 +43,8 @@ def load_picks() -> list[dict]:
     if not os.path.exists(path):
         return []
     with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+        return data if isinstance(data, list) else []
 
 
 def _parse_date(d: str) -> datetime:
@@ -149,7 +150,8 @@ def evaluate_all_picks(pick_type: Optional[str] = None) -> dict:
     cache_key = f"picks_all_{pick_type or 'all'}"
     cached = _get_cached(cache_key)
     if cached:
-        return cached
+        if isinstance(cached, dict):
+            return cached
 
     picks = load_picks()
     if pick_type:

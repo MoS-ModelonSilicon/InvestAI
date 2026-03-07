@@ -205,9 +205,10 @@ def get_profiles() -> list[dict]:
     """Return summary info for all three profiles."""
     out = []
     for p in PROFILES.values():
+        sleeves_raw: list[dict] = p["sleeves"]  # type: ignore[assignment]
         sleeves_summary = [
             {"label": s["label"], "pct": s["pct"], "symbols": s["symbols"]}
-            for s in p["sleeves"]
+            for s in sleeves_raw
         ]
         out.append({
             "id": p["id"],
@@ -235,7 +236,7 @@ def simulate(profile_id: str, amount: float = 10000,
     """
     cache_key = f"autopilot:{profile_id}:{amount}:{period}"
     cached = _get_cached(cache_key)
-    if cached:
+    if isinstance(cached, dict):
         return cached
 
     profile = PROFILES.get(profile_id)
@@ -261,7 +262,7 @@ def simulate(profile_id: str, amount: float = 10000,
     holdings = []
     all_symbol_prices = {}  # symbol -> aligned price list
 
-    for sleeve in profile["sleeves"]:
+    for sleeve in profile["sleeves"]:  # type: ignore[attr-defined]
         if not sleeve["symbols"]:
             continue
         sleeve_capital = amount * (sleeve["pct"] / 100.0)

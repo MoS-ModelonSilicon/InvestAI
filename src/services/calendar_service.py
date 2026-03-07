@@ -9,7 +9,9 @@ def get_earnings_calendar(symbols: list[str]) -> list[dict]:
     cache_key = f"earnings_cal:{','.join(sorted(symbols[:30]))}"
     cached = _get_cached(cache_key)
     if cached is not None:
-        return cached
+        if isinstance(cached, list):
+            return cached
+        return []
 
     from_date = datetime.now().strftime("%Y-%m-%d")
     to_date = (datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")

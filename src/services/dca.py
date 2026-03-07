@@ -36,7 +36,7 @@ def _avg_cost_for_symbol(holdings: list[Holding], symbol: str) -> float | None:
 
 
 def _total_qty_for_symbol(holdings: list[Holding], symbol: str) -> float:
-    return sum(h.quantity for h in holdings if h.symbol.upper() == symbol.upper())
+    return float(sum(h.quantity for h in holdings if h.symbol.upper() == symbol.upper()))
 
 
 def _urgency_label(drop_pct: float) -> str:
@@ -307,7 +307,7 @@ def suggest_monthly_budget(db: Session, user_id: int) -> dict:
 
     # Suggest allocation strategy based on risk profile
     suggestions = []
-    allocation_rules = []
+    allocation_rules: list[str] = []
 
     if "aggressive" in risk_label.lower():
         stock_pct = 80

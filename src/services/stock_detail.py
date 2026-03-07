@@ -18,7 +18,7 @@ def get_price_history(symbol: str, period: str = "1y", interval: str = "1d") -> 
     """Return OHLCV history for charting."""
     cache_key = f"history:{symbol}:{period}:{interval}"
     cached = _get_cached(cache_key)
-    if cached:
+    if isinstance(cached, dict):
         return cached
 
     period_map = {"1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825}

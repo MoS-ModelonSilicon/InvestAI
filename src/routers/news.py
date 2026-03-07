@@ -17,7 +17,7 @@ def market_news(db: Session = Depends(get_db), user: User = Depends(get_current_
         [w.symbol for w in watchlist] + [h.symbol for h in holdings]
     ))
     if not symbols:
-        symbols = None
+        return get_market_news(None)
     return get_market_news(symbols)
 
 

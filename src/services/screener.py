@@ -203,7 +203,7 @@ def _build_risk_analysis(d: dict) -> dict:
         else:
             factors.append({"name": "Price Position", "score": 3, "max": 10, "label": "Near Low", "detail": f"{pfh:+.1f}% from 52-week high, {pfl:+.1f}% from low. Could be a buying opportunity or a warning."})
 
-    overall = round(sum(f["score"] for f in factors) / len(factors), 1) if factors else 5
+    overall = round(sum(float(f["score"]) for f in factors) / len(factors), 1) if factors else 5  # type: ignore[arg-type, misc]
     if overall <= 3:
         overall_label = "Low Risk"
     elif overall <= 5:

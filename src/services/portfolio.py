@@ -25,7 +25,7 @@ def calculate_portfolio(db: Session, user_id: int) -> dict:
     enriched = []
     total_invested = 0
     total_value = 0
-    sector_map = {}
+    sector_map: dict[str, float] = {}
     best = None
     worst = None
 
@@ -98,7 +98,7 @@ def get_portfolio_performance(db: Session, user_id: int) -> dict:
 
     cache_key = "portfolio_perf"
     cached = _get_cached(cache_key)
-    if cached:
+    if isinstance(cached, dict):
         return cached
 
     earliest = min(h.buy_date for h in holdings)

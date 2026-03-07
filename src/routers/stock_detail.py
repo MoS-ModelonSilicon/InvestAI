@@ -12,7 +12,7 @@ _pool = ThreadPoolExecutor(max_workers=3)
 
 def _compute_sma(closes: list, window: int = 50) -> list:
     """Compute Simple Moving Average server-side."""
-    sma = []
+    sma: list[float | None] = []
     for i in range(len(closes)):
         if i < window - 1:
             sma.append(None)

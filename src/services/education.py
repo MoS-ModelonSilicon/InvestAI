@@ -213,10 +213,11 @@ def get_all_content() -> list[dict]:
 
 
 def get_categories() -> list[str]:
-    cats = []
-    seen = set()
+    cats: list[str] = []
+    seen: set[str] = set()
     for item in EDUCATION_CONTENT:
-        if item["category"] not in seen:
-            seen.add(item["category"])
-            cats.append(item["category"])
+        cat = str(item["category"])
+        if cat not in seen:
+            seen.add(cat)
+            cats.append(cat)
     return cats

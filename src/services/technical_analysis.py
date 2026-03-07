@@ -16,6 +16,7 @@ Advanced indicators inspired by quantitative trading research:
 - Relative strength vs benchmark -- O'Neil CANSLIM / sector rotation
 """
 
+from collections.abc import Sequence
 from typing import Optional
 
 
@@ -25,7 +26,7 @@ from typing import Optional
 
 def sma(values: list[float], period: int) -> list[Optional[float]]:
     """Simple Moving Average."""
-    result = []
+    result: list[Optional[float]] = []
     for i in range(len(values)):
         if i < period - 1:
             result.append(None)
@@ -45,6 +46,9 @@ def ema(values: list[float], period: int) -> list[Optional[float]]:
     result.append(round(seed, 4))
     for i in range(period, len(values)):
         prev = result[-1]
+        if prev is None:
+            result.append(None)
+            continue
         val = values[i] * k + prev * (1 - k)
         result.append(round(val, 4))
     return result
@@ -99,7 +103,7 @@ def macd(closes: list[float], fast: int = 12, slow: int = 26,
     ema_fast = ema(closes, fast)
     ema_slow = ema(closes, slow)
 
-    line = []
+    line: list[Optional[float]] = []
     for f, s in zip(ema_fast, ema_slow):
         if f is None or s is None:
             line.append(None)
@@ -121,7 +125,7 @@ def macd(closes: list[float], fast: int = 12, slow: int = 26,
             else:
                 signal_full.append(None)
 
-    histogram = []
+    histogram: list[Optional[float]] = []
     for l_val, s_val in zip(line, signal_full):
         if l_val is None or s_val is None:
             histogram.append(None)
@@ -139,7 +143,9 @@ def bollinger_bands(closes: list[float], period: int = 20,
                     num_std: float = 2.0) -> dict[str, list[Optional[float]]]:
     """Returns {upper, middle, lower, pct_b} lists."""
     middle = sma(closes, period)
-    upper, lower, pct_b = [], [], []
+    upper: list[Optional[float]] = []
+    lower: list[Optional[float]] = []
+    pct_b: list[Optional[float]] = []
 
     for i in range(len(closes)):
         if middle[i] is None:
@@ -148,7 +154,7 @@ def bollinger_bands(closes: list[float], period: int = 20,
             pct_b.append(None)
         else:
             window = closes[i - period + 1: i + 1]
-            mean = middle[i]
+            mean: float = middle[i]  # type: ignore[assignment]
             variance = sum((x - mean) ** 2 for x in window) / period
             std = variance ** 0.5
             u = round(mean + num_std * std, 4)
@@ -228,6 +234,9 @@ def atr(highs: list[float], lows: list[float], closes: list[float],
         result.append(round(first_atr, 4))
         for i in range(period, len(tr_vals)):
             prev = result[-1]
+            if prev is None:
+                result.append(None)
+                continue
             val = (prev * (period - 1) + tr_vals[i]) / period
             result.append(round(val, 4))
 
@@ -328,10 +337,10 @@ def adx(highs: list[float], lows: list[float], closes: list[float],
 # Bearish divergence: price makes higher high but oscillator makes lower high
 # ---------------------------------------------------------------------------
 
-def _find_swing_points(data: list[Optional[float]], window: int = 5
-                       ) -> list[tuple[int, float]]:
+def _find_swing_points(data: "Sequence[Optional[float]]", window: int = 5
+                       ) -> list[tuple[int, float, str]]:
     """Find local minima and maxima in a series."""
-    points = []
+    points: list[tuple[int, float, str]] = []
     vals = [(i, v) for i, v in enumerate(data) if v is not None]
     if len(vals) < window * 2 + 1:
         return points
@@ -430,7 +439,7 @@ def accumulation_distribution(highs: list[float], lows: list[float],
     for i in range(len(closes)):
         hl = highs[i] - lows[i]
         if hl == 0:
-            mfm = 0
+            mfm: float = 0
         else:
             mfm = ((closes[i] - lows[i]) - (highs[i] - closes[i])) / hl
         mfv = mfm * volumes[i]
@@ -726,7 +735,7 @@ def relative_strength(closes: list[float], benchmark_closes: list[float]
     Compute relative strength metrics vs a benchmark.
     Both lists must be aligned by date and same length.
     """
-    result = {
+    result: dict[str, float | bool | str | None] = {
         "rs_ratio": None, "rs_1m": None, "rs_3m": None,
         "outperforming": False, "detail": "",
     }
@@ -735,21 +744,24 @@ def relative_strength(closes: list[float], benchmark_closes: list[float]
     if n < 22:
         return result
 
-    def _pct(data, periods):
+    def _pct(data: list[float], periods: int) -> float:
         if len(data) < periods + 1:
             return 0
         return (data[-1] - data[-periods]) / data[-periods] * 100
 
     stock_1m = _pct(closes, 22)
     bench_1m = _pct(benchmark_closes, 22)
-    result["rs_1m"] = round(stock_1m - bench_1m, 2)
+    rs_1m = round(stock_1m - bench_1m, 2)
+    result["rs_1m"] = rs_1m
 
+    rs_3m: float | None = None
     if n >= 66:
         stock_3m = _pct(closes, 66)
         bench_3m = _pct(benchmark_closes, 66)
-        result["rs_3m"] = round(stock_3m - bench_3m, 2)
+        rs_3m = round(stock_3m - bench_3m, 2)
+        result["rs_3m"] = rs_3m
 
-    rs_line = []
+    rs_line: list[float | None] = []
     for i in range(n):
         if benchmark_closes[i] != 0:
             rs_line.append(closes[i] / benchmark_closes[i])
@@ -762,13 +774,13 @@ def relative_strength(closes: list[float], benchmark_closes: list[float]
             result["rs_ratio"] = round(recent_rs[-1] / recent_rs[0], 4)
             result["outperforming"] = recent_rs[-1] > recent_rs[0]
 
-    parts = []
-    if result["rs_1m"] is not None:
-        direction = "outperforming" if result["rs_1m"] > 0 else "underperforming"
-        parts.append(f"1M: {direction} benchmark by {abs(result['rs_1m']):.1f}%")
-    if result["rs_3m"] is not None:
-        direction = "outperforming" if result["rs_3m"] > 0 else "underperforming"
-        parts.append(f"3M: {direction} by {abs(result['rs_3m']):.1f}%")
+    parts: list[str] = []
+    if rs_1m is not None:
+        direction = "outperforming" if rs_1m > 0 else "underperforming"
+        parts.append(f"1M: {direction} benchmark by {abs(rs_1m):.1f}%")
+    if rs_3m is not None:
+        direction = "outperforming" if rs_3m > 0 else "underperforming"
+        parts.append(f"3M: {direction} by {abs(rs_3m):.1f}%")
     result["detail"] = "; ".join(parts) if parts else "RS data unavailable"
 
     return result
@@ -804,7 +816,7 @@ def _score_macd(macd_data: dict) -> tuple[float, str]:
     cur_s = _last_valid(sig)
     cur_h = _last_valid(hist)
 
-    if cur_l is None or cur_s is None:
+    if cur_l is None or cur_s is None or cur_h is None:
         return 0, "MACD data unavailable"
 
     prev_h = _second_last_valid(hist)
@@ -957,7 +969,7 @@ def composite_score(
 
     # --- Advanced signal modifiers ---
     advanced_score = 0.0
-    edge_signals = []
+    edge_signals: list[dict[str, object]] = []
 
     # ADX: boost confidence when market is trending, penalize in chop
     adx_multiplier = 1.0
@@ -1109,8 +1121,8 @@ def composite_score(
     else:
         verdict = "Strong Sell"
 
-    all_scores = [rsi_s, macd_s, sma_s, boll_s, stoch_s, obv_s]
-    all_scores += [e["score"] for e in edge_signals]
+    all_scores: list[float] = [rsi_s, macd_s, sma_s, boll_s, stoch_s, obv_s]
+    all_scores += [float(e["score"]) for e in edge_signals]  # type: ignore[arg-type]
     bullish = sum(1 for s in all_scores if s > 0)
     total_sigs = len(all_scores) or 1
     confidence = round(bullish / total_sigs * 100)
@@ -1124,8 +1136,8 @@ def composite_score(
         direction = "bullish" if score_val > 0 else "bearish" if score_val < 0 else "neutral"
         signals.append({"name": name, "score": score_val, "detail": detail, "direction": direction})
 
-    has_divergence = any("Divergence" in e["name"] for e in edge_signals)
-    has_accumulation = any("Accumulation" in e["name"] for e in edge_signals)
+    has_divergence = any("Divergence" in str(e["name"]) for e in edge_signals)
+    has_accumulation = any("Accumulation" in str(e["name"]) for e in edge_signals)
 
     return {
         "score": normalized,
@@ -1143,18 +1155,18 @@ def composite_score(
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _last_valid(vals: list) -> Optional[float]:
+def _last_valid(vals: list[Optional[float]]) -> Optional[float]:
     for v in reversed(vals):
         if v is not None:
-            return v
+            return float(v)
     return None
 
 
-def _second_last_valid(vals: list) -> Optional[float]:
+def _second_last_valid(vals: list[Optional[float]]) -> Optional[float]:
     found = 0
     for v in reversed(vals):
         if v is not None:
             found += 1
             if found == 2:
-                return v
+                return float(v)
     return None

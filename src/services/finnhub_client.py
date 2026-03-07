@@ -4,9 +4,10 @@ import logging
 import os
 import threading
 import time
+from typing import Any
 from datetime import datetime, timedelta
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def _rate_limit():
             time.sleep(sleep_time)
 
 
-def _get(endpoint: str, params: dict | None = None) -> dict | list | None:
+def _get(endpoint: str, params: dict[str, Any] | None = None) -> dict[str, Any] | None:
     if not API_KEY:
         return None
     p = params or {}
@@ -58,14 +59,41 @@ def _get(endpoint: str, params: dict | None = None) -> dict | list | None:
                 time.sleep(wait)
                 continue
             resp.raise_for_status()
-            return resp.json()
+            result = resp.json()
+            if isinstance(result, dict):
+                return result
+            return None
         except Exception as e:
             logger.warning("Finnhub %s error: %s", endpoint, e)
             return None
     return None
 
 
-def get_quote(symbol: str) -> dict | None:
+def _get_list(endpoint: str, params: dict[str, Any] | None = None) -> list[Any]:
+    """Like _get but for endpoints that return a JSON array."""
+    if not API_KEY:
+        return []
+    p = params or {}
+    p["token"] = API_KEY
+    for attempt in range(2):
+        _rate_limit()
+        try:
+            resp = requests.get(f"{BASE_URL}{endpoint}", params=p, timeout=15, proxies=PROXIES)
+            if resp.status_code in (403, 429):
+                if resp.status_code == 429:
+                    time.sleep(10 * (attempt + 1))
+                    continue
+                return []
+            resp.raise_for_status()
+            result = resp.json()
+            return result if isinstance(result, list) else []
+        except Exception as e:
+            logger.warning("Finnhub %s error: %s", endpoint, e)
+            return []
+    return []
+
+
+def get_quote(symbol: str) -> dict[str, Any] | None:
     """Real-time quote: c=current, d=change, dp=change%, h=high, l=low, o=open, pc=prevClose."""
     data = _get("/quote", {"symbol": symbol})
     if data and data.get("c", 0) > 0:
@@ -73,7 +101,7 @@ def get_quote(symbol: str) -> dict | None:
     return None
 
 
-def get_profile(symbol: str) -> dict | None:
+def get_profile(symbol: str) -> dict[str, Any] | None:
     """Company profile: name, finnhubIndustry, marketCapitalization (in millions), logo, etc."""
     data = _get("/stock/profile2", {"symbol": symbol})
     if data and data.get("name"):
@@ -81,15 +109,16 @@ def get_profile(symbol: str) -> dict | None:
     return None
 
 
-def get_metrics(symbol: str) -> dict | None:
+def get_metrics(symbol: str) -> dict[str, Any] | None:
     """Basic financials: PE, beta, 52wk high/low, dividend yield, margins, etc."""
     data = _get("/stock/metric", {"symbol": symbol, "metric": "all"})
     if data and data.get("metric"):
-        return data["metric"]
+        metric_val = data["metric"]
+        return metric_val if isinstance(metric_val, dict) else None
     return None
 
 
-def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> dict | None:
+def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> dict[str, Any] | None:
     """OHLCV candles. resolution: 1, 5, 15, 30, 60, D, W, M."""
     data = _get("/stock/candle", {
         "symbol": symbol,
@@ -102,37 +131,39 @@ def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> dict 
     return None
 
 
-def get_company_news(symbol: str, days_back: int = 7) -> list[dict]:
+def get_company_news(symbol: str, days_back: int = 7) -> list[dict[str, Any]]:
     to_date = datetime.now().strftime("%Y-%m-%d")
     from_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
-    data = _get("/company-news", {"symbol": symbol, "from": from_date, "to": to_date})
-    return data if isinstance(data, list) else []
+    return _get_list("/company-news", {"symbol": symbol, "from": from_date, "to": to_date})
 
 
-def get_earnings_calendar(from_date: str, to_date: str) -> list[dict]:
+def get_earnings_calendar(from_date: str, to_date: str) -> list[dict[str, Any]]:
     data = _get("/calendar/earnings", {"from": from_date, "to": to_date})
     if data and "earningsCalendar" in data:
-        return data["earningsCalendar"]
+        val = data["earningsCalendar"]
+        return val if isinstance(val, list) else []
     return []
 
 
-def get_executives(symbol: str) -> list[dict]:
+def get_executives(symbol: str) -> list[dict[str, Any]]:
     """Company executives: name, title, compensation, age, since."""
     data = _get("/stock/executive", {"symbol": symbol})
     if data and "executive" in data:
-        return data["executive"]
+        val = data["executive"]
+        return val if isinstance(val, list) else []
     return []
 
 
-def get_insider_transactions(symbol: str) -> list[dict]:
+def get_insider_transactions(symbol: str) -> list[dict[str, Any]]:
     """Insider buy/sell transactions with name, share count, transaction type."""
     data = _get("/stock/insider-transactions", {"symbol": symbol})
     if data and "data" in data:
-        return data["data"]
+        val = data["data"]
+        return val if isinstance(val, list) else []
     return []
 
 
-def get_insider_sentiment(symbol: str) -> dict | None:
+def get_insider_sentiment(symbol: str) -> dict[str, Any] | None:
     """Monthly insider sentiment (MSPR: Monthly Share Purchase Ratio)."""
     data = _get("/stock/insider-sentiment", {"symbol": symbol})
     if data and "data" in data:
@@ -140,19 +171,17 @@ def get_insider_sentiment(symbol: str) -> dict | None:
     return None
 
 
-def get_recommendation_trends(symbol: str) -> list[dict]:
+def get_recommendation_trends(symbol: str) -> list[dict[str, Any]]:
     """Analyst recommendation trends: strongBuy, buy, hold, sell, strongSell."""
-    data = _get("/stock/recommendation", {"symbol": symbol})
-    return data if isinstance(data, list) else []
+    return _get_list("/stock/recommendation", {"symbol": symbol})
 
 
 def get_peers(symbol: str) -> list[str]:
     """List of peer/comparable company tickers."""
-    data = _get("/stock/peers", {"symbol": symbol})
-    return data if isinstance(data, list) else []
+    return _get_list("/stock/peers", {"symbol": symbol})
 
 
-def get_price_target(symbol: str) -> dict | None:
+def get_price_target(symbol: str) -> dict[str, Any] | None:
     """Analyst price target consensus: high, low, mean, median."""
     data = _get("/stock/price-target", {"symbol": symbol})
     if data and data.get("targetMean"):

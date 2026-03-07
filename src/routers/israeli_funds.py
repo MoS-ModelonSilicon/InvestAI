@@ -53,7 +53,7 @@ def fund_meta():
 @router.get("/debug")
 def debug_scrape():
     """Diagnostic: test funder.co.il connectivity from this server."""
-    import requests
+    import requests  # type: ignore[import-untyped]
     import time
     results = {}
     for key, url in [("kaspit", "https://www.funder.co.il/kaspit"), ("mehakot", "https://www.funder.co.il/mehakot")]:

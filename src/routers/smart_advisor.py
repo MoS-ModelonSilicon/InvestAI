@@ -16,7 +16,7 @@ def advisor_analyze(amount: float = 10000, risk: str = "balanced",
         period = "1y"
     amount = max(100, min(amount, 10_000_000))
 
-    result = run_full_analysis(amount, risk, period)
+    result = run_full_analysis(amount, risk, period, compute_if_missing=False)
     if not result or not result.get("rankings"):
         raise HTTPException(503, "Advisor analysis unavailable -- market data may still be loading. Try again in a minute.")
     return result

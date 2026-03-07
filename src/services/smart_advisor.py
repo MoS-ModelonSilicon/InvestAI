@@ -318,7 +318,7 @@ def scan_and_score(period: str = "1y") -> list[dict]:
     """Scan all stocks, compute TA + fundamental scores, return ranked list."""
     cache_key = f"advisor:scan:{period}"
     cached = _get_cached(cache_key)
-    if cached:
+    if isinstance(cached, list):
         return cached
 
     # Try cached data first; if cache isn't warm enough, fetch a smaller set
@@ -473,7 +473,7 @@ def build_portfolios(rankings: list[dict], amount: float = 10000) -> dict:
         if not pool:
             return {"name": name, "risk": risk, "holdings": [], "allocation": []}
 
-        seen_sectors = {}
+        seen_sectors: dict[str, int] = {}
         selected = []
         for r in pool:
             sec = r["sector"]
@@ -612,7 +612,7 @@ def backtest_portfolio(holdings: list[dict], period: str = "1y") -> dict:
     bench_return_pct = round((bench_final - total_invested) / total_invested * 100, 2)
 
     peak = portfolio_values[0] if portfolio_values else total_invested
-    max_dd = 0
+    max_dd: float = 0
     for v in portfolio_values:
         if v > peak:
             peak = v
@@ -704,11 +704,11 @@ def generate_report(rankings: list[dict], portfolios: dict) -> dict:
         )
 
     risk_warnings = []
-    sectors = {}
+    sectors: dict[str, int] = {}
     for r in rankings[:20]:
         sec = r["sector"]
         sectors[sec] = sectors.get(sec, 0) + 1
-    dominant = max(sectors, key=sectors.get) if sectors else None
+    dominant = max(sectors, key=lambda k: sectors[k]) if sectors else None
     if dominant and sectors[dominant] >= 6:
         risk_warnings.append(
             f"{dominant} sector is heavily represented in top picks ({sectors[dominant]}/20) "
@@ -778,14 +778,22 @@ def _scale_result_for_amount(base_result: dict, base_amount: int,
 
 
 def run_full_analysis(amount: float = 10000, risk: str = "balanced",
-                      period: str = "1y") -> dict:
-    """Run the complete advisor pipeline. Cached for 20 min."""
+                      period: str = "1y", *,
+                      compute_if_missing: bool = True) -> dict | None:
+    """Run the complete advisor pipeline. Cached for 20 min.
+
+    Args:
+        compute_if_missing: If False, return None when cache is empty instead
+            of running the expensive scan.  The API router passes False so
+            requests finish instantly; the background scheduler passes True
+            (default) and does the heavy lifting.
+    """
     # Normalize amount to int so cache keys match whether called with
     # int (scheduler) or float (FastAPI query param).
     amount = int(amount)
     cache_key = f"advisor:full:{amount}:{risk}:{period}"
     cached = _get_cached(cache_key)
-    if cached:
+    if isinstance(cached, dict):
         return cached
 
     # If the user requested a non-default amount, try to scale from
@@ -797,6 +805,11 @@ def run_full_analysis(amount: float = 10000, risk: str = "balanced",
             scaled = _scale_result_for_amount(base_cached, DEFAULT_AMOUNT, amount)
             _set_cache(cache_key, scaled)
             return scaled
+
+    # No cache hit — heavy computation required
+    if not compute_if_missing:
+        logger.info("run_full_analysis: cache miss for %s (compute_if_missing=False) — returning None", cache_key)
+        return None
 
     rankings = scan_and_score(period)
     portfolios = build_portfolios(rankings, amount)
