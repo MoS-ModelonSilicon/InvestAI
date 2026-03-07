@@ -91,6 +91,10 @@ def _run_smart_advisor_scan() -> bool:
     scan ONCE and replicate the result across all 4 period cache keys.
     Then we build full analyses for every risk × period combo.
 
+    If the fresh scan fails (e.g. Finnhub rate-limited), falls back to the
+    last known good rankings from the database, ensuring all 12 combos stay
+    warm even when live data is temporarily unavailable.
+
     Combinations: 3 risk profiles × 4 periods = 12 full analyses.
     """
     PERIODS = ["1y", "6m", "3m", "1m"]
@@ -99,23 +103,47 @@ def _run_smart_advisor_scan() -> bool:
 
     try:
         from src.services.smart_advisor import scan_and_score, run_full_analysis
-        from src.services.market_data import _set_cache
-        from src.services.persistence import save_scan
+        from src.services.market_data import _set_cache, _get_cached
+        from src.services.persistence import save_scan, load_scan
 
-        # Phase 1: Scan ONCE (heavy — 40-80 candle fetches)
-        # scan_and_score uses CANDLE_LOOKBACK_DAYS constant, not the period
-        # param, so results are identical.  We scan "1y" then copy to all keys.
+        # Phase 1: Try fresh scan; fall back to cached/persisted rankings
         logger.info("Scheduler: smart advisor scan (one scan for all periods)")
-        rankings = scan_and_score("1y")
+        rankings = None
+        source = "fresh"
+        try:
+            rankings = scan_and_score("1y")
+        except Exception:
+            logger.exception("Scheduler: scan_and_score raised an exception")
+
+        if not rankings or len(rankings) < 5:
+            # Fresh scan failed — try in-memory cache
+            cached = _get_cached("advisor:scan:1y")
+            if isinstance(cached, list) and len(cached) >= 5:
+                rankings = cached
+                source = "memory_cache"
+                logger.info("Scheduler: fresh scan returned %d stocks, using memory cache (%d)", 0, len(rankings))
+
+        if not rankings or len(rankings) < 5:
+            # Memory cache empty too — try DB persistence
+            for period in PERIODS:
+                db_data = load_scan(f"smart_advisor_scan:{period}")
+                if db_data and isinstance(db_data, list) and len(db_data) >= 5:
+                    rankings = db_data
+                    source = f"db:{period}"
+                    logger.info("Scheduler: using DB-persisted scan results from %s (%d stocks)", period, len(rankings))
+                    break
+
         count = len(rankings) if rankings else 0
-        logger.info("Scheduler: smart advisor scan done (%d stocks)", count)
+        logger.info("Scheduler: smart advisor scan done (%d stocks, source=%s)", count, source)
+        _advisor_diag["scan"] = f"{count} stocks from {source}"
 
         if not rankings:
-            logger.warning("Scheduler: scan returned no rankings — skipping warm-up")
+            logger.warning("Scheduler: no rankings from any source — skipping warm-up")
+            _advisor_diag["scan"] = "FAILED: no rankings from any source"
             return False
 
-        # Replicate scan results to other period cache keys
-        for period in PERIODS[1:]:  # skip "1y" — already cached by scan_and_score
+        # Replicate scan results to all period cache keys
+        for period in PERIODS:
             cache_key = f"advisor:scan:{period}"
             _set_cache(cache_key, rankings)
             try:
@@ -124,43 +152,54 @@ def _run_smart_advisor_scan() -> bool:
                 pass  # non-critical
         logger.info("Scheduler: replicated scan to %d period keys", len(PERIODS))
 
-        # Phase 2: Pre-compute full analysis for every risk × period combo
-        # Pass pre-fetched rankings directly so we never depend on a
-        # possibly-evicted scan-cache entry.
+        # Phase 2: Pre-compute full analysis for every risk × period combo.
+        # For already-cached combos, refresh their TTL so they don't expire.
+        # For missing combos, compute fresh using pre-fetched rankings.
         computed = 0
+        refreshed = 0
         failed = 0
         for period in PERIODS:
             for risk in RISKS:
+                combo_key = f"{risk}/{period}"
+                cache_key = f"advisor:full:{DEFAULT_AMOUNT}:{risk}:{period}"
                 try:
-                    logger.info(
-                        "Scheduler: pre-computing full analysis %s/%s/%s",
-                        DEFAULT_AMOUNT,
-                        risk,
-                        period,
-                    )
-                    result = run_full_analysis(
-                        amount=DEFAULT_AMOUNT,
-                        risk=risk,
-                        period=period,
-                        precomputed_rankings=rankings,
-                    )
-                    combo_key = f"{risk}/{period}"
-                    if result and result.get("rankings"):
-                        computed += 1
-                        has_bt = bool(result.get("backtest", {}).get("dates"))
-                        _advisor_diag[combo_key] = f"OK rankings={len(result['rankings'])} bt={has_bt}"
+                    # Check if already cached — if so, just refresh TTL
+                    existing = _get_cached(cache_key)
+                    if isinstance(existing, dict) and existing.get("rankings"):
+                        _set_cache(cache_key, existing)  # refresh TTL
+                        refreshed += 1
+                        _advisor_diag[combo_key] = f"REFRESHED rankings={len(existing['rankings'])}"
+                        logger.debug("Scheduler: refreshed TTL for %s", cache_key)
                     else:
-                        failed += 1
-                        _advisor_diag[combo_key] = f"EMPTY result={bool(result)} keys={list(result.keys()) if result else 'None'}"
-                        logger.warning(
-                            "Scheduler: full analysis %s/%s returned empty result",
+                        # Not cached — compute fresh
+                        logger.info(
+                            "Scheduler: computing fresh analysis %s/%s/%s",
+                            DEFAULT_AMOUNT,
                             risk,
                             period,
                         )
+                        result = run_full_analysis(
+                            amount=DEFAULT_AMOUNT,
+                            risk=risk,
+                            period=period,
+                            precomputed_rankings=rankings,
+                        )
+                        if result and result.get("rankings"):
+                            computed += 1
+                            has_bt = bool(result.get("backtest", {}).get("dates"))
+                            _advisor_diag[combo_key] = f"COMPUTED rankings={len(result['rankings'])} bt={has_bt}"
+                        else:
+                            failed += 1
+                            _advisor_diag[combo_key] = f"EMPTY result={bool(result)}"
+                            logger.warning(
+                                "Scheduler: full analysis %s/%s returned empty result",
+                                risk,
+                                period,
+                            )
                 except Exception:
                     failed += 1
                     import traceback
-                    _advisor_diag[f"{risk}/{period}"] = f"EXCEPTION: {traceback.format_exc()[-200:]}"
+                    _advisor_diag[combo_key] = f"EXCEPTION: {traceback.format_exc()[-200:]}"
                     logger.exception(
                         "Scheduler: full analysis %s/%s FAILED — continuing with next combo",
                         risk,
@@ -171,10 +210,11 @@ def _run_smart_advisor_scan() -> bool:
                     return False
 
         logger.info(
-            "Scheduler: smart advisor warm-up complete — 1 scan, %d/%d analyses OK (%d failed)",
+            "Scheduler: smart advisor warm-up complete — %d computed, %d refreshed, %d failed (of %d)",
             computed,
-            len(PERIODS) * len(RISKS),
+            refreshed,
             failed,
+            len(PERIODS) * len(RISKS),
         )
         return True
     except Exception:
