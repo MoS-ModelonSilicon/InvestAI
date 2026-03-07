@@ -127,10 +127,15 @@ git config --global http.proxy http://proxy-dmz.intel.com:911
 # 3. Push → GitHub CI runs smoke tests automatically
 git push origin master
 
-# 4. Check CI status at:
-#    https://github.com/MoS-ModelonSilicon/InvestAI/actions
-#    ✅ Smoke tests pass → Render deploy is triggered
-#    ❌ Smoke tests fail → Deploy is skipped, check logs and fix
+# 4. VERIFY CI passes (MANDATORY — do not skip):
+#    Fetch: https://github.com/MoS-ModelonSilicon/InvestAI/actions/workflows/pr-tests.yml
+#    Find the run matching your commit SHA
+#    ✅ "completed successfully" → Render deploy is triggered
+#    ❌ Failed → Read logs, fix, commit, push, re-check. Repeat until green.
+#    ⚠️  The task is NOT done until CI shows green.
+
+# 5. Verify live site after deploy (~2 min):
+#    https://investai-utho.onrender.com
 ```
 
 ### CI Pipeline (`.github/workflows/pr-tests.yml`)

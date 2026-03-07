@@ -77,6 +77,19 @@ Standard process for adding a new feature to InvestAI.
 TESTING=1 python -m pytest tests/test_api_smoke.py -v --tb=short
 ```
 
+### 12. Commit, Push & Verify CI
+```bash
+git add -A
+git commit -m "feat: concise description of the feature"
+git config --global http.proxy http://proxy-dmz.intel.com:911
+git push origin master
+```
+- **Check CI status**: Fetch https://github.com/MoS-ModelonSilicon/InvestAI/actions/workflows/pr-tests.yml
+- Find the run matching your commit SHA and confirm "completed successfully"
+- If CI **fails**: read the logs, fix the issue, commit, push, and re-check
+- **Do NOT consider the task done until CI shows green**
+- After CI passes, verify the change works on the live site (~2 min deploy)
+
 ## Checklist Before Done
 
 - [ ] All 10 steps completed

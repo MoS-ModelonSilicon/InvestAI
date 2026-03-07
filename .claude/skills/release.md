@@ -13,8 +13,15 @@
 1. Ensure Intel proxy is configured: `git config --global http.proxy http://proxy-dmz.intel.com:911`
 2. Push to `master` branch on GitHub: `git push origin master`
 3. **CI Gate runs automatically** — smoke tests + lint must pass
-4. If CI passes: Render deploys (auto-deploy or via `RENDER_DEPLOY_HOOK`)
-5. Watch build logs in Render dashboard
+4. **Verify CI passes** — check the GitHub Actions status:
+   - Fetch https://github.com/MoS-ModelonSilicon/InvestAI/actions/workflows/pr-tests.yml
+   - Find the run matching your commit SHA
+   - Confirm status shows "completed successfully"
+   - If CI **fails**: read the run logs, fix the issue, commit, push, and re-check
+   - Do NOT consider the task done until CI shows green
+5. If CI passes: Render deploys (auto-deploy or via `RENDER_DEPLOY_HOOK`)
+6. **Verify live site** — after ~2 min, confirm the change works at https://investai-utho.onrender.com
+7. Watch build logs in Render dashboard
 6. First request after deploy triggers:
    - Database auto-migration (new tables/columns)
    - Default admin seed (from `ADMIN_EMAIL`/`ADMIN_PASSWORD`)
