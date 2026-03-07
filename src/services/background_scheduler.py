@@ -79,12 +79,12 @@ def _run_news_refresh() -> bool:
 def _run_smart_advisor_scan() -> bool:
     """Pre-compute the smart advisor scan + full analysis for ALL combos.
 
-    Scans all 4 periods, then builds full analysis for every risk×period
-    combo so "Run Analysis" is instant regardless of what the user picks.
+    scan_and_score() results are identical regardless of period (same stocks,
+    same candles, same scoring).  Period only affects the cache key.  So we
+    scan ONCE and replicate the result across all 4 period cache keys.
+    Then we build full analyses for every risk × period combo.
 
     Combinations: 3 risk profiles × 4 periods = 12 full analyses.
-    The scan_and_score per period is the heavy part (40-80 candle fetches).
-    Full analyses reuse the cached scan, so they're fast.
     """
     PERIODS = ["1y", "6m", "3m", "1m"]
     RISKS = ["balanced", "conservative", "aggressive"]
@@ -92,20 +92,30 @@ def _run_smart_advisor_scan() -> bool:
 
     try:
         from src.services.smart_advisor import scan_and_score, run_full_analysis
+        from src.services.market_data import _set_cache
+        from src.services.persistence import save_scan
 
-        # Phase 1: Scan all periods (heavy — fetches candles)
-        for period in PERIODS:
-            logger.info("Scheduler: smart advisor scan period=%s", period)
-            rankings = scan_and_score(period)
-            logger.info(
-                "Scheduler: smart advisor scan period=%s done (%d stocks)",
-                period, len(rankings) if rankings else 0,
-            )
-            # Small pause between periods to avoid Finnhub rate-limit spikes
-            if not _stop_event.wait(timeout=5):
-                pass  # continue
-            else:
-                return False  # shutting down
+        # Phase 1: Scan ONCE (heavy — 40-80 candle fetches)
+        # scan_and_score uses CANDLE_LOOKBACK_DAYS constant, not the period
+        # param, so results are identical.  We scan "1y" then copy to all keys.
+        logger.info("Scheduler: smart advisor scan (one scan for all periods)")
+        rankings = scan_and_score("1y")
+        count = len(rankings) if rankings else 0
+        logger.info("Scheduler: smart advisor scan done (%d stocks)", count)
+
+        if not rankings:
+            logger.warning("Scheduler: scan returned no rankings — skipping warm-up")
+            return False
+
+        # Replicate scan results to other period cache keys
+        for period in PERIODS[1:]:  # skip "1y" — already cached by scan_and_score
+            cache_key = f"advisor:scan:{period}"
+            _set_cache(cache_key, rankings)
+            try:
+                save_scan(f"smart_advisor_scan:{period}", rankings)
+            except Exception:
+                pass  # non-critical
+        logger.info("Scheduler: replicated scan to %d period keys", len(PERIODS))
 
         # Phase 2: Pre-compute full analysis for every risk × period combo
         for period in PERIODS:
@@ -117,8 +127,8 @@ def _run_smart_advisor_scan() -> bool:
                 run_full_analysis(amount=DEFAULT_AMOUNT, risk=risk, period=period)
 
         logger.info(
-            "Scheduler: smart advisor warm-up complete — %d scans, %d analyses",
-            len(PERIODS), len(PERIODS) * len(RISKS),
+            "Scheduler: smart advisor warm-up complete — 1 scan, %d analyses",
+            len(PERIODS) * len(RISKS),
         )
         return True
     except Exception:
