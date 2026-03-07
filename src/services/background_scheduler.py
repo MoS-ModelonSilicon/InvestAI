@@ -118,17 +118,34 @@ def _run_smart_advisor_scan() -> bool:
         logger.info("Scheduler: replicated scan to %d period keys", len(PERIODS))
 
         # Phase 2: Pre-compute full analysis for every risk × period combo
+        computed = 0
+        failed = 0
         for period in PERIODS:
             for risk in RISKS:
-                logger.info(
-                    "Scheduler: pre-computing full analysis %s/%s/%s",
-                    DEFAULT_AMOUNT, risk, period,
-                )
-                run_full_analysis(amount=DEFAULT_AMOUNT, risk=risk, period=period)
+                try:
+                    logger.info(
+                        "Scheduler: pre-computing full analysis %s/%s/%s",
+                        DEFAULT_AMOUNT, risk, period,
+                    )
+                    result = run_full_analysis(amount=DEFAULT_AMOUNT, risk=risk, period=period)
+                    if result and result.get("rankings"):
+                        computed += 1
+                    else:
+                        failed += 1
+                        logger.warning(
+                            "Scheduler: full analysis %s/%s returned empty result",
+                            risk, period,
+                        )
+                except Exception:
+                    failed += 1
+                    logger.exception(
+                        "Scheduler: full analysis %s/%s FAILED — continuing with next combo",
+                        risk, period,
+                    )
 
         logger.info(
-            "Scheduler: smart advisor warm-up complete — 1 scan, %d analyses",
-            len(PERIODS) * len(RISKS),
+            "Scheduler: smart advisor warm-up complete — 1 scan, %d/%d analyses OK (%d failed)",
+            computed, len(PERIODS) * len(RISKS), failed,
         )
         return True
     except Exception:
