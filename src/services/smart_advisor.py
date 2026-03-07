@@ -728,6 +728,9 @@ def generate_report(rankings: list[dict], portfolios: dict) -> dict:
 def run_full_analysis(amount: float = 10000, risk: str = "balanced",
                       period: str = "1y") -> dict:
     """Run the complete advisor pipeline. Cached for 15 min."""
+    # Normalize amount to int so cache keys match whether called with
+    # int (scheduler) or float (FastAPI query param).
+    amount = int(amount)
     cache_key = f"advisor:full:{amount}:{risk}:{period}"
     cached = _get_cached(cache_key)
     if cached:
@@ -758,7 +761,7 @@ def run_full_analysis(amount: float = 10000, risk: str = "balanced",
     # Persist full analysis to DB so "Run Analysis" is instant after restart
     try:
         from src.services.persistence import save_scan
-        db_key = f"smart_advisor_full:{amount}:{risk}:{period}"
+        db_key = f"smart_advisor_full:{int(amount)}:{risk}:{period}"
         save_scan(db_key, result)
         logger.info("Smart advisor: persisted full analysis to DB (key=%s)", db_key)
     except Exception:
