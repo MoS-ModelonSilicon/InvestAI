@@ -9,7 +9,7 @@
                      │    + API smoke tests      │  Runs at 2 AM UTC daily
                      ├──────────────────────────┤
                      │    PR Gate (Tier 1)       │  Fast TestClient tests
-                     │    ~80 fast API tests     │  No browser, no ext API
+                     │    ~114 fast API tests    │  No browser, no ext API
                      │    + lint + import check  │  Runs on every push/PR
                      └──────────────────────────┘
 ```
@@ -22,7 +22,7 @@ Every night, the full Playwright E2E suite runs against the live site to catch r
 ## Tier 1 — PR / Commit Gate (~1-2 minutes)
 
 **Workflow:** `.github/workflows/pr-tests.yml`
-**Trigger:** Every `push` to `main` + every `pull_request` targeting `main`
+**Trigger:** Every `push` to `master` + every `pull_request` targeting `master`
 
 ### Jobs
 
@@ -85,7 +85,7 @@ Every night, the full Playwright E2E suite runs against the live site to catch r
 
 | File | Purpose | Tier | Tests |
 |------|---------|------|-------|
-| `tests/test_api_smoke.py` | Fast API contract tests (TestClient) | 1 (PR) | ~80 |
+| `tests/test_api_smoke.py` | Fast API contract tests (TestClient) | 1 (PR) | ~114 |
 | `tests/test_e2e.py` | Browser E2E (Playwright, local or remote) | 2 (Nightly) | ~133 |
 | `tests/test_live_site.py` | Browser E2E for live deployment only | 2 (Nightly) | ~94 |
 
@@ -95,7 +95,7 @@ Every night, the full Playwright E2E suite runs against the live site to catch r
 
 | File | Trigger | Runs |
 |------|---------|------|
-| `.github/workflows/pr-tests.yml` | Push to `main`, PRs | Tier 1 smoke + lint |
+| `.github/workflows/pr-tests.yml` | Push to `master`, PRs | Tier 1 smoke + lint |
 | `.github/workflows/nightly-tests.yml` | Daily 2 AM UTC, manual | Tier 1 + Tier 2 full suite |
 
 ---
