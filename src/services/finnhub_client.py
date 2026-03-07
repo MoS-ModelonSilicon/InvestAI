@@ -90,7 +90,7 @@ def _get_list(endpoint: str, params: dict[str, Any] | None = None) -> list[Any]:
                 return []
             resp.raise_for_status()
             result = resp.json()
-            return cast(list[Any], result) if isinstance(result, list) else []
+            return result if isinstance(result, list) else []
         except Exception as e:
             logger.warning("Finnhub %s error: %s", endpoint, e)
             return []

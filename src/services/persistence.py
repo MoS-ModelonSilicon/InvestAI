@@ -66,7 +66,7 @@ def load_scan(key: str) -> Optional[dict[str, Any] | list[Any]]:
                 return cast(dict[str, Any], data)
             if isinstance(data, list):
                 logger.debug("Loaded scan result: %s (saved %s)", key, row.updated_at)
-                return cast(list[Any], data)
+                return data
             return None
         return None
     except Exception:
@@ -90,7 +90,7 @@ def load_scan_with_age(key: str) -> tuple[Optional[dict[str, Any] | list[Any]], 
             if isinstance(data, dict):
                 return cast(dict[str, Any], data), age
             if isinstance(data, list):
-                return cast(list[Any], data), age
+                return data, age
             return None, 0
         return None, 0
     except Exception:

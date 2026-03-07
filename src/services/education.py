@@ -1,3 +1,5 @@
+from typing import Any
+
 EDUCATION_CONTENT = [
     {
         "id": "basics-what-is-stock",
@@ -208,7 +210,7 @@ EDUCATION_CONTENT = [
 ]
 
 
-def get_all_content() -> list[dict[str, object]]:
+def get_all_content() -> list[dict[str, Any]]:
     return EDUCATION_CONTENT
 
 
