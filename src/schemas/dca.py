@@ -5,6 +5,7 @@ from datetime import datetime
 
 # ── DCA Plan CRUD ────────────────────────────────────────────
 
+
 class DcaPlanCreate(BaseModel):
     symbol: str
     name: str = ""
@@ -50,6 +51,7 @@ class DcaPlanUpdate(BaseModel):
 
 # ── Monthly Allocation Recommendation ────────────────────────
 
+
 class MonthlyAllocationItem(BaseModel):
     symbol: str
     name: str
@@ -75,6 +77,7 @@ class MonthlyAllocationResponse(BaseModel):
 
 
 # ── DCA Opportunity (dip alert) ──────────────────────────────
+
 
 class DcaOpportunity(BaseModel):
     symbol: str

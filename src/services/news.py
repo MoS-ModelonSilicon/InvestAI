@@ -23,15 +23,17 @@ def get_ticker_news(symbol: str) -> list[dict]:
             if not title:
                 continue
 
-            articles.append({
-                "title": title,
-                "publisher": item.get("source", ""),
-                "link": item.get("url", ""),
-                "published": item.get("datetime", 0),
-                "thumbnail": item.get("image", ""),
-                "summary": item.get("summary", ""),
-                "related": [item.get("related", "")] if item.get("related") else [],
-            })
+            articles.append(
+                {
+                    "title": title,
+                    "publisher": item.get("source", ""),
+                    "link": item.get("url", ""),
+                    "published": item.get("datetime", 0),
+                    "thumbnail": item.get("image", ""),
+                    "summary": item.get("summary", ""),
+                    "related": [item.get("related", "")] if item.get("related") else [],
+                }
+            )
 
         logger.info("News for %s: parsed %d articles", symbol, len(articles))
         _set_cache(cache_key, articles)

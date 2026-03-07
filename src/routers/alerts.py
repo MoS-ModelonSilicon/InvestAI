@@ -31,26 +31,39 @@ def list_alerts(db: Session = Depends(get_db), user: User = Depends(get_current_
                 db.commit()
                 db.refresh(a)
 
-        result.append({
-            "id": a.id,
-            "symbol": a.symbol,
-            "name": a.name,
-            "condition": a.condition,
-            "target_price": a.target_price,
-            "active": a.active,
-            "triggered": a.triggered,
-            "triggered_at": a.triggered_at,
-            "created_at": a.created_at,
-            "current_price": round(current_price, 2),
-        })
+        result.append(
+            {
+                "id": a.id,
+                "symbol": a.symbol,
+                "name": a.name,
+                "condition": a.condition,
+                "target_price": a.target_price,
+                "active": a.active,
+                "triggered": a.triggered,
+                "triggered_at": a.triggered_at,
+                "created_at": a.created_at,
+                "current_price": round(current_price, 2),
+            }
+        )
     return result
 
 
 @router.get("/triggered")
 def triggered_alerts(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    alerts = db.query(Alert).filter(Alert.user_id == user.id, Alert.triggered == 1).order_by(Alert.triggered_at.desc()).all()
-    return [{"id": a.id, "symbol": a.symbol, "name": a.name, "condition": a.condition,
-             "target_price": a.target_price, "triggered_at": a.triggered_at} for a in alerts]
+    alerts = (
+        db.query(Alert).filter(Alert.user_id == user.id, Alert.triggered == 1).order_by(Alert.triggered_at.desc()).all()
+    )
+    return [
+        {
+            "id": a.id,
+            "symbol": a.symbol,
+            "name": a.name,
+            "condition": a.condition,
+            "target_price": a.target_price,
+            "triggered_at": a.triggered_at,
+        }
+        for a in alerts
+    ]
 
 
 @router.post("")

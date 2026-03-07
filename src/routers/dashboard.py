@@ -25,11 +25,15 @@ def dashboard(
     if not date_to:
         date_to = date.today()
 
-    txs = db.query(Transaction).filter(
-        Transaction.user_id == user.id,
-        Transaction.date >= date_from,
-        Transaction.date <= date_to,
-    ).all()
+    txs = (
+        db.query(Transaction)
+        .filter(
+            Transaction.user_id == user.id,
+            Transaction.date >= date_from,
+            Transaction.date <= date_to,
+        )
+        .all()
+    )
 
     total_income = sum(t.amount for t in txs if t.type == "income")
     total_expenses = sum(t.amount for t in txs if t.type == "expense")
@@ -63,19 +67,20 @@ def dashboard(
     budget_status = []
     for b in budgets:
         spent = sum(
-            t.amount for t in txs
-            if t.category_id == b.category_id
-            and t.type == "expense"
-            and t.date.strftime("%Y-%m") == current_month
+            t.amount
+            for t in txs
+            if t.category_id == b.category_id and t.type == "expense" and t.date.strftime("%Y-%m") == current_month
         )
-        budget_status.append({
-            "category_id": b.category_id,
-            "category_name": b.category.name,
-            "color": b.category.color,
-            "monthly_limit": b.monthly_limit,
-            "spent": spent,
-            "percentage": round((spent / b.monthly_limit) * 100, 1) if b.monthly_limit else 0,
-        })
+        budget_status.append(
+            {
+                "category_id": b.category_id,
+                "category_name": b.category.name,
+                "color": b.category.color,
+                "monthly_limit": b.monthly_limit,
+                "spent": spent,
+                "percentage": round((spent / b.monthly_limit) * 100, 1) if b.monthly_limit else 0,
+            }
+        )
 
     return DashboardStats(
         total_income=round(total_income, 2),

@@ -28,10 +28,14 @@ for _mod in ("yfinance", "peewee", "urllib3.connectionpool"):
     logging.getLogger(_mod).setLevel(logging.CRITICAL)
 
 _USE_PROXY = os.environ.get("USE_INTEL_PROXY", "").lower() in ("1", "true", "yes")
-_PROXIES = {
-    "http": "http://proxy-dmz.intel.com:911",
-    "https": "http://proxy-dmz.intel.com:912",
-} if _USE_PROXY else None
+_PROXIES = (
+    {
+        "http": "http://proxy-dmz.intel.com:911",
+        "https": "http://proxy-dmz.intel.com:912",
+    }
+    if _USE_PROXY
+    else None
+)
 
 if _USE_PROXY:
     os.environ.setdefault("HTTP_PROXY", "http://proxy-dmz.intel.com:911")
@@ -61,17 +65,23 @@ def _disable_yahoo(reason: str = "", cooldown: int = 0):
         _yahoo_disabled_until = time.time() + cooldown
         _yahoo_tested = False  # allow re-probe after cooldown
         # Detect cloud-IP blocking (401/rate-limit on first probe) → go permanent
-        is_cloud_block = any(kw in reason.lower() for kw in (
-            "401", "unauthorized", "rate limit", "too many requests",
-        ))
+        is_cloud_block = any(
+            kw in reason.lower()
+            for kw in (
+                "401",
+                "unauthorized",
+                "rate limit",
+                "too many requests",
+            )
+        )
         if _yahoo_fail_count >= 3 and is_cloud_block:
             cooldown = _YAHOO_MAX_COOLDOWN
             _yahoo_disabled_until = time.time() + cooldown
             logger.warning("Yahoo Finance likely blocked on this IP — disabled for %ds", cooldown)
         else:
-            logger.warning("Yahoo Finance paused %ds (fail #%d)%s",
-                           cooldown, _yahoo_fail_count,
-                           f": {reason}" if reason else "")
+            logger.warning(
+                "Yahoo Finance paused %ds (fail #%d)%s", cooldown, _yahoo_fail_count, f": {reason}" if reason else ""
+            )
 
 
 def _yahoo_available() -> bool:
@@ -84,8 +94,7 @@ def _yahoo_available() -> bool:
             with _yahoo_lock:
                 _yahoo_disabled = False
                 _yahoo_tested = False
-                logger.info("Yahoo Finance cooldown expired, re-enabling (fail_count=%d)",
-                            _yahoo_fail_count)
+                logger.info("Yahoo Finance cooldown expired, re-enabling (fail_count=%d)", _yahoo_fail_count)
             return True
         return False
     return True
@@ -112,6 +121,7 @@ def _suppress_stderr():
 def _yf_ticker(symbol: str):
     """Get a yfinance Ticker -- lazy-imported to save memory when DISABLE_YAHOO=1."""
     import yfinance as yf
+
     return yf.Ticker(symbol)
 
 
@@ -269,10 +279,23 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, f
         err = str(e)[:120].lower()
         # When force=True (last-resort), never disable Yahoo globally
         if not force:
-            is_systemic = any(kw in err for kw in (
-                "401", "403", "429", "unauthorized", "rate limit", "too many requests",
-                "connection", "timeout", "ssl", "proxy", "dns", "refused",
-            ))
+            is_systemic = any(
+                kw in err
+                for kw in (
+                    "401",
+                    "403",
+                    "429",
+                    "unauthorized",
+                    "rate limit",
+                    "too many requests",
+                    "connection",
+                    "timeout",
+                    "ssl",
+                    "proxy",
+                    "dns",
+                    "refused",
+                )
+            )
             if is_systemic:
                 _disable_yahoo(str(e)[:120])
             else:
@@ -295,15 +318,19 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, f
             if not title:
                 continue
             pub_info = content.get("provider", {})
-            result.append({
-                "headline": title,
-                "source": pub_info.get("displayName", "") if isinstance(pub_info, dict) else str(pub_info),
-                "url": content.get("canonicalUrl", {}).get("url", "") or content.get("link", ""),
-                "datetime": content.get("pubDate", 0),
-                "image": content.get("thumbnail", {}).get("originalUrl", "") if isinstance(content.get("thumbnail"), dict) else "",
-                "summary": content.get("summary", ""),
-                "related": symbol,
-            })
+            result.append(
+                {
+                    "headline": title,
+                    "source": pub_info.get("displayName", "") if isinstance(pub_info, dict) else str(pub_info),
+                    "url": content.get("canonicalUrl", {}).get("url", "") or content.get("link", ""),
+                    "datetime": content.get("pubDate", 0),
+                    "image": content.get("thumbnail", {}).get("originalUrl", "")
+                    if isinstance(content.get("thumbnail"), dict)
+                    else "",
+                    "summary": content.get("summary", ""),
+                    "related": symbol,
+                }
+            )
         return result if result else None
     except Exception as e:
         _disable_yahoo(str(e)[:120])
@@ -384,9 +411,11 @@ def batch_download_candles(symbols: list[str], period: str = "1mo", interval: st
     """
     try:
         import yfinance as yf
+
         with _suppress_stderr():
-            df = yf.download(symbols, period=period, interval=interval, group_by="ticker",
-                             threads=False, progress=False, timeout=30)
+            df = yf.download(
+                symbols, period=period, interval=interval, group_by="ticker", threads=False, progress=False, timeout=30
+            )
         if df is None or df.empty:
             logger.warning("yf.download batch returned empty for %s", symbols)
             return {}

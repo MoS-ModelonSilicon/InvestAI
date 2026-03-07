@@ -2,13 +2,14 @@
 Live scraper for funder.co.il — fetches real Israeli fund data.
 Caches results for 1 hour to avoid hammering the site.
 """
+
 import json
 import logging
 import threading
 import time
 from typing import Optional
 
-import requests  # type: ignore[import-untyped]
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -17,19 +18,24 @@ _cache_lock = threading.Lock()
 CACHE_TTL = 3600  # 1 hour
 
 import os
+
 _USE_PROXY = os.environ.get("USE_INTEL_PROXY", "").lower() in ("1", "true", "yes")
-PROXIES = {
-    "http": "http://proxy-dmz.intel.com:911",
-    "https": "http://proxy-dmz.intel.com:912",
-} if _USE_PROXY else None
+PROXIES = (
+    {
+        "http": "http://proxy-dmz.intel.com:911",
+        "https": "http://proxy-dmz.intel.com:912",
+    }
+    if _USE_PROXY
+    else None
+)
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 TIMEOUT = 20
 
 PAGES = {
-    "kaspit":  {"url": "https://www.funder.co.il/kaspit",  "var": "kaspitData",  "category": "Kaspit (Money Market)"},
-    "mehakot": {"url": "https://www.funder.co.il/mehakot",  "var": "mehakotData", "category": "Index Tracking"},
-    "ksherot": {"url": "https://www.funder.co.il/ksherot",  "var": "ksherotData", "category": "Kosher Funds"},
-    "okvot":   {"url": "https://www.funder.co.il/okvot",    "var": "okvotData",   "category": "Actively Managed"},
+    "kaspit": {"url": "https://www.funder.co.il/kaspit", "var": "kaspitData", "category": "Kaspit (Money Market)"},
+    "mehakot": {"url": "https://www.funder.co.il/mehakot", "var": "mehakotData", "category": "Index Tracking"},
+    "ksherot": {"url": "https://www.funder.co.il/ksherot", "var": "ksherotData", "category": "Kosher Funds"},
+    "okvot": {"url": "https://www.funder.co.il/okvot", "var": "okvotData", "category": "Actively Managed"},
 }
 
 

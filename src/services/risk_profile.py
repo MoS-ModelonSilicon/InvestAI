@@ -41,10 +41,10 @@ PROFILE_LABELS = {
 
 ALLOCATIONS = {
     "Very Conservative": {"stocks": 15, "bonds": 55, "cash": 30},
-    "Conservative":      {"stocks": 30, "bonds": 50, "cash": 20},
-    "Moderate":          {"stocks": 55, "bonds": 35, "cash": 10},
-    "Growth":            {"stocks": 75, "bonds": 20, "cash": 5},
-    "Aggressive":        {"stocks": 90, "bonds": 8,  "cash": 2},
+    "Conservative": {"stocks": 30, "bonds": 50, "cash": 20},
+    "Moderate": {"stocks": 55, "bonds": 35, "cash": 10},
+    "Growth": {"stocks": 75, "bonds": 20, "cash": 5},
+    "Aggressive": {"stocks": 90, "bonds": 8, "cash": 2},
 }
 
 

@@ -11,11 +11,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/market", tags=["market"])
 
 TICKER_SYMBOLS = [
-    "SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "NVDA", "TSLA", "AMZN",
+    "SPY",
+    "QQQ",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "NVDA",
+    "TSLA",
+    "AMZN",
 ]
 
 FEATURED_SYMBOLS = [
-    "AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL",
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "TSLA",
+    "AMZN",
+    "GOOGL",
 ]
 
 
@@ -59,10 +71,7 @@ def get_home_data():
 
     # If we got real data, persist it for next cold start
     if ticker:
-        threading.Thread(
-            target=save_home_snapshot, args=(result,),
-            daemon=True, name="save-home-snap"
-        ).start()
+        threading.Thread(target=save_home_snapshot, args=(result,), daemon=True, name="save-home-snap").start()
         return result
 
     # Cache is cold — serve last known DB snapshot instead of empty response

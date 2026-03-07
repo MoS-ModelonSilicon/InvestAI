@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 # ── Low-level save / load ────────────────────────────────────
 
+
 def save_scan(key: str, data) -> bool:
     """Upsert scan results into the scan_results table.
 
@@ -134,8 +135,13 @@ def delete_scan(key: str) -> bool:
 # Keys considered "important" enough to persist (survive restarts).
 # We don't persist every cache entry — just the expensive/slow ones.
 PERSIST_PREFIXES = (
-    "info:", "advisor:", "news:", "company_dna:",
-    "quote:", "live_quotes:", "sparklines:",
+    "info:",
+    "advisor:",
+    "news:",
+    "company_dna:",
+    "quote:",
+    "live_quotes:",
+    "sparklines:",
 )
 
 
@@ -223,6 +229,7 @@ def restore_market_cache() -> dict[str, tuple[float, dict]]:
 
 # ── High-level: restore all caches on startup ────────────────
 
+
 def restore_all_caches():
     """Called once at startup to pre-populate all in-memory caches
     from the database.  This makes the API serve data immediately
@@ -235,6 +242,7 @@ def restore_all_caches():
         data = load_scan("value_scan")
         if data and isinstance(data, dict) and data.get("candidates"):
             from src.services.value_scanner import _scan_cache, _scan_lock
+
             with _scan_lock:
                 _scan_cache["candidates"] = data.get("candidates", [])
                 _scan_cache["rejected"] = data.get("rejected", [])
@@ -251,6 +259,7 @@ def restore_all_caches():
         data = load_scan("trading_scan")
         if data and isinstance(data, dict) and data.get("all_picks"):
             from src.services.trading_advisor import _scan_cache, _scan_lock
+
             with _scan_lock:
                 _scan_cache["all_picks"] = data.get("all_picks", [])
                 _scan_cache["packages"] = data.get("packages", {})
@@ -268,6 +277,7 @@ def restore_all_caches():
         data = load_scan("picks_tracker")
         if data and isinstance(data, dict):
             from src.services.picks_tracker import _cache, _cache_lock
+
             with _cache_lock:
                 for cache_key, val in data.items():
                     _cache[cache_key] = (time.time(), val)
@@ -280,6 +290,7 @@ def restore_all_caches():
         restored = restore_market_cache()
         if restored:
             from src.services.market_data import _cache, _cache_lock
+
             with _cache_lock:
                 _cache.update(restored)
             logger.info("Restored %d market data cache entries", len(restored))
@@ -289,6 +300,7 @@ def restore_all_caches():
     # 5. Restore ALL smart advisor scan + full analysis combos into market_data._cache
     try:
         from src.services.market_data import _cache, _cache_lock
+
         PERIODS = ["1y", "6m", "3m", "1m"]
         RISKS = ["balanced", "conservative", "aggressive"]
         DEFAULT_AMOUNT = 10000

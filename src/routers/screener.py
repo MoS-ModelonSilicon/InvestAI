@@ -69,43 +69,50 @@ def get_watchlist_live(db: Session = Depends(get_db), user: User = Depends(get_c
     """Watchlist with live prices and change data."""
     items = db.query(Watchlist).filter(Watchlist.user_id == user.id).order_by(Watchlist.added_at.desc()).all()
     from src.services.market_data import fetch_stock_info, format_market_cap
+
     result = []
     for item in items:
         info = fetch_stock_info(item.symbol)
         if info:
             price = info.get("price", 0)
-            result.append({
-                "id": item.id,
-                "symbol": item.symbol,
-                "name": info.get("name", item.name),
-                "price": round(price, 2),
-                "market_cap_fmt": format_market_cap(info.get("market_cap", 0)),
-                "pe_ratio": info.get("pe_ratio"),
-                "dividend_yield": info.get("dividend_yield"),
-                "beta": info.get("beta"),
-                "year_change": info.get("year_change"),
-                "sector": info.get("sector", "N/A"),
-                "added_at": item.added_at.isoformat() if item.added_at else None,
-            })
+            result.append(
+                {
+                    "id": item.id,
+                    "symbol": item.symbol,
+                    "name": info.get("name", item.name),
+                    "price": round(price, 2),
+                    "market_cap_fmt": format_market_cap(info.get("market_cap", 0)),
+                    "pe_ratio": info.get("pe_ratio"),
+                    "dividend_yield": info.get("dividend_yield"),
+                    "beta": info.get("beta"),
+                    "year_change": info.get("year_change"),
+                    "sector": info.get("sector", "N/A"),
+                    "added_at": item.added_at.isoformat() if item.added_at else None,
+                }
+            )
         else:
-            result.append({
-                "id": item.id,
-                "symbol": item.symbol,
-                "name": item.name,
-                "price": 0,
-                "market_cap_fmt": "N/A",
-                "pe_ratio": None,
-                "dividend_yield": None,
-                "beta": None,
-                "year_change": None,
-                "sector": "N/A",
-                "added_at": item.added_at.isoformat() if item.added_at else None,
-            })
+            result.append(
+                {
+                    "id": item.id,
+                    "symbol": item.symbol,
+                    "name": item.name,
+                    "price": 0,
+                    "market_cap_fmt": "N/A",
+                    "pe_ratio": None,
+                    "dividend_yield": None,
+                    "beta": None,
+                    "year_change": None,
+                    "sector": "N/A",
+                    "added_at": item.added_at.isoformat() if item.added_at else None,
+                }
+            )
     return result
 
 
 @router.post("/watchlist", response_model=WatchlistItem)
-def add_to_watchlist(symbol: str, name: str = "", db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def add_to_watchlist(
+    symbol: str, name: str = "", db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     existing = db.query(Watchlist).filter(Watchlist.user_id == user.id, Watchlist.symbol == symbol.upper()).first()
     if existing:
         raise HTTPException(400, "Already in watchlist")

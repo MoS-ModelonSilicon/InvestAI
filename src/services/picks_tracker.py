@@ -15,9 +15,7 @@ from src.services import data_provider as dp
 
 logger = logging.getLogger(__name__)
 
-_PICKS_FILE = os.path.join(
-    os.path.dirname(__file__), "..", "..", "static", "data", "discord-picks.json"
-)
+_PICKS_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "static", "data", "discord-picks.json")
 
 _cache: dict[str, tuple[float, object]] = {}
 _cache_lock = threading.Lock()
@@ -207,6 +205,7 @@ def evaluate_all_picks(pick_type: Optional[str] = None) -> dict:
     # Persist to DB so picks survive restarts
     try:
         from src.services.persistence import save_scan
+
         with _cache_lock:
             snapshot = {k: v for k, (_, v) in _cache.items()}
         save_scan("picks_tracker", snapshot)

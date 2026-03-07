@@ -23,8 +23,10 @@ logger = logging.getLogger(__name__)
 
 # ── Berkshire Scoring weights ───────────────────────────────────
 
-def compute_berkshire_score(info: dict, executives: list, insiders: list,
-                            sentiment: dict | None, recommendations: list) -> dict:
+
+def compute_berkshire_score(
+    info: dict, executives: list, insiders: list, sentiment: dict | None, recommendations: list
+) -> dict:
     """
     Compute a 0-100 Berkshire Score inspired by Buffett/Munger principles.
     Returns score breakdown with reasoning.
@@ -75,8 +77,12 @@ def compute_berkshire_score(info: dict, executives: list, insiders: list,
         moat_score += 2
 
     moat_score = min(25, moat_score)
-    breakdown["moat"] = {"score": moat_score, "max": 25, "reasons": moat_reasons,
-                         "label": "Competitive Advantage (Moat)"}
+    breakdown["moat"] = {
+        "score": moat_score,
+        "max": 25,
+        "reasons": moat_reasons,
+        "label": "Competitive Advantage (Moat)",
+    }
     total += moat_score
 
     # ── 2. Management Quality & Skin in the Game (25 pts) ──
@@ -86,8 +92,14 @@ def compute_berkshire_score(info: dict, executives: list, insiders: list,
     # Management team presence
     if executives and len(executives) > 0:
         mgmt_score += 3
-        ceo = next((e for e in executives if "CEO" in (e.get("position") or "").upper()
-                     or "CHIEF EXECUTIVE" in (e.get("position") or "").upper()), None)
+        ceo = next(
+            (
+                e
+                for e in executives
+                if "CEO" in (e.get("position") or "").upper() or "CHIEF EXECUTIVE" in (e.get("position") or "").upper()
+            ),
+            None,
+        )
         if ceo:
             since = ceo.get("since")
             if since and isinstance(since, (int, float)) and since > 0:
@@ -146,8 +158,12 @@ def compute_berkshire_score(info: dict, executives: list, insiders: list,
             mgmt_reasons.append(f"Neutral insider sentiment (MSPR: {avg_mspr:.2f})")
 
     mgmt_score = min(25, mgmt_score)
-    breakdown["management"] = {"score": mgmt_score, "max": 25, "reasons": mgmt_reasons,
-                               "label": "Management & Insider Activity"}
+    breakdown["management"] = {
+        "score": mgmt_score,
+        "max": 25,
+        "reasons": mgmt_reasons,
+        "label": "Management & Insider Activity",
+    }
     total += mgmt_score
 
     # ── 3. Financial Fortress (25 pts) ─────────────────────
@@ -204,8 +220,7 @@ def compute_berkshire_score(info: dict, executives: list, insiders: list,
         fin_reasons.append(f"Earnings growing at {eg:.0f}%")
 
     fin_score = min(25, fin_score)
-    breakdown["financials"] = {"score": fin_score, "max": 25, "reasons": fin_reasons,
-                               "label": "Financial Strength"}
+    breakdown["financials"] = {"score": fin_score, "max": 25, "reasons": fin_reasons, "label": "Financial Strength"}
     total += fin_score
 
     # ── 4. Valuation & Margin of Safety (15 pts) ──────────
@@ -251,8 +266,12 @@ def compute_berkshire_score(info: dict, executives: list, insiders: list,
             val_reasons.append(f"Analyst target implies {upside:.0f}% upside")
 
     val_score = min(15, val_score)
-    breakdown["valuation"] = {"score": val_score, "max": 15, "reasons": val_reasons,
-                              "label": "Valuation & Margin of Safety"}
+    breakdown["valuation"] = {
+        "score": val_score,
+        "max": 15,
+        "reasons": val_reasons,
+        "label": "Valuation & Margin of Safety",
+    }
     total += val_score
 
     # ── 5. Smart Money Consensus (10 pts) ──────────────────
@@ -274,7 +293,9 @@ def compute_berkshire_score(info: dict, executives: list, insiders: list,
 
             if bull_pct >= 70:
                 cons_score += 7
-                cons_reasons.append(f"Strong analyst consensus: {bullish} buy vs {bearish} sell ({total_analysts} analysts)")
+                cons_reasons.append(
+                    f"Strong analyst consensus: {bullish} buy vs {bearish} sell ({total_analysts} analysts)"
+                )
             elif bull_pct >= 50:
                 cons_score += 5
                 cons_reasons.append(f"Positive analyst sentiment: {bullish} buy, {h} hold, {bearish} sell")
@@ -296,8 +317,7 @@ def compute_berkshire_score(info: dict, executives: list, insiders: list,
         cons_reasons.append("No analyst recommendation data available")
 
     cons_score = min(10, cons_score)
-    breakdown["consensus"] = {"score": cons_score, "max": 10, "reasons": cons_reasons,
-                              "label": "Analyst Consensus"}
+    breakdown["consensus"] = {"score": cons_score, "max": 10, "reasons": cons_reasons, "label": "Analyst Consensus"}
     total += cons_score
 
     # ── Overall grade ──────────────────────────────────────
@@ -351,25 +371,29 @@ def get_company_dna(symbol: str) -> Optional[dict]:
     # Format executives for display
     exec_list = []
     for ex in executives[:10]:
-        exec_list.append({
-            "name": ex.get("name", "Unknown"),
-            "position": ex.get("position", "N/A"),
-            "since": ex.get("since"),
-            "compensation": ex.get("compensation"),
-            "age": ex.get("age"),
-        })
+        exec_list.append(
+            {
+                "name": ex.get("name", "Unknown"),
+                "position": ex.get("position", "N/A"),
+                "since": ex.get("since"),
+                "compensation": ex.get("compensation"),
+                "age": ex.get("age"),
+            }
+        )
 
     # Format insider transactions
     insider_list = []
     for tx in insiders[:15]:
-        insider_list.append({
-            "name": tx.get("name", "Unknown"),
-            "share": tx.get("share", 0),
-            "change": tx.get("change", 0),
-            "filing_date": tx.get("filingDate", ""),
-            "transaction_type": _classify_insider_tx(tx),
-            "transaction_price": tx.get("transactionPrice"),
-        })
+        insider_list.append(
+            {
+                "name": tx.get("name", "Unknown"),
+                "share": tx.get("share", 0),
+                "change": tx.get("change", 0),
+                "filing_date": tx.get("filingDate", ""),
+                "transaction_type": _classify_insider_tx(tx),
+                "transaction_price": tx.get("transactionPrice"),
+            }
+        )
 
     # Format analyst recommendations
     rec_summary = None
@@ -430,6 +454,7 @@ def get_company_dna(symbol: str) -> Optional[dict]:
 
 # ── Helpers ─────────────────────────────────────────────────
 
+
 def _is_insider_buy(tx: dict) -> bool:
     code = (tx.get("transactionCode") or "").upper()
     change = tx.get("change", 0)
@@ -461,10 +486,12 @@ def _format_sentiment(sentiment: dict | None) -> list[dict]:
         return []
     result = []
     for d in sentiment["data"][-6:]:
-        result.append({
-            "year": d.get("year"),
-            "month": d.get("month"),
-            "mspr": round(d.get("mspr", 0), 2),
-            "change": d.get("change", 0),
-        })
+        result.append(
+            {
+                "year": d.get("year"),
+                "month": d.get("month"),
+                "mspr": round(d.get("mspr", 0), 2),
+                "change": d.get("change", 0),
+            }
+        )
     return result

@@ -86,7 +86,6 @@ jobs:
         run: ruff check src/ tests/ --output-format=github
 
       - name: Ruff format check
-        continue-on-error: true      # advisory until codebase is formatted
         run: ruff format --check src/ tests/
 
       - name: Verify app imports
@@ -100,7 +99,6 @@ jobs:
     name: "Mypy Type Check"
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    continue-on-error: true      # advisory: don't block PRs yet
 
     steps:
       - uses: actions/checkout@v4
@@ -112,9 +110,7 @@ jobs:
           cache-dependency-path: requirements-dev.txt
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements-dev.txt
-          pip install types-requests
+        run: pip install -r requirements-dev.txt
 
       - name: Run mypy
         run: mypy src/ --config-file=pyproject.toml

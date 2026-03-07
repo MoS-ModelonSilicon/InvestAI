@@ -1,4 +1,5 @@
 """Quick debug script to check sparkline data from the API."""
+
 import requests
 
 BASE = "http://127.0.0.1:8091"
@@ -37,6 +38,7 @@ for stock in home.get("featured", []):
 # Direct sparkline test via data_provider
 print("\n=== Direct data_provider.get_candles test ===")
 import time, sys
+
 sys.path.insert(0, ".")
 from src.services import data_provider as dp
 
@@ -54,6 +56,7 @@ for sym in ["AAPL", "MSFT", "NVDA"]:
 # Direct fetch_sparklines test
 print("\n=== Direct fetch_sparklines test ===")
 from src.services.market_data import fetch_sparklines
+
 sparks = fetch_sparklines(["AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL"])
 for sym, pts in sparks.items():
     print(f"  {sym}: {len(pts)} points, sample={pts[:5] if pts else 'EMPTY'}")

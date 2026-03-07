@@ -2,6 +2,7 @@
 Israeli mutual fund service — queries live data from funder.co.il
 and provides filtering, sorting, and analytics.
 """
+
 from typing import Optional
 
 from src.services.funder_scraper import fetch_all_funds, get_categories, get_managers

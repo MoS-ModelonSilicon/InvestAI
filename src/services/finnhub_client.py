@@ -7,7 +7,7 @@ import time
 from typing import Any
 from datetime import datetime, timedelta
 
-import requests  # type: ignore[import-untyped]
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +18,14 @@ if not API_KEY:
     logger.info("FINNHUB_API_KEY not set — Finnhub disabled, using Yahoo only")
 
 _USE_PROXY = os.environ.get("USE_INTEL_PROXY", "").lower() in ("1", "true", "yes")
-PROXIES = {
-    "http": "http://proxy-dmz.intel.com:911",
-    "https": "http://proxy-dmz.intel.com:912",
-} if _USE_PROXY else None
+PROXIES = (
+    {
+        "http": "http://proxy-dmz.intel.com:911",
+        "https": "http://proxy-dmz.intel.com:912",
+    }
+    if _USE_PROXY
+    else None
+)
 
 _call_times: list[float] = []
 _rate_lock = threading.Lock()
@@ -120,12 +124,15 @@ def get_metrics(symbol: str) -> dict[str, Any] | None:
 
 def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> dict[str, Any] | None:
     """OHLCV candles. resolution: 1, 5, 15, 30, 60, D, W, M."""
-    data = _get("/stock/candle", {
-        "symbol": symbol,
-        "resolution": resolution,
-        "from": from_ts,
-        "to": to_ts,
-    })
+    data = _get(
+        "/stock/candle",
+        {
+            "symbol": symbol,
+            "resolution": resolution,
+            "from": from_ts,
+            "to": to_ts,
+        },
+    )
     if data and data.get("s") == "ok":
         return data
     return None

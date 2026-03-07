@@ -2,6 +2,7 @@
 Admin panel — user management, system stats, account actions.
 All endpoints require is_admin=1.
 """
+
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -12,14 +13,23 @@ from sqlalchemy.orm import Session
 from src.auth import require_admin, hash_password
 from src.database import get_db
 from src.models import (
-    User, Transaction, Category, Budget, Holding, Watchlist,
-    Alert, DcaPlan, RiskProfile, PasswordReset,
+    User,
+    Transaction,
+    Category,
+    Budget,
+    Holding,
+    Watchlist,
+    Alert,
+    DcaPlan,
+    RiskProfile,
+    PasswordReset,
 )
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 # ── Schemas ───────────────────────────────────────────────────
+
 
 class UserOut(BaseModel):
     id: int
@@ -55,6 +65,7 @@ class DeleteUserBody(BaseModel):
 
 
 # ── System Stats ──────────────────────────────────────────────
+
 
 @router.get("/stats")
 def admin_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
@@ -93,6 +104,7 @@ def admin_stats(db: Session = Depends(get_db), admin: User = Depends(require_adm
 
 # ── User List ─────────────────────────────────────────────────
 
+
 @router.get("/users")
 def list_users(
     search: str = Query("", description="Filter by email or name"),
@@ -106,33 +118,34 @@ def list_users(
 
     if search:
         pattern = f"%{search.lower()}%"
-        q = q.filter(
-            (func.lower(User.email).like(pattern)) |
-            (func.lower(User.name).like(pattern))
-        )
+        q = q.filter((func.lower(User.email).like(pattern)) | (func.lower(User.name).like(pattern)))
 
     total = q.count()
     users = q.order_by(User.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
 
     results = []
     for u in users:
-        results.append(UserOut(
-            id=u.id,
-            email=u.email,
-            name=u.name or "",
-            is_admin=u.is_admin or 0,
-            is_active=u.is_active if u.is_active is not None else 1,
-            created_at=u.created_at,
-            transaction_count=db.query(func.count(Transaction.id)).filter(Transaction.user_id == u.id).scalar() or 0,
-            holding_count=db.query(func.count(Holding.id)).filter(Holding.user_id == u.id).scalar() or 0,
-            watchlist_count=db.query(func.count(Watchlist.id)).filter(Watchlist.user_id == u.id).scalar() or 0,
-            alert_count=db.query(func.count(Alert.id)).filter(Alert.user_id == u.id).scalar() or 0,
-        ))
+        results.append(
+            UserOut(
+                id=u.id,
+                email=u.email,
+                name=u.name or "",
+                is_admin=u.is_admin or 0,
+                is_active=u.is_active if u.is_active is not None else 1,
+                created_at=u.created_at,
+                transaction_count=db.query(func.count(Transaction.id)).filter(Transaction.user_id == u.id).scalar()
+                or 0,
+                holding_count=db.query(func.count(Holding.id)).filter(Holding.user_id == u.id).scalar() or 0,
+                watchlist_count=db.query(func.count(Watchlist.id)).filter(Watchlist.user_id == u.id).scalar() or 0,
+                alert_count=db.query(func.count(Alert.id)).filter(Alert.user_id == u.id).scalar() or 0,
+            )
+        )
 
     return {"users": [r.model_dump() for r in results], "total": total, "page": page, "per_page": per_page}
 
 
 # ── User Detail ───────────────────────────────────────────────
+
 
 @router.get("/users/{user_id}")
 def get_user_detail(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
@@ -160,6 +173,7 @@ def get_user_detail(user_id: int, db: Session = Depends(get_db), admin: User = D
 
 # ── Toggle Admin ──────────────────────────────────────────────
 
+
 @router.post("/toggle-admin")
 def toggle_admin(body: ToggleAdminBody, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     """Promote or demote a user to/from admin."""
@@ -176,6 +190,7 @@ def toggle_admin(body: ToggleAdminBody, db: Session = Depends(get_db), admin: Us
 
 
 # ── Toggle Active (Enable / Disable) ─────────────────────────
+
 
 @router.post("/toggle-active")
 def toggle_active(body: ToggleActiveBody, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
@@ -194,6 +209,7 @@ def toggle_active(body: ToggleActiveBody, db: Session = Depends(get_db), admin: 
 
 # ── Admin Reset Password ─────────────────────────────────────
 
+
 @router.post("/reset-password")
 def admin_reset_password(body: ResetPasswordBody, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     """Admin force-resets a user's password."""
@@ -210,6 +226,7 @@ def admin_reset_password(body: ResetPasswordBody, db: Session = Depends(get_db),
 
 
 # ── Delete User ───────────────────────────────────────────────
+
 
 @router.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):

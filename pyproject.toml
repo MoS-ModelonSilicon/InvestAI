@@ -42,6 +42,7 @@ ignore = [
     "RET504", # unnecessary assignment before return
     "RET505", # unnecessary else after return – cosmetic preference
     "S311",   # random – not used for crypto
+    "S607",   # partial executable path – git/npm etc. are fine
     "UP007",  # Use X | Y for union – already using this
     "UP015",  # unnecessary mode argument – cosmetic
     "UP042",  # str+Enum inheritance – valid pre-3.11 pattern

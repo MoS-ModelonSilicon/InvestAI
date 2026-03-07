@@ -17,7 +17,15 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 COOKIE_NAME = "investai_session"
 
-PUBLIC_PATHS = {"/login", "/auth/login", "/auth/register", "/auth/logout", "/auth/forgot-password", "/auth/reset-password", "/health"}
+PUBLIC_PATHS = {
+    "/login",
+    "/auth/login",
+    "/auth/register",
+    "/auth/logout",
+    "/auth/forgot-password",
+    "/auth/reset-password",
+    "/health",
+}
 
 # ── Password hashing ─────────────────────────────────────────
 import bcrypt as _bcrypt
@@ -88,6 +96,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if payload:
             # Check if user is still active
             from src.models import User
+
             db = next(get_db())
             try:
                 user = db.query(User).filter(User.id == int(payload["sub"])).first()

@@ -26,97 +26,324 @@ _warm_done = threading.Event()
 
 STOCK_UNIVERSE = [
     # ── US: Technology ─────────────────────────────
-    "AAPL", "MSFT", "GOOGL", "NVDA", "META", "AVGO", "ADBE", "CRM", "CSCO",
-    "INTC", "AMD", "TXN", "QCOM", "AMAT", "NOW", "ORCL", "IBM", "MU", "PANW",
-    "SNPS", "CDNS", "FTNT", "MRVL",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "NVDA",
+    "META",
+    "AVGO",
+    "ADBE",
+    "CRM",
+    "CSCO",
+    "INTC",
+    "AMD",
+    "TXN",
+    "QCOM",
+    "AMAT",
+    "NOW",
+    "ORCL",
+    "IBM",
+    "MU",
+    "PANW",
+    "SNPS",
+    "CDNS",
+    "FTNT",
+    "MRVL",
     # US: Consumer Cyclical
-    "AMZN", "TSLA", "HD", "NKE", "SBUX", "LOW", "MCD", "TJX", "BKNG",
-    "CMG", "ORLY", "LULU", "ABNB", "GM", "F", "RIVN",
+    "AMZN",
+    "TSLA",
+    "HD",
+    "NKE",
+    "SBUX",
+    "LOW",
+    "MCD",
+    "TJX",
+    "BKNG",
+    "CMG",
+    "ORLY",
+    "LULU",
+    "ABNB",
+    "GM",
+    "F",
+    "RIVN",
     # US: Financial Services
-    "BRK-B", "JPM", "V", "MA", "GS", "BLK", "AXP", "MS", "SCHW",
-    "C", "BAC", "WFC", "CB", "PGR", "ICE", "CME", "SPGI",
+    "BRK-B",
+    "JPM",
+    "V",
+    "MA",
+    "GS",
+    "BLK",
+    "AXP",
+    "MS",
+    "SCHW",
+    "C",
+    "BAC",
+    "WFC",
+    "CB",
+    "PGR",
+    "ICE",
+    "CME",
+    "SPGI",
     # US: Healthcare
-    "UNH", "JNJ", "LLY", "ABT", "MRK", "TMO", "PFE", "ABBV", "DHR",
-    "ISRG", "MDT", "AMGN", "GILD", "VRTX", "REGN", "BMY", "ZTS",
+    "UNH",
+    "JNJ",
+    "LLY",
+    "ABT",
+    "MRK",
+    "TMO",
+    "PFE",
+    "ABBV",
+    "DHR",
+    "ISRG",
+    "MDT",
+    "AMGN",
+    "GILD",
+    "VRTX",
+    "REGN",
+    "BMY",
+    "ZTS",
     # US: Industrials
-    "CAT", "DE", "BA", "UNP", "HON", "MMM", "GE", "RTX", "LMT",
-    "UPS", "FDX", "WM", "ETN", "ITW", "EMR",
+    "CAT",
+    "DE",
+    "BA",
+    "UNP",
+    "HON",
+    "MMM",
+    "GE",
+    "RTX",
+    "LMT",
+    "UPS",
+    "FDX",
+    "WM",
+    "ETN",
+    "ITW",
+    "EMR",
     # US: Consumer Defensive
-    "PG", "KO", "PEP", "COST", "WMT", "PM", "MO", "CL", "MDLZ",
-    "KHC", "GIS", "SJM", "HSY",
+    "PG",
+    "KO",
+    "PEP",
+    "COST",
+    "WMT",
+    "PM",
+    "MO",
+    "CL",
+    "MDLZ",
+    "KHC",
+    "GIS",
+    "SJM",
+    "HSY",
     # US: Energy
-    "XOM", "CVX", "COP", "EOG", "SLB", "MPC", "PSX", "VLO", "OXY",
-    "DVN", "HAL", "FANG", "KMI", "WMB", "OKE",
+    "XOM",
+    "CVX",
+    "COP",
+    "EOG",
+    "SLB",
+    "MPC",
+    "PSX",
+    "VLO",
+    "OXY",
+    "DVN",
+    "HAL",
+    "FANG",
+    "KMI",
+    "WMB",
+    "OKE",
     # US: Communication Services
-    "DIS", "NFLX", "CMCSA", "T", "VZ", "TMUS", "GOOG", "CHTR", "EA",
-    "TTWO", "MTCH",
+    "DIS",
+    "NFLX",
+    "CMCSA",
+    "T",
+    "VZ",
+    "TMUS",
+    "GOOG",
+    "CHTR",
+    "EA",
+    "TTWO",
+    "MTCH",
     # US: Utilities
-    "NEE", "DUK", "SO", "D", "SRE", "AEP", "EXC", "XEL", "WEC", "ED",
+    "NEE",
+    "DUK",
+    "SO",
+    "D",
+    "SRE",
+    "AEP",
+    "EXC",
+    "XEL",
+    "WEC",
+    "ED",
     # US: Real Estate
-    "PLD", "AMT", "CCI", "EQIX", "PSA", "O", "SPG", "WELL", "DLR",
+    "PLD",
+    "AMT",
+    "CCI",
+    "EQIX",
+    "PSA",
+    "O",
+    "SPG",
+    "WELL",
+    "DLR",
     # US: Basic Materials
-    "LIN", "APD", "SHW", "ECL", "NEM", "FCX", "NUE", "DOW", "DD",
-
+    "LIN",
+    "APD",
+    "SHW",
+    "ECL",
+    "NEM",
+    "FCX",
+    "NUE",
+    "DOW",
+    "DD",
     # ── International (US-listed ADRs only) ───────
     # China / HK
-    "BABA", "JD", "BIDU", "NIO", "LI", "XPEV", "PDD", "TME", "BEKE",
+    "BABA",
+    "JD",
+    "BIDU",
+    "NIO",
+    "LI",
+    "XPEV",
+    "PDD",
+    "TME",
+    "BEKE",
     # Japan
-    "TM", "SONY", "MUFG",
+    "TM",
+    "SONY",
+    "MUFG",
     # Taiwan
     "TSM",
     # Europe
-    "ASML", "NVO", "SAP", "SHEL", "AZN", "UL", "DEO", "TTE", "SPOT",
+    "ASML",
+    "NVO",
+    "SAP",
+    "SHEL",
+    "AZN",
+    "UL",
+    "DEO",
+    "TTE",
+    "SPOT",
     # India
-    "INFY", "WIT", "IBN",
+    "INFY",
+    "WIT",
+    "IBN",
     # Canada
-    "SHOP", "RY", "TD",
+    "SHOP",
+    "RY",
+    "TD",
     # Brazil
-    "VALE", "PBR", "ITUB", "NU",
+    "VALE",
+    "PBR",
+    "ITUB",
+    "NU",
     # Singapore
-    "SE", "GRAB",
+    "SE",
+    "GRAB",
     # Israel
-    "TEVA", "CHKP", "NICE", "WIX", "MNDY", "CYBR", "ICL", "ESLT",
+    "TEVA",
+    "CHKP",
+    "NICE",
+    "WIX",
+    "MNDY",
+    "CYBR",
+    "ICL",
+    "ESLT",
 ]
 
 ETF_UNIVERSE = [
     # Broad US Market
-    "SPY", "QQQ", "VTI", "VOO", "IWM", "DIA", "RSP",
+    "SPY",
+    "QQQ",
+    "VTI",
+    "VOO",
+    "IWM",
+    "DIA",
+    "RSP",
     # International / Emerging Markets
-    "VEA", "VWO", "EFA", "IEMG", "FXI",   # FXI = China large-cap
+    "VEA",
+    "VWO",
+    "EFA",
+    "IEMG",
+    "FXI",  # FXI = China large-cap
     "MCHI",  # MSCI China
-    "EWJ",   # Japan
-    "EWY",   # South Korea
-    "EWH",   # Hong Kong
-    "EWT",   # Taiwan
+    "EWJ",  # Japan
+    "EWY",  # South Korea
+    "EWH",  # Hong Kong
+    "EWT",  # Taiwan
     "INDA",  # India
-    "EWZ",   # Brazil
-    "EWG",   # Germany
-    "EWU",   # UK
-    "EWA",   # Australia
-    "EWC",   # Canada
+    "EWZ",  # Brazil
+    "EWG",  # Germany
+    "EWU",  # UK
+    "EWA",  # Australia
+    "EWC",  # Canada
     # Bonds
-    "BND", "AGG", "TLT", "LQD", "HYG", "TIP", "VCSH", "VCIT",
+    "BND",
+    "AGG",
+    "TLT",
+    "LQD",
+    "HYG",
+    "TIP",
+    "VCSH",
+    "VCIT",
     # Dividend / Income
-    "VIG", "VYM", "SCHD", "DVY", "HDV", "JEPI",
+    "VIG",
+    "VYM",
+    "SCHD",
+    "DVY",
+    "HDV",
+    "JEPI",
     # Sector ETFs
-    "XLK", "XLF", "XLE", "XLV", "XLI", "XLP", "XLY", "XLB", "XLU", "XLRE", "XLC",
+    "XLK",
+    "XLF",
+    "XLE",
+    "XLV",
+    "XLI",
+    "XLP",
+    "XLY",
+    "XLB",
+    "XLU",
+    "XLRE",
+    "XLC",
     # Thematic
-    "ARKK", "ARKW", "SOXX", "SMH", "KWEB", "ICLN", "TAN",
+    "ARKK",
+    "ARKW",
+    "SOXX",
+    "SMH",
+    "KWEB",
+    "ICLN",
+    "TAN",
     # Commodities
-    "GLD", "SLV", "VNQ", "USO", "DBC",
+    "GLD",
+    "SLV",
+    "VNQ",
+    "USO",
+    "DBC",
 ]
 
 ALL_UNIVERSE = STOCK_UNIVERSE + ETF_UNIVERSE
 
 SECTORS = [
-    "Technology", "Financial Services", "Healthcare", "Consumer Cyclical",
-    "Industrials", "Communication Services", "Consumer Defensive", "Energy",
-    "Basic Materials", "Real Estate", "Utilities",
+    "Technology",
+    "Financial Services",
+    "Healthcare",
+    "Consumer Cyclical",
+    "Industrials",
+    "Communication Services",
+    "Consumer Defensive",
+    "Energy",
+    "Basic Materials",
+    "Real Estate",
+    "Utilities",
 ]
 
 REGIONS = [
-    "US", "China / Hong Kong", "Japan", "South Korea", "Taiwan",
-    "Europe", "India", "Australia", "Canada", "Brazil", "Singapore", "Israel",
+    "US",
+    "China / Hong Kong",
+    "Japan",
+    "South Korea",
+    "Taiwan",
+    "Europe",
+    "India",
+    "Australia",
+    "Canada",
+    "Brazil",
+    "Singapore",
+    "Israel",
 ]
 
 _REGION_MAP = {}
@@ -142,14 +369,48 @@ for sym in STOCK_UNIVERSE:
 def get_region(symbol: str) -> str:
     return _REGION_MAP.get(symbol, "US")
 
+
 MAX_WORKERS = 2 if _LOW_MEMORY else 5
 
 WARM_PRIORITY = [
-    "SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA",
-    "JPM", "NFLX", "AMD", "XOM", "LLY", "BABA", "TSM", "V", "MA",
-    "BRK-B", "UNH", "JNJ", "PG", "HD", "DIS", "COST", "INTC",
-    "VTI", "VOO", "IWM", "BND", "VIG", "SCHD", "XLK", "XLF",
-    "ARKK", "GLD", "VNQ", "SOXX",
+    "SPY",
+    "QQQ",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "NVDA",
+    "META",
+    "TSLA",
+    "JPM",
+    "NFLX",
+    "AMD",
+    "XOM",
+    "LLY",
+    "BABA",
+    "TSM",
+    "V",
+    "MA",
+    "BRK-B",
+    "UNH",
+    "JNJ",
+    "PG",
+    "HD",
+    "DIS",
+    "COST",
+    "INTC",
+    "VTI",
+    "VOO",
+    "IWM",
+    "BND",
+    "VIG",
+    "SCHD",
+    "XLK",
+    "XLF",
+    "ARKK",
+    "GLD",
+    "VNQ",
+    "SOXX",
 ]
 
 
@@ -202,17 +463,20 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
 
         price = quote["c"]
         prev_close = quote.get("pc", price)
-        _set_cache(f"quote:{symbol}", {
-            "symbol": symbol,
-            "name": profile.get("name", symbol),
-            "price": round(price, 2),
-            "change": round(quote.get("d", price - prev_close), 2),
-            "change_pct": round(quote.get("dp", 0), 2),
-            "market_cap": (profile.get("marketCapitalization", 0) or 0) * 1_000_000,
-            "volume": 0,
-            "day_high": round(quote.get("h", price), 2),
-            "day_low": round(quote.get("l", price), 2),
-        })
+        _set_cache(
+            f"quote:{symbol}",
+            {
+                "symbol": symbol,
+                "name": profile.get("name", symbol),
+                "price": round(price, 2),
+                "change": round(quote.get("d", price - prev_close), 2),
+                "change_pct": round(quote.get("dp", 0), 2),
+                "market_cap": (profile.get("marketCapitalization", 0) or 0) * 1_000_000,
+                "volume": 0,
+                "day_high": round(quote.get("h", price), 2),
+                "day_low": round(quote.get("l", price), 2),
+            },
+        )
 
         price = quote["c"]
         w52_high = metrics.get("52WeekHigh")
@@ -341,11 +605,11 @@ def format_market_cap(cap: float) -> str:
     if not cap:
         return "N/A"
     if cap >= 1e12:
-        return f"${cap/1e12:.1f}T"
+        return f"${cap / 1e12:.1f}T"
     if cap >= 1e9:
-        return f"${cap/1e9:.1f}B"
+        return f"${cap / 1e9:.1f}B"
     if cap >= 1e6:
-        return f"${cap/1e6:.0f}M"
+        return f"${cap / 1e6:.0f}M"
     return f"${cap:,.0f}"
 
 
@@ -454,8 +718,7 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
             return cached
         if filled >= len(symbols) * 0.5:
             # Serve partial cache — better than empty charts
-            logger.info("Sparkline cache partial (%d/%d filled), serving stale + refreshing gaps",
-                        filled, len(symbols))
+            logger.info("Sparkline cache partial (%d/%d filled), serving stale + refreshing gaps", filled, len(symbols))
 
     # Serialize sparkline fetches: if another thread is already fetching,
     # wait for it then return the (now-cached) result instead of doubling API calls.
@@ -480,7 +743,7 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
         # (keyed by symbol:from_ts:to_ts) actually gets hits across page loads
         # instead of creating a unique cache key every second.
         now = int(time.time())
-        to_ts = (now // 3600) * 3600 + 3600   # end of current UTC hour
+        to_ts = (now // 3600) * 3600 + 3600  # end of current UTC hour
         from_ts = to_ts - max(days * 2, 10) * 86400
 
         # Merge with existing cache so previously-successful symbols aren't lost
@@ -550,9 +813,20 @@ def fetch_sparklines(symbols: list[str], period: str = "5d", interval: str = "1h
 
 # Canonical list of symbols that appear on the homepage ticker + featured
 # cards.  Duplicated from routers/market.py to avoid a circular import.
-_ACTIVE_SYMBOLS = list(dict.fromkeys([
-    "SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "NVDA", "TSLA", "AMZN",
-]))
+_ACTIVE_SYMBOLS = list(
+    dict.fromkeys(
+        [
+            "SPY",
+            "QQQ",
+            "AAPL",
+            "MSFT",
+            "GOOGL",
+            "NVDA",
+            "TSLA",
+            "AMZN",
+        ]
+    )
+)
 _FEATURED_SYMBOLS = ["AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL"]
 
 
@@ -579,6 +853,7 @@ def refresh_active_symbols():
 
 # ── Background cache warming ────────────────────
 
+
 def warm_cache():
     """Phase 1: priority symbols (fast). Phase 2: rest of universe (background batches)."""
     global _warming
@@ -591,7 +866,7 @@ def warm_cache():
     t0 = time.time()
     batch_size = 8
     for i in range(0, len(WARM_PRIORITY), batch_size):
-        batch = WARM_PRIORITY[i:i+batch_size]
+        batch = WARM_PRIORITY[i : i + batch_size]
         with ThreadPoolExecutor(max_workers=2) as pool:
             futures = {pool.submit(fetch_stock_info, sym, True): sym for sym in batch}
             for fut in as_completed(futures):
@@ -609,7 +884,7 @@ def warm_cache():
     if rest:
         logger.info("Cache warm phase 2: %d remaining symbols", len(rest))
         for i in range(0, len(rest), batch_size):
-            batch = rest[i:i+batch_size]
+            batch = rest[i : i + batch_size]
             with ThreadPoolExecutor(max_workers=2) as pool:
                 futures = {pool.submit(fetch_stock_info, sym, True): sym for sym in batch}
                 for fut in as_completed(futures):
@@ -625,6 +900,7 @@ def warm_cache():
 
 def start_cache_warmer():
     """Launch background thread that warms cache on startup and refreshes periodically."""
+
     def _loop():
         while True:
             try:
@@ -645,10 +921,7 @@ def get_cache_status() -> dict:
     """Return how many symbols are cached and whether warming is in progress."""
     with _cache_lock:
         now = time.time()
-        cached_count = sum(
-            1 for k, (ts, _) in _cache.items()
-            if k.startswith("info:") and now - ts < CACHE_TTL
-        )
+        cached_count = sum(1 for k, (ts, _) in _cache.items() if k.startswith("info:") and now - ts < CACHE_TTL)
     return {
         "cached": cached_count,
         "total": len(ALL_UNIVERSE),

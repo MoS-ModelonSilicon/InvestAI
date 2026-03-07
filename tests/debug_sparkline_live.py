@@ -1,4 +1,5 @@
 """Debug sparkline rendering on live Render site."""
+
 import requests
 from playwright.sync_api import sync_playwright
 
@@ -62,7 +63,8 @@ with sync_playwright() as p:
 
     for canvas in spark_canvases:
         cid = canvas.get_attribute("id")
-        info = page.evaluate("""(canvasId) => {
+        info = page.evaluate(
+            """(canvasId) => {
             const c = document.getElementById(canvasId);
             if (!c) return {exists: false};
             const rect = c.getBoundingClientRect();
@@ -80,7 +82,9 @@ with sync_playwright() as p:
                 parentWidth: c.parentElement.offsetWidth,
                 parentHeight: c.parentElement.offsetHeight,
             };
-        }""", cid)
+        }""",
+            cid,
+        )
         print(f"  {cid}: {info}")
 
     # Check for failed network requests

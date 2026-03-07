@@ -13,9 +13,7 @@ router = APIRouter(prefix="/api/calendar", tags=["calendar"])
 def earnings_calendar(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     watchlist = db.query(Watchlist).filter(Watchlist.user_id == user.id).all()
     holdings = db.query(Holding).filter(Holding.user_id == user.id).all()
-    symbols = list(set(
-        [w.symbol for w in watchlist] + [h.symbol for h in holdings]
-    ))
+    symbols = list(set([w.symbol for w in watchlist] + [h.symbol for h in holdings]))
     if not symbols:
         symbols = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "JPM", "JNJ", "XOM"]
     return get_earnings_calendar(symbols)

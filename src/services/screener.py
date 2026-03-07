@@ -108,30 +108,110 @@ def _build_risk_analysis(d: dict) -> dict:
     beta = d.get("beta")
     if beta is not None:
         if beta < 0.6:
-            factors.append({"name": "Volatility", "score": 2, "max": 10, "label": "Very Low", "detail": f"Beta {beta:.2f} — moves much less than the market. Very stable."})
+            factors.append(
+                {
+                    "name": "Volatility",
+                    "score": 2,
+                    "max": 10,
+                    "label": "Very Low",
+                    "detail": f"Beta {beta:.2f} — moves much less than the market. Very stable.",
+                }
+            )
         elif beta < 0.9:
-            factors.append({"name": "Volatility", "score": 4, "max": 10, "label": "Low", "detail": f"Beta {beta:.2f} — less volatile than average. Relatively stable."})
+            factors.append(
+                {
+                    "name": "Volatility",
+                    "score": 4,
+                    "max": 10,
+                    "label": "Low",
+                    "detail": f"Beta {beta:.2f} — less volatile than average. Relatively stable.",
+                }
+            )
         elif beta < 1.2:
-            factors.append({"name": "Volatility", "score": 6, "max": 10, "label": "Medium", "detail": f"Beta {beta:.2f} — moves roughly with the market."})
+            factors.append(
+                {
+                    "name": "Volatility",
+                    "score": 6,
+                    "max": 10,
+                    "label": "Medium",
+                    "detail": f"Beta {beta:.2f} — moves roughly with the market.",
+                }
+            )
         elif beta < 1.6:
-            factors.append({"name": "Volatility", "score": 8, "max": 10, "label": "High", "detail": f"Beta {beta:.2f} — more volatile than average. Expect bigger swings."})
+            factors.append(
+                {
+                    "name": "Volatility",
+                    "score": 8,
+                    "max": 10,
+                    "label": "High",
+                    "detail": f"Beta {beta:.2f} — more volatile than average. Expect bigger swings.",
+                }
+            )
         else:
-            factors.append({"name": "Volatility", "score": 10, "max": 10, "label": "Very High", "detail": f"Beta {beta:.2f} — significantly more volatile. Not for the faint-hearted."})
+            factors.append(
+                {
+                    "name": "Volatility",
+                    "score": 10,
+                    "max": 10,
+                    "label": "Very High",
+                    "detail": f"Beta {beta:.2f} — significantly more volatile. Not for the faint-hearted.",
+                }
+            )
 
     # Valuation
     pe = d.get("pe_ratio")
     fpe = d.get("forward_pe")
     if pe is not None:
         if pe < 0:
-            factors.append({"name": "Valuation", "score": 9, "max": 10, "label": "Unprofitable", "detail": f"Negative P/E ({pe:.1f}) — company is currently losing money."})
+            factors.append(
+                {
+                    "name": "Valuation",
+                    "score": 9,
+                    "max": 10,
+                    "label": "Unprofitable",
+                    "detail": f"Negative P/E ({pe:.1f}) — company is currently losing money.",
+                }
+            )
         elif pe < 12:
-            factors.append({"name": "Valuation", "score": 2, "max": 10, "label": "Cheap", "detail": f"P/E {pe:.1f} — trading below market average. Could be undervalued or facing challenges."})
+            factors.append(
+                {
+                    "name": "Valuation",
+                    "score": 2,
+                    "max": 10,
+                    "label": "Cheap",
+                    "detail": f"P/E {pe:.1f} — trading below market average. Could be undervalued or facing challenges.",
+                }
+            )
         elif pe < 25:
-            factors.append({"name": "Valuation", "score": 4, "max": 10, "label": "Fair", "detail": f"P/E {pe:.1f} — reasonably priced relative to earnings."})
+            factors.append(
+                {
+                    "name": "Valuation",
+                    "score": 4,
+                    "max": 10,
+                    "label": "Fair",
+                    "detail": f"P/E {pe:.1f} — reasonably priced relative to earnings.",
+                }
+            )
         elif pe < 40:
-            factors.append({"name": "Valuation", "score": 6, "max": 10, "label": "Premium", "detail": f"P/E {pe:.1f} — priced above average. Market expects growth."})
+            factors.append(
+                {
+                    "name": "Valuation",
+                    "score": 6,
+                    "max": 10,
+                    "label": "Premium",
+                    "detail": f"P/E {pe:.1f} — priced above average. Market expects growth.",
+                }
+            )
         else:
-            factors.append({"name": "Valuation", "score": 8, "max": 10, "label": "Expensive", "detail": f"P/E {pe:.1f} — very high expectations baked into the price."})
+            factors.append(
+                {
+                    "name": "Valuation",
+                    "score": 8,
+                    "max": 10,
+                    "label": "Expensive",
+                    "detail": f"P/E {pe:.1f} — very high expectations baked into the price.",
+                }
+            )
 
     # Financial Health
     dte = d.get("debt_to_equity")
@@ -162,7 +242,15 @@ def _build_risk_analysis(d: dict) -> dict:
                 parts.append(f"negative margins ({pm:.1f}%)")
         health_score = max(1, min(10, health_score))
         lbl = "Strong" if health_score <= 3 else "Moderate" if health_score <= 6 else "Weak"
-        factors.append({"name": "Financial Health", "score": health_score, "max": 10, "label": lbl, "detail": "; ".join(parts).capitalize() + "."})
+        factors.append(
+            {
+                "name": "Financial Health",
+                "score": health_score,
+                "max": 10,
+                "label": lbl,
+                "detail": "; ".join(parts).capitalize() + ".",
+            }
+        )
 
     # Growth
     rg = d.get("revenue_growth")
@@ -189,7 +277,15 @@ def _build_risk_analysis(d: dict) -> dict:
                 growth_score = min(growth_score + 2, 10)
                 parts.append(f"earnings down {eg:.1f}%")
         lbl = "Strong" if growth_score <= 3 else "Moderate" if growth_score <= 6 else "Declining"
-        factors.append({"name": "Growth", "score": growth_score, "max": 10, "label": lbl, "detail": "; ".join(parts).capitalize() + "."})
+        factors.append(
+            {
+                "name": "Growth",
+                "score": growth_score,
+                "max": 10,
+                "label": lbl,
+                "detail": "; ".join(parts).capitalize() + ".",
+            }
+        )
 
     # Price Position (vs 52-week range)
     pfh = d.get("pct_from_high")
@@ -197,11 +293,35 @@ def _build_risk_analysis(d: dict) -> dict:
     if pfh is not None and pfl is not None:
         range_pct = 100 * (1 + pfh / 100) if pfh else 0
         if pfh is not None and pfh > -5:
-            factors.append({"name": "Price Position", "score": 7, "max": 10, "label": "Near High", "detail": f"{pfh:+.1f}% from 52-week high, {pfl:+.1f}% from low. Trading near its peak."})
+            factors.append(
+                {
+                    "name": "Price Position",
+                    "score": 7,
+                    "max": 10,
+                    "label": "Near High",
+                    "detail": f"{pfh:+.1f}% from 52-week high, {pfl:+.1f}% from low. Trading near its peak.",
+                }
+            )
         elif pfh is not None and pfh > -15:
-            factors.append({"name": "Price Position", "score": 5, "max": 10, "label": "Mid Range", "detail": f"{pfh:+.1f}% from 52-week high, {pfl:+.1f}% from low."})
+            factors.append(
+                {
+                    "name": "Price Position",
+                    "score": 5,
+                    "max": 10,
+                    "label": "Mid Range",
+                    "detail": f"{pfh:+.1f}% from 52-week high, {pfl:+.1f}% from low.",
+                }
+            )
         else:
-            factors.append({"name": "Price Position", "score": 3, "max": 10, "label": "Near Low", "detail": f"{pfh:+.1f}% from 52-week high, {pfl:+.1f}% from low. Could be a buying opportunity or a warning."})
+            factors.append(
+                {
+                    "name": "Price Position",
+                    "score": 3,
+                    "max": 10,
+                    "label": "Near Low",
+                    "detail": f"{pfh:+.1f}% from 52-week high, {pfl:+.1f}% from low. Could be a buying opportunity or a warning.",
+                }
+            )
 
     overall = round(sum(float(f["score"]) for f in factors) / len(factors), 1) if factors else 5  # type: ignore[arg-type, misc]
     if overall <= 3:
@@ -290,35 +410,37 @@ def screen_instruments(
         if summary_text and len(summary_text) > 250:
             summary_text = summary_text[:247] + "..."
 
-        filtered.append({
-            "symbol": d["symbol"],
-            "name": d["name"],
-            "sector": d.get("sector", "N/A"),
-            "industry": d.get("industry", "N/A"),
-            "price": round(d.get("price", 0), 2),
-            "market_cap": d.get("market_cap", 0),
-            "market_cap_fmt": format_market_cap(d.get("market_cap", 0)),
-            "pe_ratio": round(d["pe_ratio"], 2) if d.get("pe_ratio") else None,
-            "forward_pe": round(d["forward_pe"], 2) if d.get("forward_pe") else None,
-            "dividend_yield": d.get("dividend_yield"),
-            "beta": round(d["beta"], 2) if d.get("beta") else None,
-            "year_change": d.get("year_change"),
-            "recommendation": d.get("recommendation"),
-            "signal": sig["signal"],
-            "signal_reason": sig["reason"],
-            "week52_high": round(d["week52_high"], 2) if d.get("week52_high") else None,
-            "week52_low": round(d["week52_low"], 2) if d.get("week52_low") else None,
-            "pct_from_high": d.get("pct_from_high"),
-            "revenue_growth": d.get("revenue_growth"),
-            "earnings_growth": d.get("earnings_growth"),
-            "profit_margin": d.get("profit_margin"),
-            "return_on_equity": d.get("return_on_equity"),
-            "debt_to_equity": d.get("debt_to_equity"),
-            "risk_analysis": risk,
-            "analyst_targets": analyst,
-            "summary": summary_text,
-            "region": d.get("region", "US"),
-        })
+        filtered.append(
+            {
+                "symbol": d["symbol"],
+                "name": d["name"],
+                "sector": d.get("sector", "N/A"),
+                "industry": d.get("industry", "N/A"),
+                "price": round(d.get("price", 0), 2),
+                "market_cap": d.get("market_cap", 0),
+                "market_cap_fmt": format_market_cap(d.get("market_cap", 0)),
+                "pe_ratio": round(d["pe_ratio"], 2) if d.get("pe_ratio") else None,
+                "forward_pe": round(d["forward_pe"], 2) if d.get("forward_pe") else None,
+                "dividend_yield": d.get("dividend_yield"),
+                "beta": round(d["beta"], 2) if d.get("beta") else None,
+                "year_change": d.get("year_change"),
+                "recommendation": d.get("recommendation"),
+                "signal": sig["signal"],
+                "signal_reason": sig["reason"],
+                "week52_high": round(d["week52_high"], 2) if d.get("week52_high") else None,
+                "week52_low": round(d["week52_low"], 2) if d.get("week52_low") else None,
+                "pct_from_high": d.get("pct_from_high"),
+                "revenue_growth": d.get("revenue_growth"),
+                "earnings_growth": d.get("earnings_growth"),
+                "profit_margin": d.get("profit_margin"),
+                "return_on_equity": d.get("return_on_equity"),
+                "debt_to_equity": d.get("debt_to_equity"),
+                "risk_analysis": risk,
+                "analyst_targets": analyst,
+                "summary": summary_text,
+                "region": d.get("region", "US"),
+            }
+        )
 
     filtered.sort(key=lambda x: x.get("market_cap", 0), reverse=True)
     return filtered

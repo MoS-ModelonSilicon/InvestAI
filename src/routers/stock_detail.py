@@ -17,7 +17,7 @@ def _compute_sma(closes: list, window: int = 50) -> list:
         if i < window - 1:
             sma.append(None)
         else:
-            avg = sum(closes[i - window + 1: i + 1]) / window
+            avg = sum(closes[i - window + 1 : i + 1]) / window
             sma.append(round(avg, 2))
     return sma
 

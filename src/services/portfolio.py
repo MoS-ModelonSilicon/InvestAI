@@ -69,11 +69,13 @@ def calculate_portfolio(db: Session, user_id: int) -> dict:
 
     allocation = []
     for sec, val in sorted(sector_map.items(), key=lambda x: x[1], reverse=True):
-        allocation.append({
-            "sector": sec,
-            "value": round(val, 2),
-            "pct": round(val / total_value * 100, 1) if total_value > 0 else 0,
-        })
+        allocation.append(
+            {
+                "sector": sec,
+                "value": round(val, 2),
+                "pct": round(val / total_value * 100, 1) if total_value > 0 else 0,
+            }
+        )
 
     total_gl = total_value - total_invested
     total_gl_pct = (total_gl / total_invested * 100) if total_invested > 0 else 0

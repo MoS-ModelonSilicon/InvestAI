@@ -27,8 +27,8 @@ def _nav_click(page: Page, page_id: str):
 #  Connectivity & basic loading
 # ────────────────────────────────────────────
 
-class TestSiteLoads:
 
+class TestSiteLoads:
     def test_login_page_loads(self, page: Page, live_url: str, _live_server):
         page.goto(f"{live_url}/login", wait_until="domcontentloaded")
         expect(page.locator(".tab-btn")).to_have_count(2)
@@ -48,10 +48,11 @@ class TestSiteLoads:
 #  Authentication
 # ────────────────────────────────────────────
 
-class TestLogin:
 
+class TestLogin:
     def test_successful_login(self, page: Page, live_url: str, _live_server):
         import requests
+
         requests.post(
             f"{live_url}/auth/register",
             json={"email": "login_test@e2e.local", "password": "Pass1234", "name": "Login Tester"},
@@ -105,23 +106,23 @@ class TestLogin:
 #  Sidebar navigation
 # ────────────────────────────────────────────
 
-class TestNavigation:
 
+class TestNavigation:
     NAV_PAGES = [
-        ("dashboard",       "Dashboard"),
-        ("portfolio",       "Portfolio"),
-        ("watchlist",       "Watchlist"),
-        ("news",            "Market News"),
-        ("transactions",    "Transactions"),
-        ("budgets",         "Budgets"),
-        ("profile",         "Risk Profile"),
-        ("screener",        "Stock & Fund Screener"),
+        ("dashboard", "Dashboard"),
+        ("portfolio", "Portfolio"),
+        ("watchlist", "Watchlist"),
+        ("news", "Market News"),
+        ("transactions", "Transactions"),
+        ("budgets", "Budgets"),
+        ("profile", "Risk Profile"),
+        ("screener", "Stock & Fund Screener"),
         ("recommendations", "For You"),
-        ("comparison",      "Compare Stocks"),
-        ("alerts",          "Price Alerts"),
-        ("calendar",        "Earnings & Events Calendar"),
-        ("education",       "Learn to Invest"),
-        ("il-funds",        "Israeli Funds"),
+        ("comparison", "Compare Stocks"),
+        ("alerts", "Price Alerts"),
+        ("calendar", "Earnings & Events Calendar"),
+        ("education", "Learn to Invest"),
+        ("il-funds", "Israeli Funds"),
     ]
 
     def test_navigate_to_each_page(self, authenticated_page: Page):
@@ -189,6 +190,7 @@ class TestNavigation:
 #  Dashboard — real data flow
 # ────────────────────────────────────────────
 
+
 class TestDashboardFlow:
     """Dashboard should load stats and charts with actual data."""
 
@@ -208,13 +210,12 @@ class TestDashboardFlow:
         cards = grid.locator(".market-card")
         count = cards.count()
         assert count > 0, (
-            f"Market grid has 0 cards — /api/market/featured returned no data. "
-            f"Grid HTML: {grid.inner_html()[:300]}"
+            f"Market grid has 0 cards — /api/market/featured returned no data. Grid HTML: {grid.inner_html()[:300]}"
         )
 
     def test_sparkline_charts_render_on_market_cards(self, authenticated_page: Page):
         """Each market card should have a visible sparkline canvas with drawn pixels."""
-        authenticated_page.wait_for_selector('.market-card', timeout=30_000)
+        authenticated_page.wait_for_selector(".market-card", timeout=30_000)
         # Wait for sparkline charts to be created by JS
         authenticated_page.wait_for_function(
             'typeof sparkCharts !== "undefined" && Object.keys(sparkCharts).length > 0',
@@ -227,20 +228,16 @@ class TestDashboardFlow:
             cid = canvas.get_attribute("id")
             box = canvas.bounding_box()
             assert box is not None, f"{cid} has no bounding box — not in DOM"
-            assert box["width"] > 0 and box["height"] > 0, (
-                f"{cid} has zero dimensions: {box}"
-            )
+            assert box["width"] > 0 and box["height"] > 0, f"{cid} has zero dimensions: {box}"
 
     def test_sparkline_charts_have_pixel_data(self, authenticated_page: Page):
         """Sparkline canvases should have non-zero pixel data (Chart.js drew something)."""
-        authenticated_page.wait_for_selector('.market-card', timeout=30_000)
+        authenticated_page.wait_for_selector(".market-card", timeout=30_000)
         authenticated_page.wait_for_function(
             'typeof sparkCharts !== "undefined" && Object.keys(sparkCharts).length > 0',
             timeout=30_000,
         )
-        spark_keys = authenticated_page.evaluate(
-            'Object.keys(sparkCharts)'
-        )
+        spark_keys = authenticated_page.evaluate("Object.keys(sparkCharts)")
         assert len(spark_keys) > 0, (
             "sparkCharts is empty — Chart.js never created any sparkline charts. "
             "The /api/market/home sparkline arrays may be empty."
@@ -248,7 +245,7 @@ class TestDashboardFlow:
 
         for symbol in spark_keys:
             non_zero = authenticated_page.evaluate(
-                '''(sym) => {
+                """(sym) => {
                     const el = document.getElementById("spark-" + sym);
                     if (!el) return -1;
                     const ctx = el.getContext("2d");
@@ -256,48 +253,38 @@ class TestDashboardFlow:
                     let n = 0;
                     for (let i = 3; i < d.length; i += 4) { if (d[i] > 0) n++; }
                     return n;
-                }''',
+                }""",
                 symbol,
             )
-            assert non_zero > 0, (
-                f"spark-{symbol} canvas has 0 drawn pixels — chart did not render"
-            )
+            assert non_zero > 0, f"spark-{symbol} canvas has 0 drawn pixels — chart did not render"
 
     def test_sparkline_data_has_realistic_values(self, authenticated_page: Page):
         """Sparkline chart data should contain multiple realistic price points."""
-        authenticated_page.wait_for_selector('.market-card', timeout=30_000)
+        authenticated_page.wait_for_selector(".market-card", timeout=30_000)
         authenticated_page.wait_for_function(
             'typeof sparkCharts !== "undefined" && Object.keys(sparkCharts).length > 0',
             timeout=30_000,
         )
-        data_info = authenticated_page.evaluate('''() => {
+        data_info = authenticated_page.evaluate("""() => {
             const r = {};
             for (const [sym, chart] of Object.entries(sparkCharts)) {
                 const d = chart.data.datasets[0].data;
                 r[sym] = {len: d.length, min: Math.min(...d), max: Math.max(...d)};
             }
             return r;
-        }''')
+        }""")
         assert len(data_info) > 0, "No sparkline chart data found"
         for symbol, info in data_info.items():
-            assert info["len"] > 1, (
-                f"{symbol} sparkline has only {info['len']} data point(s)"
-            )
-            assert info["min"] > 0, (
-                f"{symbol} sparkline has invalid min price: {info['min']}"
-            )
-            assert info["max"] > info["min"], (
-                f"{symbol} sparkline is flat (min={info['min']}, max={info['max']})"
-            )
+            assert info["len"] > 1, f"{symbol} sparkline has only {info['len']} data point(s)"
+            assert info["min"] > 0, f"{symbol} sparkline has invalid min price: {info['min']}"
+            assert info["max"] > info["min"], f"{symbol} sparkline is flat (min={info['min']}, max={info['max']})"
 
     def test_ticker_strip_has_data(self, authenticated_page: Page):
         """Ticker bar should show real market symbols."""
         strip = authenticated_page.locator("#ticker-strip")
         authenticated_page.wait_for_timeout(3000)
         html = strip.inner_html()
-        assert "ticker-loading" not in html or len(html) > 200, (
-            f"Ticker strip never loaded data. Content: {html[:300]}"
-        )
+        assert "ticker-loading" not in html or len(html) > 200, f"Ticker strip never loaded data. Content: {html[:300]}"
 
     def test_chart_trend_renders(self, authenticated_page: Page):
         """Monthly trend chart canvas should have been drawn on (non-zero size)."""
@@ -315,8 +302,8 @@ class TestDashboardFlow:
 #  Transactions — full CRUD flow
 # ────────────────────────────────────────────
 
-class TestTransactionsFlow:
 
+class TestTransactionsFlow:
     def _go(self, page: Page):
         _nav_click(page, "transactions")
 
@@ -357,8 +344,8 @@ class TestTransactionsFlow:
 #  Budgets — full flow
 # ────────────────────────────────────────────
 
-class TestBudgetsFlow:
 
+class TestBudgetsFlow:
     def _go(self, page: Page):
         _nav_click(page, "budgets")
 
@@ -373,8 +360,7 @@ class TestBudgetsFlow:
         grid = authenticated_page.locator("#budgets-grid")
         cards = grid.locator(".budget-card")
         assert cards.count() > 0, (
-            "No budget cards appeared after creating a budget. "
-            f"Grid HTML: {grid.inner_html()[:300]}"
+            f"No budget cards appeared after creating a budget. Grid HTML: {grid.inner_html()[:300]}"
         )
 
     def test_budget_card_shows_progress(self, authenticated_page: Page):
@@ -383,17 +369,15 @@ class TestBudgetsFlow:
         authenticated_page.wait_for_timeout(1000)
         card = authenticated_page.locator(".budget-card").first
         html = card.inner_html()
-        assert "$" in html or "%" in html, (
-            f"Budget card doesn't show any dollar or percent values: {html[:300]}"
-        )
+        assert "$" in html or "%" in html, f"Budget card doesn't show any dollar or percent values: {html[:300]}"
 
 
 # ────────────────────────────────────────────
 #  Risk Profile — wizard flow
 # ────────────────────────────────────────────
 
-class TestProfileFlow:
 
+class TestProfileFlow:
     def test_profile_wizard_loads(self, authenticated_page: Page):
         """Risk profile page should show a wizard with questions or a result."""
         _nav_click(authenticated_page, "profile")
@@ -402,9 +386,7 @@ class TestProfileFlow:
         result = authenticated_page.locator("#profile-result")
         wizard_html = wizard.inner_html()
         result_visible = result.is_visible()
-        assert len(wizard_html) > 10 or result_visible, (
-            "Profile page is empty — neither wizard nor result loaded"
-        )
+        assert len(wizard_html) > 10 or result_visible, "Profile page is empty — neither wizard nor result loaded"
 
     def test_profile_wizard_has_interactive_options(self, authenticated_page: Page):
         """The wizard should have clickable answer options or a saved result."""
@@ -415,17 +397,15 @@ class TestProfileFlow:
             return  # already completed
         options = authenticated_page.locator("#wizard-content .wizard-option, #wizard-content button")
         count = options.count()
-        assert count > 0, (
-            "Wizard has no clickable options — /api/profile did not return questions"
-        )
+        assert count > 0, "Wizard has no clickable options — /api/profile did not return questions"
 
 
 # ────────────────────────────────────────────
 #  Screener — search flow
 # ────────────────────────────────────────────
 
-class TestScreenerFlow:
 
+class TestScreenerFlow:
     def test_screener_filters_populated_from_api(self, authenticated_page: Page):
         """Sector and region dropdowns should be populated by /api/screener/sectors."""
         _nav_click(authenticated_page, "screener")
@@ -433,12 +413,10 @@ class TestScreenerFlow:
         sector_opts = authenticated_page.locator("#scr-sector option")
         region_opts = authenticated_page.locator("#scr-region option")
         assert sector_opts.count() > 1, (
-            f"Sector dropdown only has {sector_opts.count()} option(s) — "
-            "/api/screener/sectors returned no sectors"
+            f"Sector dropdown only has {sector_opts.count()} option(s) — /api/screener/sectors returned no sectors"
         )
         assert region_opts.count() > 1, (
-            f"Region dropdown only has {region_opts.count()} option(s) — "
-            "/api/screener/sectors returned no regions"
+            f"Region dropdown only has {region_opts.count()} option(s) — /api/screener/sectors returned no regions"
         )
 
     def test_screener_search_returns_results(self, authenticated_page: Page):
@@ -449,10 +427,7 @@ class TestScreenerFlow:
         authenticated_page.wait_for_timeout(5000)
         results = authenticated_page.locator("#scr-results-area")
         html = results.inner_html()
-        assert len(html) > 50, (
-            f"Screener returned empty results. /api/screener returned no data. "
-            f"HTML: {html[:300]}"
-        )
+        assert len(html) > 50, f"Screener returned empty results. /api/screener returned no data. HTML: {html[:300]}"
 
     def test_screener_preset_value_stocks(self, authenticated_page: Page):
         """Clicking 'Value Stocks' preset should auto-search and return stock cards."""
@@ -465,8 +440,7 @@ class TestScreenerFlow:
         count_text = count_el.inner_text()
         assert count_text != "", "Result count is empty after Value Stocks preset"
         assert not count_text.startswith("0 results"), (
-            f"Value Stocks returned 0 results — expected some value stocks. "
-            f"Count text: '{count_text}'"
+            f"Value Stocks returned 0 results — expected some value stocks. Count text: '{count_text}'"
         )
 
     def test_screener_preset_value_stocks_shows_cards(self, authenticated_page: Page):
@@ -489,9 +463,7 @@ class TestScreenerFlow:
         authenticated_page.get_by_role("button", name="Growth Tech").click()
         authenticated_page.wait_for_timeout(8000)
         count_text = authenticated_page.locator("#scr-result-count").inner_text()
-        assert not count_text.startswith("0 results"), (
-            f"Growth Tech returned 0 results. Count: '{count_text}'"
-        )
+        assert not count_text.startswith("0 results"), f"Growth Tech returned 0 results. Count: '{count_text}'"
 
     def test_screener_preset_high_dividend(self, authenticated_page: Page):
         """High Dividend preset should return results with dividend yield >= 3%."""
@@ -500,9 +472,7 @@ class TestScreenerFlow:
         authenticated_page.get_by_role("button", name="High Dividend").click()
         authenticated_page.wait_for_timeout(8000)
         count_text = authenticated_page.locator("#scr-result-count").inner_text()
-        assert not count_text.startswith("0 results"), (
-            f"High Dividend returned 0 results. Count: '{count_text}'"
-        )
+        assert not count_text.startswith("0 results"), f"High Dividend returned 0 results. Count: '{count_text}'"
 
     def test_screener_preset_all_etfs(self, authenticated_page: Page):
         """All ETFs preset should return ETF results."""
@@ -511,9 +481,7 @@ class TestScreenerFlow:
         authenticated_page.get_by_role("button", name="All ETFs").click()
         authenticated_page.wait_for_timeout(8000)
         count_text = authenticated_page.locator("#scr-result-count").inner_text()
-        assert not count_text.startswith("0 results"), (
-            f"All ETFs returned 0 results. Count: '{count_text}'"
-        )
+        assert not count_text.startswith("0 results"), f"All ETFs returned 0 results. Count: '{count_text}'"
 
     def test_screener_card_has_metrics(self, authenticated_page: Page):
         """Cards should display real metric values (P/E, Div %, Beta, Mkt Cap)."""
@@ -570,9 +538,7 @@ class TestScreenerFlow:
         signal_select = authenticated_page.locator("#scr-signal")
         expect(signal_select).to_be_visible()
         opts = signal_select.locator("option")
-        assert opts.count() == 4, (
-            f"Signal dropdown should have 4 options (All/Buy/Hold/Avoid), got {opts.count()}"
-        )
+        assert opts.count() == 4, f"Signal dropdown should have 4 options (All/Buy/Hold/Avoid), got {opts.count()}"
 
     def test_screener_signal_filter_buy_returns_only_buy(self, authenticated_page: Page):
         """Filtering by 'Buy' signal should only show cards with Buy badges."""
@@ -589,9 +555,7 @@ class TestScreenerFlow:
         # Every visible card's signal badge must say Buy
         for i in range(min(count, 10)):  # check up to 10
             badge = cards.nth(i).locator(".signal-badge").inner_text().strip().lower()
-            assert "buy" in badge, (
-                f"Card {i} has signal '{badge}' but filter is set to Buy"
-            )
+            assert "buy" in badge, f"Card {i} has signal '{badge}' but filter is set to Buy"
 
     def test_screener_signal_filter_avoid_returns_only_avoid(self, authenticated_page: Page):
         """Filtering by 'Avoid' signal should only show cards with Avoid badges."""
@@ -606,9 +570,7 @@ class TestScreenerFlow:
             return
         for i in range(min(count, 10)):
             badge = cards.nth(i).locator(".signal-badge").inner_text().strip().lower()
-            assert "avoid" in badge, (
-                f"Card {i} has signal '{badge}' but filter is set to Avoid"
-            )
+            assert "avoid" in badge, f"Card {i} has signal '{badge}' but filter is set to Avoid"
 
     def test_screener_signal_filter_cleared_by_clear_button(self, authenticated_page: Page):
         """Clear button should reset the signal filter back to 'All Signals'."""
@@ -628,11 +590,10 @@ class TestScreenerAPI:
     def _session(base_url: str, email: str, password: str, name: str):
         """Register + login via API. Returns requests.Session."""
         import requests as _req
+
         s = _req.Session()
-        s.post(f"{base_url}/auth/register",
-               json={"email": email, "password": password, "name": name}, timeout=30)
-        resp = s.post(f"{base_url}/auth/login",
-                      json={"email": email, "password": password}, timeout=30)
+        s.post(f"{base_url}/auth/register", json={"email": email, "password": password, "name": name}, timeout=30)
+        resp = s.post(f"{base_url}/auth/login", json={"email": email, "password": password}, timeout=30)
         assert resp.status_code == 200, f"Login failed: {resp.text}"
         return s
 
@@ -640,6 +601,7 @@ class TestScreenerAPI:
     def _wait_cache(s, base_url: str):
         """Poll until cache is ready."""
         import time
+
         for _ in range(20):
             cs = s.get(f"{base_url}/api/market/cache-status", timeout=10).json()
             if cs.get("ready"):
@@ -698,9 +660,7 @@ class TestScreenerAPI:
         for item in items:
             pe = item["pe_ratio"]
             assert pe is not None, f"{item['symbol']} has null pe_ratio"
-            assert pe <= 15, (
-                f"{item['symbol']} P/E={pe} exceeds pe_max=15 filter"
-            )
+            assert pe <= 15, f"{item['symbol']} P/E={pe} exceeds pe_max=15 filter"
 
     def test_high_dividend_api_returns_results(self, live_url: str, _live_server):
         """High Dividend filter (div >= 3%) should return results."""
@@ -732,13 +692,9 @@ class TestScreenerAPI:
         has_div = sum(1 for i in items if i["dividend_yield"] is not None)
         has_beta = sum(1 for i in items if i["beta"] is not None)
         assert has_pe > 0, (
-            f"No stocks have pe_ratio populated out of {len(items)} — "
-            f"cache warmer may be using full=False"
+            f"No stocks have pe_ratio populated out of {len(items)} — cache warmer may be using full=False"
         )
-        assert has_beta > 0, (
-            f"No stocks have beta populated out of {len(items)} — "
-            f"cache warmer may be using full=False"
-        )
+        assert has_beta > 0, f"No stocks have beta populated out of {len(items)} — cache warmer may be using full=False"
 
     def test_signal_filter_buy_returns_only_buy(self, live_url: str, _live_server):
         """Filtering by signal=Buy should return only Buy-signal stocks."""
@@ -753,9 +709,7 @@ class TestScreenerAPI:
         items = resp.json()["items"]
         # Buy results may be 0 on a fresh cache — only verify correctness when present
         for item in items:
-            assert item["signal"] == "Buy", (
-                f"{item['symbol']} has signal='{item['signal']}' but filter is Buy"
-            )
+            assert item["signal"] == "Buy", f"{item['symbol']} has signal='{item['signal']}' but filter is Buy"
 
     def test_signal_filter_hold_returns_only_hold(self, live_url: str, _live_server):
         """Filtering by signal=Hold should return only Hold-signal stocks."""
@@ -770,9 +724,7 @@ class TestScreenerAPI:
         items = resp.json()["items"]
         assert len(items) > 0, "signal=Hold filter returned 0 results"
         for item in items:
-            assert item["signal"] == "Hold", (
-                f"{item['symbol']} has signal='{item['signal']}' but filter is Hold"
-            )
+            assert item["signal"] == "Hold", f"{item['symbol']} has signal='{item['signal']}' but filter is Hold"
 
     def test_signal_filter_avoid_returns_only_avoid(self, live_url: str, _live_server):
         """Filtering by signal=Avoid should return only Avoid-signal stocks."""
@@ -787,9 +739,7 @@ class TestScreenerAPI:
         items = resp.json()["items"]
         # Avoid may have 0 results if all stocks are Buy/Hold — that's OK
         for item in items:
-            assert item["signal"] == "Avoid", (
-                f"{item['symbol']} has signal='{item['signal']}' but filter is Avoid"
-            )
+            assert item["signal"] == "Avoid", f"{item['symbol']} has signal='{item['signal']}' but filter is Avoid"
 
     def test_signal_filter_no_filter_returns_mixed(self, live_url: str, _live_server):
         """Without signal filter, results should contain a mix of signals."""
@@ -804,17 +754,15 @@ class TestScreenerAPI:
         items = resp.json()["items"]
         assert len(items) > 0, "Unfiltered screener returned 0 results"
         signals = set(i["signal"] for i in items)
-        assert len(signals) >= 2, (
-            f"Expected mixed signals without filter, got only: {signals}"
-        )
+        assert len(signals) >= 2, f"Expected mixed signals without filter, got only: {signals}"
 
 
 # ────────────────────────────────────────────
 #  Recommendations
 # ────────────────────────────────────────────
 
-class TestRecommendationsFlow:
 
+class TestRecommendationsFlow:
     def test_recommendations_loads_content_or_prompt(self, authenticated_page: Page):
         """Should show recommendations or a prompt to complete risk profile."""
         _nav_click(authenticated_page, "recommendations")
@@ -832,8 +780,8 @@ class TestRecommendationsFlow:
 #  Watchlist
 # ────────────────────────────────────────────
 
-class TestWatchlistFlow:
 
+class TestWatchlistFlow:
     def test_watchlist_loads(self, authenticated_page: Page):
         """Watchlist should show cards or an empty state message."""
         _nav_click(authenticated_page, "watchlist")
@@ -843,8 +791,7 @@ class TestWatchlistFlow:
         has_cards = ".watchlist-card" in html or "card" in html.lower()
         has_empty = "empty" in html.lower() or "no " in html.lower() or "add" in html.lower()
         assert has_cards or has_empty or len(html) > 20, (
-            f"Watchlist page is blank — /api/screener/watchlist/live returned nothing. "
-            f"HTML: {html[:300]}"
+            f"Watchlist page is blank — /api/screener/watchlist/live returned nothing. HTML: {html[:300]}"
         )
 
 
@@ -852,18 +799,15 @@ class TestWatchlistFlow:
 #  News
 # ────────────────────────────────────────────
 
-class TestNewsFlow:
 
+class TestNewsFlow:
     def test_news_loads_articles(self, authenticated_page: Page):
         """News page should show article cards from /api/news."""
         _nav_click(authenticated_page, "news")
         authenticated_page.wait_for_timeout(5000)
         container = authenticated_page.locator("#news-container")
         html = container.inner_html()
-        assert len(html) > 50, (
-            f"News page is empty — /api/news returned no articles. "
-            f"HTML: {html[:300]}"
-        )
+        assert len(html) > 50, f"News page is empty — /api/news returned no articles. HTML: {html[:300]}"
 
     def test_news_count_shown(self, authenticated_page: Page):
         """The news count badge should display a number."""
@@ -878,8 +822,8 @@ class TestNewsFlow:
 #  Portfolio — add holding flow
 # ────────────────────────────────────────────
 
-class TestPortfolioFlow:
 
+class TestPortfolioFlow:
     def test_add_holding_and_verify(self, authenticated_page: Page):
         """Add a stock holding and verify the portfolio page shows it."""
         _nav_click(authenticated_page, "portfolio")
@@ -894,10 +838,7 @@ class TestPortfolioFlow:
         authenticated_page.wait_for_timeout(12000)
         container = authenticated_page.locator("#portfolio-container")
         html = container.inner_html()
-        assert "AAPL" in html, (
-            f"Portfolio does not show AAPL after adding holding. "
-            f"HTML: {html[:500]}"
-        )
+        assert "AAPL" in html, f"Portfolio does not show AAPL after adding holding. HTML: {html[:500]}"
 
     def test_portfolio_summary_has_values(self, authenticated_page: Page):
         """Portfolio page should show total value, gain/loss etc."""
@@ -905,15 +846,13 @@ class TestPortfolioFlow:
         authenticated_page.wait_for_timeout(12000)
         container = authenticated_page.locator("#portfolio-container")
         html = container.inner_html()
-        assert "$" in html, (
-            f"Portfolio shows no dollar values — summary didn't load. "
-            f"HTML: {html[:500]}"
-        )
+        assert "$" in html, f"Portfolio shows no dollar values — summary didn't load. HTML: {html[:500]}"
 
 
 # ────────────────────────────────────────────
 #  Portfolio — chart height constraint
 # ────────────────────────────────────────────
+
 
 class TestPortfolioChartHeight:
     """
@@ -929,10 +868,7 @@ class TestPortfolioChartHeight:
         _nav_click(authenticated_page, "portfolio")
         authenticated_page.wait_for_timeout(2000)
         wrap = authenticated_page.locator(".pf-chart-wrap")
-        assert wrap.count() >= 2, (
-            "Expected at least 2 .pf-chart-wrap containers "
-            "(allocation + performance)"
-        )
+        assert wrap.count() >= 2, "Expected at least 2 .pf-chart-wrap containers (allocation + performance)"
         # The performance chart canvas should be inside the wrapper
         perf_canvas = authenticated_page.locator(".pf-chart-wrap #pf-perf-chart")
         expect(perf_canvas).to_have_count(1)
@@ -957,8 +893,7 @@ class TestPortfolioChartHeight:
         box = wrap.bounding_box()
         assert box is not None, "Alloc chart wrapper has no bounding box"
         assert box["height"] <= 300, (
-            f"Allocation chart is {box['height']:.0f}px tall — should be "
-            f"≤ 300px. Chart is still too tall."
+            f"Allocation chart is {box['height']:.0f}px tall — should be ≤ 300px. Chart is still too tall."
         )
 
     def test_perf_chart_canvas_has_no_hardcoded_height(self, authenticated_page: Page):
@@ -968,17 +903,15 @@ class TestPortfolioChartHeight:
         canvas = authenticated_page.locator("#pf-perf-chart")
         height_attr = canvas.get_attribute("height")
         # Chart.js may set a computed height attr at runtime, but NOT "200"
-        assert height_attr != "200", (
-            "Canvas still has the old hardcoded height='200' attribute"
-        )
+        assert height_attr != "200", "Canvas still has the old hardcoded height='200' attribute"
 
 
 # ────────────────────────────────────────────
 #  Comparison — compare stocks flow
 # ────────────────────────────────────────────
 
-class TestComparisonFlow:
 
+class TestComparisonFlow:
     def test_compare_stocks_returns_data(self, authenticated_page: Page):
         """Enter symbols and compare — should show a chart and table."""
         _nav_click(authenticated_page, "comparison")
@@ -987,21 +920,16 @@ class TestComparisonFlow:
         authenticated_page.wait_for_timeout(20000)
         results = authenticated_page.locator("#compare-results")
         html = results.inner_html()
-        assert len(html) > 50, (
-            f"Comparison returned no results for AAPL, MSFT. "
-            f"/api/compare failed. HTML: {html[:300]}"
-        )
-        assert "AAPL" in html or "aapl" in html.lower(), (
-            f"Comparison results don't mention AAPL. HTML: {html[:500]}"
-        )
+        assert len(html) > 50, f"Comparison returned no results for AAPL, MSFT. /api/compare failed. HTML: {html[:300]}"
+        assert "AAPL" in html or "aapl" in html.lower(), f"Comparison results don't mention AAPL. HTML: {html[:500]}"
 
 
 # ────────────────────────────────────────────
 #  Alerts — create alert flow
 # ────────────────────────────────────────────
 
-class TestAlertsFlow:
 
+class TestAlertsFlow:
     def test_create_alert_and_verify(self, authenticated_page: Page):
         """Create a price alert and verify it shows in the list."""
         _nav_click(authenticated_page, "alerts")
@@ -1014,10 +942,7 @@ class TestAlertsFlow:
         authenticated_page.wait_for_timeout(2000)
         container = authenticated_page.locator("#alerts-container")
         html = container.inner_html()
-        assert "TSLA" in html, (
-            f"Alert for TSLA not found after creation. "
-            f"HTML: {html[:500]}"
-        )
+        assert "TSLA" in html, f"Alert for TSLA not found after creation. HTML: {html[:500]}"
 
     def test_alerts_page_loads_list(self, authenticated_page: Page):
         """Alerts page should load and display active/triggered sections."""
@@ -1025,61 +950,52 @@ class TestAlertsFlow:
         authenticated_page.wait_for_timeout(2000)
         container = authenticated_page.locator("#alerts-container")
         html = container.inner_html()
-        assert len(html) > 20, (
-            f"Alerts container is empty. HTML: {html[:300]}"
-        )
+        assert len(html) > 20, f"Alerts container is empty. HTML: {html[:300]}"
 
 
 # ────────────────────────────────────────────
 #  Calendar
 # ────────────────────────────────────────────
 
-class TestCalendarFlow:
 
+class TestCalendarFlow:
     def test_calendar_loads_content(self, authenticated_page: Page):
         """Calendar should show earnings/events or at least tab structure."""
         _nav_click(authenticated_page, "calendar")
         authenticated_page.wait_for_timeout(5000)
         container = authenticated_page.locator("#calendar-container")
         html = container.inner_html()
-        assert len(html) > 30, (
-            f"Calendar page is blank — /api/calendar endpoints returned nothing. "
-            f"HTML: {html[:300]}"
-        )
+        assert len(html) > 30, f"Calendar page is blank — /api/calendar endpoints returned nothing. HTML: {html[:300]}"
 
 
 # ────────────────────────────────────────────
 #  Education
 # ────────────────────────────────────────────
 
-class TestEducationFlow:
 
+class TestEducationFlow:
     def test_education_loads_articles(self, authenticated_page: Page):
         """Education page should show learning content cards."""
         _nav_click(authenticated_page, "education")
         authenticated_page.wait_for_timeout(3000)
         container = authenticated_page.locator("#edu-container")
         html = container.inner_html()
-        assert len(html) > 50, (
-            f"Education page is empty — /api/education returned no content. "
-            f"HTML: {html[:300]}"
-        )
+        assert len(html) > 50, f"Education page is empty — /api/education returned no content. HTML: {html[:300]}"
 
 
 # ────────────────────────────────────────────
 #  Israeli Funds
 # ────────────────────────────────────────────
 
-class TestILFundsFlow:
 
+class TestILFundsFlow:
     def test_il_funds_filters_loaded(self, authenticated_page: Page):
         """Fund type and manager dropdowns should be populated from /api/il-funds/meta."""
         _nav_click(authenticated_page, "il-funds")
         authenticated_page.wait_for_timeout(3000)
         type_opts = authenticated_page.locator("#il-filter-type option")
         assert type_opts.count() > 1, (
-            f"IL Fund Type filter has only {type_opts.count()} option(s) — "
-            "/api/il-funds/meta returned no types"
+            f"IL Fund Type filter has only {type_opts.count()} option(s) — /api/il-funds/meta returned no types"
         )
 
     def test_il_funds_search_returns_results(self, authenticated_page: Page):
@@ -1090,10 +1006,7 @@ class TestILFundsFlow:
         authenticated_page.wait_for_timeout(5000)
         results = authenticated_page.locator("#il-results-area")
         html = results.inner_html()
-        assert len(html) > 50, (
-            f"IL Funds search returned no results. "
-            f"HTML: {html[:300]}"
-        )
+        assert len(html) > 50, f"IL Funds search returned no results. HTML: {html[:300]}"
 
     def test_il_funds_best_deals_loaded(self, authenticated_page: Page):
         """The best deals / kaspit highlight section should have content."""
@@ -1101,17 +1014,14 @@ class TestILFundsFlow:
         authenticated_page.wait_for_timeout(8000)
         highlight = authenticated_page.locator("#il-kaspit-highlight")
         html = highlight.inner_html()
-        assert len(html) > 20, (
-            f"Kaspit highlight / best deals section is empty. "
-            f"HTML: {html[:300]}"
-        )
+        assert len(html) > 20, f"Kaspit highlight / best deals section is empty. HTML: {html[:300]}"
 
 
 # ════════════════════════════════════════════
 #  Multi-User — registration, auth, isolation
 # ════════════════════════════════════════════
 
-import requests as _requests   # noqa: E402  (import here to keep existing order)
+import requests as _requests  # noqa: E402  (import here to keep existing order)
 
 
 class TestRegistration:
@@ -1120,6 +1030,7 @@ class TestRegistration:
     def test_register_new_user_via_ui(self, page: Page, live_url: str, _live_server):
         """Register a brand-new user through the browser form."""
         import uuid
+
         unique = uuid.uuid4().hex[:8]
         page.goto(f"{live_url}/login", wait_until="domcontentloaded")
         # Switch to the Register tab
@@ -1154,9 +1065,7 @@ class TestRegistration:
             f"{live_url}/auth/register",
             json={"email": "short@e2e.local", "password": "ab", "name": "Short"},
         )
-        assert resp.status_code in (400, 422), (
-            f"Expected 400/422 for short password, got {resp.status_code}"
-        )
+        assert resp.status_code in (400, 422), f"Expected 400/422 for short password, got {resp.status_code}"
 
 
 class TestAuthMe:
@@ -1198,9 +1107,10 @@ class TestMultiUserIsolation:
     def test_watchlist_isolation(self, live_url: str, _live_server):
         """User A adds a symbol to watchlist; User B's watchlist must not contain it."""
         import uuid
+
         tag = uuid.uuid4().hex[:6]
         s_a = self._session_for(live_url, f"alice_wl_{tag}@e2e.local", "Alice123", "Alice")
-        s_b = self._session_for(live_url, f"bob_wl_{tag}@e2e.local",   "Bob12345", "Bob")
+        s_b = self._session_for(live_url, f"bob_wl_{tag}@e2e.local", "Bob12345", "Bob")
 
         # User A adds NVDA (symbol is a query param)
         resp = s_a.post(f"{live_url}/api/screener/watchlist", params={"symbol": "NVDA"})
@@ -1210,74 +1120,86 @@ class TestMultiUserIsolation:
         resp_b = s_b.get(f"{live_url}/api/screener/watchlist")
         assert resp_b.status_code == 200
         symbols_b = [item.get("symbol", "") for item in resp_b.json()]
-        assert "NVDA" not in symbols_b, (
-            f"User B can see User A's watchlist item NVDA! B's watchlist: {symbols_b}"
-        )
+        assert "NVDA" not in symbols_b, f"User B can see User A's watchlist item NVDA! B's watchlist: {symbols_b}"
 
     # ── holdings/portfolio isolation ─────────
     def test_portfolio_isolation(self, live_url: str, _live_server):
         """User A adds a GOOG holding; User B should not see it."""
         import uuid
+
         tag = uuid.uuid4().hex[:6]
         s_a = self._session_for(live_url, f"alice_pf_{tag}@e2e.local", "Alice123", "Alice PF")
-        s_b = self._session_for(live_url, f"bob_pf_{tag}@e2e.local",   "Bob12345", "Bob PF")
+        s_b = self._session_for(live_url, f"bob_pf_{tag}@e2e.local", "Bob12345", "Bob PF")
 
-        s_a.post(f"{live_url}/api/portfolio/holdings", json={
-            "symbol": "GOOG", "name": "Alphabet", "quantity": 5,
-            "buy_price": 170.0, "buy_date": "2025-01-01",
-        })
+        s_a.post(
+            f"{live_url}/api/portfolio/holdings",
+            json={
+                "symbol": "GOOG",
+                "name": "Alphabet",
+                "quantity": 5,
+                "buy_price": 170.0,
+                "buy_date": "2025-01-01",
+            },
+        )
 
         resp_b = s_b.get(f"{live_url}/api/portfolio/holdings")
         assert resp_b.status_code == 200
         holdings = resp_b.json()
         symbols_b = [h.get("symbol", "") for h in holdings] if isinstance(holdings, list) else []
-        assert "GOOG" not in symbols_b, (
-            f"User B can see User A's GOOG holding! B's portfolio: {symbols_b}"
-        )
+        assert "GOOG" not in symbols_b, f"User B can see User A's GOOG holding! B's portfolio: {symbols_b}"
 
     # ── transactions isolation ───────────────
     def test_transactions_isolation(self, live_url: str, _live_server):
         """User A creates a transaction; User B should not see it."""
         import uuid
+
         tag = uuid.uuid4().hex[:6]
         s_a = self._session_for(live_url, f"alice_tx_{tag}@e2e.local", "Alice123", "Alice TX")
-        s_b = self._session_for(live_url, f"bob_tx_{tag}@e2e.local",   "Bob12345", "Bob TX")
+        s_b = self._session_for(live_url, f"bob_tx_{tag}@e2e.local", "Bob12345", "Bob TX")
 
-        s_a.post(f"{live_url}/api/transactions", json={
-            "type": "expense", "amount": 42.0,
-            "date": "2025-06-01", "description": "Alice secret purchase",
-        })
+        s_a.post(
+            f"{live_url}/api/transactions",
+            json={
+                "type": "expense",
+                "amount": 42.0,
+                "date": "2025-06-01",
+                "description": "Alice secret purchase",
+            },
+        )
 
         resp_b = s_b.get(f"{live_url}/api/transactions")
         assert resp_b.status_code == 200
         descs = [t.get("description", "") for t in resp_b.json()]
-        assert "Alice secret purchase" not in descs, (
-            f"User B can see User A's transaction! B's txns: {descs}"
-        )
+        assert "Alice secret purchase" not in descs, f"User B can see User A's transaction! B's txns: {descs}"
 
     # ── alerts isolation ─────────────────────
     def test_alerts_isolation(self, live_url: str, _live_server):
         """User A creates an alert; User B should not see it."""
         import uuid
+
         tag = uuid.uuid4().hex[:6]
         s_a = self._session_for(live_url, f"alice_al_{tag}@e2e.local", "Alice123", "Alice AL")
-        s_b = self._session_for(live_url, f"bob_al_{tag}@e2e.local",   "Bob12345", "Bob AL")
+        s_b = self._session_for(live_url, f"bob_al_{tag}@e2e.local", "Bob12345", "Bob AL")
 
-        s_a.post(f"{live_url}/api/alerts", json={
-            "symbol": "AMC", "condition": "above", "target_price": 999.0,
-        })
+        s_a.post(
+            f"{live_url}/api/alerts",
+            json={
+                "symbol": "AMC",
+                "condition": "above",
+                "target_price": 999.0,
+            },
+        )
 
         resp_b = s_b.get(f"{live_url}/api/alerts")
         assert resp_b.status_code == 200
         symbols_b = [a.get("symbol", "") for a in resp_b.json()]
-        assert "AMC" not in symbols_b, (
-            f"User B can see User A's AMC alert! B's alerts: {symbols_b}"
-        )
+        assert "AMC" not in symbols_b, f"User B can see User A's AMC alert! B's alerts: {symbols_b}"
 
 
 # ────────────────────────────────────────────
 #  Full-width layout
 # ────────────────────────────────────────────
+
 
 class TestFullWidthLayout:
     """Content area should fill all available width (no max-width constraint)."""
@@ -1286,9 +1208,7 @@ class TestFullWidthLayout:
         """The .content element should NOT have a restrictive max-width like 1200px."""
         content = authenticated_page.locator("main.content")
         max_w = content.evaluate("el => getComputedStyle(el).maxWidth")
-        assert max_w == "none" or max_w == "", (
-            f".content has max-width={max_w}, expected none"
-        )
+        assert max_w == "none" or max_w == "", f".content has max-width={max_w}, expected none"
 
     def test_content_stretches_with_viewport(self, authenticated_page: Page):
         """Content area width should track the viewport minus the sidebar."""
@@ -1299,9 +1219,7 @@ class TestFullWidthLayout:
         box = content.bounding_box()
         # Sidebar is 240px, so content should be at least (1920 - 240 - some padding)
         assert box is not None
-        assert box["width"] >= 1600, (
-            f"Content width {box['width']}px is too narrow for 1920px viewport"
-        )
+        assert box["width"] >= 1600, f"Content width {box['width']}px is too narrow for 1920px viewport"
 
     def test_il_funds_table_is_wide(self, authenticated_page: Page):
         """IL Funds table should use the full content width, not be capped at 1200px."""
@@ -1311,28 +1229,27 @@ class TestFullWidthLayout:
         content = authenticated_page.locator("main.content")
         box = content.bounding_box()
         assert box is not None
-        assert box["width"] >= 1600, (
-            f"Content area is only {box['width']}px wide on IL Funds page"
-        )
+        assert box["width"] >= 1600, f"Content area is only {box['width']}px wide on IL Funds page"
 
 
 # ────────────────────────────────────────────
 #  Search bars on every applicable page
 # ────────────────────────────────────────────
 
+
 class TestSearchBars:
     """Every data page should have a search bar that is visible and functional."""
 
     SEARCH_PAGES = [
-        ("portfolio",    "portfolio-search",     "Search holdings"),
-        ("watchlist",    "watchlist-search",     "Search by symbol"),
-        ("news",         "news-search",          "Search news"),
-        ("transactions", "transactions-search",  "Search transactions"),
-        ("alerts",       "alerts-search",        "Search alerts"),
-        ("calendar",     "calendar-search",      "Search events"),
-        ("education",    "education-search",     "Search articles"),
-        ("il-funds",     "il-funds-search",      "Search funds"),
-        ("picks-tracker","picks-search",         "Search picks"),
+        ("portfolio", "portfolio-search", "Search holdings"),
+        ("watchlist", "watchlist-search", "Search by symbol"),
+        ("news", "news-search", "Search news"),
+        ("transactions", "transactions-search", "Search transactions"),
+        ("alerts", "alerts-search", "Search alerts"),
+        ("calendar", "calendar-search", "Search events"),
+        ("education", "education-search", "Search articles"),
+        ("il-funds", "il-funds-search", "Search funds"),
+        ("picks-tracker", "picks-search", "Search picks"),
     ]
 
     def test_search_bars_present_on_all_data_pages(self, authenticated_page: Page):
@@ -1371,9 +1288,7 @@ class TestSearchBars:
         authenticated_page.wait_for_timeout(500)
         cards_after = authenticated_page.locator(".edu-card:visible").count()
         # After filtering, should have fewer (or same if all match, but very unlikely)
-        assert cards_after <= cards_before, (
-            f"Filtering didn't reduce cards: before={cards_before}, after={cards_after}"
-        )
+        assert cards_after <= cards_before, f"Filtering didn't reduce cards: before={cards_before}, after={cards_after}"
 
         # Clear search — should restore all cards
         authenticated_page.fill("#education-search", "")
@@ -1395,9 +1310,7 @@ class TestSearchBars:
         authenticated_page.fill("#calendar-search", "xyznonexistent")
         authenticated_page.wait_for_timeout(500)
         events_after = authenticated_page.locator(".cal-event:visible").count()
-        assert events_after == 0, (
-            f"Expected 0 events for nonsense query, got {events_after}"
-        )
+        assert events_after == 0, f"Expected 0 events for nonsense query, got {events_after}"
 
         # Clear
         authenticated_page.fill("#calendar-search", "")
@@ -1446,12 +1359,14 @@ class TestSearchBars:
 #  Forgot Password — API tests
 # ────────────────────────────────────────────
 
+
 class TestForgotPasswordAPI:
     """Test the /auth/forgot-password and /auth/reset-password endpoints directly."""
 
     def test_forgot_password_returns_ok_for_existing_user(self, live_url: str, _live_server):
         """POST /auth/forgot-password should return 200 with ok=True for a registered email."""
         import requests
+
         # Ensure user exists
         requests.post(
             f"{live_url}/auth/register",
@@ -1469,6 +1384,7 @@ class TestForgotPasswordAPI:
     def test_forgot_password_returns_ok_for_unknown_email(self, live_url: str, _live_server):
         """Should still return 200 to not leak whether the email exists."""
         import requests
+
         resp = requests.post(
             f"{live_url}/auth/forgot-password",
             json={"email": "nobody_here@e2e.local"},
@@ -1480,6 +1396,7 @@ class TestForgotPasswordAPI:
     def test_reset_password_with_valid_code(self, live_url: str, _live_server):
         """Full flow: register → forgot → get code from DB → reset → login with new password."""
         import requests
+
         email = "resetfull@e2e.local"
         old_pw = "OldPass1"
         new_pw = "NewPass1"
@@ -1496,10 +1413,12 @@ class TestForgotPasswordAPI:
 
         # Grab the code directly from the DB
         import sys, pathlib
+
         root = pathlib.Path(__file__).resolve().parent.parent
         sys.path.insert(0, str(root))
         from src.database import SessionLocal
         from src.models import PasswordReset, User
+
         db = SessionLocal()
         try:
             user = db.query(User).filter(User.email == email).first()
@@ -1541,6 +1460,7 @@ class TestForgotPasswordAPI:
     def test_reset_password_wrong_code_rejected(self, live_url: str, _live_server):
         """Using a wrong code should return 400."""
         import requests
+
         email = "resetbad@e2e.local"
         requests.post(
             f"{live_url}/auth/register",
@@ -1559,6 +1479,7 @@ class TestForgotPasswordAPI:
     def test_reset_password_code_single_use(self, live_url: str, _live_server):
         """A code can only be used once."""
         import requests
+
         email = "resetonce@e2e.local"
         requests.post(
             f"{live_url}/auth/register",
@@ -1568,10 +1489,12 @@ class TestForgotPasswordAPI:
 
         # Get code from DB
         import pathlib, sys
+
         root = pathlib.Path(__file__).resolve().parent.parent
         sys.path.insert(0, str(root))
         from src.database import SessionLocal
         from src.models import PasswordReset, User
+
         db = SessionLocal()
         try:
             user = db.query(User).filter(User.email == email).first()
@@ -1603,6 +1526,7 @@ class TestForgotPasswordAPI:
     def test_reset_password_short_password_rejected(self, live_url: str, _live_server):
         """New password under 4 chars should be rejected."""
         import requests
+
         resp = requests.post(
             f"{live_url}/auth/reset-password",
             json={"email": "anyone@e2e.local", "code": "123456", "new_password": "ab"},
@@ -1614,6 +1538,7 @@ class TestForgotPasswordAPI:
 # ────────────────────────────────────────────
 #  Forgot Password — Browser UI tests
 # ────────────────────────────────────────────
+
 
 class TestForgotPasswordUI:
     """Test the web forgot-password flow in the browser."""
@@ -1649,6 +1574,7 @@ class TestForgotPasswordUI:
     def test_submit_email_shows_code_form(self, page: Page, live_url: str, _live_server):
         """After submitting an email, the code+password form should appear."""
         import requests
+
         requests.post(
             f"{live_url}/auth/register",
             json={"email": "uireset@e2e.local", "password": "UiPass1", "name": "UI Reset"},
@@ -1666,6 +1592,7 @@ class TestForgotPasswordUI:
     def test_full_ui_reset_flow(self, page: Page, live_url: str, _live_server):
         """Full browser flow: click forgot → enter email → get code from DB → enter code + new pw → login."""
         import requests
+
         email = "uifull@e2e.local"
         old_pw = "OldUiPass1"
         new_pw = "NewUiPass1"
@@ -1685,10 +1612,12 @@ class TestForgotPasswordUI:
 
         # Grab code from DB
         import pathlib, sys
+
         root = pathlib.Path(__file__).resolve().parent.parent
         sys.path.insert(0, str(root))
         from src.database import SessionLocal
         from src.models import PasswordReset, User
+
         db = SessionLocal()
         try:
             user = db.query(User).filter(User.email == email).first()
@@ -1727,6 +1656,7 @@ class TestForgotPasswordUI:
 #  Value Scanner — Action Plan
 # ────────────────────────────────────────────
 
+
 class TestActionPlanAPI:
     """API-level tests for the Value Scanner Action Plan endpoint.
 
@@ -1738,11 +1668,10 @@ class TestActionPlanAPI:
     @staticmethod
     def _session(base_url: str, email: str, password: str, name: str = "Test"):
         import requests as _req
+
         s = _req.Session()
-        s.post(f"{base_url}/auth/register",
-               json={"email": email, "password": password, "name": name}, timeout=60)
-        resp = s.post(f"{base_url}/auth/login",
-                      json={"email": email, "password": password}, timeout=60)
+        s.post(f"{base_url}/auth/register", json={"email": email, "password": password, "name": name}, timeout=60)
+        resp = s.post(f"{base_url}/auth/login", json={"email": email, "password": password}, timeout=60)
         assert resp.status_code == 200, f"Login failed: {resp.text}"
         return s
 
@@ -1801,9 +1730,7 @@ class TestActionPlanAPI:
                 assert stock["allocation_dollars"] > 0, f"{stock['symbol']} has $0 allocation"
                 total_alloc_pct += stock["allocation_pct"]
 
-        assert 99 <= total_alloc_pct <= 101, (
-            f"Total allocation should be ~100%, got {total_alloc_pct:.1f}%"
-        )
+        assert 99 <= total_alloc_pct <= 101, f"Total allocation should be ~100%, got {total_alloc_pct:.1f}%"
 
     def test_action_plan_allocations_sum_to_investment(self, live_url: str, _live_server):
         """Dollar allocations across all stocks should sum close to the requested amount."""
@@ -1815,14 +1742,8 @@ class TestActionPlanAPI:
         if not plan:
             return
 
-        total_dollars = sum(
-            stock["allocation_dollars"]
-            for group in plan
-            for stock in group["stocks"]
-        )
-        assert abs(total_dollars - amount) < 10, (
-            f"Dollar allocations sum to ${total_dollars:.2f}, expected ~${amount}"
-        )
+        total_dollars = sum(stock["allocation_dollars"] for group in plan for stock in group["stocks"])
+        assert abs(total_dollars - amount) < 10, f"Dollar allocations sum to ${total_dollars:.2f}, expected ~${amount}"
 
     def test_action_plan_sector_filter(self, live_url: str, _live_server):
         """Sector filter should only return stocks from that sector."""
@@ -1949,8 +1870,7 @@ class TestActionPlanUI:
         has_empty = empty.count() > 0
         has_warning = warning.count() > 0
         assert has_groups or has_empty or has_warning, (
-            "Action plan modal has no groups, no empty state, and no warning — "
-            "the content didn't render properly"
+            "Action plan modal has no groups, no empty state, and no warning — the content didn't render properly"
         )
         if has_groups:
             # Verify the first group has strategy content
@@ -1968,6 +1888,7 @@ class TestActionPlanUI:
 #  Market Data Integrity — verify prices load without errors
 # ════════════════════════════════════════════════════════════
 
+
 class TestMarketDataIntegrity:
     """
     Verify that the dashboard shows real market data without HTTP error
@@ -1982,8 +1903,7 @@ class TestMarketDataIntegrity:
         body_text = authenticated_page.locator("#page-dashboard").inner_text()
         for bad in ("HTTP Error", "Unauthorized", "Invalid Crumb", "401", "403"):
             assert bad not in body_text, (
-                f"Dashboard contains error text '{bad}' — market data provider "
-                f"is leaking errors to the UI"
+                f"Dashboard contains error text '{bad}' — market data provider is leaking errors to the UI"
             )
 
     def test_market_cards_show_real_prices(self, authenticated_page: Page):
@@ -1991,9 +1911,7 @@ class TestMarketDataIntegrity:
         _nav_click(authenticated_page, "dashboard")
         # Wait for market cards to appear (cache warming may take a while)
         try:
-            authenticated_page.wait_for_selector(
-                ".market-card .market-card-price", timeout=60_000
-            )
+            authenticated_page.wait_for_selector(".market-card .market-card-price", timeout=60_000)
         except Exception:
             # If no cards appear at all, skip — cache may be fully cold
             cards = authenticated_page.locator(".market-card")
@@ -2012,10 +1930,9 @@ class TestMarketDataIntegrity:
             price_text = price_el.inner_text().strip()
             if not price_text:
                 continue
-            assert "$" in price_text, (
-                f"Market card {i} price missing '$': '{price_text}'"
-            )
+            assert "$" in price_text, f"Market card {i} price missing '$': '{price_text}'"
             import re as _re
+
             nums = _re.findall(r"[\d,.]+", price_text)
             assert nums, f"Market card {i} has no numeric price: '{price_text}'"
             val = float(nums[0].replace(",", ""))
@@ -2045,33 +1962,40 @@ class TestMarketDataIntegrity:
         authenticated_page.on("pageerror", lambda e: js_errors.append(str(e)))
         _nav_click(authenticated_page, "dashboard")
         authenticated_page.wait_for_timeout(15_000)
-        critical = [
-            e for e in js_errors
-            if "TypeError" in e or "ReferenceError" in e or "SyntaxError" in e
-        ]
-        assert len(critical) == 0, (
-            f"JavaScript errors during market data load: {critical}"
-        )
+        critical = [e for e in js_errors if "TypeError" in e or "ReferenceError" in e or "SyntaxError" in e]
+        assert len(critical) == 0, f"JavaScript errors during market data load: {critical}"
 
     def test_market_api_returns_valid_data(self, live_url: str, _live_server):
         """The /api/market/home API should return ticker + featured arrays with prices."""
         import requests
+
         s = requests.Session()
-        px = None if "127.0.0.1" in live_url else {
-            "http": "http://proxy-dmz.intel.com:911",
-            "https": "http://proxy-dmz.intel.com:912",
-        }
+        px = (
+            None
+            if "127.0.0.1" in live_url
+            else {
+                "http": "http://proxy-dmz.intel.com:911",
+                "https": "http://proxy-dmz.intel.com:912",
+            }
+        )
         # Register & login
-        s.post(f"{live_url}/auth/register",
-               json={"email": "market_api@e2e.local", "password": "Pass1234", "name": "MarketAPI"},
-               proxies=px, timeout=30)
-        resp = s.post(f"{live_url}/auth/login",
-                      json={"email": "market_api@e2e.local", "password": "Pass1234"},
-                      proxies=px, timeout=30)
+        s.post(
+            f"{live_url}/auth/register",
+            json={"email": "market_api@e2e.local", "password": "Pass1234", "name": "MarketAPI"},
+            proxies=px,
+            timeout=30,
+        )
+        resp = s.post(
+            f"{live_url}/auth/login",
+            json={"email": "market_api@e2e.local", "password": "Pass1234"},
+            proxies=px,
+            timeout=30,
+        )
         assert resp.status_code == 200, f"Login failed: {resp.text}"
 
         # Wait for cache to warm (at least partially)
         import time
+
         for _ in range(12):
             r = s.get(f"{live_url}/api/market/cache-status", proxies=px, timeout=15)
             if r.status_code == 200:
@@ -2089,28 +2013,20 @@ class TestMarketDataIntegrity:
         ticker = data.get("ticker", [])
         assert len(ticker) >= 1, "Market ticker returned no items"
         for item in ticker:
-            assert item.get("price", 0) > 0, (
-                f"Ticker item {item.get('symbol', '?')} has zero/missing price"
-            )
-            assert "error" not in str(item).lower(), (
-                f"Ticker item contains error text: {item}"
-            )
+            assert item.get("price", 0) > 0, f"Ticker item {item.get('symbol', '?')} has zero/missing price"
+            assert "error" not in str(item).lower(), f"Ticker item contains error text: {item}"
 
         # Validate featured stocks
         featured = data.get("featured", [])
         assert len(featured) >= 1, "Market featured returned no items"
         for item in featured:
-            assert item.get("price", 0) > 0, (
-                f"Featured item {item.get('symbol', '?')} has zero/missing price"
-            )
+            assert item.get("price", 0) > 0, f"Featured item {item.get('symbol', '?')} has zero/missing price"
 
     def test_market_cards_have_change_indicators(self, authenticated_page: Page):
         """Market cards should show change % with up/down coloring."""
         _nav_click(authenticated_page, "dashboard")
         try:
-            authenticated_page.wait_for_selector(
-                ".market-card .market-card-change", timeout=60_000
-            )
+            authenticated_page.wait_for_selector(".market-card .market-card-change", timeout=60_000)
         except Exception:
             cards = authenticated_page.locator(".market-card")
             if cards.count() == 0:
@@ -2127,14 +2043,13 @@ class TestMarketDataIntegrity:
                 text = change_el.inner_text().strip()
                 if "%" in text:
                     changes_found += 1
-        assert changes_found >= 1, (
-            "No market cards show a change percentage — data may not have loaded"
-        )
+        assert changes_found >= 1, "No market cards show a change percentage — data may not have loaded"
 
 
 # ════════════════════════════════════════════════════════════
 #  OOM Fix Verification — cache bounds, PXD removal, memory
 # ════════════════════════════════════════════════════════════
+
 
 class TestOOMFixAPI:
     """
@@ -2151,11 +2066,10 @@ class TestOOMFixAPI:
     @staticmethod
     def _session(base_url: str, email: str, password: str, name: str = "Test"):
         import requests as _req
+
         s = _req.Session()
-        s.post(f"{base_url}/auth/register",
-               json={"email": email, "password": password, "name": name}, timeout=60)
-        resp = s.post(f"{base_url}/auth/login",
-                      json={"email": email, "password": password}, timeout=60)
+        s.post(f"{base_url}/auth/register", json={"email": email, "password": password, "name": name}, timeout=60)
+        resp = s.post(f"{base_url}/auth/login", json={"email": email, "password": password}, timeout=60)
         assert resp.status_code == 200, f"Login failed: {resp.text}"
         return s
 
@@ -2172,13 +2086,9 @@ class TestOOMFixAPI:
         assert "warming" in data, "Missing 'warming' key"
         assert "ready" in data, "Missing 'ready' key"
         # total should be the universe size (~257), not something huge
-        assert data["total"] <= 300, (
-            f"Universe total {data['total']} seems too large — expected ≤300"
-        )
+        assert data["total"] <= 300, f"Universe total {data['total']} seems too large — expected ≤300"
         # cached should never exceed CACHE_MAX_ENTRIES (600 normal, 300 low-mem)
-        assert data["cached"] <= 600, (
-            f"Cached count {data['cached']} exceeds CACHE_MAX_ENTRIES"
-        )
+        assert data["cached"] <= 600, f"Cached count {data['cached']} exceeds CACHE_MAX_ENTRIES"
 
     # ── PXD is delisted and removed ─────────────────────────
 
@@ -2220,15 +2130,18 @@ class TestOOMFixAPI:
             )
         except Exception:
             import pytest
+
             pytest.skip("Advisor scan still running — timeout waiting for results")
         if resp.status_code == 503:
             import pytest
+
             pytest.skip("Advisor scan still warming up")
         assert resp.status_code == 200, f"Advisor returned {resp.status_code}: {resp.text[:300]}"
         data = resp.json()
         rankings = data.get("rankings", [])
         if not rankings:
             import pytest
+
             pytest.skip("No advisor rankings yet — scan not complete")
         for stock in rankings[:10]:  # check first 10
             assert "indicators" not in stock, (
@@ -2250,8 +2163,7 @@ class TestOOMFixAPI:
         data = resp.json()
         all_picks = data.get("all_picks", [])
         assert len(all_picks) <= 30, (
-            f"Trading dashboard returned {len(all_picks)} picks — "
-            "expected ≤30 (API slice from ≤50 stored)"
+            f"Trading dashboard returned {len(all_picks)} picks — expected ≤30 (API slice from ≤50 stored)"
         )
 
     def test_trading_dashboard_has_progress(self, live_url: str, _live_server):
@@ -2278,9 +2190,11 @@ class TestOOMFixAPI:
             resp = s.get(f"{live_url}/api/market/home", timeout=(5, 40))
         except Exception:
             import pytest
+
             pytest.skip("Market home timed out — cache likely cold")
         if resp.status_code == 503:
             import pytest
+
             pytest.skip("Market home returned 503 — still warming")
         assert resp.status_code == 200
         data = resp.json()
@@ -2296,6 +2210,7 @@ class TestOOMFixAPI:
             resp = s.get(f"{live_url}/api/value-scanner", timeout=(5, 40))
         except Exception:
             import pytest
+
             pytest.skip("Value scanner timed out — scan may still be running")
         assert resp.status_code == 200
         data = resp.json()
@@ -2324,9 +2239,11 @@ class TestOOMFixAPI:
             resp = s.get(f"{live_url}/api/advisor/stock/AAPL", timeout=(5, 40))
         except Exception:
             import pytest
+
             pytest.skip("Advisor single-stock timed out — data provider may be slow")
         if resp.status_code in (404, 503):
             import pytest
+
             pytest.skip("Advisor single-stock returned 404/503 — data not ready")
         assert resp.status_code == 200, f"Single stock returned {resp.status_code}"
         data = resp.json()
@@ -2340,6 +2257,7 @@ class TestOOMFixAPI:
 # ════════════════════════════════════════════════════════════
 #  Yahoo-Only Data Flow — no Finnhub dependency required
 # ════════════════════════════════════════════════════════════
+
 
 class TestYahooOnlyDataFlow:
     """
@@ -2360,17 +2278,20 @@ class TestYahooOnlyDataFlow:
     @staticmethod
     def _session(base_url: str, email: str, password: str, name: str = "Test"):
         import requests as _req
+
         s = _req.Session()
-        px = None if "127.0.0.1" in base_url else {
-            "http": "http://proxy-dmz.intel.com:911",
-            "https": "http://proxy-dmz.intel.com:912",
-        }
+        px = (
+            None
+            if "127.0.0.1" in base_url
+            else {
+                "http": "http://proxy-dmz.intel.com:911",
+                "https": "http://proxy-dmz.intel.com:912",
+            }
+        )
         if px:
             s.proxies.update(px)
-        s.post(f"{base_url}/auth/register",
-               json={"email": email, "password": password, "name": name}, timeout=30)
-        resp = s.post(f"{base_url}/auth/login",
-                      json={"email": email, "password": password}, timeout=30)
+        s.post(f"{base_url}/auth/register", json={"email": email, "password": password, "name": name}, timeout=30)
+        resp = s.post(f"{base_url}/auth/login", json={"email": email, "password": password}, timeout=30)
         assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
         return s
 
@@ -2378,6 +2299,7 @@ class TestYahooOnlyDataFlow:
     def _wait_for_cache(s, base_url: str, min_cached: int = 6, retries: int = 24):
         """Wait until the cache has at least min_cached entries."""
         import time as _time
+
         for _ in range(retries):
             try:
                 r = s.get(f"{base_url}/api/market/cache-status", timeout=15)
@@ -2402,13 +2324,9 @@ class TestYahooOnlyDataFlow:
         assert isinstance(data, list), f"Expected list, got {type(data).__name__}"
         symbols = [item["symbol"] for item in data]
         for sym in self.FEATURED:
-            assert sym in symbols, (
-                f"Featured stock {sym} missing from response. Got: {symbols}"
-            )
+            assert sym in symbols, f"Featured stock {sym} missing from response. Got: {symbols}"
         for item in data:
-            assert item.get("price", 0) > 0, (
-                f"{item['symbol']} has zero/missing price: {item}"
-            )
+            assert item.get("price", 0) > 0, f"{item['symbol']} has zero/missing price: {item}"
 
     def test_featured_prices_are_realistic(self, live_url: str, _live_server):
         """Featured stock prices should be in a realistic range ($1–$5000)."""
@@ -2420,9 +2338,7 @@ class TestYahooOnlyDataFlow:
         for item in data:
             price = item.get("price", 0)
             sym = item.get("symbol", "?")
-            assert 1 < price < 5000, (
-                f"{sym} price ${price} is outside realistic range $1–$5000"
-            )
+            assert 1 < price < 5000, f"{sym} price ${price} is outside realistic range $1–$5000"
 
     def test_featured_have_change_percent(self, live_url: str, _live_server):
         """Featured stocks should include a change percentage."""
@@ -2435,9 +2351,7 @@ class TestYahooOnlyDataFlow:
         for item in data:
             cp = item.get("change_pct") or item.get("changePercent") or item.get("change_percent")
             if cp is not None:
-                assert -50 < cp < 50, (
-                    f"{item['symbol']} change% {cp} is unreasonably large"
-                )
+                assert -50 < cp < 50, f"{item['symbol']} change% {cp} is unreasonably large"
                 with_change += 1
         assert with_change >= 1, "No featured stocks have a change percentage"
 
@@ -2457,18 +2371,11 @@ class TestYahooOnlyDataFlow:
             if spark and len(spark) >= 5:
                 with_sparkline += 1
                 # Verify sparkline values are realistic prices
-                assert all(isinstance(v, (int, float)) for v in spark), (
-                    f"{sym} sparkline contains non-numeric values"
-                )
-                assert min(spark) > 0, (
-                    f"{sym} sparkline has non-positive values: min={min(spark)}"
-                )
-                assert max(spark) > min(spark), (
-                    f"{sym} sparkline is completely flat: {min(spark)}–{max(spark)}"
-                )
+                assert all(isinstance(v, (int, float)) for v in spark), f"{sym} sparkline contains non-numeric values"
+                assert min(spark) > 0, f"{sym} sparkline has non-positive values: min={min(spark)}"
+                assert max(spark) > min(spark), f"{sym} sparkline is completely flat: {min(spark)}–{max(spark)}"
         assert with_sparkline >= 3, (
-            f"Only {with_sparkline}/6 featured stocks have ≥5 sparkline points — "
-            "Yahoo candle data may not be flowing"
+            f"Only {with_sparkline}/6 featured stocks have ≥5 sparkline points — Yahoo candle data may not be flowing"
         )
 
     def test_sparkline_points_count(self, live_url: str, _live_server):
@@ -2481,10 +2388,7 @@ class TestYahooOnlyDataFlow:
         for item in data:
             spark = item.get("sparkline", [])
             if spark:
-                assert len(spark) >= 10, (
-                    f"{item['symbol']} sparkline has only {len(spark)} points, "
-                    f"expected ≥10"
-                )
+                assert len(spark) >= 10, f"{item['symbol']} sparkline has only {len(spark)} points, expected ≥10"
 
     # ── /api/market/ticker returns real quotes ───────────────
 
@@ -2498,13 +2402,9 @@ class TestYahooOnlyDataFlow:
         assert isinstance(data, list), f"Expected list, got {type(data).__name__}"
         symbols = [item["symbol"] for item in data]
         for sym in self.TICKER:
-            assert sym in symbols, (
-                f"Ticker symbol {sym} missing. Got: {symbols}"
-            )
+            assert sym in symbols, f"Ticker symbol {sym} missing. Got: {symbols}"
         for item in data:
-            assert item.get("price", 0) > 0, (
-                f"Ticker {item['symbol']} has zero price"
-            )
+            assert item.get("price", 0) > 0, f"Ticker {item['symbol']} has zero price"
 
     # ── /api/market/home combined endpoint ───────────────────
 
@@ -2517,12 +2417,8 @@ class TestYahooOnlyDataFlow:
         data = resp.json()
         assert "ticker" in data, "Missing 'ticker' key in /home response"
         assert "featured" in data, "Missing 'featured' key in /home response"
-        assert len(data["ticker"]) >= 6, (
-            f"Ticker has only {len(data['ticker'])} items, expected ≥6"
-        )
-        assert len(data["featured"]) >= 4, (
-            f"Featured has only {len(data['featured'])} items, expected ≥4"
-        )
+        assert len(data["ticker"]) >= 6, f"Ticker has only {len(data['ticker'])} items, expected ≥6"
+        assert len(data["featured"]) >= 4, f"Featured has only {len(data['featured'])} items, expected ≥4"
 
     def test_home_featured_have_sparklines(self, live_url: str, _live_server):
         """Featured items in /home should include sparkline arrays."""
@@ -2533,9 +2429,7 @@ class TestYahooOnlyDataFlow:
         data = resp.json()
         featured = data.get("featured", [])
         with_spark = sum(1 for f in featured if len(f.get("sparkline", [])) >= 5)
-        assert with_spark >= 3, (
-            f"Only {with_spark}/{len(featured)} featured stocks in /home have sparklines"
-        )
+        assert with_spark >= 3, f"Only {with_spark}/{len(featured)} featured stocks in /home have sparklines"
 
     def test_home_no_error_text_in_response(self, live_url: str, _live_server):
         """The /home API response should contain no error strings."""
@@ -2544,6 +2438,7 @@ class TestYahooOnlyDataFlow:
         resp = s.get(f"{live_url}/api/market/home", timeout=60)
         assert resp.status_code == 200
         data = resp.json()
+
         # Check only string-valued fields to avoid false positives in numbers
         def _collect_strings(obj):
             strs = []
@@ -2556,12 +2451,10 @@ class TestYahooOnlyDataFlow:
                 for v in obj:
                     strs.extend(_collect_strings(v))
             return strs
+
         all_strings = " ".join(_collect_strings(data))
-        for bad in ("error", "unauthorized", "invalid crumb",
-                     "rate limit", "too many requests"):
-            assert bad not in all_strings, (
-                f"API response contains error text '{bad}'"
-            )
+        for bad in ("error", "unauthorized", "invalid crumb", "rate limit", "too many requests"):
+            assert bad not in all_strings, f"API response contains error text '{bad}'"
 
     # ── UI validation: dashboard renders Yahoo data ──────────
 
@@ -2576,9 +2469,7 @@ class TestYahooOnlyDataFlow:
         authenticated_page.wait_for_timeout(5_000)
         cards = authenticated_page.locator(".market-card")
         count = cards.count()
-        assert count >= 4, (
-            f"Only {count} market cards rendered, expected ≥4 (all 6 featured)"
-        )
+        assert count >= 4, f"Only {count} market cards rendered, expected ≥4 (all 6 featured)"
 
     def test_dashboard_sparklines_draw_via_yahoo(self, authenticated_page: Page):
         """Sparkline charts on dashboard should render with Yahoo candle data."""
@@ -2591,22 +2482,20 @@ class TestYahooOnlyDataFlow:
             )
         except Exception:
             import pytest
+
             pytest.skip("sparkCharts not populated — cache may be cold")
-        data_info = authenticated_page.evaluate('''() => {
+        data_info = authenticated_page.evaluate("""() => {
             const r = {};
             for (const [sym, chart] of Object.entries(sparkCharts)) {
                 const d = chart.data.datasets[0].data;
                 r[sym] = {len: d.length, min: Math.min(...d), max: Math.max(...d)};
             }
             return r;
-        }''')
-        assert len(data_info) >= 3, (
-            f"Only {len(data_info)} sparkline charts rendered, expected ≥3"
-        )
+        }""")
+        assert len(data_info) >= 3, f"Only {len(data_info)} sparkline charts rendered, expected ≥3"
         for symbol, info in data_info.items():
             assert info["len"] >= 5, (
-                f"{symbol} sparkline has only {info['len']} points — "
-                "Yahoo candle data not flowing to UI"
+                f"{symbol} sparkline has only {info['len']} points — Yahoo candle data not flowing to UI"
             )
             assert info["min"] > 0, f"{symbol} sparkline has non-positive prices"
 
@@ -2615,17 +2504,15 @@ class TestYahooOnlyDataFlow:
         _nav_click(authenticated_page, "dashboard")
         authenticated_page.wait_for_timeout(15_000)
         body = authenticated_page.locator("#page-dashboard").inner_text().lower()
-        for bad in ("http error", "unauthorized", "invalid crumb", "rate limit",
-                     "finnhub", "api key"):
-            assert bad not in body, (
-                f"Dashboard contains error text '{bad}' — Yahoo-only mode broken"
-            )
+        for bad in ("http error", "unauthorized", "invalid crumb", "rate limit", "finnhub", "api key"):
+            assert bad not in body, f"Dashboard contains error text '{bad}' — Yahoo-only mode broken"
 
 
 # ════════════════════════════════════════════════════════════
 #  Advisor Performance Fix — candle cache, full-universe scan,
 #  non-blocking warm, priority scanning, rate limiter
 # ════════════════════════════════════════════════════════════
+
 
 class TestAdvisorPerfAPI:
     """
@@ -2644,19 +2531,19 @@ class TestAdvisorPerfAPI:
     def _session(base_url: str, email: str, password: str, name: str = "Test"):
         import requests as _req
         import time as _time
+
         s = _req.Session()
-        proxies = {"http": "http://proxy-dmz.intel.com:911",
-                   "https": "http://proxy-dmz.intel.com:912"}
+        proxies = {"http": "http://proxy-dmz.intel.com:911", "https": "http://proxy-dmz.intel.com:912"}
         px = proxies if "127.0.0.1" not in base_url and "localhost" not in base_url else None
         if px:
             s.proxies.update(px)
         # Use a time-based suffix to avoid stale-registration collisions on live site
         ts = str(int(_time.time()))[-6:]
         unique_email = email.replace("@", f"{ts}@")
-        s.post(f"{base_url}/auth/register",
-               json={"email": unique_email, "password": password, "name": name}, timeout=60)
-        resp = s.post(f"{base_url}/auth/login",
-                      json={"email": unique_email, "password": password}, timeout=60)
+        s.post(
+            f"{base_url}/auth/register", json={"email": unique_email, "password": password, "name": name}, timeout=60
+        )
+        resp = s.post(f"{base_url}/auth/login", json={"email": unique_email, "password": password}, timeout=60)
         assert resp.status_code == 200, f"Login failed: {resp.text}"
         return s
 
@@ -2709,9 +2596,7 @@ class TestAdvisorPerfAPI:
         # If scan hasn't started yet, packages may be empty — that's ok
         if packages:
             actual_keys = set(packages.keys())
-            assert expected_keys == actual_keys, (
-                f"Expected packages {expected_keys}, got {actual_keys}"
-            )
+            assert expected_keys == actual_keys, f"Expected packages {expected_keys}, got {actual_keys}"
             # Each package should have a picks list
             for key in expected_keys:
                 pkg = packages[key]
@@ -2724,6 +2609,7 @@ class TestAdvisorPerfAPI:
         """The /api/trading endpoint should respond within 10 seconds even when
         the scan is still in progress (non-blocking)."""
         import time
+
         s = self._session(live_url, "perf_time@e2e.local", "Pass1234", "Perf Time")
         t0 = time.time()
         resp = s.get(f"{live_url}/api/trading", timeout=10)
@@ -2748,9 +2634,7 @@ class TestAdvisorPerfAPI:
         assert "bearish" in mood, "Missing 'bearish' in market_mood"
         total_pct = mood["bullish"] + mood["neutral"] + mood["bearish"]
         if data.get("all_picks"):  # only check when there are actual picks
-            assert 95 <= total_pct <= 105, (
-                f"market_mood sums to {total_pct}% — expected ~100%"
-            )
+            assert 95 <= total_pct <= 105, f"market_mood sums to {total_pct}% — expected ~100%"
 
     # ── Cache warmer reports readiness ────────────────────────
 
@@ -2758,6 +2642,7 @@ class TestAdvisorPerfAPI:
         """After server has been running, cache-status should report ready=True,
         proving warm_cache phase 1 completed and _warm_done.set() was called."""
         import time
+
         s = self._session(live_url, "perf_warm@e2e.local", "Pass1234", "Perf Warm")
         # Poll cache-status up to 180s for ready=True (Render cold start + Finnhub rate limits)
         deadline = time.time() + 180
@@ -2776,6 +2661,7 @@ class TestAdvisorPerfAPI:
             time.sleep(5)
         if not ready and last_data.get("warming") and last_data.get("cached", 0) > 0:
             import pytest
+
             pytest.skip(
                 f"Cache warmer still warming ({last_data.get('cached')}/{last_data.get('total')} cached) "
                 f"after 180s — phase 1 slow due to API rate limits"
@@ -2792,6 +2678,7 @@ class TestAdvisorPerfAPI:
         proving the rate limiter sleeps outside the lock."""
         import time
         from concurrent.futures import ThreadPoolExecutor, as_completed
+
         s = self._session(live_url, "perf_conc@e2e.local", "Pass1234", "Perf Conc")
 
         endpoints = [
@@ -2822,8 +2709,7 @@ class TestAdvisorPerfAPI:
 
         # Wall-clock time should be reasonable (< 30s for 3 parallel calls)
         assert total_wall < 30, (
-            f"Concurrent calls took {total_wall:.1f}s wall-clock — "
-            "rate limiter may still be serializing threads"
+            f"Concurrent calls took {total_wall:.1f}s wall-clock — rate limiter may still be serializing threads"
         )
 
     # ── Second stock history call benefits from candle cache ──
@@ -2832,6 +2718,7 @@ class TestAdvisorPerfAPI:
         """Fetching the same stock's history twice should be faster the second time,
         proving the candle cache in data_provider.get_candles() works."""
         import time
+
         s = self._session(live_url, "perf_cache@e2e.local", "Pass1234", "Perf Cache")
 
         # First call — populates the cache
@@ -2840,11 +2727,13 @@ class TestAdvisorPerfAPI:
             resp1 = s.get(f"{live_url}/api/stock/AAPL/history", timeout=30)
         except Exception:
             import pytest
+
             pytest.skip("Stock history timed out — data provider may be slow")
         elapsed1 = time.time() - t0
 
         if resp1.status_code != 200:
             import pytest
+
             pytest.skip(f"Stock history returned {resp1.status_code} — data not available")
 
         # Second call — should hit cache
@@ -2870,9 +2759,7 @@ class TestAdvisorPerfAPI:
         assert resp.status_code == 200
         data = resp.json()
         all_picks = data.get("all_picks", [])
-        assert len(all_picks) <= 30, (
-            f"API returned {len(all_picks)} picks — expected ≤30"
-        )
+        assert len(all_picks) <= 30, f"API returned {len(all_picks)} picks — expected ≤30"
 
     # ── Stock detail returns data (Yahoo-first fallback works) ─
 
@@ -2884,9 +2771,11 @@ class TestAdvisorPerfAPI:
             resp = s.get(f"{live_url}/api/stock/AAPL", timeout=30)
         except Exception:
             import pytest
+
             pytest.skip("Stock detail timed out")
         if resp.status_code == 404:
             import pytest
+
             pytest.skip("Stock detail returned 404 — data not available yet")
         assert resp.status_code == 200
         data = resp.json()
@@ -2904,6 +2793,7 @@ class TestAdvisorPerfAPI:
             resp = s.get(f"{live_url}/api/value-scanner", timeout=60)
         except Exception:
             import pytest
+
             pytest.skip("Value scanner timed out")
         assert resp.status_code == 200
         data = resp.json()
@@ -2918,6 +2808,7 @@ class TestAdvisorPerfAPI:
 # ────────────────────────────────────────────
 #  Server-Side Optimization Tests
 # ────────────────────────────────────────────
+
 
 class TestPerfOptimizations:
     """Verify the server-side optimization changes work correctly in-browser."""
@@ -2937,14 +2828,11 @@ class TestPerfOptimizations:
         cards = page.locator(".budget-card")
         assert cards.count() > 0, "Budget card should appear after creation"
         card_html = cards.first.inner_html()
-        assert "$" in card_html or "%" in card_html, (
-            f"Budget card should show dollar/percent values: {card_html[:200]}"
-        )
+        assert "$" in card_html or "%" in card_html, f"Budget card should show dollar/percent values: {card_html[:200]}"
         # Verify no JS errors on the page
         js_errors = page.evaluate("() => window.__jsErrors || []")
         # Filter for budget-related errors only
-        budget_errors = [e for e in (js_errors if isinstance(js_errors, list) else [])
-                         if "budget" in str(e).lower()]
+        budget_errors = [e for e in (js_errors if isinstance(js_errors, list) else []) if "budget" in str(e).lower()]
         assert len(budget_errors) == 0, f"JS errors on budget page: {budget_errors}"
 
     def test_stock_detail_loads_via_combined_endpoint(self, authenticated_page: Page):
@@ -3032,9 +2920,7 @@ class TestPerfOptimizations:
 
             # No new API calls should have been made
             call_count = page.evaluate("() => window.__apiCallCount")
-            assert call_count == 0, (
-                f"Tab switch triggered {call_count} API calls to /advisor/analyze — should be 0"
-            )
+            assert call_count == 0, f"Tab switch triggered {call_count} API calls to /advisor/analyze — should be 0"
 
     def test_trading_advisor_skips_unchanged_rerender(self, authenticated_page: Page):
         """Trading advisor 30s poll should skip re-render if data unchanged."""
@@ -3063,6 +2949,7 @@ class TestPerfOptimizations:
 #  instantly instead of recomputing from scratch.
 # ════════════════════════════════════════════════════════════
 
+
 class TestSmartAdvisorCacheHit:
     """E2E tests verifying the advisor cache key fix.
 
@@ -3075,18 +2962,18 @@ class TestSmartAdvisorCacheHit:
     def _session(base_url, email, password, name="Test"):
         import requests as _req
         import time as _time
+
         s = _req.Session()
-        proxies = {"http": "http://proxy-dmz.intel.com:911",
-                   "https": "http://proxy-dmz.intel.com:912"}
+        proxies = {"http": "http://proxy-dmz.intel.com:911", "https": "http://proxy-dmz.intel.com:912"}
         px = proxies if "127.0.0.1" not in base_url and "localhost" not in base_url else None
         if px:
             s.proxies.update(px)
         ts = str(int(_time.time()))[-6:]
         unique_email = email.replace("@", f"{ts}@")
-        s.post(f"{base_url}/auth/register",
-               json={"email": unique_email, "password": password, "name": name}, timeout=60)
-        resp = s.post(f"{base_url}/auth/login",
-                      json={"email": unique_email, "password": password}, timeout=60)
+        s.post(
+            f"{base_url}/auth/register", json={"email": unique_email, "password": password, "name": name}, timeout=60
+        )
+        resp = s.post(f"{base_url}/auth/login", json={"email": unique_email, "password": password}, timeout=60)
         assert resp.status_code == 200, f"Login failed: {resp.text}"
         return s
 
@@ -3095,12 +2982,12 @@ class TestSmartAdvisorCacheHit:
         """If the scheduler has pre-computed results, /api/advisor/analyze
         should return in under 5 seconds (cache hit, not a full rescan)."""
         import time as _time
+
         s = self._session(live_url, "cache_hit@e2e.local", "Pass1234", "Cache Hit")
 
         # First call may trigger computation if cache is cold — allow it
         try:
-            s.get(f"{live_url}/api/advisor/analyze?amount=10000&risk=balanced&period=1y",
-                  timeout=(5, 120))
+            s.get(f"{live_url}/api/advisor/analyze?amount=10000&risk=balanced&period=1y", timeout=(5, 120))
         except Exception:
             pass  # OK if first call is slow or times out
 
@@ -3115,9 +3002,7 @@ class TestSmartAdvisorCacheHit:
         if resp.status_code == 503:
             pytest.skip("Advisor data not ready yet (503)")
 
-        assert resp.status_code == 200, (
-            f"Advisor returned {resp.status_code}: {resp.text[:200]}"
-        )
+        assert resp.status_code == 200, f"Advisor returned {resp.status_code}: {resp.text[:200]}"
         assert elapsed < 5.0, (
             f"Second advisor call took {elapsed:.1f}s — expected <5s (cache hit). "
             "Cache key normalization may be broken (int vs float mismatch)."
@@ -3177,6 +3062,5 @@ class TestSmartAdvisorCacheHit:
             syms1 = [r["symbol"] for r in d1.get("rankings", [])]
             syms2 = [r["symbol"] for r in d2.get("rankings", [])]
             assert syms1 == syms2, (
-                "amount=10000 and amount=10000.0 returned different rankings — "
-                "cache key normalization may be broken"
+                "amount=10000 and amount=10000.0 returned different rankings — cache key normalization may be broken"
             )

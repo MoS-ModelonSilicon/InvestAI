@@ -36,7 +36,9 @@ def list_transactions(
 
 
 @router.post("", response_model=TransactionOut)
-def create_transaction(payload: TransactionCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def create_transaction(
+    payload: TransactionCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     cat = db.query(Category).filter(Category.id == payload.category_id).first()
     if not cat:
         raise HTTPException(404, "Category not found")
@@ -48,7 +50,9 @@ def create_transaction(payload: TransactionCreate, db: Session = Depends(get_db)
 
 
 @router.put("/{tx_id}", response_model=TransactionOut)
-def update_transaction(tx_id: int, payload: TransactionUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_transaction(
+    tx_id: int, payload: TransactionUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     tx = db.query(Transaction).filter(Transaction.id == tx_id, Transaction.user_id == user.id).first()
     if not tx:
         raise HTTPException(404, "Transaction not found")

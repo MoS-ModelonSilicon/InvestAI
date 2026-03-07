@@ -23,9 +23,9 @@ from conftest import TEST_USER_EMAIL, TEST_USER_PASSWORD, TEST_USER_NAME
 
 # ── Helpers ──────────────────────────────────────────────
 
-SLOW = 60_000         # generous timeout for Render cold-start
-API_WAIT = 8_000      # wait for API data to arrive
-CHART_WAIT = 15_000   # wait for Chart.js to render
+SLOW = 60_000  # generous timeout for Render cold-start
+API_WAIT = 8_000  # wait for API data to arrive
+CHART_WAIT = 15_000  # wait for Chart.js to render
 
 
 def _nav(page: Page, page_id: str):
@@ -41,6 +41,7 @@ def _unique(prefix: str = "") -> str:
 # ════════════════════════════════════════════════════════════
 #  1. STOCK DETAIL — deep dive into a single stock
 # ════════════════════════════════════════════════════════════
+
 
 class TestStockDetail:
     """Navigate to a stock detail page and verify all sections render."""
@@ -141,6 +142,7 @@ class TestStockDetail:
 #  2. DCA PLANNER — full CRUD flow
 # ════════════════════════════════════════════════════════════
 
+
 class TestDCAPlanner:
     """Test the Dollar Cost Averaging planner feature."""
 
@@ -160,7 +162,9 @@ class TestDCAPlanner:
         """Create a new DCA plan via the UI and verify it appears."""
         self._go(authenticated_page)
         # Click "New DCA Plan" button
-        new_btn = authenticated_page.locator("#page-dca").get_by_role("button", name=re.compile("new.*plan|add.*plan", re.IGNORECASE))
+        new_btn = authenticated_page.locator("#page-dca").get_by_role(
+            "button", name=re.compile("new.*plan|add.*plan", re.IGNORECASE)
+        )
         if new_btn.count() == 0:
             return  # button not found, skip
         new_btn.click(force=True)
@@ -185,9 +189,7 @@ class TestDCAPlanner:
         has_dollar = "$" in html
         has_percent = "%" in html
         has_plan_content = "plan" in html.lower() or "dca" in html.lower()
-        assert has_dollar or has_percent or has_plan_content, (
-            f"DCA page missing financial metrics. HTML: {html[:500]}"
-        )
+        assert has_dollar or has_percent or has_plan_content, f"DCA page missing financial metrics. HTML: {html[:500]}"
 
     def test_dca_budget_suggestion(self, authenticated_page: Page):
         """Budget suggestion section should provide AI-based budget recommendations."""
@@ -202,6 +204,7 @@ class TestDCAPlanner:
 # ════════════════════════════════════════════════════════════
 #  3. AUTOPILOT / AI PICKS — strategy simulation
 # ════════════════════════════════════════════════════════════
+
 
 class TestAutopilotAIPicks:
     """Test the Autopilot strategy profiles and simulation."""
@@ -218,11 +221,19 @@ class TestAutopilotAIPicks:
         html = container.inner_html()
         assert len(html) > 100, f"Autopilot page is mostly empty. HTML: {html[:300]}"
         # Should have profile cards or strategy names
-        has_profiles = any(kw in html.lower() for kw in [
-            "daredevil", "strategist", "fortress",
-            "aggressive", "balanced", "conservative",
-            "profile", "strategy"
-        ])
+        has_profiles = any(
+            kw in html.lower()
+            for kw in [
+                "daredevil",
+                "strategist",
+                "fortress",
+                "aggressive",
+                "balanced",
+                "conservative",
+                "profile",
+                "strategy",
+            ]
+        )
         assert has_profiles, f"Autopilot page missing strategy profiles. HTML: {html[:500]}"
 
     def test_autopilot_select_profile(self, authenticated_page: Page):
@@ -248,7 +259,9 @@ class TestAutopilotAIPicks:
             authenticated_page.wait_for_timeout(500)
 
         # Click Run Simulation
-        sim_btn = authenticated_page.locator("#page-autopilot").get_by_role("button", name=re.compile("simulat|run|backtest", re.IGNORECASE))
+        sim_btn = authenticated_page.locator("#page-autopilot").get_by_role(
+            "button", name=re.compile("simulat|run|backtest", re.IGNORECASE)
+        )
         if sim_btn.count() == 0:
             return  # skip if no button found
         btn = sim_btn.first
@@ -274,6 +287,7 @@ class TestAutopilotAIPicks:
 #  4. SMART ADVISOR — long-term analysis
 # ════════════════════════════════════════════════════════════
 
+
 class TestSmartAdvisor:
     """Test the Smart Advisor (long-term stock analysis)."""
 
@@ -293,16 +307,16 @@ class TestSmartAdvisor:
         """Should have a risk level selector (conservative/balanced/aggressive)."""
         self._go(authenticated_page)
         html = authenticated_page.locator("#page-smart-advisor").inner_html()
-        has_risk = any(kw in html.lower() for kw in [
-            "conservative", "balanced", "aggressive", "risk"
-        ])
+        has_risk = any(kw in html.lower() for kw in ["conservative", "balanced", "aggressive", "risk"])
         assert has_risk, f"Advisor page missing risk selector. HTML: {html[:500]}"
 
     def test_advisor_run_analysis(self, authenticated_page: Page):
         """Running the analysis should produce stock rankings and portfolio data."""
         self._go(authenticated_page)
         # Click Run Analysis button
-        btn = authenticated_page.locator("#page-smart-advisor").get_by_role("button", name=re.compile("analy|scan|run", re.IGNORECASE))
+        btn = authenticated_page.locator("#page-smart-advisor").get_by_role(
+            "button", name=re.compile("analy|scan|run", re.IGNORECASE)
+        )
         if btn.count() == 0:
             return
         btn.first.click(force=True)
@@ -311,9 +325,7 @@ class TestSmartAdvisor:
         html = authenticated_page.locator("#page-smart-advisor").inner_html()
         # Should show results with stock symbols, scores, or portfolio data
         has_results = "$" in html or "score" in html.lower() or "rank" in html.lower()
-        assert has_results or len(html) > 2000, (
-            f"Advisor analysis produced no visible results. HTML: {html[:500]}"
-        )
+        assert has_results or len(html) > 2000, f"Advisor analysis produced no visible results. HTML: {html[:500]}"
 
     def test_advisor_tabs_switch(self, authenticated_page: Page):
         """Should be able to switch between Long-term and Short-term tabs."""
@@ -330,6 +342,7 @@ class TestSmartAdvisor:
 # ════════════════════════════════════════════════════════════
 #  5. TRADING ADVISOR — short-term picks
 # ════════════════════════════════════════════════════════════
+
 
 class TestTradingAdvisor:
     """Test the Trading Advisor (short-term picks with technical analysis)."""
@@ -348,14 +361,26 @@ class TestTradingAdvisor:
         self._go(authenticated_page)
         html = authenticated_page.locator("#page-smart-advisor").inner_html()
         # Should show trading-related content
-        has_trading = any(kw in html.lower() for kw in [
-            "trade", "pick", "package", "mood", "signal",
-            "entry", "target", "stop", "r/r", "rsi", "macd",
-            "bullish", "bearish", "neutral"
-        ])
-        assert has_trading or len(html) > 1000, (
-            f"Trading tab has no trading-related content. HTML: {html[:500]}"
+        has_trading = any(
+            kw in html.lower()
+            for kw in [
+                "trade",
+                "pick",
+                "package",
+                "mood",
+                "signal",
+                "entry",
+                "target",
+                "stop",
+                "r/r",
+                "rsi",
+                "macd",
+                "bullish",
+                "bearish",
+                "neutral",
+            ]
         )
+        assert has_trading or len(html) > 1000, f"Trading tab has no trading-related content. HTML: {html[:500]}"
 
     def test_trading_shows_picks_or_scan(self, authenticated_page: Page):
         """Should show trading picks or a scan-in-progress indicator."""
@@ -371,6 +396,7 @@ class TestTradingAdvisor:
 # ════════════════════════════════════════════════════════════
 #  6. PICKS TRACKER — Discord picks evaluation
 # ════════════════════════════════════════════════════════════
+
 
 class TestPicksTracker:
     """Test the Discord picks tracker and evaluation page."""
@@ -391,9 +417,7 @@ class TestPicksTracker:
         """Should have filter tabs (All, Breakout, Swing, Options)."""
         self._go(authenticated_page)
         html = authenticated_page.locator("#page-picks-tracker").inner_html()
-        has_tabs = any(kw in html.lower() for kw in [
-            "breakout", "swing", "options", "all"
-        ])
+        has_tabs = any(kw in html.lower() for kw in ["breakout", "swing", "options", "all"])
         assert has_tabs, f"Picks tracker missing filter tabs. HTML: {html[:500]}"
 
     def test_picks_tracker_stats_row(self, authenticated_page: Page):
@@ -403,9 +427,7 @@ class TestPicksTracker:
         authenticated_page.wait_for_timeout(15000)
         html = authenticated_page.locator("#page-picks-tracker").inner_html()
         has_stats = "%" in html or "win" in html.lower() or "pick" in html.lower()
-        assert has_stats or len(html) > 500, (
-            f"Picks tracker missing stats. HTML: {html[:500]}"
-        )
+        assert has_stats or len(html) > 500, f"Picks tracker missing stats. HTML: {html[:500]}"
 
     def test_picks_tracker_search(self, authenticated_page: Page):
         """Search bar should filter picks by symbol."""
@@ -423,6 +445,7 @@ class TestPicksTracker:
 # ════════════════════════════════════════════════════════════
 #  7. VALUE SCANNER — Graham-Buffett analysis
 # ════════════════════════════════════════════════════════════
+
 
 class TestValueScanner:
     """Test the Value Scanner (Graham-Buffett criteria stock screening)."""
@@ -447,12 +470,8 @@ class TestValueScanner:
         """Value scanner tab should be accessible and show filters/results."""
         self._go(authenticated_page)
         html = authenticated_page.locator("#page-screener").inner_html()
-        has_scanner = any(kw in html.lower() for kw in [
-            "value", "scanner", "graham", "buffett", "margin", "safety"
-        ])
-        assert has_scanner or len(html) > 1000, (
-            f"Value scanner tab not showing. HTML: {html[:500]}"
-        )
+        has_scanner = any(kw in html.lower() for kw in ["value", "scanner", "graham", "buffett", "margin", "safety"])
+        assert has_scanner or len(html) > 1000, f"Value scanner tab not showing. HTML: {html[:500]}"
 
     def test_value_scanner_run_scan(self, authenticated_page: Page):
         """Running the value scan should produce scored stocks."""
@@ -473,6 +492,7 @@ class TestValueScanner:
 #  8. WATCHLIST — full interaction flow
 # ════════════════════════════════════════════════════════════
 
+
 class TestWatchlistInteraction:
     """Full watchlist interaction tests including add, view, and remove."""
 
@@ -488,9 +508,7 @@ class TestWatchlistInteraction:
         authenticated_page.get_by_role("button", name="Search").first.click()
         authenticated_page.wait_for_timeout(8000)
         # Click add to watchlist on the first result if available
-        add_btns = authenticated_page.locator(
-            ".add-watchlist-btn, [data-action='watchlist'], .scr-watch-btn"
-        )
+        add_btns = authenticated_page.locator(".add-watchlist-btn, [data-action='watchlist'], .scr-watch-btn")
         if add_btns.count() > 0:
             add_btns.first.click(force=True)
             authenticated_page.wait_for_timeout(2000)
@@ -501,9 +519,7 @@ class TestWatchlistInteraction:
         cards = authenticated_page.locator(".watchlist-card, .wl-card")
         if cards.count() > 0:
             html = cards.first.inner_html()
-            assert "$" in html or "." in html, (
-                f"Watchlist card missing price. HTML: {html[:300]}"
-            )
+            assert "$" in html or "." in html, f"Watchlist card missing price. HTML: {html[:300]}"
 
     def test_watchlist_card_has_metrics(self, authenticated_page: Page):
         """Watchlist cards should show P/E, market cap, or other metrics."""
@@ -512,15 +528,14 @@ class TestWatchlistInteraction:
         html = container.inner_html()
         if "empty" in html.lower() or len(html) < 100:
             return  # empty watchlist, skip
-        has_metrics = any(kw in html.lower() for kw in [
-            "p/e", "market cap", "dividend", "beta", "sector", "vol"
-        ])
+        has_metrics = any(kw in html.lower() for kw in ["p/e", "market cap", "dividend", "beta", "sector", "vol"])
         assert has_metrics, f"Watchlist cards missing metrics. HTML: {html[:500]}"
 
 
 # ════════════════════════════════════════════════════════════
 #  9. PORTFOLIO — advanced features
 # ════════════════════════════════════════════════════════════
+
 
 class TestPortfolioAdvanced:
     """Advanced portfolio tests: multiple holdings, allocation, delete."""
@@ -596,6 +611,7 @@ class TestPortfolioAdvanced:
 #  10. ALERTS — advanced interactions
 # ════════════════════════════════════════════════════════════
 
+
 class TestAlertsAdvanced:
     """Advanced alert tests: multiple conditions, dismiss, search."""
 
@@ -649,6 +665,7 @@ class TestAlertsAdvanced:
 #  11. TRANSACTIONS — edit and delete flow
 # ════════════════════════════════════════════════════════════
 
+
 class TestTransactionsAdvanced:
     """Advanced transaction tests: edit, delete, date filtering."""
 
@@ -700,12 +717,16 @@ class TestTransactionsAdvanced:
         if rows_before == 0:
             return
         # Click delete on the first row
-        del_btn = authenticated_page.locator("#tx-body tr .delete-btn, #tx-body tr .btn-delete, #tx-body tr button[title='Delete']").first
+        del_btn = authenticated_page.locator(
+            "#tx-body tr .delete-btn, #tx-body tr .btn-delete, #tx-body tr button[title='Delete']"
+        ).first
         if del_btn.count() > 0:
             del_btn.click(force=True)
             authenticated_page.wait_for_timeout(2000)
             # Handle confirmation dialog if exists
-            confirm = authenticated_page.locator(".confirm-btn, .modal button:has-text('Yes'), .modal button:has-text('Delete')")
+            confirm = authenticated_page.locator(
+                ".confirm-btn, .modal button:has-text('Yes'), .modal button:has-text('Delete')"
+            )
             if confirm.count() > 0:
                 confirm.first.click(force=True)
                 authenticated_page.wait_for_timeout(2000)
@@ -714,6 +735,7 @@ class TestTransactionsAdvanced:
 # ════════════════════════════════════════════════════════════
 #  12. BUDGETS — advanced interactions
 # ════════════════════════════════════════════════════════════
+
 
 class TestBudgetsAdvanced:
     """Advanced budget tests: multiple budgets, progress tracking."""
@@ -746,6 +768,7 @@ class TestBudgetsAdvanced:
 #  13. COMPARISON — advanced flows
 # ════════════════════════════════════════════════════════════
 
+
 class TestComparisonAdvanced:
     """Advanced comparison tests: multiple stocks, chart rendering."""
 
@@ -761,9 +784,7 @@ class TestComparisonAdvanced:
         authenticated_page.wait_for_timeout(25000)
         html = authenticated_page.locator("#compare-results").inner_html()
         for sym in ["AAPL", "MSFT", "GOOGL"]:
-            assert sym.lower() in html.lower(), (
-                f"Comparison results don't contain {sym}. HTML: {html[:500]}"
-            )
+            assert sym.lower() in html.lower(), f"Comparison results don't contain {sym}. HTML: {html[:500]}"
 
     def test_comparison_chart_renders(self, authenticated_page: Page):
         """Comparison should render an overlay chart with all symbols."""
@@ -785,17 +806,14 @@ class TestComparisonAdvanced:
         authenticated_page.wait_for_timeout(25000)
         html = authenticated_page.locator("#compare-results").inner_html()
         # Should show comparison metrics
-        has_metrics = any(kw in html.lower() for kw in [
-            "p/e", "market cap", "dividend", "return", "beta"
-        ])
-        assert has_metrics or "$" in html, (
-            f"Comparison missing metric details. HTML: {html[:500]}"
-        )
+        has_metrics = any(kw in html.lower() for kw in ["p/e", "market cap", "dividend", "return", "beta"])
+        assert has_metrics or "$" in html, f"Comparison missing metric details. HTML: {html[:500]}"
 
 
 # ════════════════════════════════════════════════════════════
 #  14. RISK PROFILE — wizard completion
 # ════════════════════════════════════════════════════════════
+
 
 class TestRiskProfileComplete:
     """Test completing the risk profile wizard end-to-end."""
@@ -821,9 +839,7 @@ class TestRiskProfileComplete:
             authenticated_page.wait_for_timeout(1000)
             # Should advance to next question or show result
             new_html = wizard.inner_html()
-            assert new_html != html or result.is_visible(), (
-                "Wizard didn't advance after clicking an option"
-            )
+            assert new_html != html or result.is_visible(), "Wizard didn't advance after clicking an option"
 
     def test_profile_result_shows_allocation(self, authenticated_page: Page):
         """After completing the profile, should show risk score and allocation."""
@@ -840,14 +856,13 @@ class TestRiskProfileComplete:
 #  15. THEME TOGGLE — dark/light mode
 # ════════════════════════════════════════════════════════════
 
+
 class TestThemeToggle:
     """Test the dark/light mode theme toggle."""
 
     def test_theme_toggle_exists(self, authenticated_page: Page):
         """A theme toggle button/icon should be visible."""
-        toggle = authenticated_page.locator(
-            ".theme-toggle, #theme-toggle, .theme-btn, [data-action='toggle-theme']"
-        )
+        toggle = authenticated_page.locator(".theme-toggle, #theme-toggle, .theme-btn, [data-action='toggle-theme']")
         assert toggle.count() > 0, "No theme toggle button found"
 
     def test_theme_toggle_changes_class(self, authenticated_page: Page):
@@ -855,9 +870,7 @@ class TestThemeToggle:
         body_class_before = authenticated_page.evaluate("document.body.className")
         html_class_before = authenticated_page.evaluate("document.documentElement.className")
 
-        toggle = authenticated_page.locator(
-            ".theme-toggle, #theme-toggle, .theme-btn, [data-action='toggle-theme']"
-        )
+        toggle = authenticated_page.locator(".theme-toggle, #theme-toggle, .theme-btn, [data-action='toggle-theme']")
         if toggle.count() == 0:
             return
         toggle.first.click(force=True)
@@ -866,8 +879,7 @@ class TestThemeToggle:
         body_class_after = authenticated_page.evaluate("document.body.className")
         html_class_after = authenticated_page.evaluate("document.documentElement.className")
 
-        changed = (body_class_before != body_class_after or
-                   html_class_before != html_class_after)
+        changed = body_class_before != body_class_after or html_class_before != html_class_after
         # Also check data-theme attribute
         if not changed:
             theme_attr = authenticated_page.evaluate(
@@ -877,9 +889,7 @@ class TestThemeToggle:
 
     def test_theme_persists_on_reload(self, authenticated_page: Page, live_url: str):
         """Theme preference should persist after page reload."""
-        toggle = authenticated_page.locator(
-            ".theme-toggle, #theme-toggle, .theme-btn, [data-action='toggle-theme']"
-        )
+        toggle = authenticated_page.locator(".theme-toggle, #theme-toggle, .theme-btn, [data-action='toggle-theme']")
         if toggle.count() == 0:
             return
         toggle.first.click(force=True)
@@ -893,14 +903,13 @@ class TestThemeToggle:
         theme_after = authenticated_page.evaluate(
             "document.documentElement.getAttribute('data-theme') || document.body.className"
         )
-        assert theme_before == theme_after, (
-            f"Theme didn't persist: before={theme_before}, after={theme_after}"
-        )
+        assert theme_before == theme_after, f"Theme didn't persist: before={theme_before}, after={theme_after}"
 
 
 # ════════════════════════════════════════════════════════════
 #  16. MOBILE RESPONSIVE LAYOUT
 # ════════════════════════════════════════════════════════════
+
 
 class TestMobileLayout:
     """Test mobile responsive behavior."""
@@ -923,9 +932,7 @@ class TestMobileLayout:
         """Mobile should show a hamburger menu button."""
         authenticated_page.set_viewport_size({"width": 375, "height": 812})
         authenticated_page.wait_for_timeout(500)
-        hamburger = authenticated_page.locator(
-            ".hamburger, .mobile-menu-btn, .nav-toggle, .menu-toggle"
-        )
+        hamburger = authenticated_page.locator(".hamburger, .mobile-menu-btn, .nav-toggle, .menu-toggle")
         if hamburger.count() > 0:
             expect(hamburger.first).to_be_visible()
         # Restore
@@ -935,9 +942,7 @@ class TestMobileLayout:
         """Mobile should have a bottom navigation bar."""
         authenticated_page.set_viewport_size({"width": 375, "height": 812})
         authenticated_page.wait_for_timeout(500)
-        bottom_nav = authenticated_page.locator(
-            ".bottom-nav, .mobile-nav, .nav-bottom"
-        )
+        bottom_nav = authenticated_page.locator(".bottom-nav, .mobile-nav, .nav-bottom")
         if bottom_nav.count() > 0:
             expect(bottom_nav.first).to_be_visible()
         # Restore
@@ -950,9 +955,7 @@ class TestMobileLayout:
         content = authenticated_page.locator("main.content")
         box = content.bounding_box()
         if box:
-            assert box["width"] <= 380, (
-                f"Content overflows mobile viewport: width={box['width']}px"
-            )
+            assert box["width"] <= 380, f"Content overflows mobile viewport: width={box['width']}px"
         # Restore
         authenticated_page.set_viewport_size({"width": 1280, "height": 1024})
 
@@ -960,6 +963,7 @@ class TestMobileLayout:
 # ════════════════════════════════════════════════════════════
 #  17. API HEALTH — verify key endpoints return data
 # ════════════════════════════════════════════════════════════
+
 
 class TestAPIHealth:
     """Direct API health checks via the browser's fetch — no CORS issues."""
@@ -1055,14 +1059,28 @@ class TestAPIHealth:
 #  18. NAVIGATION — full SPA routing integrity
 # ════════════════════════════════════════════════════════════
 
+
 class TestNavComplete:
     """Verify every sidebar nav page loads without JS errors."""
 
     ALL_PAGES = [
-        "dashboard", "portfolio", "watchlist", "dca", "alerts",
-        "screener", "autopilot", "smart-advisor", "comparison", "il-funds",
-        "news", "calendar", "picks-tracker", "education", "profile",
-        "transactions", "budgets",
+        "dashboard",
+        "portfolio",
+        "watchlist",
+        "dca",
+        "alerts",
+        "screener",
+        "autopilot",
+        "smart-advisor",
+        "comparison",
+        "il-funds",
+        "news",
+        "calendar",
+        "picks-tracker",
+        "education",
+        "profile",
+        "transactions",
+        "budgets",
     ]
 
     def test_all_pages_activate_without_console_error(self, authenticated_page: Page):
@@ -1093,6 +1111,7 @@ class TestNavComplete:
 #  19. CONTEXT MENU — right-click actions
 # ════════════════════════════════════════════════════════════
 
+
 class TestContextMenus:
     """Test right-click context menus on stock items."""
 
@@ -1119,6 +1138,7 @@ class TestContextMenus:
 #  20. EDUCATION — article interaction
 # ════════════════════════════════════════════════════════════
 
+
 class TestEducationInteraction:
     """Test deeper education page interactions."""
 
@@ -1131,13 +1151,22 @@ class TestEducationInteraction:
         self._go(authenticated_page)
         html = authenticated_page.locator("#edu-container").inner_html()
         # Should have category headers or groupings
-        has_categories = any(kw in html.lower() for kw in [
-            "basics", "beginner", "advanced", "investment", "strategy",
-            "technical", "fundamental", "risk", "etf", "category"
-        ])
-        assert has_categories or len(html) > 200, (
-            f"Education page missing category groupings. HTML: {html[:500]}"
+        has_categories = any(
+            kw in html.lower()
+            for kw in [
+                "basics",
+                "beginner",
+                "advanced",
+                "investment",
+                "strategy",
+                "technical",
+                "fundamental",
+                "risk",
+                "etf",
+                "category",
+            ]
         )
+        assert has_categories or len(html) > 200, f"Education page missing category groupings. HTML: {html[:500]}"
 
     def test_education_card_click_expands(self, authenticated_page: Page):
         """Clicking an education card should expand it or show full content."""
@@ -1157,6 +1186,7 @@ class TestEducationInteraction:
 #  21. CALENDAR — tab switching and event details
 # ════════════════════════════════════════════════════════════
 
+
 class TestCalendarInteraction:
     """Test calendar page tab switching and event display."""
 
@@ -1170,9 +1200,7 @@ class TestCalendarInteraction:
         html = authenticated_page.locator("#page-calendar").inner_html()
         has_earnings = "earning" in html.lower()
         has_economic = "economic" in html.lower() or "event" in html.lower()
-        assert has_earnings or has_economic, (
-            f"Calendar missing earnings/economic sections. HTML: {html[:500]}"
-        )
+        assert has_earnings or has_economic, f"Calendar missing earnings/economic sections. HTML: {html[:500]}"
 
     def test_calendar_events_have_dates(self, authenticated_page: Page):
         """Calendar events should display dates."""
@@ -1182,13 +1210,15 @@ class TestCalendarInteraction:
             return  # no data
         # Look for date patterns (2025, 2026, Jan, Feb, etc.)
         import re as _re
-        has_dates = _re.search(r'202[5-9]|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec', html)
+
+        has_dates = _re.search(r"202[5-9]|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec", html)
         assert has_dates, f"Calendar events missing dates. HTML: {html[:500]}"
 
 
 # ════════════════════════════════════════════════════════════
 #  22. ISRAELI FUNDS — detailed filter tests
 # ════════════════════════════════════════════════════════════
+
 
 class TestILFundsAdvanced:
     """Advanced Israeli funds tests: presets, sorting, pagination."""
@@ -1213,9 +1243,7 @@ class TestILFundsAdvanced:
         authenticated_page.get_by_role("button", name="Search").first.click()
         authenticated_page.wait_for_timeout(8000)
         # Look for pagination controls
-        pagination = authenticated_page.locator(
-            ".pagination, .page-nav, .pager, [data-page]"
-        )
+        pagination = authenticated_page.locator(".pagination, .page-nav, .pager, [data-page]")
         html = authenticated_page.locator("#page-il-funds").inner_html()
         has_pagination = pagination.count() > 0 or "next" in html.lower() or "page" in html.lower()
         # Pagination may or may not exist depending on result count
@@ -1231,14 +1259,13 @@ class TestILFundsAdvanced:
             authenticated_page.get_by_role("button", name="Search").first.click()
             authenticated_page.wait_for_timeout(5000)
             html = authenticated_page.locator("#il-results-area").inner_html()
-            assert len(html) > 50 or "kosher" in html.lower(), (
-                f"Kosher filter returned no results. HTML: {html[:300]}"
-            )
+            assert len(html) > 50 or "kosher" in html.lower(), f"Kosher filter returned no results. HTML: {html[:300]}"
 
 
 # ════════════════════════════════════════════════════════════
 #  23. NEWS — symbol-specific filtering
 # ════════════════════════════════════════════════════════════
+
 
 class TestNewsAdvanced:
     """Advanced news tests: search, symbol tags."""
@@ -1255,20 +1282,23 @@ class TestNewsAdvanced:
             return
         # Should have dates or source info
         import re as _re
-        has_info = _re.search(r'202[5-9]|ago|hour|minute|source|reuters|bloomberg', html, _re.IGNORECASE)
-        assert has_info or "http" in html, (
-            f"News cards missing source/date. HTML: {html[:500]}"
-        )
+
+        has_info = _re.search(r"202[5-9]|ago|hour|minute|source|reuters|bloomberg", html, _re.IGNORECASE)
+        assert has_info or "http" in html, f"News cards missing source/date. HTML: {html[:500]}"
 
     def test_news_search_filters(self, authenticated_page: Page):
         """News search bar should filter articles by keyword."""
         self._go(authenticated_page)
         search = authenticated_page.locator("#news-search")
         if search.count() > 0 and search.is_visible():
-            cards_before = authenticated_page.locator("#news-container .news-card:visible, #news-container article:visible").count()
+            cards_before = authenticated_page.locator(
+                "#news-container .news-card:visible, #news-container article:visible"
+            ).count()
             search.fill("Apple")
             authenticated_page.wait_for_timeout(1000)
-            cards_after = authenticated_page.locator("#news-container .news-card:visible, #news-container article:visible").count()
+            cards_after = authenticated_page.locator(
+                "#news-container .news-card:visible, #news-container article:visible"
+            ).count()
             if cards_before > 0:
                 assert cards_after <= cards_before, "News search didn't filter"
             search.fill("")
@@ -1278,6 +1308,7 @@ class TestNewsAdvanced:
 # ════════════════════════════════════════════════════════════
 #  24. FULL USER JOURNEY — signup to portfolio management
 # ════════════════════════════════════════════════════════════
+
 
 class TestFullUserJourney:
     """End-to-end journey: register → login → build portfolio → set alerts → view."""
@@ -1305,7 +1336,7 @@ class TestFullUserJourney:
         _nav(page, "transactions")
         page.wait_for_timeout(3000)
         # The section may be display:none until JS activates it; wait for active class
-        page.wait_for_selector('#page-transactions.active', timeout=SLOW)
+        page.wait_for_selector("#page-transactions.active", timeout=SLOW)
         page.wait_for_timeout(1000)
         page.locator('button:has-text("+ Add Transaction")').click(force=True)
         page.select_option("#tx-type", "income")
@@ -1366,6 +1397,7 @@ class TestFullUserJourney:
 #  25. MULTI-USER DATA ISOLATION (API-level, works on live site)
 # ════════════════════════════════════════════════════════════
 
+
 class TestMultiUserLive:
     """Two users should never see each other's data — tested via browser fetch."""
 
@@ -1424,15 +1456,14 @@ class TestMultiUserLive:
         self._register_and_login(page_b, live_url, email_b, "Bob12345", "Bob")
         resp_b = page_b.evaluate("async () => (await fetch('/api/portfolio/holdings')).json()")
         symbols_b = [h.get("symbol", "") for h in resp_b] if isinstance(resp_b, list) else []
-        assert "UNIQUE_TEST" not in symbols_b, (
-            f"User B can see User A's holding! B's holdings: {symbols_b}"
-        )
+        assert "UNIQUE_TEST" not in symbols_b, f"User B can see User A's holding! B's holdings: {symbols_b}"
         ctx_b.close()
 
 
 # ════════════════════════════════════════════════════════════
 #  26. ERROR HANDLING & EDGE CASES
 # ════════════════════════════════════════════════════════════
+
 
 class TestErrorHandling:
     """Test how the app handles edge cases and invalid inputs."""
@@ -1508,12 +1539,14 @@ class TestErrorHandling:
 #  27. PERFORMANCE & LOADING
 # ════════════════════════════════════════════════════════════
 
+
 class TestPerformance:
     """Verify critical pages load within acceptable timeframes."""
 
     def test_login_page_loads_fast(self, page: Page, live_url: str, _live_server):
         """Login page should load within 30 seconds (even with cold start)."""
         import time
+
         start = time.time()
         page.goto(f"{live_url}/login", wait_until="domcontentloaded", timeout=SLOW)
         elapsed = time.time() - start
@@ -1539,6 +1572,7 @@ class TestPerformance:
 # ════════════════════════════════════════════════════════════
 #  28. SCREENER — full interaction flow
 # ════════════════════════════════════════════════════════════
+
 
 class TestScreenerFull:
     """Complete screener interaction tests."""
@@ -1613,6 +1647,7 @@ class TestScreenerFull:
 #  SPARKLINE CHARTS — verify all market cards have visible charts
 # ════════════════════════════════════════════════════════════
 
+
 class TestSparklineCharts:
     """Validate that sparkline charts render on every market card in the dashboard."""
 
@@ -1666,10 +1701,7 @@ class TestSparklineCharts:
             else:
                 missing.append(sym)
 
-        assert len(missing) == 0, (
-            f"Sparkline charts NOT rendered for: {missing}. "
-            f"Rendered OK: {rendered}"
-        )
+        assert len(missing) == 0, f"Sparkline charts NOT rendered for: {missing}. Rendered OK: {rendered}"
 
     def test_sparkline_canvases_have_drawn_pixels(self, authenticated_page: Page):
         """Verify Chart.js actually drew on the canvas (not blank white)."""
@@ -1683,7 +1715,8 @@ class TestSparklineCharts:
                 blank.append(sym)
                 continue
             # Check if canvas has any non-transparent pixels drawn
-            has_pixels = authenticated_page.evaluate("""(sym) => {
+            has_pixels = authenticated_page.evaluate(
+                """(sym) => {
                 const c = document.getElementById('spark-' + sym);
                 if (!c) return false;
                 const ctx = c.getContext('2d');
@@ -1694,31 +1727,31 @@ class TestSparklineCharts:
                     if (data[i] > 0) return true;
                 }
                 return false;
-            }""", sym)
+            }""",
+                sym,
+            )
             if not has_pixels:
                 blank.append(sym)
 
-        assert len(blank) == 0, (
-            f"Sparkline canvases are BLANK (no drawn pixels) for: {blank}"
-        )
+        assert len(blank) == 0, f"Sparkline canvases are BLANK (no drawn pixels) for: {blank}"
 
     def test_sparkline_api_returns_data_for_all_symbols(self, live_url: str):
         """The /api/market/home API should return sparkline arrays with >1 point for all featured stocks."""
         import requests
-        proxies = {"http": "http://proxy-dmz.intel.com:911",
-                   "https": "http://proxy-dmz.intel.com:912"}
+
+        proxies = {"http": "http://proxy-dmz.intel.com:911", "https": "http://proxy-dmz.intel.com:912"}
         px = proxies if "127.0.0.1" not in live_url and "localhost" not in live_url else None
 
         # Register + login via API to get a session
         s = requests.Session()
         if px:
             s.proxies.update(px)
-        s.post(f"{live_url}/auth/register",
-               json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD, "name": TEST_USER_NAME},
-               timeout=60)
-        s.post(f"{live_url}/auth/login",
-               json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD},
-               timeout=60)
+        s.post(
+            f"{live_url}/auth/register",
+            json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD, "name": TEST_USER_NAME},
+            timeout=60,
+        )
+        s.post(f"{live_url}/auth/login", json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD}, timeout=60)
 
         resp = s.get(f"{live_url}/api/market/home", timeout=60)
         assert resp.status_code == 200, f"market/home returned {resp.status_code}"
@@ -1736,9 +1769,9 @@ class TestSparklineCharts:
                 empty_sparklines.append(f"{sym}({len(sparkline)}pts)")
 
         assert len(empty_sparklines) == 0, (
-            f"Sparkline data MISSING for: {empty_sparklines}. "
-            f"All stocks should have >1 data point."
+            f"Sparkline data MISSING for: {empty_sparklines}. All stocks should have >1 data point."
         )
+
     def test_sparkline_api_consistent_across_calls(self, live_url: str):
         """Hit /api/market/home 3 times rapidly — every call must return sparklines for ALL symbols.
 
@@ -1750,20 +1783,19 @@ class TestSparklineCharts:
         import requests
         import time
 
-        proxies = {"http": "http://proxy-dmz.intel.com:911",
-                   "https": "http://proxy-dmz.intel.com:912"}
+        proxies = {"http": "http://proxy-dmz.intel.com:911", "https": "http://proxy-dmz.intel.com:912"}
         px = proxies if "127.0.0.1" not in live_url and "localhost" not in live_url else None
 
         # Register + login via API to get a session
         s = requests.Session()
         if px:
             s.proxies.update(px)
-        s.post(f"{live_url}/auth/register",
-               json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD, "name": TEST_USER_NAME},
-               timeout=60)
-        s.post(f"{live_url}/auth/login",
-               json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD},
-               timeout=60)
+        s.post(
+            f"{live_url}/auth/register",
+            json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD, "name": TEST_USER_NAME},
+            timeout=60,
+        )
+        s.post(f"{live_url}/auth/login", json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD}, timeout=60)
 
         failures = []
         for call_num in range(1, 4):
@@ -1778,6 +1810,5 @@ class TestSparklineCharts:
             time.sleep(2)  # small gap between calls
 
         assert len(failures) == 0, (
-            f"Sparkline data was INCONSISTENT across rapid calls: {failures}. "
-            f"Cache/rate-limit fix may have regressed."
+            f"Sparkline data was INCONSISTENT across rapid calls: {failures}. Cache/rate-limit fix may have regressed."
         )

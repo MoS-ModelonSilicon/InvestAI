@@ -16,6 +16,7 @@ router = APIRouter(prefix="/api/dca", tags=["dca"])
 
 # ── Dashboard (full overview) ────────────────────────────────
 
+
 @router.get("/dashboard")
 def dca_dashboard(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     try:
@@ -41,6 +42,7 @@ def dca_dashboard(db: Session = Depends(get_db), user: User = Depends(get_curren
 
 # ── Budget suggestion (based on risk profile) ───────────────
 
+
 @router.get("/budget-suggestion")
 def budget_suggestion(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     try:
@@ -52,14 +54,10 @@ def budget_suggestion(db: Session = Depends(get_db), user: User = Depends(get_cu
 
 # ── CRUD for DCA Plans ───────────────────────────────────────
 
+
 @router.get("/plans")
 def list_plans(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    plans = (
-        db.query(DcaPlan)
-        .filter(DcaPlan.user_id == user.id)
-        .order_by(DcaPlan.created_at.desc())
-        .all()
-    )
+    plans = db.query(DcaPlan).filter(DcaPlan.user_id == user.id).order_by(DcaPlan.created_at.desc()).all()
     return [
         {
             "id": p.id,
@@ -79,11 +77,7 @@ def list_plans(db: Session = Depends(get_db), user: User = Depends(get_current_u
 
 @router.post("/plans")
 def create_plan(payload: DcaPlanCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    existing = (
-        db.query(DcaPlan)
-        .filter(DcaPlan.user_id == user.id, DcaPlan.symbol == payload.symbol.upper())
-        .first()
-    )
+    existing = db.query(DcaPlan).filter(DcaPlan.user_id == user.id, DcaPlan.symbol == payload.symbol.upper()).first()
     if existing:
         raise HTTPException(400, f"DCA plan for {payload.symbol.upper()} already exists")
 

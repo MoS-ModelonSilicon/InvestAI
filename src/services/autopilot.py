@@ -41,8 +41,16 @@ PROFILES = {
                 "label": "High-Beta Growth Stocks",
                 "pct": 55,
                 "symbols": [
-                    "NVDA", "TSLA", "META", "AMD", "AVGO", "MRVL",
-                    "PANW", "SHOP", "NFLX", "CRM",
+                    "NVDA",
+                    "TSLA",
+                    "META",
+                    "AMD",
+                    "AVGO",
+                    "MRVL",
+                    "PANW",
+                    "SHOP",
+                    "NFLX",
+                    "CRM",
                 ],
             },
             {
@@ -87,8 +95,16 @@ PROFILES = {
                 "label": "Quality-Value Stocks",
                 "pct": 20,
                 "symbols": [
-                    "AAPL", "MSFT", "GOOGL", "JPM", "UNH",
-                    "BRK-B", "JNJ", "V", "PG", "HD",
+                    "AAPL",
+                    "MSFT",
+                    "GOOGL",
+                    "JPM",
+                    "UNH",
+                    "BRK-B",
+                    "JNJ",
+                    "V",
+                    "PG",
+                    "HD",
                 ],
             },
             {
@@ -175,6 +191,7 @@ PERIOD_DAYS = {
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _fetch_daily_closes(symbol: str, from_ts: int, to_ts: int) -> Optional[dict]:
     """Return {dates: [str], closes: [float]} for a symbol."""
     candles = dp.get_candles(symbol, "D", from_ts, to_ts)
@@ -184,8 +201,7 @@ def _fetch_daily_closes(symbol: str, from_ts: int, to_ts: int) -> Optional[dict]
     return {"dates": dates, "closes": candles["c"]}
 
 
-def _align_to_dates(target_dates: list[str], sym_dates: list[str],
-                     sym_closes: list[float]) -> list[Optional[float]]:
+def _align_to_dates(target_dates: list[str], sym_dates: list[str], sym_closes: list[float]) -> list[Optional[float]]:
     """Map symbol prices onto the target date grid via lookup dict."""
     lookup = dict(zip(sym_dates, sym_closes))
     result = []
@@ -201,33 +217,32 @@ def _align_to_dates(target_dates: list[str], sym_dates: list[str],
 # Simulation engine
 # ---------------------------------------------------------------------------
 
+
 def get_profiles() -> list[dict]:
     """Return summary info for all three profiles."""
     out = []
     for p in PROFILES.values():
         sleeves_raw: list[dict] = p["sleeves"]  # type: ignore[assignment]
-        sleeves_summary = [
-            {"label": s["label"], "pct": s["pct"], "symbols": s["symbols"]}
-            for s in sleeves_raw
-        ]
-        out.append({
-            "id": p["id"],
-            "name": p["name"],
-            "subtitle": p["subtitle"],
-            "risk_level": p["risk_level"],
-            "risk_score": p["risk_score"],
-            "description": p["description"],
-            "strategy": p["strategy"],
-            "rebalance": p["rebalance"],
-            "expected_return": p["expected_return"],
-            "expected_drawdown": p["expected_drawdown"],
-            "sleeves": sleeves_summary,
-        })
+        sleeves_summary = [{"label": s["label"], "pct": s["pct"], "symbols": s["symbols"]} for s in sleeves_raw]
+        out.append(
+            {
+                "id": p["id"],
+                "name": p["name"],
+                "subtitle": p["subtitle"],
+                "risk_level": p["risk_level"],
+                "risk_score": p["risk_score"],
+                "description": p["description"],
+                "strategy": p["strategy"],
+                "rebalance": p["rebalance"],
+                "expected_return": p["expected_return"],
+                "expected_drawdown": p["expected_drawdown"],
+                "sleeves": sleeves_summary,
+            }
+        )
     return out
 
 
-def simulate(profile_id: str, amount: float = 10000,
-             period: str = "1y") -> dict:
+def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict:
     """
     Run a day-by-day historical backtest for the given profile.
 
@@ -273,9 +288,7 @@ def simulate(profile_id: str, amount: float = 10000,
             if not sym_data or not sym_data["closes"]:
                 continue
 
-            aligned = _align_to_dates(
-                trading_dates, sym_data["dates"], sym_data["closes"]
-            )
+            aligned = _align_to_dates(trading_dates, sym_data["dates"], sym_data["closes"])
 
             first_price = None
             for p in aligned:
@@ -287,14 +300,16 @@ def simulate(profile_id: str, amount: float = 10000,
 
             shares = per_symbol / first_price
             all_symbol_prices[sym] = aligned
-            holdings.append({
-                "symbol": sym,
-                "sleeve": sleeve["label"],
-                "allocation_pct": round(per_symbol / amount * 100, 2),
-                "shares": round(shares, 4),
-                "buy_price": round(first_price, 2),
-                "invested": round(per_symbol, 2),
-            })
+            holdings.append(
+                {
+                    "symbol": sym,
+                    "sleeve": sleeve["label"],
+                    "allocation_pct": round(per_symbol / amount * 100, 2),
+                    "shares": round(shares, 4),
+                    "buy_price": round(first_price, 2),
+                    "invested": round(per_symbol, 2),
+                }
+            )
 
     if not holdings:
         return {"error": "No holdings could be constructed — market data unavailable"}
@@ -340,21 +355,23 @@ def simulate(profile_id: str, amount: float = 10000,
         gl = current_value - h["invested"]
         gl_pct = (gl / h["invested"] * 100) if h["invested"] > 0 else 0
 
-        enriched_holdings.append({
-            **h,
-            "current_price": round(current_price, 2),
-            "current_value": round(current_value, 2),
-            "gain_loss": round(gl, 2),
-            "gain_loss_pct": round(gl_pct, 2),
-        })
+        enriched_holdings.append(
+            {
+                **h,
+                "current_price": round(current_price, 2),
+                "current_value": round(current_value, 2),
+                "gain_loss": round(gl, 2),
+                "gain_loss_pct": round(gl_pct, 2),
+            }
+        )
 
     enriched_holdings.sort(key=lambda x: x["current_value"], reverse=True)
 
     # Statistics
     final_value = daily_values[-1] if daily_values else amount
-    total_return_pct = ((final_value - amount) / amount * 100)
+    total_return_pct = (final_value - amount) / amount * 100
     bench_final = bench_values[-1] if bench_values else amount
-    bench_return_pct = ((bench_final - amount) / amount * 100)
+    bench_return_pct = (bench_final - amount) / amount * 100
     alpha = total_return_pct - bench_return_pct
 
     # Daily return stats (skip day 0 which is always ~0)
@@ -412,9 +429,7 @@ def simulate(profile_id: str, amount: float = 10000,
         sl_data["invested"] = round(sl_data["invested"], 2)
         sl_data["current_value"] = round(sl_data["current_value"], 2)
         sl_data["gain_loss"] = round(sl_data["current_value"] - sl_data["invested"], 2)
-        sl_data["pct"] = round(
-            sl_data["current_value"] / final_value * 100, 1
-        ) if final_value > 0 else 0
+        sl_data["pct"] = round(sl_data["current_value"] / final_value * 100, 1) if final_value > 0 else 0
 
     result = {
         "profile": {

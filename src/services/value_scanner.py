@@ -22,7 +22,11 @@ import time
 from typing import Optional
 
 from src.services.market_data import (
-    fetch_batch, fetch_stock_info, STOCK_UNIVERSE, format_market_cap, _LOW_MEMORY,
+    fetch_batch,
+    fetch_stock_info,
+    STOCK_UNIVERSE,
+    format_market_cap,
+    _LOW_MEMORY,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,16 +35,16 @@ _MAX_WORKERS = 2 if _LOW_MEMORY else 4
 EXCLUDED_SECTORS = {"Financial Services", "Real Estate"}
 
 PE_MAX = 15
-DE_MAX = 100          # Yahoo reports D/E as percentage
+DE_MAX = 100  # Yahoo reports D/E as percentage
 CURRENT_RATIO_MIN = 1.5
 
 CRITERIA = [
-    ("pe",             "P/E ≤ 15"),
+    ("pe", "P/E ≤ 15"),
     ("debt_to_equity", "D/E ≤ 1.0"),
-    ("current_ratio",  "Current Ratio ≥ 1.5"),
-    ("profit_margin",  "Positive Margin"),
-    ("roe",            "Positive ROE"),
-    ("fcf",            "Positive FCF"),
+    ("current_ratio", "Current Ratio ≥ 1.5"),
+    ("profit_margin", "Positive Margin"),
+    ("roe", "Positive ROE"),
+    ("fcf", "Positive FCF"),
 ]
 
 # ---------------------------------------------------------------------------
@@ -60,9 +64,7 @@ SCAN_CACHE_TTL = 300  # 5 minutes
 
 
 def _needs_metrics(d: dict) -> bool:
-    return (d.get("pe_ratio") is None
-            and d.get("debt_to_equity") is None
-            and d.get("return_on_equity") is None)
+    return d.get("pe_ratio") is None and d.get("debt_to_equity") is None and d.get("return_on_equity") is None
 
 
 def _check_criteria(d: dict) -> list[dict]:
@@ -71,57 +73,58 @@ def _check_criteria(d: dict) -> list[dict]:
 
     pe = d.get("pe_ratio")
     if pe is not None and 0 < pe <= PE_MAX:
-        results.append({"key": "pe", "label": "P/E ≤ 15", "passed": True,
-                        "detail": f"P/E {pe:.1f}"})
+        results.append({"key": "pe", "label": "P/E ≤ 15", "passed": True, "detail": f"P/E {pe:.1f}"})
     else:
         reason = f"P/E {pe:.1f} > 15" if pe and pe > 0 else "P/E unavailable or negative"
-        results.append({"key": "pe", "label": "P/E ≤ 15", "passed": False,
-                        "detail": reason})
+        results.append({"key": "pe", "label": "P/E ≤ 15", "passed": False, "detail": reason})
 
     dte = d.get("debt_to_equity")
     if dte is not None and dte <= DE_MAX:
-        results.append({"key": "debt_to_equity", "label": "D/E ≤ 1.0", "passed": True,
-                        "detail": f"D/E {dte/100:.2f}"})
+        results.append(
+            {"key": "debt_to_equity", "label": "D/E ≤ 1.0", "passed": True, "detail": f"D/E {dte / 100:.2f}"}
+        )
     else:
-        reason = f"D/E {dte/100:.2f} > 1.0" if dte is not None else "D/E data missing"
-        results.append({"key": "debt_to_equity", "label": "D/E ≤ 1.0", "passed": False,
-                        "detail": reason})
+        reason = f"D/E {dte / 100:.2f} > 1.0" if dte is not None else "D/E data missing"
+        results.append({"key": "debt_to_equity", "label": "D/E ≤ 1.0", "passed": False, "detail": reason})
 
     cr = d.get("current_ratio")
     if cr is not None and cr >= CURRENT_RATIO_MIN:
-        results.append({"key": "current_ratio", "label": "Current Ratio ≥ 1.5",
-                        "passed": True, "detail": f"CR {cr:.2f}"})
+        results.append(
+            {"key": "current_ratio", "label": "Current Ratio ≥ 1.5", "passed": True, "detail": f"CR {cr:.2f}"}
+        )
     else:
         reason = f"CR {cr:.2f} < 1.5" if cr is not None else "Current Ratio data missing"
-        results.append({"key": "current_ratio", "label": "Current Ratio ≥ 1.5",
-                        "passed": False, "detail": reason})
+        results.append({"key": "current_ratio", "label": "Current Ratio ≥ 1.5", "passed": False, "detail": reason})
 
     pm = d.get("profit_margin")
     if pm is not None and pm > 0:
-        results.append({"key": "profit_margin", "label": "Positive Margin",
-                        "passed": True, "detail": f"Margin {pm:.1f}%"})
+        results.append(
+            {"key": "profit_margin", "label": "Positive Margin", "passed": True, "detail": f"Margin {pm:.1f}%"}
+        )
     else:
         reason = f"Margin {pm:.1f}%" if pm is not None else "Margin data missing"
-        results.append({"key": "profit_margin", "label": "Positive Margin",
-                        "passed": False, "detail": reason})
+        results.append({"key": "profit_margin", "label": "Positive Margin", "passed": False, "detail": reason})
 
     roe = d.get("return_on_equity")
     if roe is not None and roe > 0:
-        results.append({"key": "roe", "label": "Positive ROE", "passed": True,
-                        "detail": f"ROE {roe:.1f}%"})
+        results.append({"key": "roe", "label": "Positive ROE", "passed": True, "detail": f"ROE {roe:.1f}%"})
     else:
         reason = f"ROE {roe:.1f}%" if roe is not None else "ROE data missing"
-        results.append({"key": "roe", "label": "Positive ROE", "passed": False,
-                        "detail": reason})
+        results.append({"key": "roe", "label": "Positive ROE", "passed": False, "detail": reason})
 
     fcf = d.get("free_cash_flow")
     if fcf is not None and fcf > 0:
-        results.append({"key": "fcf", "label": "Positive FCF", "passed": True,
-                        "detail": f"FCF ${fcf/1e9:.2f}B" if abs(fcf) >= 1e9 else f"FCF ${fcf/1e6:.0f}M"})
+        results.append(
+            {
+                "key": "fcf",
+                "label": "Positive FCF",
+                "passed": True,
+                "detail": f"FCF ${fcf / 1e9:.2f}B" if abs(fcf) >= 1e9 else f"FCF ${fcf / 1e6:.0f}M",
+            }
+        )
     else:
         reason = "Negative FCF" if fcf is not None and fcf <= 0 else "FCF data missing"
-        results.append({"key": "fcf", "label": "Positive FCF", "passed": False,
-                        "detail": reason})
+        results.append({"key": "fcf", "label": "Positive FCF", "passed": False, "detail": reason})
 
     return results
 
@@ -350,7 +353,7 @@ def _run_background_scan():
         BATCH_SIZE = 8
         _vs_batch_num = 0
         for batch_start in range(0, len(needs_fetch), BATCH_SIZE):
-            batch = needs_fetch[batch_start:batch_start + BATCH_SIZE]
+            batch = needs_fetch[batch_start : batch_start + BATCH_SIZE]
             _vs_batch_num += 1
 
             for sym in batch:
@@ -395,6 +398,7 @@ def _run_background_scan():
             if _vs_batch_num <= 2 or _vs_batch_num % 5 == 0:
                 try:
                     from src.services.persistence import save_scan
+
                     with _scan_lock:
                         snapshot = dict(_scan_cache)
                     save_scan("value_scan", snapshot)
@@ -405,12 +409,16 @@ def _run_background_scan():
             _scan_cache["complete"] = True
             _scan_cache["updated_at"] = time.time()
 
-        logger.info("Value scanner: background scan complete - %d candidates, %d rejected",
-                     len(_scan_cache["candidates"]), len(_scan_cache["rejected"]))
+        logger.info(
+            "Value scanner: background scan complete - %d candidates, %d rejected",
+            len(_scan_cache["candidates"]),
+            len(_scan_cache["rejected"]),
+        )
 
         # Persist results to DB so they survive restarts
         try:
             from src.services.persistence import save_scan
+
             with _scan_lock:
                 snapshot = dict(_scan_cache)
             save_scan("value_scan", snapshot)
@@ -516,7 +524,7 @@ def scan_value_stocks(
     total_pages = max(1, (total_candidates + per_page - 1) // per_page)
     page = max(1, min(page, total_pages))
     start = (page - 1) * per_page
-    page_candidates = all_candidates[start:start + per_page]
+    page_candidates = all_candidates[start : start + per_page]
 
     return {
         "candidates": page_candidates,
@@ -671,31 +679,35 @@ def build_action_plan(
             strengths = [cr["detail"] for cr in m.get("criteria", []) if cr["passed"]]
             weaknesses = [cr["detail"] for cr in m.get("criteria", []) if not cr["passed"]]
 
-            stocks_in_group.append({
-                "symbol": m["symbol"],
-                "name": m["name"],
-                "sector": m["sector"],
-                "price": m["price"],
-                "quality": m["quality"],
-                "mos": m["mos"],
-                "pe_ratio": m["pe_ratio"],
-                "allocation_pct": m["allocation_pct"],
-                "allocation_dollars": m["allocation_dollars"],
-                "suggested_shares": m["suggested_shares"],
-                "strengths": strengths[:3],
-                "weaknesses": weaknesses[:3],
-            })
+            stocks_in_group.append(
+                {
+                    "symbol": m["symbol"],
+                    "name": m["name"],
+                    "sector": m["sector"],
+                    "price": m["price"],
+                    "quality": m["quality"],
+                    "mos": m["mos"],
+                    "pe_ratio": m["pe_ratio"],
+                    "allocation_pct": m["allocation_pct"],
+                    "allocation_dollars": m["allocation_dollars"],
+                    "suggested_shares": m["suggested_shares"],
+                    "strengths": strengths[:3],
+                    "weaknesses": weaknesses[:3],
+                }
+            )
 
-        plan.append({
-            "signal": sig,
-            "action": strategy_info["action"],
-            "strategy": strategy_info["strategy"],
-            "position_limit": strategy_info["position_limit"],
-            "risk_note": strategy_info["risk"],
-            "group_allocation_pct": group_alloc_pct,
-            "group_allocation_dollars": group_alloc_dollars,
-            "stocks": stocks_in_group,
-        })
+        plan.append(
+            {
+                "signal": sig,
+                "action": strategy_info["action"],
+                "strategy": strategy_info["strategy"],
+                "position_limit": strategy_info["position_limit"],
+                "risk_note": strategy_info["risk"],
+                "group_allocation_pct": group_alloc_pct,
+                "group_allocation_dollars": group_alloc_dollars,
+                "stocks": stocks_in_group,
+            }
+        )
 
     return {
         "plan": plan,

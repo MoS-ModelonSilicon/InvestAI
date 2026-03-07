@@ -24,6 +24,7 @@ from typing import Optional
 # Moving Averages
 # ---------------------------------------------------------------------------
 
+
 def sma(values: list[float], period: int) -> list[Optional[float]]:
     """Simple Moving Average."""
     result: list[Optional[float]] = []
@@ -31,7 +32,7 @@ def sma(values: list[float], period: int) -> list[Optional[float]]:
         if i < period - 1:
             result.append(None)
         else:
-            window = values[i - period + 1: i + 1]
+            window = values[i - period + 1 : i + 1]
             result.append(round(sum(window) / period, 4))
     return result
 
@@ -57,6 +58,7 @@ def ema(values: list[float], period: int) -> list[Optional[float]]:
 # ---------------------------------------------------------------------------
 # RSI  (Wilder, 1978)
 # ---------------------------------------------------------------------------
+
 
 def rsi(closes: list[float], period: int = 14) -> list[Optional[float]]:
     """Relative Strength Index (0-100)."""
@@ -97,8 +99,10 @@ def rsi(closes: list[float], period: int = 14) -> list[Optional[float]]:
 # MACD  (Appel, 1979)
 # ---------------------------------------------------------------------------
 
-def macd(closes: list[float], fast: int = 12, slow: int = 26,
-         signal_period: int = 9) -> dict[str, list[Optional[float]]]:
+
+def macd(
+    closes: list[float], fast: int = 12, slow: int = 26, signal_period: int = 9
+) -> dict[str, list[Optional[float]]]:
     """Returns {line, signal, histogram} lists."""
     ema_fast = ema(closes, fast)
     ema_slow = ema(closes, slow)
@@ -139,8 +143,8 @@ def macd(closes: list[float], fast: int = 12, slow: int = 26,
 # Bollinger Bands  (Bollinger, 1980s)
 # ---------------------------------------------------------------------------
 
-def bollinger_bands(closes: list[float], period: int = 20,
-                    num_std: float = 2.0) -> dict[str, list[Optional[float]]]:
+
+def bollinger_bands(closes: list[float], period: int = 20, num_std: float = 2.0) -> dict[str, list[Optional[float]]]:
     """Returns {upper, middle, lower, pct_b} lists."""
     middle = sma(closes, period)
     upper: list[Optional[float]] = []
@@ -153,10 +157,10 @@ def bollinger_bands(closes: list[float], period: int = 20,
             lower.append(None)
             pct_b.append(None)
         else:
-            window = closes[i - period + 1: i + 1]
+            window = closes[i - period + 1 : i + 1]
             mean: float = middle[i]  # type: ignore[assignment]
             variance = sum((x - mean) ** 2 for x in window) / period
-            std = variance ** 0.5
+            std = variance**0.5
             u = round(mean + num_std * std, 4)
             l = round(mean - num_std * std, 4)
             upper.append(u)
@@ -173,17 +177,18 @@ def bollinger_bands(closes: list[float], period: int = 20,
 # Stochastic Oscillator  (Lane, 1950s)
 # ---------------------------------------------------------------------------
 
-def stochastic(highs: list[float], lows: list[float], closes: list[float],
-               k_period: int = 14, d_period: int = 3
-               ) -> dict[str, list[Optional[float]]]:
+
+def stochastic(
+    highs: list[float], lows: list[float], closes: list[float], k_period: int = 14, d_period: int = 3
+) -> dict[str, list[Optional[float]]]:
     """Returns {k, d} lists (0-100)."""
     k_vals: list[Optional[float]] = []
     for i in range(len(closes)):
         if i < k_period - 1:
             k_vals.append(None)
         else:
-            h_window = highs[i - k_period + 1: i + 1]
-            l_window = lows[i - k_period + 1: i + 1]
+            h_window = highs[i - k_period + 1 : i + 1]
+            l_window = lows[i - k_period + 1 : i + 1]
             hh = max(h_window)
             ll = min(l_window)
             if hh == ll:
@@ -213,8 +218,8 @@ def stochastic(highs: list[float], lows: list[float], closes: list[float],
 # ATR  (Wilder, 1978)
 # ---------------------------------------------------------------------------
 
-def atr(highs: list[float], lows: list[float], closes: list[float],
-        period: int = 14) -> list[Optional[float]]:
+
+def atr(highs: list[float], lows: list[float], closes: list[float], period: int = 14) -> list[Optional[float]]:
     """Average True Range."""
     if len(closes) < 2:
         return [None] * len(closes)
@@ -247,6 +252,7 @@ def atr(highs: list[float], lows: list[float], closes: list[float],
 # OBV  (Granville, 1963)
 # ---------------------------------------------------------------------------
 
+
 def obv(closes: list[float], volumes: list[float]) -> list[float]:
     """On-Balance Volume."""
     if not closes:
@@ -267,8 +273,10 @@ def obv(closes: list[float], volumes: list[float]) -> list[float]:
 # Measures trend STRENGTH, not direction. ADX > 25 = trending, < 20 = ranging.
 # ---------------------------------------------------------------------------
 
-def adx(highs: list[float], lows: list[float], closes: list[float],
-        period: int = 14) -> dict[str, list[Optional[float]]]:
+
+def adx(
+    highs: list[float], lows: list[float], closes: list[float], period: int = 14
+) -> dict[str, list[Optional[float]]]:
     """
     Average Directional Index. Returns {adx, plus_di, minus_di}.
     ADX range: 0-100. >25 = trending, <20 = ranging.
@@ -283,9 +291,7 @@ def adx(highs: list[float], lows: list[float], closes: list[float],
 
     tr_list, pdm_list, mdm_list = [], [], []
     for i in range(1, n):
-        tr = max(highs[i] - lows[i],
-                 abs(highs[i] - closes[i - 1]),
-                 abs(lows[i] - closes[i - 1]))
+        tr = max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1]))
         up = highs[i] - highs[i - 1]
         dn = lows[i - 1] - lows[i]
         tr_list.append(tr)
@@ -337,8 +343,8 @@ def adx(highs: list[float], lows: list[float], closes: list[float],
 # Bearish divergence: price makes higher high but oscillator makes lower high
 # ---------------------------------------------------------------------------
 
-def _find_swing_points(data: "Sequence[Optional[float]]", window: int = 5
-                       ) -> list[tuple[int, float, str]]:
+
+def _find_swing_points(data: "Sequence[Optional[float]]", window: int = 5) -> list[tuple[int, float, str]]:
     """Find local minima and maxima in a series."""
     points: list[tuple[int, float, str]] = []
     vals = [(i, v) for i, v in enumerate(data) if v is not None]
@@ -355,8 +361,7 @@ def _find_swing_points(data: "Sequence[Optional[float]]", window: int = 5
     return points
 
 
-def detect_divergence(closes: list[float], oscillator: list[Optional[float]],
-                      lookback: int = 60) -> dict:
+def detect_divergence(closes: list[float], oscillator: list[Optional[float]], lookback: int = 60) -> dict:
     """
     Detect bullish and bearish divergences between price and an oscillator.
 
@@ -364,9 +369,12 @@ def detect_divergence(closes: list[float], oscillator: list[Optional[float]],
              bull_detail, bear_detail}
     """
     result = {
-        "bullish_div": False, "bearish_div": False,
-        "bull_strength": 0, "bear_strength": 0,
-        "bull_detail": "", "bear_detail": "",
+        "bullish_div": False,
+        "bearish_div": False,
+        "bull_strength": 0,
+        "bear_strength": 0,
+        "bull_detail": "",
+        "bear_detail": "",
     }
 
     n = len(closes)
@@ -429,9 +437,10 @@ def detect_divergence(closes: list[float], oscillator: list[Optional[float]],
 # More sophisticated than OBV: uses close position within high-low range.
 # ---------------------------------------------------------------------------
 
-def accumulation_distribution(highs: list[float], lows: list[float],
-                              closes: list[float], volumes: list[float]
-                              ) -> list[float]:
+
+def accumulation_distribution(
+    highs: list[float], lows: list[float], closes: list[float], volumes: list[float]
+) -> list[float]:
     """Chaikin Accumulation/Distribution line."""
     if not closes:
         return []
@@ -456,6 +465,7 @@ def accumulation_distribution(highs: list[float], lows: list[float],
 # Extreme Z-scores (>2 or <-2) often precede mean reversion.
 # ---------------------------------------------------------------------------
 
+
 def zscore(closes: list[float], period: int = 50) -> list[Optional[float]]:
     """Z-score of price relative to its SMA. Values > 2 or < -2 are extreme."""
     result: list[Optional[float]] = []
@@ -463,10 +473,10 @@ def zscore(closes: list[float], period: int = 50) -> list[Optional[float]]:
         if i < period - 1:
             result.append(None)
         else:
-            window = closes[i - period + 1: i + 1]
+            window = closes[i - period + 1 : i + 1]
             mean = sum(window) / period
             variance = sum((x - mean) ** 2 for x in window) / period
-            std = variance ** 0.5
+            std = variance**0.5
             if std == 0:
                 result.append(0)
             else:
@@ -479,8 +489,8 @@ def zscore(closes: list[float], period: int = 50) -> list[Optional[float]]:
 # Detects unusual volume patterns that indicate smart money activity.
 # ---------------------------------------------------------------------------
 
-def volume_anomaly(closes: list[float], volumes: list[float],
-                   period: int = 20) -> dict:
+
+def volume_anomaly(closes: list[float], volumes: list[float], period: int = 20) -> dict:
     """
     Detect institutional-grade volume anomalies.
 
@@ -493,8 +503,11 @@ def volume_anomaly(closes: list[float], volumes: list[float],
     }
     """
     result = {
-        "anomaly_score": 0, "accumulation": False, "distribution": False,
-        "quiet_accumulation": False, "detail": "Insufficient data",
+        "anomaly_score": 0,
+        "accumulation": False,
+        "distribution": False,
+        "quiet_accumulation": False,
+        "detail": "Insufficient data",
     }
     n = len(closes)
     if n < period + 5 or len(volumes) < period + 5:
@@ -570,9 +583,15 @@ def volume_anomaly(closes: list[float], volumes: list[float],
 # Provides support, resistance, trend, and momentum in one indicator.
 # ---------------------------------------------------------------------------
 
-def ichimoku(highs: list[float], lows: list[float], closes: list[float],
-             tenkan_p: int = 9, kijun_p: int = 26, senkou_b_p: int = 52
-             ) -> dict[str, list[Optional[float]]]:
+
+def ichimoku(
+    highs: list[float],
+    lows: list[float],
+    closes: list[float],
+    tenkan_p: int = 9,
+    kijun_p: int = 26,
+    senkou_b_p: int = 52,
+) -> dict[str, list[Optional[float]]]:
     """
     Returns {tenkan, kijun, senkou_a, senkou_b, chikou}.
     senkou_a and senkou_b are shifted forward by kijun_p periods.
@@ -582,8 +601,8 @@ def ichimoku(highs: list[float], lows: list[float], closes: list[float],
     def _midpoint(h, l, period, idx):
         if idx < period - 1:
             return None
-        seg_h = h[idx - period + 1:idx + 1]
-        seg_l = l[idx - period + 1:idx + 1]
+        seg_h = h[idx - period + 1 : idx + 1]
+        seg_l = l[idx - period + 1 : idx + 1]
         return round((max(seg_h) + min(seg_l)) / 2, 4)
 
     tenkan = [_midpoint(highs, lows, tenkan_p, i) for i in range(n)]
@@ -595,16 +614,18 @@ def ichimoku(highs: list[float], lows: list[float], closes: list[float],
             senkou_a_raw.append(round((tenkan[i] + kijun[i]) / 2, 4))
         else:
             senkou_a_raw.append(None)
-    senkou_a = [None] * kijun_p + senkou_a_raw[:n - kijun_p] if n > kijun_p else [None] * n
+    senkou_a = [None] * kijun_p + senkou_a_raw[: n - kijun_p] if n > kijun_p else [None] * n
 
     senkou_b_raw = [_midpoint(highs, lows, senkou_b_p, i) for i in range(n)]
-    senkou_b = [None] * kijun_p + senkou_b_raw[:n - kijun_p] if n > kijun_p else [None] * n
+    senkou_b = [None] * kijun_p + senkou_b_raw[: n - kijun_p] if n > kijun_p else [None] * n
 
     chikou = closes[kijun_p:] + [None] * min(kijun_p, n)
 
     return {
-        "tenkan": tenkan, "kijun": kijun,
-        "senkou_a": senkou_a, "senkou_b": senkou_b,
+        "tenkan": tenkan,
+        "kijun": kijun,
+        "senkou_a": senkou_a,
+        "senkou_b": senkou_b,
         "chikou": chikou[:n],
     }
 
@@ -674,6 +695,7 @@ def ichimoku_signal(closes: list[float], ichi: dict) -> dict:
 # Fibonacci Swing Levels (Auto-detected)
 # ---------------------------------------------------------------------------
 
+
 def fibonacci_levels(closes: list[float], lookback: int = 120) -> dict:
     """
     Auto-detect major swing high/low and compute Fibonacci retracement levels.
@@ -683,7 +705,7 @@ def fibonacci_levels(closes: list[float], lookback: int = 120) -> dict:
     if n < 20:
         return {"swing_high": None, "swing_low": None, "levels": {}}
 
-    window = closes[-min(lookback, n):]
+    window = closes[-min(lookback, n) :]
     swing_high = max(window)
     swing_low = min(window)
     diff = swing_high - swing_low
@@ -695,15 +717,9 @@ def fibonacci_levels(closes: list[float], lookback: int = 120) -> dict:
     in_uptrend = closes[-1] > closes[-min(lookback, n)]
 
     if in_uptrend:
-        levels = {
-            str(r): round(swing_high - diff * r, 2)
-            for r in [0.236, 0.382, 0.5, 0.618, 0.786]
-        }
+        levels = {str(r): round(swing_high - diff * r, 2) for r in [0.236, 0.382, 0.5, 0.618, 0.786]}
     else:
-        levels = {
-            str(r): round(swing_low + diff * r, 2)
-            for r in [0.236, 0.382, 0.5, 0.618, 0.786]
-        }
+        levels = {str(r): round(swing_low + diff * r, 2) for r in [0.236, 0.382, 0.5, 0.618, 0.786]}
 
     nearest_support = None
     nearest_resistance = None
@@ -729,15 +745,18 @@ def fibonacci_levels(closes: list[float], lookback: int = 120) -> dict:
 # Outperformance during market weakness = institutional quality.
 # ---------------------------------------------------------------------------
 
-def relative_strength(closes: list[float], benchmark_closes: list[float]
-                      ) -> dict:
+
+def relative_strength(closes: list[float], benchmark_closes: list[float]) -> dict:
     """
     Compute relative strength metrics vs a benchmark.
     Both lists must be aligned by date and same length.
     """
     result: dict[str, float | bool | str | None] = {
-        "rs_ratio": None, "rs_1m": None, "rs_3m": None,
-        "outperforming": False, "detail": "",
+        "rs_ratio": None,
+        "rs_1m": None,
+        "rs_3m": None,
+        "outperforming": False,
+        "detail": "",
     }
 
     n = min(len(closes), len(benchmark_closes))
@@ -790,6 +809,7 @@ def relative_strength(closes: list[float], benchmark_closes: list[float]
 # Composite signal scoring
 # ---------------------------------------------------------------------------
 
+
 def _score_rsi(rsi_vals: list[Optional[float]]) -> tuple[float, str]:
     """Score RSI: -2 to +2."""
     v = _last_valid(rsi_vals)
@@ -834,8 +854,9 @@ def _score_macd(macd_data: dict) -> tuple[float, str]:
     return 0, "MACD neutral"
 
 
-def _score_sma_cross(closes: list[float], sma50: list[Optional[float]],
-                     sma200: list[Optional[float]]) -> tuple[float, str]:
+def _score_sma_cross(
+    closes: list[float], sma50: list[Optional[float]], sma200: list[Optional[float]]
+) -> tuple[float, str]:
     """Score SMA 50/200 position and crossovers."""
     price = closes[-1] if closes else None
     s50 = _last_valid(sma50)
@@ -927,11 +948,21 @@ def _score_obv(obv_vals: list[float], closes: list[float]) -> tuple[float, str]:
 
 
 def composite_score(
-    rsi_vals, macd_data, closes, sma50, sma200,
-    boll_pct_b, stoch_data, obv_vals,
+    rsi_vals,
+    macd_data,
+    closes,
+    sma50,
+    sma200,
+    boll_pct_b,
+    stoch_data,
+    obv_vals,
     *,
-    adx_data=None, rsi_div=None, macd_div=None,
-    vol_anomaly=None, ichimoku_sig=None, zscore_vals=None,
+    adx_data=None,
+    rsi_div=None,
+    macd_div=None,
+    vol_anomaly=None,
+    ichimoku_sig=None,
+    zscore_vals=None,
     rs_data=None,
 ) -> dict:
     """
@@ -946,8 +977,12 @@ def composite_score(
     """
     # --- Base indicator scoring (classic) ---
     weights = {
-        "macd": 0.22, "rsi": 0.18, "sma": 0.18,
-        "bollinger": 0.14, "stochastic": 0.10, "obv": 0.08,
+        "macd": 0.22,
+        "rsi": 0.18,
+        "sma": 0.18,
+        "bollinger": 0.14,
+        "stochastic": 0.10,
+        "obv": 0.08,
         "advanced": 0.10,
     }
 
@@ -959,12 +994,12 @@ def composite_score(
     obv_s, obv_d = _score_obv(obv_vals, closes)
 
     base_raw = (
-        macd_s * weights["macd"] +
-        rsi_s * weights["rsi"] +
-        sma_s * weights["sma"] +
-        boll_s * weights["bollinger"] +
-        stoch_s * weights["stochastic"] +
-        obv_s * weights["obv"]
+        macd_s * weights["macd"]
+        + rsi_s * weights["rsi"]
+        + sma_s * weights["sma"]
+        + boll_s * weights["bollinger"]
+        + stoch_s * weights["stochastic"]
+        + obv_s * weights["obv"]
     )
 
     # --- Advanced signal modifiers ---
@@ -981,90 +1016,120 @@ def composite_score(
             if adx_val > 30:
                 adx_multiplier = 1.25
                 direction = "bullish" if (pdi or 0) > (mdi or 0) else "bearish"
-                edge_signals.append({
-                    "name": "ADX Trend", "score": 1.5 if direction == "bullish" else -1.5,
-                    "detail": f"Strong trend (ADX {adx_val:.0f}) -- {direction} directional movement",
-                    "direction": direction,
-                })
+                edge_signals.append(
+                    {
+                        "name": "ADX Trend",
+                        "score": 1.5 if direction == "bullish" else -1.5,
+                        "detail": f"Strong trend (ADX {adx_val:.0f}) -- {direction} directional movement",
+                        "direction": direction,
+                    }
+                )
                 advanced_score += 0.5 if direction == "bullish" else -0.5
             elif adx_val < 20:
                 adx_multiplier = 0.75
-                edge_signals.append({
-                    "name": "ADX Trend", "score": 0,
-                    "detail": f"Weak trend (ADX {adx_val:.0f}) -- ranging market, signals less reliable",
-                    "direction": "neutral",
-                })
+                edge_signals.append(
+                    {
+                        "name": "ADX Trend",
+                        "score": 0,
+                        "detail": f"Weak trend (ADX {adx_val:.0f}) -- ranging market, signals less reliable",
+                        "direction": "neutral",
+                    }
+                )
 
     # Divergences: THE most powerful predictive signal
     if rsi_div and rsi_div.get("bullish_div"):
         boost = min(rsi_div["bull_strength"] / 50, 1.5)
         advanced_score += boost
-        edge_signals.append({
-            "name": "RSI Divergence", "score": boost,
-            "detail": rsi_div["bull_detail"],
-            "direction": "bullish",
-        })
+        edge_signals.append(
+            {
+                "name": "RSI Divergence",
+                "score": boost,
+                "detail": rsi_div["bull_detail"],
+                "direction": "bullish",
+            }
+        )
     if rsi_div and rsi_div.get("bearish_div"):
         penalty = min(rsi_div["bear_strength"] / 50, 1.5)
         advanced_score -= penalty
-        edge_signals.append({
-            "name": "RSI Divergence", "score": -penalty,
-            "detail": rsi_div["bear_detail"],
-            "direction": "bearish",
-        })
+        edge_signals.append(
+            {
+                "name": "RSI Divergence",
+                "score": -penalty,
+                "detail": rsi_div["bear_detail"],
+                "direction": "bearish",
+            }
+        )
 
     if macd_div and macd_div.get("bullish_div"):
         boost = min(macd_div["bull_strength"] / 60, 1.2)
         advanced_score += boost
-        edge_signals.append({
-            "name": "MACD Divergence", "score": boost,
-            "detail": macd_div["bull_detail"],
-            "direction": "bullish",
-        })
+        edge_signals.append(
+            {
+                "name": "MACD Divergence",
+                "score": boost,
+                "detail": macd_div["bull_detail"],
+                "direction": "bullish",
+            }
+        )
     if macd_div and macd_div.get("bearish_div"):
         penalty = min(macd_div["bear_strength"] / 60, 1.2)
         advanced_score -= penalty
-        edge_signals.append({
-            "name": "MACD Divergence", "score": -penalty,
-            "detail": macd_div["bear_detail"],
-            "direction": "bearish",
-        })
+        edge_signals.append(
+            {
+                "name": "MACD Divergence",
+                "score": -penalty,
+                "detail": macd_div["bear_detail"],
+                "direction": "bearish",
+            }
+        )
 
     # Volume anomaly: institutional flow detection
     if vol_anomaly:
         if vol_anomaly.get("accumulation"):
             boost = min(vol_anomaly["anomaly_score"] / 60, 1.0)
             advanced_score += boost
-            edge_signals.append({
-                "name": "Inst. Accumulation", "score": boost,
-                "detail": vol_anomaly["detail"],
-                "direction": "bullish",
-            })
+            edge_signals.append(
+                {
+                    "name": "Inst. Accumulation",
+                    "score": boost,
+                    "detail": vol_anomaly["detail"],
+                    "direction": "bullish",
+                }
+            )
         elif vol_anomaly.get("distribution"):
             penalty = min(vol_anomaly["anomaly_score"] / 60, 1.0)
             advanced_score -= penalty
-            edge_signals.append({
-                "name": "Inst. Distribution", "score": -penalty,
-                "detail": vol_anomaly["detail"],
-                "direction": "bearish",
-            })
+            edge_signals.append(
+                {
+                    "name": "Inst. Distribution",
+                    "score": -penalty,
+                    "detail": vol_anomaly["detail"],
+                    "direction": "bearish",
+                }
+            )
         if vol_anomaly.get("quiet_accumulation"):
             advanced_score += 0.6
-            edge_signals.append({
-                "name": "Quiet Accumulation", "score": 0.6,
-                "detail": vol_anomaly["detail"],
-                "direction": "bullish",
-            })
+            edge_signals.append(
+                {
+                    "name": "Quiet Accumulation",
+                    "score": 0.6,
+                    "detail": vol_anomaly["detail"],
+                    "direction": "bullish",
+                }
+            )
 
     # Ichimoku Cloud
     if ichimoku_sig and ichimoku_sig.get("signal", 0) != 0:
         ichi_contrib = min(max(ichimoku_sig["signal"] * 0.4, -1.2), 1.2)
         advanced_score += ichi_contrib
-        edge_signals.append({
-            "name": "Ichimoku", "score": ichi_contrib,
-            "detail": ichimoku_sig["detail"],
-            "direction": "bullish" if ichi_contrib > 0 else "bearish",
-        })
+        edge_signals.append(
+            {
+                "name": "Ichimoku",
+                "score": ichi_contrib,
+                "detail": ichimoku_sig["detail"],
+                "direction": "bullish" if ichi_contrib > 0 else "bearish",
+            }
+        )
 
     # Mean reversion Z-score: extreme deviations
     if zscore_vals:
@@ -1072,18 +1137,24 @@ def composite_score(
         if z is not None:
             if z < -2.0:
                 advanced_score += 0.8
-                edge_signals.append({
-                    "name": "Z-Score", "score": 0.8,
-                    "detail": f"Price {abs(z):.1f} std devs below mean -- extreme oversold, mean reversion likely",
-                    "direction": "bullish",
-                })
+                edge_signals.append(
+                    {
+                        "name": "Z-Score",
+                        "score": 0.8,
+                        "detail": f"Price {abs(z):.1f} std devs below mean -- extreme oversold, mean reversion likely",
+                        "direction": "bullish",
+                    }
+                )
             elif z > 2.0:
                 advanced_score -= 0.8
-                edge_signals.append({
-                    "name": "Z-Score", "score": -0.8,
-                    "detail": f"Price {z:.1f} std devs above mean -- extreme overbought, pullback likely",
-                    "direction": "bearish",
-                })
+                edge_signals.append(
+                    {
+                        "name": "Z-Score",
+                        "score": -0.8,
+                        "detail": f"Price {z:.1f} std devs above mean -- extreme overbought, pullback likely",
+                        "direction": "bearish",
+                    }
+                )
 
     # Relative strength vs benchmark
     if rs_data and rs_data.get("rs_1m") is not None:
@@ -1091,18 +1162,24 @@ def composite_score(
         rs3 = rs_data.get("rs_3m")
         if rs1 > 5 and (rs3 is None or rs3 > 3):
             advanced_score += 0.7
-            edge_signals.append({
-                "name": "Relative Strength", "score": 0.7,
-                "detail": f"Outperforming benchmark: {rs_data['detail']}",
-                "direction": "bullish",
-            })
+            edge_signals.append(
+                {
+                    "name": "Relative Strength",
+                    "score": 0.7,
+                    "detail": f"Outperforming benchmark: {rs_data['detail']}",
+                    "direction": "bullish",
+                }
+            )
         elif rs1 < -5 and (rs3 is None or rs3 < -3):
             advanced_score -= 0.5
-            edge_signals.append({
-                "name": "Relative Strength", "score": -0.5,
-                "detail": f"Underperforming benchmark: {rs_data['detail']}",
-                "direction": "bearish",
-            })
+            edge_signals.append(
+                {
+                    "name": "Relative Strength",
+                    "score": -0.5,
+                    "detail": f"Underperforming benchmark: {rs_data['detail']}",
+                    "direction": "bearish",
+                }
+            )
 
     # Combine base + advanced with ADX weighting
     raw = base_raw * adx_multiplier + advanced_score * weights["advanced"]
@@ -1129,9 +1206,12 @@ def composite_score(
 
     signals = []
     for score_val, detail, name in [
-        (rsi_s, rsi_d, "RSI"), (macd_s, macd_d, "MACD"),
-        (sma_s, sma_d, "SMA"), (boll_s, boll_d, "Bollinger"),
-        (stoch_s, stoch_d, "Stochastic"), (obv_s, obv_d, "Volume"),
+        (rsi_s, rsi_d, "RSI"),
+        (macd_s, macd_d, "MACD"),
+        (sma_s, sma_d, "SMA"),
+        (boll_s, boll_d, "Bollinger"),
+        (stoch_s, stoch_d, "Stochastic"),
+        (obv_s, obv_d, "Volume"),
     ]:
         direction = "bullish" if score_val > 0 else "bearish" if score_val < 0 else "neutral"
         signals.append({"name": name, "score": score_val, "detail": detail, "direction": direction})
@@ -1154,6 +1234,7 @@ def composite_score(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _last_valid(vals: list[Optional[float]]) -> Optional[float]:
     for v in reversed(vals):

@@ -43,11 +43,16 @@ os.environ["DISABLE_YAHOO"] = "1"  # avoid slow Yahoo Finance retries in CI
 # Without this, internal requests.get() calls (from yfinance, finnhub,
 # market_data, etc.) will hang indefinitely behind a corporate proxy.
 import requests as _req
+
 _orig_send = _req.adapters.HTTPAdapter.send
+
+
 def _send_with_timeout(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None):
     if timeout is None:
         timeout = 5
     return _orig_send(self, request, stream=stream, timeout=timeout, verify=verify, cert=cert, proxies=proxies)
+
+
 _req.adapters.HTTPAdapter.send = _send_with_timeout
 
 from fastapi.testclient import TestClient
@@ -169,9 +174,10 @@ class TestAuthSmoke:
         assert r.json().get("ok") is True
 
     def test_reset_password_bad_code(self):
-        r = client.post("/auth/reset-password", json={
-            "email": "nobody@testsmoke.com", "code": "000000", "new_password": "NewPass123!"
-        })
+        r = client.post(
+            "/auth/reset-password",
+            json={"email": "nobody@testsmoke.com", "code": "000000", "new_password": "NewPass123!"},
+        )
         assert r.status_code == 400
 
 
@@ -200,13 +206,13 @@ class TestAllEndpointsSmoke:
         assert isinstance(r.json(), list)
 
     def test_create_category(self):
-        r = _authed_post("/api/categories", self.c,
-                         json={"name": "SmokeCategory", "color": "#ff0000", "type": "expense"})
+        r = _authed_post(
+            "/api/categories", self.c, json={"name": "SmokeCategory", "color": "#ff0000", "type": "expense"}
+        )
         assert r.status_code == 200
 
     def test_delete_category(self):
-        r = _authed_post("/api/categories", self.c,
-                         json={"name": "ToDelete", "color": "#ff0000", "type": "expense"})
+        r = _authed_post("/api/categories", self.c, json={"name": "ToDelete", "color": "#ff0000", "type": "expense"})
         cat_id = r.json().get("id")
         if cat_id:
             r2 = _authed_delete(f"/api/categories/{cat_id}", self.c)
@@ -218,8 +224,9 @@ class TestAllEndpointsSmoke:
         cats = r.json()
         if cats:
             return cats[0]["id"]
-        r2 = _authed_post("/api/categories", self.c,
-                          json={"name": "SmokeDefault", "color": "#000000", "type": "expense"})
+        r2 = _authed_post(
+            "/api/categories", self.c, json={"name": "SmokeDefault", "color": "#000000", "type": "expense"}
+        )
         return r2.json()["id"]
 
     # ── Transactions ──
@@ -229,31 +236,50 @@ class TestAllEndpointsSmoke:
 
     def test_create_transaction(self):
         cat_id = self._get_category_id()
-        r = _authed_post("/api/transactions", self.c, json={
-            "amount": 100.0, "type": "income", "description": "smoke test",
-            "date": "2025-01-15", "category_id": cat_id
-        })
+        r = _authed_post(
+            "/api/transactions",
+            self.c,
+            json={
+                "amount": 100.0,
+                "type": "income",
+                "description": "smoke test",
+                "date": "2025-01-15",
+                "category_id": cat_id,
+            },
+        )
         assert r.status_code == 200
 
     def test_update_transaction(self):
         cat_id = self._get_category_id()
-        r = _authed_post("/api/transactions", self.c, json={
-            "amount": 50.0, "type": "expense", "description": "to update",
-            "date": "2025-01-15", "category_id": cat_id
-        })
+        r = _authed_post(
+            "/api/transactions",
+            self.c,
+            json={
+                "amount": 50.0,
+                "type": "expense",
+                "description": "to update",
+                "date": "2025-01-15",
+                "category_id": cat_id,
+            },
+        )
         tx_id = r.json().get("id")
         if tx_id:
-            r2 = _authed_put(f"/api/transactions/{tx_id}", self.c, json={
-                "amount": 75.0, "description": "updated"
-            })
+            r2 = _authed_put(f"/api/transactions/{tx_id}", self.c, json={"amount": 75.0, "description": "updated"})
             assert r2.status_code in (200, 204)
 
     def test_delete_transaction(self):
         cat_id = self._get_category_id()
-        r = _authed_post("/api/transactions", self.c, json={
-            "amount": 10.0, "type": "expense", "description": "to delete",
-            "date": "2025-01-15", "category_id": cat_id
-        })
+        r = _authed_post(
+            "/api/transactions",
+            self.c,
+            json={
+                "amount": 10.0,
+                "type": "expense",
+                "description": "to delete",
+                "date": "2025-01-15",
+                "category_id": cat_id,
+            },
+        )
         tx_id = r.json().get("id")
         if tx_id:
             r2 = _authed_delete(f"/api/transactions/{tx_id}", self.c)
@@ -274,9 +300,7 @@ class TestAllEndpointsSmoke:
     def test_budget_status_has_precomputed_fields(self):
         """After creating a budget, /status should include computed fields."""
         cat_id = self._get_category_id()
-        _authed_post("/api/budgets", self.c, json={
-            "category_id": cat_id, "monthly_limit": 500.0
-        })
+        _authed_post("/api/budgets", self.c, json={"category_id": cat_id, "monthly_limit": 500.0})
         r = _authed_get("/api/budgets/status", self.c)
         assert r.status_code == 200
         data = r.json()
@@ -289,16 +313,12 @@ class TestAllEndpointsSmoke:
 
     def test_create_budget(self):
         cat_id = self._get_category_id()
-        r = _authed_post("/api/budgets", self.c, json={
-            "category_id": cat_id, "monthly_limit": 500.0
-        })
+        r = _authed_post("/api/budgets", self.c, json={"category_id": cat_id, "monthly_limit": 500.0})
         assert r.status_code == 200
 
     def test_delete_budget(self):
         cat_id = self._get_category_id()
-        r = _authed_post("/api/budgets", self.c, json={
-            "category_id": cat_id, "monthly_limit": 200.0
-        })
+        r = _authed_post("/api/budgets", self.c, json={"category_id": cat_id, "monthly_limit": 200.0})
         budget_id = r.json().get("id")
         if budget_id:
             r2 = _authed_delete(f"/api/budgets/{budget_id}", self.c)
@@ -314,9 +334,7 @@ class TestAllEndpointsSmoke:
         assert r.status_code == 200
 
     def test_create_and_delete_alert(self):
-        r = _authed_post("/api/alerts", self.c, json={
-            "symbol": "AAPL", "condition": "above", "target_price": 999.0
-        })
+        r = _authed_post("/api/alerts", self.c, json={"symbol": "AAPL", "condition": "above", "target_price": 999.0})
         assert r.status_code == 200
         alert_id = r.json().get("id")
         if alert_id:
@@ -324,9 +342,7 @@ class TestAllEndpointsSmoke:
             assert r2.status_code in (200, 204)
 
     def test_dismiss_alert(self):
-        r = _authed_post("/api/alerts", self.c, json={
-            "symbol": "AAPL", "condition": "below", "target_price": 1.0
-        })
+        r = _authed_post("/api/alerts", self.c, json={"symbol": "AAPL", "condition": "below", "target_price": 1.0})
         alert_id = r.json().get("id")
         if alert_id:
             r2 = _authed_post(f"/api/alerts/{alert_id}/dismiss", self.c)
@@ -346,9 +362,11 @@ class TestAllEndpointsSmoke:
         assert r.status_code == 200
 
     def test_add_and_remove_holding(self):
-        r = _authed_post("/api/portfolio/holdings", self.c, json={
-            "symbol": "AAPL", "quantity": 10, "buy_price": 150.0, "buy_date": "2025-01-15"
-        })
+        r = _authed_post(
+            "/api/portfolio/holdings",
+            self.c,
+            json={"symbol": "AAPL", "quantity": 10, "buy_price": 150.0, "buy_date": "2025-01-15"},
+        )
         assert r.status_code == 200
         holding_id = r.json().get("id")
         if holding_id:
@@ -361,20 +379,32 @@ class TestAllEndpointsSmoke:
         assert r.status_code == 200
 
     def test_submit_profile(self):
-        r = _authed_post("/api/profile", self.c, json={
-            "goal": "growth", "timeline": "5-10",
-            "experience": "intermediate", "risk_reaction": "hold",
-            "income_stability": "stable"
-        })
+        r = _authed_post(
+            "/api/profile",
+            self.c,
+            json={
+                "goal": "growth",
+                "timeline": "5-10",
+                "experience": "intermediate",
+                "risk_reaction": "hold",
+                "income_stability": "stable",
+            },
+        )
         assert r.status_code == 200
 
     def test_profile_allocation(self):
         # Submit profile first so allocation endpoint has data
-        _authed_post("/api/profile", self.c, json={
-            "goal": "growth", "timeline": "5-10",
-            "experience": "intermediate", "risk_reaction": "hold",
-            "income_stability": "stable"
-        })
+        _authed_post(
+            "/api/profile",
+            self.c,
+            json={
+                "goal": "growth",
+                "timeline": "5-10",
+                "experience": "intermediate",
+                "risk_reaction": "hold",
+                "income_stability": "stable",
+            },
+        )
         r = _authed_get("/api/profile/allocation", self.c)
         assert r.status_code in (200, 404)
 
@@ -603,17 +633,13 @@ class TestAllEndpointsSmoke:
         assert r.status_code == 200
 
         # Create
-        r2 = _authed_post("/api/dca/plans", self.c, json={
-            "symbol": "AAPL", "monthly_budget": 100.0
-        })
+        r2 = _authed_post("/api/dca/plans", self.c, json={"symbol": "AAPL", "monthly_budget": 100.0})
         assert r2.status_code == 200
         plan_id = r2.json().get("id")
 
         if plan_id:
             # Update
-            r3 = _authed_put(f"/api/dca/plans/{plan_id}", self.c, json={
-                "monthly_budget": 200.0
-            })
+            r3 = _authed_put(f"/api/dca/plans/{plan_id}", self.c, json={"monthly_budget": 200.0})
             assert r3.status_code in (200, 204)
 
             # Delete
@@ -669,45 +695,48 @@ class TestAdminSmoke:
         _, target_email = _register_and_login()
         from src.database import get_db
         from src.models import User
+
         db = next(get_db())
         target = db.query(User).filter(User.email == target_email).first()
         target_id = target.id
         db.close()
 
-        r = _authed_post("/api/admin/toggle-admin", self.c,
-                         json={"user_id": target_id})
+        r = _authed_post("/api/admin/toggle-admin", self.c, json={"user_id": target_id})
         assert r.status_code == 200
 
     def test_admin_toggle_active(self):
         _, target_email = _register_and_login()
         from src.database import get_db
         from src.models import User
+
         db = next(get_db())
         target = db.query(User).filter(User.email == target_email).first()
         target_id = target.id
         db.close()
 
-        r = _authed_post("/api/admin/toggle-active", self.c,
-                         json={"user_id": target_id})
+        r = _authed_post("/api/admin/toggle-active", self.c, json={"user_id": target_id})
         assert r.status_code == 200
 
     def test_admin_reset_password(self):
         _, target_email = _register_and_login()
         from src.database import get_db
         from src.models import User
+
         db = next(get_db())
         target = db.query(User).filter(User.email == target_email).first()
         target_id = target.id
         db.close()
 
-        r = _authed_post("/api/admin/reset-password", self.c,
-                         json={"user_id": target_id, "new_password": "Admin0Reset99!"})
+        r = _authed_post(
+            "/api/admin/reset-password", self.c, json={"user_id": target_id, "new_password": "Admin0Reset99!"}
+        )
         assert r.status_code == 200
 
     def test_admin_delete_user(self):
         _, target_email = _register_and_login()
         from src.database import get_db
         from src.models import User
+
         db = next(get_db())
         target = db.query(User).filter(User.email == target_email).first()
         target_id = target.id
@@ -739,13 +768,26 @@ class TestSecuritySmoke:
         """All /api/* endpoints should return 401 without a session cookie."""
         anon = TestClient(app, raise_server_exceptions=False, base_url="https://testserver")
         protected = [
-            "/api/dashboard", "/api/transactions", "/api/budgets",
-            "/api/categories", "/api/alerts", "/api/portfolio/summary",
-            "/api/profile", "/api/screener", "/api/market/home",
-            "/api/news", "/api/education", "/api/calendar/earnings",
-            "/api/recommendations", "/api/picks", "/api/dca/dashboard",
-            "/api/autopilot/profiles", "/api/advisor/analyze",
-            "/api/trading", "/api/value-scanner", "/api/admin/stats",
+            "/api/dashboard",
+            "/api/transactions",
+            "/api/budgets",
+            "/api/categories",
+            "/api/alerts",
+            "/api/portfolio/summary",
+            "/api/profile",
+            "/api/screener",
+            "/api/market/home",
+            "/api/news",
+            "/api/education",
+            "/api/calendar/earnings",
+            "/api/recommendations",
+            "/api/picks",
+            "/api/dca/dashboard",
+            "/api/autopilot/profiles",
+            "/api/advisor/analyze",
+            "/api/trading",
+            "/api/value-scanner",
+            "/api/admin/stats",
         ]
         for path in protected:
             r = anon.get(path)
@@ -788,10 +830,17 @@ class TestUserIsolationSmoke:
         cat_id = cats[0]["id"] if cats else 1
 
         # User 1 creates a transaction
-        r = _authed_post("/api/transactions", cookies1, json={
-            "amount": 999.0, "type": "income", "description": "user1 only",
-            "date": "2025-06-01", "category_id": cat_id
-        })
+        r = _authed_post(
+            "/api/transactions",
+            cookies1,
+            json={
+                "amount": 999.0,
+                "type": "income",
+                "description": "user1 only",
+                "date": "2025-06-01",
+                "category_id": cat_id,
+            },
+        )
         assert r.status_code == 200
 
         # User 2 should not see it
@@ -803,9 +852,7 @@ class TestUserIsolationSmoke:
         cookies1, _ = _register_and_login()
         cookies2, _ = _register_and_login()
 
-        _authed_post("/api/alerts", cookies1, json={
-            "symbol": "TSLA", "condition": "above", "target_price": 9999.0
-        })
+        _authed_post("/api/alerts", cookies1, json={"symbol": "TSLA", "condition": "above", "target_price": 9999.0})
         r2 = _authed_get("/api/alerts", cookies2)
         symbols = [a.get("symbol", "") for a in r2.json()] if isinstance(r2.json(), list) else []
         assert "TSLA" not in symbols or len(symbols) == 0
@@ -814,9 +861,11 @@ class TestUserIsolationSmoke:
         cookies1, _ = _register_and_login()
         cookies2, _ = _register_and_login()
 
-        _authed_post("/api/portfolio/holdings", cookies1, json={
-            "symbol": "GME", "quantity": 100, "buy_price": 25.0, "buy_date": "2025-01-15"
-        })
+        _authed_post(
+            "/api/portfolio/holdings",
+            cookies1,
+            json={"symbol": "GME", "quantity": 100, "buy_price": 25.0, "buy_date": "2025-01-15"},
+        )
         r2 = _authed_get("/api/portfolio/holdings", cookies2)
         data = r2.json()
         if isinstance(data, list):
@@ -871,6 +920,7 @@ class TestDataIntegritySmoke:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # Background Scheduler — server-side scanning (deep / nightly)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 
 @pytest.mark.deep
 class TestBackgroundScheduler:
@@ -934,8 +984,10 @@ class TestBackgroundScheduler:
     def test_scheduler_stop_event(self):
         """stop_background_scheduler() should signal the stop event."""
         from src.services.background_scheduler import (
-            _stop_event, stop_background_scheduler,
+            _stop_event,
+            stop_background_scheduler,
         )
+
         _stop_event.clear()
         assert not _stop_event.is_set()
         stop_background_scheduler()
@@ -965,6 +1017,7 @@ class TestBackgroundScheduler:
 # Trading Advisor — Double-Buffer Scan Integrity (deep / nightly)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+
 @pytest.mark.deep
 class TestTradingAdvisorDoubleBuffer:
     """Verify the double-buffer scan pattern: old results are never wiped
@@ -974,6 +1027,7 @@ class TestTradingAdvisorDoubleBuffer:
     def test_dashboard_returns_stable_structure(self):
         """get_dashboard() should always return the expected keys."""
         from src.services.trading_advisor import get_dashboard
+
         data = get_dashboard()
         assert "packages" in data
         assert "all_picks" in data
@@ -994,27 +1048,52 @@ class TestTradingAdvisorDoubleBuffer:
 
         # Seed fake "last-good" results into the live cache
         fake_pick = {
-            "symbol": "FAKE", "name": "Fake Corp", "sector": "Tech",
-            "price": 100, "score": 80, "raw_score": 2, "verdict": "Buy",
+            "symbol": "FAKE",
+            "name": "Fake Corp",
+            "sector": "Tech",
+            "price": 100,
+            "score": 80,
+            "raw_score": 2,
+            "verdict": "Buy",
             "confidence": "High",
-            "signals": [], "edge_signals": [], "signals_text": [],
-            "entry": 98, "target": 110, "stop_loss": 92, "risk_reward": 2.0,
-            "rsi": 55, "stoch_k": 60,
-            "macd_bullish_cross": True, "macd_hist_positive": True,
-            "above_sma50": True, "above_sma200": True, "golden_cross": True,
+            "signals": [],
+            "edge_signals": [],
+            "signals_text": [],
+            "entry": 98,
+            "target": 110,
+            "stop_loss": 92,
+            "risk_reward": 2.0,
+            "rsi": 55,
+            "stoch_k": 60,
+            "macd_bullish_cross": True,
+            "macd_hist_positive": True,
+            "above_sma50": True,
+            "above_sma200": True,
+            "golden_cross": True,
             "vol_above_avg": False,
-            "boll_pct_b": 0.5, "boll_squeeze": False,
-            "has_divergence": False, "has_institutional_signal": False,
-            "vol_anomaly_score": 0, "quiet_accumulation": False,
-            "rs_outperforming": False, "rs_1m": None,
-            "ichimoku_bullish": False, "zscore": 0.1,
-            "fib_support": 95, "fib_resistance": 115,
+            "boll_pct_b": 0.5,
+            "boll_squeeze": False,
+            "has_divergence": False,
+            "has_institutional_signal": False,
+            "vol_anomaly_score": 0,
+            "quiet_accumulation": False,
+            "rs_outperforming": False,
+            "rs_1m": None,
+            "ichimoku_bullish": False,
+            "zscore": 0.1,
+            "fib_support": 95,
+            "fib_resistance": 115,
             "sparkline": [100, 101, 102],
-            "market_cap_fmt": "10B", "beta": 1.1, "dividend_yield": 0.02,
+            "market_cap_fmt": "10B",
+            "beta": 1.1,
+            "dividend_yield": 0.02,
         }
         fake_pkg = {
-            "id": "momentum", "name": "Momentum Plays",
-            "subtitle": "test", "timeframe": "Days", "risk_level": "High",
+            "id": "momentum",
+            "name": "Momentum Plays",
+            "subtitle": "test",
+            "timeframe": "Days",
+            "risk_level": "High",
             "picks": [fake_pick],
         }
 
@@ -1050,23 +1129,45 @@ class TestTradingAdvisorDoubleBuffer:
         from src.services import trading_advisor as ta
 
         fake_pick = {
-            "symbol": "SAFE", "name": "Safe Corp", "sector": "Finance",
-            "price": 50, "score": 70, "raw_score": 1, "verdict": "Hold",
+            "symbol": "SAFE",
+            "name": "Safe Corp",
+            "sector": "Finance",
+            "price": 50,
+            "score": 70,
+            "raw_score": 1,
+            "verdict": "Hold",
             "confidence": "Medium",
-            "signals": [], "edge_signals": [], "signals_text": [],
-            "entry": 48, "target": 55, "stop_loss": 45, "risk_reward": 1.5,
-            "rsi": 50, "stoch_k": 50,
-            "macd_bullish_cross": False, "macd_hist_positive": False,
-            "above_sma50": True, "above_sma200": False, "golden_cross": False,
+            "signals": [],
+            "edge_signals": [],
+            "signals_text": [],
+            "entry": 48,
+            "target": 55,
+            "stop_loss": 45,
+            "risk_reward": 1.5,
+            "rsi": 50,
+            "stoch_k": 50,
+            "macd_bullish_cross": False,
+            "macd_hist_positive": False,
+            "above_sma50": True,
+            "above_sma200": False,
+            "golden_cross": False,
             "vol_above_avg": False,
-            "boll_pct_b": 0.4, "boll_squeeze": False,
-            "has_divergence": False, "has_institutional_signal": False,
-            "vol_anomaly_score": 0, "quiet_accumulation": False,
-            "rs_outperforming": False, "rs_1m": None,
-            "ichimoku_bullish": False, "zscore": -0.2,
-            "fib_support": 46, "fib_resistance": 58,
+            "boll_pct_b": 0.4,
+            "boll_squeeze": False,
+            "has_divergence": False,
+            "has_institutional_signal": False,
+            "vol_anomaly_score": 0,
+            "quiet_accumulation": False,
+            "rs_outperforming": False,
+            "rs_1m": None,
+            "ichimoku_bullish": False,
+            "zscore": -0.2,
+            "fib_support": 46,
+            "fib_resistance": 58,
             "sparkline": [50, 51, 49],
-            "market_cap_fmt": "5B", "beta": 0.9, "dividend_yield": 0.03,
+            "market_cap_fmt": "5B",
+            "beta": 0.9,
+            "dividend_yield": 0.03,
         }
 
         with ta._scan_lock:
@@ -1112,6 +1213,7 @@ class TestTradingAdvisorDoubleBuffer:
 # Additional Scheduler Tasks — market data, news, smart advisor (deep)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+
 @pytest.mark.deep
 # ════════════════════════════════════════════════════════════
 #  Smart Advisor — Cache Key Normalization (fcdf3be fix)
@@ -1139,8 +1241,7 @@ class TestSmartAdvisorCacheKey:
             "portfolios": {},
             "backtest": {},
             "selected_risk": "balanced",
-            "advisor_report": {"market_mood": {}, "market_regime": "Unknown",
-                               "top_actions": [], "risk_warnings": []},
+            "advisor_report": {"market_mood": {}, "market_regime": "Unknown", "top_actions": [], "risk_warnings": []},
         }
         int_key = "advisor:full:10000:balanced:1y"
         with _cache_lock:
@@ -1170,9 +1271,7 @@ class TestSmartAdvisorCacheKey:
     def test_various_float_amounts_normalize(self):
         """Various float amounts should all normalize to int cache keys."""
         for amount in [1000.0, 5000.0, 50000.0, 100000.0]:
-            assert int(amount) == int(amount), (
-                f"int({amount}) should be idempotent"
-            )
+            assert int(amount) == int(amount), f"int({amount}) should be idempotent"
             # The cache key should not contain a decimal point
             key = f"advisor:full:{int(amount)}:balanced:1y"
             assert "." not in key, f"Cache key should not contain '.': {key}"
@@ -1205,9 +1304,7 @@ class TestSmartAdvisorCacheKey:
         resp = c.get("/api/advisor/analyze?amount=10000&risk=balanced&period=1y")
         assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text[:200]}"
         data = resp.json()
-        assert data["rankings"][0]["symbol"] == "AAPL", (
-            "Endpoint did not return the pre-seeded cached result"
-        )
+        assert data["rankings"][0]["symbol"] == "AAPL", "Endpoint did not return the pre-seeded cached result"
 
         # Cleanup
         with _cache_lock:
@@ -1221,34 +1318,40 @@ class TestSchedulerNewTasks:
     def test_run_market_data_refresh(self):
         """_run_market_data_refresh should call refresh_active_symbols."""
         from src.services.background_scheduler import _run_market_data_refresh
+
         result = _run_market_data_refresh()
         assert result is True
 
     def test_run_news_refresh(self):
         """_run_news_refresh should call refresh_news_cache."""
         from src.services.background_scheduler import _run_news_refresh
+
         result = _run_news_refresh()
         assert result is True
 
     def test_run_smart_advisor_scan(self):
         """_run_smart_advisor_scan should call scan_and_score."""
         from src.services.background_scheduler import _run_smart_advisor_scan
+
         result = _run_smart_advisor_scan()
         assert result is True
 
     def test_refresh_active_symbols_exists(self):
         """market_data.refresh_active_symbols should be importable and callable."""
         from src.services.market_data import refresh_active_symbols
+
         refresh_active_symbols()
 
     def test_refresh_news_cache_exists(self):
         """news.refresh_news_cache should be importable and callable."""
         from src.services.news import refresh_news_cache
+
         refresh_news_cache()
 
     def test_scheduler_intervals_defined(self):
         """All five interval constants should be defined."""
         from src.services import background_scheduler as bs
+
         assert bs.MARKET_DATA_INTERVAL > 0
         assert bs.NEWS_INTERVAL > 0
         assert bs.SMART_ADVISOR_INTERVAL > 0

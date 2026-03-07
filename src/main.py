@@ -11,18 +11,43 @@ from slowapi.errors import RateLimitExceeded
 from src.database import engine, get_db, Base
 from src.models import Category, User, PasswordReset
 from src.auth import (
-    AuthMiddleware, COOKIE_NAME, ACCESS_TOKEN_EXPIRE_DAYS,
-    create_access_token, hash_password, verify_password,
+    AuthMiddleware,
+    COOKIE_NAME,
+    ACCESS_TOKEN_EXPIRE_DAYS,
+    create_access_token,
+    hash_password,
+    verify_password,
 )
 from src.routers import (
-    categories, transactions, budgets, dashboard, profile, screener,
-    recommendations, market, stock_detail, portfolio, news, comparison,
-    alerts, education, calendar_router, israeli_funds, value_scanner,
-    autopilot, smart_advisor, trading_advisor, picks_tracker, dca, admin,
+    categories,
+    transactions,
+    budgets,
+    dashboard,
+    profile,
+    screener,
+    recommendations,
+    market,
+    stock_detail,
+    portfolio,
+    news,
+    comparison,
+    alerts,
+    education,
+    calendar_router,
+    israeli_funds,
+    value_scanner,
+    autopilot,
+    smart_advisor,
+    trading_advisor,
+    picks_tracker,
+    dca,
+    admin,
 )
 
 import time as _time, logging as _logging
+
 _log = _logging.getLogger(__name__)
+
 
 def _init_db(retries: int = 3, delay: float = 2.0):
     """Create tables with retry for transient connection issues."""
@@ -38,13 +63,16 @@ def _init_db(retries: int = 3, delay: float = 2.0):
             else:
                 _log.error("All DB init attempts failed — starting without tables")
 
+
 _init_db()
+
 
 # ── Auto-migrate: add missing columns/indexes to existing tables ──
 def _auto_migrate():
     """Add columns and indexes introduced after initial deploy (safe to re-run)."""
     from sqlalchemy import inspect, text
     from src.database import _is_sqlite
+
     insp = inspect(engine)
     if "users" in insp.get_table_names():
         cols = {c["name"] for c in insp.get_columns("users")}
@@ -68,9 +96,11 @@ def _auto_migrate():
         except Exception:
             pass  # Indexes already exist or table not yet created
 
+
 _auto_migrate()
 
 import os as _os
+
 _is_production = _os.environ.get("RENDER") or _os.environ.get("PRODUCTION")
 app = FastAPI(
     title="InvestAI",
@@ -83,7 +113,7 @@ app = FastAPI(
 _testing = _os.environ.get("TESTING") == "1"
 limiter = Limiter(
     key_func=get_remote_address,
-    enabled=not _testing,          # disable rate limiting during pytest
+    enabled=not _testing,  # disable rate limiting during pytest
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -91,6 +121,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add OWASP-recommended security headers to every response."""
+
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         response.headers["X-Frame-Options"] = "DENY"
@@ -148,6 +179,7 @@ app.include_router(admin.router)
 
 # ── Health / version check (public, no auth) ─────────────────
 import subprocess as _sp
+
 try:
     _GIT_SHA = _sp.check_output(["git", "rev-parse", "--short", "HEAD"], timeout=3, text=True).strip()
 except Exception:
@@ -158,6 +190,7 @@ except Exception:
 def health_check():
     """Public health endpoint — returns git commit for deploy verification."""
     from src.services.market_data import _warm_done, _cache
+
     return {
         "status": "ok",
         "version": _GIT_SHA,
@@ -251,6 +284,7 @@ def do_login(body: LoginBody, request: Request):
 def get_me(request: Request):
     """Return current user info from JWT cookie."""
     from src.auth import decode_token
+
     cookie = request.cookies.get(COOKIE_NAME, "")
     payload = decode_token(cookie) if cookie else None
     if not payload:
@@ -280,17 +314,21 @@ class ResetPasswordBody(BaseModel):
 def forgot_password(body: ForgotPasswordBody, request: Request):
     """Generate a 6-digit reset code. Sends via email if SMTP is configured, otherwise logs it."""
     import secrets as _secrets, os, logging
+
     logger = logging.getLogger("investai")
     db: Session = next(get_db())
     try:
         user = db.query(User).filter(User.email == body.email.lower().strip()).first()
         # Always return OK to not leak whether email exists
         if not user:
-            return JSONResponse(content={"ok": True, "message": "If that email is registered, a reset code has been sent."})
+            return JSONResponse(
+                content={"ok": True, "message": "If that email is registered, a reset code has been sent."}
+            )
 
         code = f"{_secrets.randbelow(1000000):06d}"
         # Store hashed code — never plaintext in DB
         from src.auth import hash_password as _hash_pw
+
         reset = PasswordReset(user_id=user.id, code=_hash_pw(code))
         db.add(reset)
         db.commit()
@@ -304,6 +342,7 @@ def forgot_password(body: ForgotPasswordBody, request: Request):
             try:
                 import smtplib
                 from email.mime.text import MIMEText
+
                 msg = MIMEText(f"Your InvestAI password reset code is: {code}\n\nThis code expires in 15 minutes.")
                 msg["Subject"] = "InvestAI \u2014 Password Reset Code"
                 msg["From"] = smtp_user
@@ -331,6 +370,7 @@ def forgot_password(body: ForgotPasswordBody, request: Request):
 def reset_password(body: ResetPasswordBody):
     """Verify reset code and set a new password."""
     from datetime import datetime, timedelta
+
     if len(body.new_password) < 8:
         return JSONResponse(status_code=400, content={"detail": "Password must be at least 8 characters"})
     db: Session = next(get_db())
@@ -342,6 +382,7 @@ def reset_password(body: ResetPasswordBody):
         cutoff = datetime.utcnow() - timedelta(minutes=15)
         # Reset codes are stored hashed — fetch all recent unused codes and verify
         from src.auth import verify_password as _verify_pw
+
         candidates = (
             db.query(PasswordReset)
             .filter(
@@ -406,6 +447,7 @@ def startup():
     # ── Auto-promote admin via env var (for Render / headless deploy) ──
     # Set ADMIN_EMAIL + ADMIN_PASSWORD to auto-create & promote an admin account
     import os, logging
+
     logger = logging.getLogger("investai")
     admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     admin_password = os.environ.get("ADMIN_PASSWORD", "").strip()
@@ -438,15 +480,19 @@ def startup():
         # This lets the API serve last-known data immediately
         try:
             from src.services.persistence import restore_all_caches
+
             restore_all_caches()
         except Exception:
             import logging
+
             logging.getLogger("investai").exception("Failed to restore caches from DB")
 
         from src.services.market_data import start_cache_warmer
+
         start_cache_warmer()
 
         # Single background scheduler handles all periodic scans
         # (value scanner, trading advisor) on fixed server-side intervals
         from src.services.background_scheduler import start_background_scheduler
+
         start_background_scheduler()

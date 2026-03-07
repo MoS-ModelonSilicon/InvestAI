@@ -7,8 +7,7 @@ router = APIRouter(prefix="/api/advisor", tags=["smart-advisor"])
 
 
 @router.get("/analyze")
-def advisor_analyze(amount: float = 10000, risk: str = "balanced",
-                    period: str = "1y"):
+def advisor_analyze(amount: float = 10000, risk: str = "balanced", period: str = "1y"):
     """Run full advisor analysis: scan, score, build portfolios, backtest."""
     if risk not in ("conservative", "balanced", "aggressive"):
         risk = "balanced"
@@ -18,7 +17,9 @@ def advisor_analyze(amount: float = 10000, risk: str = "balanced",
 
     result = run_full_analysis(amount, risk, period, compute_if_missing=False)
     if not result or not result.get("rankings"):
-        raise HTTPException(503, "Advisor analysis unavailable -- market data may still be loading. Try again in a minute.")
+        raise HTTPException(
+            503, "Advisor analysis unavailable -- market data may still be loading. Try again in a minute."
+        )
     return result
 
 

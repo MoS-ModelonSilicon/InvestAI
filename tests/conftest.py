@@ -41,7 +41,7 @@ def pytest_addoption(parser):
         action="store",
         default=None,
         help="URL of the deployed site to test (e.g. https://investai-utho.onrender.com). "
-             "When set, skips local server startup.",
+        "When set, skips local server startup.",
     )
 
 
@@ -65,10 +65,14 @@ def _live_server(request):
 
     proc = subprocess.Popen(
         [
-            sys.executable, "-m", "uvicorn",
+            sys.executable,
+            "-m",
+            "uvicorn",
             "src.main:app",
-            "--host", "127.0.0.1",
-            "--port", "8091",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8091",
         ],
         cwd=str(__import__("pathlib").Path(__file__).resolve().parent.parent),
         stdout=subprocess.PIPE,
@@ -124,6 +128,7 @@ def _wake_remote_server(request, _live_server):
     if not live_url:
         return
     import requests as _req
+
     for _attempt in range(6):  # up to ~3 min of retries
         try:
             r = _req.get(f"{live_url.rstrip('/')}/login", proxies=_PROXIES, timeout=60)
@@ -139,6 +144,7 @@ def _wake_remote_server(request, _live_server):
 def authenticated_page(page: Page, live_url: str) -> Page:
     """Register (if needed) and log in a test user, returning a page on the dashboard."""
     import requests
+
     # Use proxy for remote sites when behind Intel proxy, skip for local
     px = _PROXIES if "127.0.0.1" not in live_url and "localhost" not in live_url else None
     # Ensure the test user exists (ignore 400 if already registered)
@@ -170,13 +176,12 @@ def live_url(_live_server: str) -> str:
 def _api_session(base_url: str, email: str, password: str, name: str = "Test"):
     """Register + login via API. Returns (requests.Session, proxies_dict)."""
     import requests as _req
+
     px = _PROXIES if "127.0.0.1" not in base_url and "localhost" not in base_url else None
     s = _req.Session()
     if px:
         s.proxies.update(px)
-    s.post(f"{base_url}/auth/register",
-           json={"email": email, "password": password, "name": name}, timeout=30)
-    resp = s.post(f"{base_url}/auth/login",
-                  json={"email": email, "password": password}, timeout=30)
+    s.post(f"{base_url}/auth/register", json={"email": email, "password": password, "name": name}, timeout=30)
+    resp = s.post(f"{base_url}/auth/login", json={"email": email, "password": password}, timeout=30)
     assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
     return s

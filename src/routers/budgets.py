@@ -46,16 +46,18 @@ def budget_status(db: Session = Depends(get_db), user: User = Depends(get_curren
         spent = round(spent_map.get(b.category_id, 0), 2)
         pct = round((spent / b.monthly_limit) * 100, 1) if b.monthly_limit else 0
         color = "var(--red)" if pct > 90 else "#eab308" if pct > 70 else b.category.color
-        result.append({
-            "id": b.id,
-            "category_id": b.category_id,
-            "category_name": b.category.name,
-            "category_color": b.category.color,
-            "monthly_limit": b.monthly_limit,
-            "spent": spent,
-            "percentage": pct,
-            "bar_color": color,
-        })
+        result.append(
+            {
+                "id": b.id,
+                "category_id": b.category_id,
+                "category_name": b.category.name,
+                "category_color": b.category.color,
+                "monthly_limit": b.monthly_limit,
+                "spent": spent,
+                "percentage": pct,
+                "bar_color": color,
+            }
+        )
     return result
 
 

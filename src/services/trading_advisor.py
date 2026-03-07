@@ -20,8 +20,11 @@ from typing import Optional
 from src.services import data_provider as dp
 from src.services import technical_analysis as ta
 from src.services.market_data import (
-    fetch_batch, fetch_stock_info, ALL_UNIVERSE,
-    format_market_cap, _LOW_MEMORY,
+    fetch_batch,
+    fetch_stock_info,
+    ALL_UNIVERSE,
+    format_market_cap,
+    _LOW_MEMORY,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,6 +60,7 @@ _scan_running = False
 # ---------------------------------------------------------------------------
 # Single-stock analysis
 # ---------------------------------------------------------------------------
+
 
 def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict]:
     """Compute all indicators (classic + advanced) and build an action card."""
@@ -100,8 +104,14 @@ def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict
 
     # Advanced composite score
     comp = ta.composite_score(
-        rsi_vals, macd_data, closes, sma50, sma200,
-        boll["pct_b"], stoch, obv_vals,
+        rsi_vals,
+        macd_data,
+        closes,
+        sma50,
+        sma200,
+        boll["pct_b"],
+        stoch,
+        obv_vals,
         adx_data=adx_data,
         rsi_div=rsi_div,
         macd_div=macd_div,
@@ -141,11 +151,7 @@ def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict
 
     macd_hist = macd_data["histogram"]
     recent_hist = [h for h in macd_hist[-5:] if h is not None]
-    macd_bullish_cross = (
-        len(recent_hist) >= 2
-        and any(h <= 0 for h in recent_hist[:-1])
-        and recent_hist[-1] > 0
-    )
+    macd_bullish_cross = len(recent_hist) >= 2 and any(h <= 0 for h in recent_hist[:-1]) and recent_hist[-1] > 0
 
     avg_vol_20 = sum(volumes[-20:]) / 20 if len(volumes) >= 20 else 0
     vol_above_avg = volumes[-1] > avg_vol_20 * 1.2 if avg_vol_20 > 0 else False
@@ -214,19 +220,19 @@ def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict
 # Strategy package builders
 # ---------------------------------------------------------------------------
 
+
 def _build_momentum_package(picks: list[dict]) -> dict:
     """Short-term momentum plays (days to weeks)."""
     pool = [
-        p for p in picks
-        if p["macd_bullish_cross"]
-        and p["above_sma50"]
-        and (p["rsi"] is not None and 45 <= p["rsi"] <= 75)
+        p
+        for p in picks
+        if p["macd_bullish_cross"] and p["above_sma50"] and (p["rsi"] is not None and 45 <= p["rsi"] <= 75)
     ]
     if len(pool) < 3:
         pool = [
-            p for p in picks
-            if p["macd_hist_positive"] and p["above_sma50"]
-            and (p["rsi"] is not None and p["rsi"] < 75)
+            p
+            for p in picks
+            if p["macd_hist_positive"] and p["above_sma50"] and (p["rsi"] is not None and p["rsi"] < 75)
         ]
     pool.sort(key=lambda x: x["score"], reverse=True)
     return {
@@ -242,17 +248,12 @@ def _build_momentum_package(picks: list[dict]) -> dict:
 def _build_swing_package(picks: list[dict]) -> dict:
     """Medium-term swing trades (weeks to months)."""
     pool = [
-        p for p in picks
-        if p["golden_cross"]
-        and p["macd_hist_positive"]
-        and (p["rsi"] is not None and 35 <= p["rsi"] <= 65)
+        p
+        for p in picks
+        if p["golden_cross"] and p["macd_hist_positive"] and (p["rsi"] is not None and 35 <= p["rsi"] <= 65)
     ]
     if len(pool) < 3:
-        pool = [
-            p for p in picks
-            if p["above_sma50"]
-            and (p["rsi"] is not None and 30 <= p["rsi"] <= 65)
-        ]
+        pool = [p for p in picks if p["above_sma50"] and (p["rsi"] is not None and 30 <= p["rsi"] <= 65)]
     pool.sort(key=lambda x: x["risk_reward"], reverse=True)
     return {
         "id": "swing",
@@ -267,15 +268,12 @@ def _build_swing_package(picks: list[dict]) -> dict:
 def _build_oversold_package(picks: list[dict]) -> dict:
     """Oversold bargains for patient buyers."""
     pool = [
-        p for p in picks
-        if p["rsi"] is not None and p["rsi"] < 40
-        and (p["boll_pct_b"] is not None and p["boll_pct_b"] < 0.3)
+        p
+        for p in picks
+        if p["rsi"] is not None and p["rsi"] < 40 and (p["boll_pct_b"] is not None and p["boll_pct_b"] < 0.3)
     ]
     if len(pool) < 3:
-        pool = [
-            p for p in picks
-            if p["rsi"] is not None and p["rsi"] < 45
-        ]
+        pool = [p for p in picks if p["rsi"] is not None and p["rsi"] < 45]
     pool.sort(key=lambda x: x["rsi"] if x["rsi"] is not None else 100)
     return {
         "id": "oversold",
@@ -292,19 +290,18 @@ def _build_hidden_gems_package(picks: list[dict]) -> dict:
     Hidden Gems: stocks showing divergences, quiet accumulation,
     or relative strength that most traders miss.
     """
-    pool = [
-        p for p in picks
-        if (p.get("has_divergence") or p.get("quiet_accumulation")
-            or p.get("rs_outperforming"))
-    ]
+    pool = [p for p in picks if (p.get("has_divergence") or p.get("quiet_accumulation") or p.get("rs_outperforming"))]
     if not pool:
         pool = [p for p in picks if p.get("has_institutional_signal")]
-    pool.sort(key=lambda x: (
-        (2 if x.get("has_divergence") else 0) +
-        (1.5 if x.get("quiet_accumulation") else 0) +
-        (1 if x.get("rs_outperforming") else 0) +
-        x["score"] / 100
-    ), reverse=True)
+    pool.sort(
+        key=lambda x: (
+            (2 if x.get("has_divergence") else 0)
+            + (1.5 if x.get("quiet_accumulation") else 0)
+            + (1 if x.get("rs_outperforming") else 0)
+            + x["score"] / 100
+        ),
+        reverse=True,
+    )
     return {
         "id": "hidden",
         "name": "Hidden Gems",
@@ -321,9 +318,9 @@ def _build_institutional_package(picks: list[dict]) -> dict:
     suggesting smart money is positioning.
     """
     pool = [
-        p for p in picks
-        if (p.get("has_institutional_signal") or p.get("vol_anomaly_score", 0) > 30
-            or p.get("quiet_accumulation"))
+        p
+        for p in picks
+        if (p.get("has_institutional_signal") or p.get("vol_anomaly_score", 0) > 30 or p.get("quiet_accumulation"))
         and (p["rsi"] is not None and p["rsi"] < 70)
     ]
     if len(pool) < 3:
@@ -342,6 +339,7 @@ def _build_institutional_package(picks: list[dict]) -> dict:
 # ---------------------------------------------------------------------------
 # Background scanner
 # ---------------------------------------------------------------------------
+
 
 def _fetch_benchmark():
     """Fetch SPY daily closes for relative strength comparisons."""
@@ -374,10 +372,10 @@ def _run_background_scan():
         # For symbols not yet cached, create minimal fund_info stubs so we can
         # still scan them — candles are what matter for technical analysis
         from src.services.market_data import WARM_PRIORITY
+
         for sym in ALL_UNIVERSE:
             if sym not in fund_map:
-                fund_map[sym] = {"symbol": sym, "name": sym, "sector": "N/A",
-                                 "price": 1, "market_cap": 0}
+                fund_map[sym] = {"symbol": sym, "name": sym, "sector": "N/A", "price": 1, "market_cap": 0}
 
         # Prioritize: scan popular stocks first for faster initial picks
         priority_set = set(WARM_PRIORITY)
@@ -408,7 +406,7 @@ def _run_background_scan():
         BATCH = 16
         batch_num = 0
         for batch_start in range(0, len(symbols), BATCH):
-            batch_syms = symbols[batch_start:batch_start + BATCH]
+            batch_syms = symbols[batch_start : batch_start + BATCH]
             batch_num += 1
 
             def _fetch(sym):
@@ -426,6 +424,7 @@ def _run_background_scan():
                         fi = fund_map.get(sym, {})
                         if fi.get("name") == sym:
                             from src.services.market_data import _get_cached
+
                             cached = _get_cached(f"info:{sym}")
                             if cached:
                                 fi = cached
@@ -483,6 +482,7 @@ def _run_background_scan():
                 if batch_num <= 2 or batch_num % 6 == 0 or is_final:
                     try:
                         from src.services.persistence import save_scan
+
                         with _scan_lock:
                             snapshot = dict(_scan_cache)
                         save_scan("trading_scan", snapshot)
@@ -509,6 +509,7 @@ def _run_background_scan():
         # Persist results to DB so they survive restarts
         try:
             from src.services.persistence import save_scan
+
             with _scan_lock:
                 snapshot = dict(_scan_cache)
             save_scan("trading_scan", snapshot)
@@ -572,6 +573,7 @@ def start_trading_advisor():
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def get_dashboard() -> dict:
     """Return current scan results for the dashboard.
@@ -670,8 +672,14 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
                 rs_data = ta.relative_strength(closes[-n:], bench[-n:])
 
     comp = ta.composite_score(
-        rsi_vals, macd_data, closes, sma50, sma200,
-        boll["pct_b"], stoch, obv_vals,
+        rsi_vals,
+        macd_data,
+        closes,
+        sma50,
+        sma200,
+        boll["pct_b"],
+        stoch,
+        obv_vals,
         adx_data=adx_data,
         rsi_div=rsi_div,
         macd_div=macd_div,
@@ -717,8 +725,10 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
         "dates": dates,
         "price": {"close": closes, "high": highs, "low": lows, "volume": volumes},
         "indicators": {
-            "sma_50": sma50, "sma_200": sma200,
-            "ema_12": ema12, "ema_26": ema26,
+            "sma_50": sma50,
+            "sma_200": sma200,
+            "ema_12": ema12,
+            "ema_26": ema26,
             "rsi": rsi_vals,
             "macd": macd_data,
             "bollinger": boll,

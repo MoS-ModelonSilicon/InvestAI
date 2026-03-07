@@ -14,6 +14,7 @@ class TransactionType(str, enum.Enum):
 
 # ── User Model ───────────────────────────────────────────────
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -38,6 +39,7 @@ class User(Base):
 
 # ── Finance Tracker Models ───────────────────────────────────
 
+
 class Category(Base):
     __tablename__ = "categories"
 
@@ -47,9 +49,7 @@ class Category(Base):
     color = Column(String, default="#6366f1")
     type = Column(String, nullable=False, default="expense")
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "name", name="uq_category_user_name"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "name", name="uq_category_user_name"),)
 
     owner = relationship("User", back_populates="categories")
     transactions = relationship("Transaction", back_populates="category")
@@ -79,15 +79,14 @@ class Budget(Base):
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     monthly_limit = Column(Float, nullable=False)
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "category_id", name="uq_budget_user_cat"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "category_id", name="uq_budget_user_cat"),)
 
     owner = relationship("User", back_populates="budgets")
     category = relationship("Category", back_populates="budgets")
 
 
 # ── Investment Models ────────────────────────────────────────
+
 
 class RiskProfile(Base):
     __tablename__ = "risk_profiles"
@@ -118,9 +117,7 @@ class Watchlist(Base):
     name = Column(String, default="")
     added_at = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "symbol", name="uq_watchlist_user_symbol"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "symbol", name="uq_watchlist_user_symbol"),)
 
     owner = relationship("User", back_populates="watchlist_items")
 
@@ -173,9 +170,7 @@ class DcaPlan(Base):
     active = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "symbol", name="uq_dca_user_symbol"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "symbol", name="uq_dca_user_symbol"),)
 
     owner = relationship("User", back_populates="dca_plans")
 
@@ -196,8 +191,9 @@ class ScanResult(Base):
     Stores JSON-serialized scan data keyed by a string identifier
     (e.g. 'value_scan', 'trading_scan', 'market_cache').
     """
+
     __tablename__ = "scan_results"
 
     key = Column(String, primary_key=True)
-    data = Column(Text, nullable=False)          # JSON string
+    data = Column(Text, nullable=False)  # JSON string
     updated_at = Column(DateTime, default=datetime.utcnow)

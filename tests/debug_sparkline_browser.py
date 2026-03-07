@@ -1,4 +1,5 @@
 """Debug: check sparkline canvas rendering in the actual browser."""
+
 import requests
 from playwright.sync_api import sync_playwright
 
@@ -41,7 +42,8 @@ with sync_playwright() as p:
         cid = canvas.get_attribute("id")
         bbox = canvas.bounding_box()
         # Check canvas dimensions and whether Chart.js drew anything
-        info = page.evaluate("""(canvasId) => {
+        info = page.evaluate(
+            """(canvasId) => {
             const c = document.getElementById(canvasId);
             if (!c) return {exists: false};
             const ctx = c.getContext('2d');
@@ -80,7 +82,9 @@ with sync_playwright() as p:
                 parentWidth: c.parentElement.offsetWidth,
                 parentHeight: c.parentElement.offsetHeight,
             };
-        }""", cid)
+        }""",
+            cid,
+        )
         print(f"  {cid}: {info}")
 
     # Check for JS errors

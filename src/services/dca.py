@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 # ── Helpers ──────────────────────────────────────────────────
 
+
 def _avg_cost_for_symbol(holdings: list[Holding], symbol: str) -> float | None:
     """Weighted-average cost basis for a symbol across all lots."""
     total_qty = 0.0
@@ -58,6 +59,7 @@ def _next_first_of_month() -> str:
 
 
 # ── Core analysis ────────────────────────────────────────────
+
 
 def analyze_dca_opportunity(plan: DcaPlan, holdings: list[Holding]) -> dict | None:
     """
@@ -96,7 +98,9 @@ def analyze_dca_opportunity(plan: DcaPlan, holdings: list[Holding]) -> dict | No
 
     urgency = _urgency_label(drop_from_cost)
 
-    reason_parts = [f"{plan.symbol} is down {abs(drop_from_cost):.1f}% from your avg cost (${avg_cost:.2f} → ${price:.2f})"]
+    reason_parts = [
+        f"{plan.symbol} is down {abs(drop_from_cost):.1f}% from your avg cost (${avg_cost:.2f} → ${price:.2f})"
+    ]
     if drop_from_high and drop_from_high < -15:
         reason_parts.append(f"Also {abs(drop_from_high):.1f}% below 52-week high")
     reason_parts.append(f"DCA strategy: invest {applied_mult:.1f}× your normal ${plan.monthly_budget:.0f}/mo")
@@ -159,19 +163,21 @@ def build_monthly_allocation(plans: list[DcaPlan], holdings: list[Holding]) -> d
 
         shares = round(recommended / price, 4) if price > 0 else 0
 
-        allocations.append({
-            "symbol": plan.symbol,
-            "name": name,
-            "normal_amount": plan.monthly_budget,
-            "dip_detected": dip_detected,
-            "dip_pct": dip_pct,
-            "recommended_amount": recommended,
-            "multiplier_applied": multiplier_applied,
-            "reason": reason,
-            "current_price": price if price > 0 else None,
-            "avg_cost": avg_cost,
-            "shares_to_buy": shares,
-        })
+        allocations.append(
+            {
+                "symbol": plan.symbol,
+                "name": name,
+                "normal_amount": plan.monthly_budget,
+                "dip_detected": dip_detected,
+                "dip_pct": dip_pct,
+                "recommended_amount": recommended,
+                "multiplier_applied": multiplier_applied,
+                "reason": reason,
+                "current_price": price if price > 0 else None,
+                "avg_cost": avg_cost,
+                "shares_to_buy": shares,
+            }
+        )
 
         total_normal += plan.monthly_budget
         total_recommended += recommended
@@ -214,12 +220,7 @@ def build_monthly_allocation(plans: list[DcaPlan], holdings: list[Holding]) -> d
 
 def get_dca_dashboard(db: Session, user_id: int) -> dict:
     """Full DCA dashboard: plans, opportunities, monthly allocation."""
-    plans = (
-        db.query(DcaPlan)
-        .filter(DcaPlan.user_id == user_id)
-        .order_by(DcaPlan.created_at.desc())
-        .all()
-    )
+    plans = db.query(DcaPlan).filter(DcaPlan.user_id == user_id).order_by(DcaPlan.created_at.desc()).all()
     holdings = db.query(Holding).filter(Holding.user_id == user_id).all()
 
     active_plans = [p for p in plans if p.active]
@@ -243,18 +244,20 @@ def get_dca_dashboard(db: Session, user_id: int) -> dict:
 
     plan_dicts = []
     for p in plans:
-        plan_dicts.append({
-            "id": p.id,
-            "symbol": p.symbol,
-            "name": p.name,
-            "monthly_budget": p.monthly_budget,
-            "dip_threshold": p.dip_threshold,
-            "dip_multiplier": p.dip_multiplier,
-            "is_long_term": bool(p.is_long_term),
-            "notes": p.notes,
-            "active": bool(p.active),
-            "created_at": p.created_at.isoformat() if p.created_at else None,
-        })
+        plan_dicts.append(
+            {
+                "id": p.id,
+                "symbol": p.symbol,
+                "name": p.name,
+                "monthly_budget": p.monthly_budget,
+                "dip_threshold": p.dip_threshold,
+                "dip_multiplier": p.dip_multiplier,
+                "is_long_term": bool(p.is_long_term),
+                "notes": p.notes,
+                "active": bool(p.active),
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+            }
+        )
 
     return {
         "plans": plan_dicts,
@@ -271,18 +274,11 @@ def suggest_monthly_budget(db: Session, user_id: int) -> dict:
     risk profile and current portfolio.
     """
     profile = (
-        db.query(RiskProfile)
-        .filter(RiskProfile.user_id == user_id)
-        .order_by(RiskProfile.created_at.desc())
-        .first()
+        db.query(RiskProfile).filter(RiskProfile.user_id == user_id).order_by(RiskProfile.created_at.desc()).first()
     )
 
     holdings = db.query(Holding).filter(Holding.user_id == user_id).all()
-    plans = (
-        db.query(DcaPlan)
-        .filter(DcaPlan.user_id == user_id, DcaPlan.active == 1)
-        .all()
-    )
+    plans = db.query(DcaPlan).filter(DcaPlan.user_id == user_id, DcaPlan.active == 1).all()
 
     current_dca_total = sum(p.monthly_budget for p in plans)
 
@@ -329,9 +325,7 @@ def suggest_monthly_budget(db: Session, user_id: int) -> dict:
         stock_pct = 60
         etf_pct = 30
         cash_pct = 10
-        suggestions.append(
-            f"Moderate strategy: {stock_pct}% stocks, {etf_pct}% ETFs, {cash_pct}% dip reserve."
-        )
+        suggestions.append(f"Moderate strategy: {stock_pct}% stocks, {etf_pct}% ETFs, {cash_pct}% dip reserve.")
 
     # Position sizing rule
     max_per_stock = round(monthly_investment * 0.25, 2)
