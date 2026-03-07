@@ -38,6 +38,13 @@ Use this checklist when reviewing any PR or code change in InvestAI.
 - [ ] Results cached appropriately (15-min for full info, 90s for live quotes)
 - [ ] Graceful degradation when APIs are down
 
+## Caching
+
+- [ ] Cache keys use **normalized types** (e.g., `int(amount)` not raw float from FastAPI)
+- [ ] If a function parameter only affects the cache key (not computation), scan once + replicate keys
+- [ ] Pre-warming covers ALL parameter permutations users can select, not just defaults
+- [ ] Cache key format is documented in the function docstring
+
 ## Frontend
 
 - [ ] New pages added as hidden `<section>` in `index.html`

@@ -12,13 +12,31 @@
 
 1. Ensure Intel proxy is configured: `git config --global http.proxy http://proxy-dmz.intel.com:911`
 2. Push to `master` branch on GitHub: `git push origin master`
-3. Render auto-deploys from `master`
-3. Watch build logs in Render dashboard
-4. First request after deploy triggers:
+3. **CI Gate runs automatically** — smoke tests + lint must pass
+4. If CI passes: Render deploys (auto-deploy or via `RENDER_DEPLOY_HOOK`)
+5. Watch build logs in Render dashboard
+6. First request after deploy triggers:
    - Database auto-migration (new tables/columns)
    - Default admin seed (from `ADMIN_EMAIL`/`ADMIN_PASSWORD`)
    - Cache restore from PostgreSQL (`persistence.py`)
-   - Background warmer startup (15-min cycle)
+   - Background warmer startup (refreshes every 15 min)
+   - **Smart advisor warm-up**: scan once → replicate to 4 period keys → pre-compute 12 risk×period analyses (~2-3 min)
+
+## CI Pipeline (`.github/workflows/pr-tests.yml`)
+
+| Job | Blocking? | Purpose |
+|-----|-----------|--------|
+| `smoke-tests` | **YES** | API smoke tests — if these fail, deploy is skipped |
+| `lint` | **YES** | Ruff lint + import verification |
+| `type-check` | No | Mypy advisory only |
+| `deploy` | — | Triggers Render deploy hook (only after smoke-tests + lint pass) |
+
+**To fully gate deploys on CI:**
+1. In Render dashboard → Settings → disable "Auto-Deploy"
+2. Copy Deploy Hook URL from Render → Settings
+3. Add as GitHub secret: `RENDER_DEPLOY_HOOK`
+
+**Key lesson**: Never use `continue-on-error: true` on smoke-tests — it makes the CI gate advisory (failures hidden as green). The `type-check` and `ruff format` jobs use it intentionally because they're advisory.
 
 ## Post-Deploy Verification
 
