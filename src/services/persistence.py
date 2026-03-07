@@ -133,6 +133,7 @@ def delete_scan(key: str) -> bool:
 # We don't persist every cache entry — just the expensive/slow ones.
 PERSIST_PREFIXES = (
     "info:", "advisor:", "news:", "company_dna:",
+    "quote:", "live_quotes:", "sparklines:",
 )
 
 

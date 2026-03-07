@@ -77,23 +77,49 @@ def _run_news_refresh() -> bool:
 
 
 def _run_smart_advisor_scan() -> bool:
-    """Pre-compute the smart advisor scan_and_score + full analysis.
+    """Pre-compute the smart advisor scan + full analysis for ALL combos.
 
-    Runs scan_and_score first (which persists to DB), then builds the
-    full analysis with default params so 'Run Analysis' is instant.
+    Scans all 4 periods, then builds full analysis for every risk×period
+    combo so "Run Analysis" is instant regardless of what the user picks.
+
+    Combinations: 3 risk profiles × 4 periods = 12 full analyses.
+    The scan_and_score per period is the heavy part (40-80 candle fetches).
+    Full analyses reuse the cached scan, so they're fast.
     """
+    PERIODS = ["1y", "6m", "3m", "1m"]
+    RISKS = ["balanced", "conservative", "aggressive"]
+    DEFAULT_AMOUNT = 10000
+
     try:
         from src.services.smart_advisor import scan_and_score, run_full_analysis
-        logger.info("Scheduler: starting smart advisor scan")
-        rankings = scan_and_score("1y")
-        logger.info("Scheduler: smart advisor scan complete (%d stocks)", len(rankings) if rankings else 0)
 
-        # Also pre-compute the full analysis with default params
-        # so clicking "Run Analysis" is instant
-        if rankings:
-            logger.info("Scheduler: pre-computing full analysis (default params)")
-            run_full_analysis(amount=10000, risk="balanced", period="1y")
-            logger.info("Scheduler: full analysis pre-computed")
+        # Phase 1: Scan all periods (heavy — fetches candles)
+        for period in PERIODS:
+            logger.info("Scheduler: smart advisor scan period=%s", period)
+            rankings = scan_and_score(period)
+            logger.info(
+                "Scheduler: smart advisor scan period=%s done (%d stocks)",
+                period, len(rankings) if rankings else 0,
+            )
+            # Small pause between periods to avoid Finnhub rate-limit spikes
+            if not _stop_event.wait(timeout=5):
+                pass  # continue
+            else:
+                return False  # shutting down
+
+        # Phase 2: Pre-compute full analysis for every risk × period combo
+        for period in PERIODS:
+            for risk in RISKS:
+                logger.info(
+                    "Scheduler: pre-computing full analysis %s/%s/%s",
+                    DEFAULT_AMOUNT, risk, period,
+                )
+                run_full_analysis(amount=DEFAULT_AMOUNT, risk=risk, period=period)
+
+        logger.info(
+            "Scheduler: smart advisor warm-up complete — %d scans, %d analyses",
+            len(PERIODS), len(PERIODS) * len(RISKS),
+        )
         return True
     except Exception:
         logger.exception("Scheduler: smart advisor scan failed")

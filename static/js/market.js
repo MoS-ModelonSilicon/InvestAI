@@ -3,6 +3,29 @@ let marketInterval = null;
 let sparkCharts = {};
 let previousPrices = {};
 
+// ── localStorage offline-first cache for instant market rendering ──
+const MARKET_CACHE_KEY = "investai_market_home";
+const MARKET_CACHE_MAX_AGE = 30 * 60 * 1000; // 30 min — stale but still useful
+
+function saveMarketCache(data) {
+    try {
+        localStorage.setItem(MARKET_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+    } catch (_) { /* quota exceeded — ignore */ }
+}
+
+function loadMarketCache() {
+    try {
+        const raw = localStorage.getItem(MARKET_CACHE_KEY);
+        if (!raw) return null;
+        const { ts, data } = JSON.parse(raw);
+        if (Date.now() - ts > MARKET_CACHE_MAX_AGE) {
+            localStorage.removeItem(MARKET_CACHE_KEY);
+            return null;
+        }
+        return data;
+    } catch (_) { return null; }
+}
+
 async function loadTicker() {
     try {
         const data = await api.get("/api/market/ticker");
@@ -152,16 +175,39 @@ async function loadHome() {
         const data = await api.get("/api/market/home");
         renderTicker(data.ticker);
         renderFeaturedStocks(data.featured);
+        saveMarketCache(data);
+        // Remove stale indicator once fresh data arrives
+        document.querySelectorAll(".market-stale-badge").forEach(el => el.remove());
     } catch (e) {
         loadTicker();
         loadFeaturedStocks();
     }
 }
 
+function _renderCachedMarket() {
+    const cached = loadMarketCache();
+    if (!cached) return false;
+    try {
+        if (cached.ticker) renderTicker(cached.ticker);
+        if (cached.featured) renderFeaturedStocks(cached.featured);
+        // Add a subtle "Updating..." badge so users know fresh data is coming
+        const grid = document.getElementById("market-grid");
+        if (grid && !grid.querySelector(".market-stale-badge")) {
+            const badge = document.createElement("div");
+            badge.className = "market-stale-badge";
+            badge.textContent = "Updating…";
+            grid.prepend(badge);
+        }
+        return true;
+    } catch (_) { return false; }
+}
+
 function startMarketRefresh() {
     if (tickerInterval) clearInterval(tickerInterval);
     if (marketInterval) clearInterval(marketInterval);
 
+    // Instant render from localStorage cache, then fetch fresh in background
+    _renderCachedMarket();
     loadHome();
 
     marketInterval = setInterval(loadHome, 120000);
