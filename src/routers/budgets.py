@@ -39,7 +39,7 @@ def budget_status(db: Session = Depends(get_db), user: User = Depends(get_curren
         .group_by(Transaction.category_id)
         .all()
     )
-    spent_map = {cat_id: total for cat_id, total in spent_rows}
+    spent_map = dict(spent_rows)
 
     result = []
     for b in budgets:

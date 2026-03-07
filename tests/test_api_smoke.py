@@ -880,7 +880,6 @@ class TestBackgroundScheduler:
     def test_run_full_scan_sets_results(self):
         """trading_advisor.run_full_scan() should populate the cache."""
         from src.services import trading_advisor as ta
-        import time as _time
 
         # Reset cache to empty state
         with ta._scan_lock:
@@ -1164,14 +1163,14 @@ class TestSmartAdvisorCacheKey:
         """Verify the cache key always uses int, not float."""
         # The function should convert amount to int before forming the key
         # We can verify by checking that 10000.0 and 10000 produce the same key
-        key_int = f"advisor:full:{int(10000)}:balanced:1y"
+        key_int = f"advisor:full:{10000}:balanced:1y"
         key_float = f"advisor:full:{int(10000.0)}:balanced:1y"
         assert key_int == key_float == "advisor:full:10000:balanced:1y"
 
     def test_various_float_amounts_normalize(self):
         """Various float amounts should all normalize to int cache keys."""
         for amount in [1000.0, 5000.0, 50000.0, 100000.0]:
-            assert int(amount) == int(int(amount)), (
+            assert int(amount) == int(amount), (
                 f"int({amount}) should be idempotent"
             )
             # The cache key should not contain a decimal point
