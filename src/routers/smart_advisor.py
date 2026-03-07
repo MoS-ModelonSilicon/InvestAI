@@ -2,8 +2,30 @@ from fastapi import APIRouter, HTTPException
 
 from src.services.smart_advisor import run_full_analysis, analyze_single_stock
 from src.services.company_dna import get_company_dna
+from src.services.market_data import _get_cached
 
 router = APIRouter(prefix="/api/advisor", tags=["smart-advisor"])
+
+
+@router.get("/debug")
+def advisor_debug():
+    """Show which advisor combos are cached (for diagnosing scheduler issues)."""
+    PERIODS = ["1y", "6m", "3m", "1m"]
+    RISKS = ["balanced", "conservative", "aggressive"]
+    status: dict = {"scans": {}, "combos": {}}
+    for p in PERIODS:
+        val = _get_cached(f"advisor:scan:{p}")
+        status["scans"][p] = len(val) if isinstance(val, list) else None
+    for p in PERIODS:
+        for r in RISKS:
+            key = f"advisor:full:10000:{r}:{p}"
+            val = _get_cached(key)
+            has_rankings = bool(val.get("rankings")) if isinstance(val, dict) else False
+            status["combos"][f"{r}/{p}"] = {
+                "cached": isinstance(val, dict),
+                "has_rankings": has_rankings,
+            }
+    return status
 
 
 @router.get("/analyze")

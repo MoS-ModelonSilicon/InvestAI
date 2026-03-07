@@ -802,7 +802,12 @@ def _scale_result_for_amount(base_result: dict, base_amount: int, target_amount:
 
 
 def run_full_analysis(
-    amount: float = 10000, risk: str = "balanced", period: str = "1y", *, compute_if_missing: bool = True
+    amount: float = 10000,
+    risk: str = "balanced",
+    period: str = "1y",
+    *,
+    compute_if_missing: bool = True,
+    precomputed_rankings: list[dict] | None = None,
 ) -> dict | None:
     """Run the complete advisor pipeline. Cached for 20 min.
 
@@ -811,6 +816,9 @@ def run_full_analysis(
             of running the expensive scan.  The API router passes False so
             requests finish instantly; the background scheduler passes True
             (default) and does the heavy lifting.
+        precomputed_rankings: If provided, skip scan_and_score() and use these
+            rankings directly.  The scheduler passes pre-fetched rankings so
+            we never re-scan or depend on a possibly-evicted cache entry.
     """
     # Normalize amount to int so cache keys match whether called with
     # int (scheduler) or float (FastAPI query param).
@@ -835,28 +843,44 @@ def run_full_analysis(
         logger.info("run_full_analysis: cache miss for %s (compute_if_missing=False) — returning None", cache_key)
         return None
 
-    rankings = scan_and_score(period)
-    portfolios = build_portfolios(rankings, amount)
+    rankings = precomputed_rankings if precomputed_rankings else scan_and_score(period)
+    if not rankings:
+        logger.warning("run_full_analysis: no rankings available for %s — returning None", cache_key)
+        return None
 
-    selected_key = risk if risk in portfolios else "balanced"
-    selected_portfolio = portfolios[selected_key]
+    try:
+        portfolios = build_portfolios(rankings, amount)
 
-    bt = {}
-    if selected_portfolio.get("holdings"):
-        try:
-            bt = backtest_portfolio(selected_portfolio["holdings"], period)
-        except Exception:
-            logger.exception("backtest_portfolio failed for %s/%s — caching result without backtest", risk, period)
+        selected_key = risk if risk in portfolios else "balanced"
+        selected_portfolio = portfolios[selected_key]
 
-    report = generate_report(rankings, portfolios)
+        bt = {}
+        if selected_portfolio.get("holdings"):
+            try:
+                bt = backtest_portfolio(selected_portfolio["holdings"], period)
+            except Exception:
+                logger.exception("backtest_portfolio failed for %s/%s — caching result without backtest", risk, period)
 
-    result = {
-        "rankings": rankings[:30],
-        "portfolios": portfolios,
-        "backtest": bt,
-        "selected_risk": selected_key,
-        "advisor_report": report,
-    }
+        report = generate_report(rankings, portfolios)
+
+        result = {
+            "rankings": rankings[:30],
+            "portfolios": portfolios,
+            "backtest": bt,
+            "selected_risk": selected_key,
+            "advisor_report": report,
+        }
+    except Exception:
+        # Safety net: even if portfolio build or report generation fails,
+        # cache a minimal result with rankings so the endpoint doesn't 503.
+        logger.exception("run_full_analysis: unexpected error for %s — caching minimal result", cache_key)
+        result = {
+            "rankings": rankings[:30],
+            "portfolios": {},
+            "backtest": {},
+            "selected_risk": risk,
+            "advisor_report": {},
+        }
 
     _set_cache(cache_key, result)
 

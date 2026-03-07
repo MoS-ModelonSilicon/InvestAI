@@ -122,6 +122,8 @@ def _run_smart_advisor_scan() -> bool:
         logger.info("Scheduler: replicated scan to %d period keys", len(PERIODS))
 
         # Phase 2: Pre-compute full analysis for every risk × period combo
+        # Pass pre-fetched rankings directly so we never depend on a
+        # possibly-evicted scan-cache entry.
         computed = 0
         failed = 0
         for period in PERIODS:
@@ -133,7 +135,12 @@ def _run_smart_advisor_scan() -> bool:
                         risk,
                         period,
                     )
-                    result = run_full_analysis(amount=DEFAULT_AMOUNT, risk=risk, period=period)
+                    result = run_full_analysis(
+                        amount=DEFAULT_AMOUNT,
+                        risk=risk,
+                        period=period,
+                        precomputed_rankings=rankings,
+                    )
                     if result and result.get("rankings"):
                         computed += 1
                     else:

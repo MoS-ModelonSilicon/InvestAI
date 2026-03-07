@@ -493,7 +493,8 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
         market_cap = mcap_millions * 1_000_000
 
         result = {
-            "symbol": profile.get("ticker", symbol),
+            "symbol": symbol,  # Always use the requested symbol, not Finnhub's ticker
+                               # which may include exchange suffixes (e.g. RY.TO, TTE.PA)
             "name": profile.get("name", symbol),
             "sector": profile.get("finnhubIndustry", "N/A"),
             "industry": profile.get("finnhubIndustry", "N/A"),
