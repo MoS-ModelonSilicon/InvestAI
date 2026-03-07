@@ -2,6 +2,8 @@
 
 Step-by-step debugging process for InvestAI issues.
 
+> **For the full bug lifecycle** (reproduce → fix → validate → deploy → verify live → close), see `.claude/skills/bug-lifecycle.md`. This file covers the **diagnosis** portion in depth.
+
 ## Step 1: Classify the Bug
 
 | Symptom | Likely Area |
@@ -100,6 +102,14 @@ curl -v http://localhost:8000/api/<fixed-endpoint>
 - Add test case for the bug
 - If it's a gotcha, add it to the relevant local CLAUDE.md
 - If it's a pattern, add to `.claude/skills/code-review.md`
+
+## Step 7: Deploy, Verify CI & Live Site
+
+Follow the mandatory gates in `.claude/skills/bug-lifecycle.md` Phase 6-8:
+1. Commit & push
+2. Verify CI green on GitHub Actions
+3. Verify the fix works on the live site
+4. **A bug is NOT closed until verified on production**
 
 ## Real-World Debug Case Studies
 

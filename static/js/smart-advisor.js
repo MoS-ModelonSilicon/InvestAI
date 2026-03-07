@@ -5,6 +5,31 @@ let _advDetailChart = null;
 let _advLastHoldings = [];
 let _advLastData = null;    // cached analysis to avoid re-fetch on tab switch
 
+// ── localStorage offline-first cache for advisor results ──
+const _ADV_CACHE_KEY = "investai_advisor_cache";
+const _ADV_CACHE_TTL = 20 * 60 * 1000; // 20 min (matches server cache TTL)
+
+function _advCacheSave(amount, risk, period, data) {
+    try {
+        const key = `${amount}:${risk}:${period}`;
+        const raw = localStorage.getItem(_ADV_CACHE_KEY);
+        const store = raw ? JSON.parse(raw) : {};
+        store[key] = { ts: Date.now(), data };
+        localStorage.setItem(_ADV_CACHE_KEY, JSON.stringify(store));
+    } catch (_) { /* quota exceeded — ignore */ }
+}
+
+function _advCacheLoad(amount, risk, period) {
+    try {
+        const raw = localStorage.getItem(_ADV_CACHE_KEY);
+        if (!raw) return null;
+        const store = JSON.parse(raw);
+        const entry = store[`${amount}:${risk}:${period}`];
+        if (entry && Date.now() - entry.ts < _ADV_CACHE_TTL) return entry.data;
+    } catch (_) {}
+    return null;
+}
+
 function setAdvRisk(r) {
     _advRisk = r;
     document.querySelectorAll(".adv-risk-btn").forEach(b => {
@@ -21,21 +46,72 @@ function setAdvPeriod(p) {
 
 async function runAdvisor() {
     const amount = document.getElementById("adv-amount").value || 10000;
-    document.getElementById("adv-loading").style.display = "";
-    document.getElementById("adv-results").style.display = "none";
-    document.getElementById("adv-error").style.display = "none";
+    const loadEl = document.getElementById("adv-loading");
+    const resEl = document.getElementById("adv-results");
+    const errEl = document.getElementById("adv-error");
 
-    try {
-        const data = await api.get(`/api/advisor/analyze?amount=${amount}&risk=${_advRisk}&period=${_advPeriod}`);
-        _advLastData = data;  // cache for tab switching
-        document.getElementById("adv-loading").style.display = "none";
-        document.getElementById("adv-results").style.display = "";
-        renderAdvisorResults(data);
-    } catch (e) {
-        document.getElementById("adv-loading").style.display = "none";
-        document.getElementById("adv-error").style.display = "";
-        document.getElementById("adv-error").innerHTML = `<p style="color:var(--red)">Analysis failed. Market data may still be loading — try again in a minute.</p>`;
+    loadEl.style.display = "";
+    resEl.style.display = "none";
+    errEl.style.display = "none";
+
+    // 1. Instant render from localStorage (stale-while-revalidate)
+    const localData = _advCacheLoad(amount, _advRisk, _advPeriod);
+    if (localData) {
+        _advLastData = localData;
+        loadEl.style.display = "none";
+        resEl.style.display = "";
+        renderAdvisorResults(localData);
     }
+
+    // 2. Fetch fresh from server (with auto-retry on 503)
+    const url = `/api/advisor/analyze?amount=${amount}&risk=${_advRisk}&period=${_advPeriod}`;
+    const MAX_RETRIES = 6;
+    const RETRY_DELAY = 10_000; // 10s between retries
+    let lastErr = null;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        try {
+            const res = await fetch(url);
+            if (res.status === 503) {
+                // Server says cache isn't ready yet — wait and retry
+                lastErr = "Server is still computing analysis...";
+                if (!localData) {
+                    loadEl.style.display = "";
+                    loadEl.innerHTML = `<div class="loading-spinner"></div><p>Analysis is being prepared — retrying (${attempt + 1}/${MAX_RETRIES})...</p>`;
+                }
+                await new Promise(r => setTimeout(r, RETRY_DELAY));
+                continue;
+            }
+            if (res.status === 401) {
+                window.location.href = "/login";
+                return;
+            }
+            if (!res.ok) throw new Error(await res.text());
+
+            const data = await res.json();
+            _advLastData = data;
+            _advCacheSave(amount, _advRisk, _advPeriod, data);
+            loadEl.style.display = "none";
+            resEl.style.display = "";
+            renderAdvisorResults(data);
+            return; // success
+        } catch (e) {
+            lastErr = e.message || "Network error";
+            // On network errors, retry too
+            if (attempt < MAX_RETRIES - 1) {
+                await new Promise(r => setTimeout(r, RETRY_DELAY));
+                continue;
+            }
+        }
+    }
+
+    // All retries exhausted
+    if (!localData) {
+        loadEl.style.display = "none";
+        errEl.style.display = "";
+        errEl.innerHTML = `<p style="color:var(--red)">Analysis unavailable — server may still be warming up. Try again in a minute.</p>`;
+    }
+    // If we had localData, we already rendered it — just leave it visible
 }
 
 function loadSmartAdvisor() { /* page shown, no auto-load */ }

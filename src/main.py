@@ -146,6 +146,26 @@ app.include_router(dca.router)
 app.include_router(admin.router)
 
 
+# ── Health / version check (public, no auth) ─────────────────
+import subprocess as _sp
+try:
+    _GIT_SHA = _sp.check_output(["git", "rev-parse", "--short", "HEAD"], timeout=3, text=True).strip()
+except Exception:
+    _GIT_SHA = "unknown"
+
+
+@app.get("/health")
+def health_check():
+    """Public health endpoint — returns git commit for deploy verification."""
+    from src.services.market_data import _warm_done, _cache
+    return {
+        "status": "ok",
+        "version": _GIT_SHA,
+        "cache_ready": _warm_done.is_set(),
+        "cache_entries": len(_cache),
+    }
+
+
 @app.get("/")
 def serve_frontend():
     return FileResponse("static/index.html")

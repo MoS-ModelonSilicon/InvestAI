@@ -155,7 +155,8 @@ git push origin master
 
 ## Key Context Files
 
-- `.claude/skills/` — Reusable workflows (debugging, code review, new features)
+- `.claude/skills/` — Reusable workflows (debugging, code review, new features, bug lifecycle)
+- `.claude/skills/bug-lifecycle.md` — **Mandatory 8-phase bug flow**: report → reproduce → diagnose → fix → validate → deploy → verify live → close
 - `docs/architecture.md` — Full system architecture
 - `docs/adr/` — Engineering decision records
 - `src/CLAUDE.md` — Backend gotchas
