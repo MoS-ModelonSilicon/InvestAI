@@ -3,7 +3,7 @@ import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Optional
+from typing import Any, Optional
 
 from src.services import data_provider as dp
 
@@ -16,9 +16,9 @@ try:
 except Exception:
     pass  # some platforms don't support stack_size
 
-_cache: dict[str, tuple[float, dict]] = {}
+_cache: dict[str, tuple[float, Any]] = {}
 _cache_lock = threading.Lock()
-CACHE_TTL = 900  # 15 min
+CACHE_TTL = 1200  # 20 min — overlap with 15-min scheduler so cache never goes cold
 CACHE_MAX_ENTRIES = 600 if not _LOW_MEMORY else 300  # cap to prevent unbounded growth
 
 _warming = False
@@ -153,7 +153,7 @@ WARM_PRIORITY = [
 ]
 
 
-def _get_cached(key: str) -> Optional[dict]:
+def _get_cached(key: str) -> Any:
     with _cache_lock:
         if key in _cache:
             ts, data = _cache[key]
@@ -162,7 +162,7 @@ def _get_cached(key: str) -> Optional[dict]:
     return None
 
 
-def _set_cache(key: str, data):
+def _set_cache(key: str, data: Any) -> None:
     with _cache_lock:
         _cache[key] = (time.time(), data)
         # Evict expired entries when cache grows too large
@@ -196,7 +196,9 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict]:
             return None
 
         profile = dp.get_profile(symbol) or {}
-        metrics = dp.get_metrics(symbol) if full else {}
+        metrics: dict = dp.get_metrics(symbol) if full else {}
+        if metrics is None:
+            metrics = {}
 
         price = quote["c"]
         prev_close = quote.get("pc", price)
@@ -301,19 +303,21 @@ def fetch_batch(symbols: list[str], cached_only: bool = False) -> list[dict]:
     return cached_results + fresh
 
 
-def _pct(val) -> Optional[float]:
+def _pct(val: object) -> Optional[float]:
     if val is None:
         return None
-    return round(val * 100, 2) if abs(val) < 10 else round(val, 2)
+    v = float(val)  # type: ignore[arg-type]
+    return round(v * 100, 2) if abs(v) < 10 else round(v, 2)
 
 
-def _pct_safe(val) -> Optional[float]:
+def _pct_safe(val: object) -> Optional[float]:
     """Convert to percentage, guarding against values already in % form."""
     if val is None:
         return None
-    if abs(val) > 1:
-        return round(val, 2)
-    return round(val * 100, 2)
+    v = float(val)  # type: ignore[arg-type]
+    if abs(v) > 1:
+        return round(v, 2)
+    return round(v * 100, 2)
 
 
 def _classify_asset(info: dict) -> str:

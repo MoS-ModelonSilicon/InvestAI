@@ -143,7 +143,8 @@ def load_home_snapshot() -> Optional[dict]:
     Returns the full {ticker, featured} dict, or None.
     Used as an instant fallback when the in-memory cache is cold.
     """
-    return load_scan("market_home_snapshot")
+    result = load_scan("market_home_snapshot")
+    return result if isinstance(result, dict) else None
 
 
 def save_home_snapshot(data: dict) -> bool:
@@ -276,30 +277,54 @@ def restore_all_caches():
     try:
         restored = restore_market_cache()
         if restored:
-            from src.services.market_data import _cache, _cache_lock
+            from src.services.market_data import _cache, _cache_lock  # type: ignore[assignment]
             with _cache_lock:
                 _cache.update(restored)
             logger.info("Restored %d market data cache entries", len(restored))
     except Exception:
         logger.exception("Failed to restore market data cache")
 
-    # 5. Restore smart advisor scan + full analysis into market_data._cache
+    # 5. Restore ALL smart advisor scan + full analysis combos into market_data._cache
     try:
-        from src.services.market_data import _cache, _cache_lock
-        # Restore scan results (e.g. advisor:scan:1y)
-        scan_data = load_scan("smart_advisor_scan:1y")
-        if scan_data and isinstance(scan_data, list) and len(scan_data) > 0:
-            with _cache_lock:
-                _cache["advisor:scan:1y"] = (time.time(), scan_data)
-            logger.info("Restored smart advisor scan: %d stocks", len(scan_data))
+        from src.services.market_data import _cache, _cache_lock  # type: ignore[assignment]
+        PERIODS = ["1y", "6m", "3m", "1m"]
+        RISKS = ["balanced", "conservative", "aggressive"]
+        DEFAULT_AMOUNT = 10000
+        now = time.time()
 
-        # Restore full analysis for default params (advisor:full:10000:balanced:1y)
-        full_data = load_scan("smart_advisor_full:10000:balanced:1y")
-        if full_data and isinstance(full_data, dict) and full_data.get("rankings"):
-            with _cache_lock:
-                _cache["advisor:full:10000:balanced:1y"] = (time.time(), full_data)
-            logger.info("Restored smart advisor full analysis: %d rankings",
-                        len(full_data["rankings"]))
+        # Restore scan results for all 4 periods
+        scans_restored = 0
+        for period in PERIODS:
+            scan_data = load_scan(f"smart_advisor_scan:{period}")
+            if scan_data and isinstance(scan_data, list) and len(scan_data) > 0:
+                with _cache_lock:
+                    _cache[f"advisor:scan:{period}"] = (now, scan_data)
+                scans_restored += 1
+        if scans_restored:
+            logger.info("Restored %d smart advisor scan period keys", scans_restored)
+
+        # If we only got 1y, replicate to other periods (scan is period-independent)
+        if scans_restored == 1:
+            scan_1y = load_scan("smart_advisor_scan:1y")
+            if scan_1y and isinstance(scan_1y, list):
+                with _cache_lock:
+                    for period in PERIODS:
+                        _cache[f"advisor:scan:{period}"] = (now, scan_1y)
+                logger.info("Replicated 1y scan to all period keys")
+
+        # Restore full analysis for ALL 12 risk x period combos
+        analyses_restored = 0
+        for period in PERIODS:
+            for risk in RISKS:
+                db_key = f"smart_advisor_full:{DEFAULT_AMOUNT}:{risk}:{period}"
+                cache_key = f"advisor:full:{DEFAULT_AMOUNT}:{risk}:{period}"
+                full_data = load_scan(db_key)
+                if full_data and isinstance(full_data, dict) and full_data.get("rankings"):
+                    with _cache_lock:
+                        _cache[cache_key] = (now, full_data)
+                    analyses_restored += 1
+        if analyses_restored:
+            logger.info("Restored %d smart advisor full analysis combos", analyses_restored)
     except Exception:
         logger.exception("Failed to restore smart advisor cache")
 

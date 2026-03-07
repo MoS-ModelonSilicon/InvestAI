@@ -544,24 +544,36 @@ def backtest_portfolio(holdings: list[dict], period: str = "1y") -> dict:
     if total_invested <= 0:
         return {"error": "No capital allocated"}
 
+    # Fetch candles for all unique symbols IN PARALLEL (was sequential)
+    unique_symbols = list({h["symbol"] for h in holdings})
+
+    def _fetch_holding_candles(sym):
+        try:
+            return sym, dp.get_candles(sym, "D", from_ts, to_ts)
+        except Exception:
+            return sym, None
+
+    candle_map: dict[str, dict] = {}
+    with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
+        futures = {pool.submit(_fetch_holding_candles, s): s for s in unique_symbols}
+        for fut in as_completed(futures):
+            sym, candles = fut.result()
+            if candles and candles.get("c"):
+                candle_map[sym] = candles
+
     symbol_aligned: dict[str, list] = {}
-    for h in holdings:
-        sym = h["symbol"]
-        if sym in symbol_aligned:
-            continue
-        candles = dp.get_candles(sym, "D", from_ts, to_ts)
-        if candles and candles.get("c"):
-            lookup = dict(zip(
-                [datetime.fromtimestamp(t).strftime("%Y-%m-%d") for t in candles["t"]],
-                candles["c"],
-            ))
-            aligned = []
-            last_known = None
-            for d in bench_dates:
-                if d in lookup:
-                    last_known = lookup[d]
-                aligned.append(last_known)
-            symbol_aligned[sym] = aligned
+    for sym, candles in candle_map.items():
+        lookup = dict(zip(
+            [datetime.fromtimestamp(t).strftime("%Y-%m-%d") for t in candles["t"]],
+            candles["c"],
+        ))
+        aligned = []
+        last_known = None
+        for d in bench_dates:
+            if d in lookup:
+                last_known = lookup[d]
+            aligned.append(last_known)
+        symbol_aligned[sym] = aligned
 
     bt_holdings = []
     cash = 0.0
@@ -725,9 +737,49 @@ def generate_report(rankings: list[dict], portfolios: dict) -> dict:
 # Public API: full analysis
 # ---------------------------------------------------------------------------
 
+DEFAULT_AMOUNT = 10000
+
+
+def _scale_result_for_amount(base_result: dict, base_amount: int,
+                              target_amount: int) -> dict:
+    """Scale a pre-computed analysis result to a different investment amount.
+
+    Portfolio allocations are percentage-based, so we only need to scale
+    the dollar values (invested, shares) — rankings, backtest percentages,
+    and the report are amount-independent.
+    """
+    if base_amount == target_amount or base_amount <= 0:
+        return base_result
+
+    import copy
+    result = copy.deepcopy(base_result)
+    ratio = target_amount / base_amount
+
+    for _tier_key, portfolio in result.get("portfolios", {}).items():
+        if not isinstance(portfolio, dict):
+            continue
+        for h in portfolio.get("holdings", []):
+            h["invested"] = round(h["invested"] * ratio, 2)
+            h["shares"] = round(h["shares"] * ratio, 4)
+
+    bt = result.get("backtest", {})
+    if bt and not bt.get("error"):
+        if bt.get("portfolio"):
+            bt["portfolio"] = [round(v * ratio, 2) for v in bt["portfolio"]]
+        if bt.get("benchmark"):
+            bt["benchmark"] = [round(v * ratio, 2) for v in bt["benchmark"]]
+        stats = bt.get("stats", {})
+        if "final_value" in stats:
+            stats["final_value"] = round(stats["final_value"] * ratio, 2)
+        if "invested" in stats:
+            stats["invested"] = round(stats["invested"] * ratio, 2)
+
+    return result
+
+
 def run_full_analysis(amount: float = 10000, risk: str = "balanced",
                       period: str = "1y") -> dict:
-    """Run the complete advisor pipeline. Cached for 15 min."""
+    """Run the complete advisor pipeline. Cached for 20 min."""
     # Normalize amount to int so cache keys match whether called with
     # int (scheduler) or float (FastAPI query param).
     amount = int(amount)
@@ -735,6 +787,16 @@ def run_full_analysis(amount: float = 10000, risk: str = "balanced",
     cached = _get_cached(cache_key)
     if cached:
         return cached
+
+    # If the user requested a non-default amount, try to scale from
+    # the pre-computed default-amount result (instant, no API calls)
+    if amount != DEFAULT_AMOUNT:
+        base_key = f"advisor:full:{DEFAULT_AMOUNT}:{risk}:{period}"
+        base_cached = _get_cached(base_key)
+        if base_cached:
+            scaled = _scale_result_for_amount(base_cached, DEFAULT_AMOUNT, amount)
+            _set_cache(cache_key, scaled)
+            return scaled
 
     rankings = scan_and_score(period)
     portfolios = build_portfolios(rankings, amount)
