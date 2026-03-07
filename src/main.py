@@ -191,11 +191,19 @@ def health_check():
     """Public health endpoint — returns git commit for deploy verification."""
     from src.services.market_data import _warm_done, _cache
 
+    # Show which of the 12 advisor combos are cached
+    advisor_combos = {}
+    for risk in ["balanced", "conservative", "aggressive"]:
+        for period in ["1m", "3m", "6m", "1y"]:
+            key = f"advisor:full:10000:{risk}:{period}"
+            advisor_combos[f"{risk}/{period}"] = key in _cache
+
     return {
         "status": "ok",
         "version": _GIT_SHA,
         "cache_ready": _warm_done.is_set(),
         "cache_entries": len(_cache),
+        "advisor_combos": advisor_combos,
     }
 
 
