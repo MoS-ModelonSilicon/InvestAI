@@ -157,9 +157,33 @@ git push origin master
 
 - `.claude/skills/` — Reusable workflows (debugging, code review, new features, bug lifecycle)
 - `.claude/skills/bug-lifecycle.md` — **Mandatory 8-phase bug flow**: report → reproduce → diagnose → fix → validate → deploy → verify live → close
+- `.claude/agents/` — **Specialized bug-handling agents** (see below)
+- `.claude/bugs/open.md` — Live bug tracker ledger maintained by Bug Reviewer Agent
 - `docs/architecture.md` — Full system architecture
 - `docs/adr/` — Engineering decision records
 - `src/CLAUDE.md` — Backend gotchas
 - `src/services/CLAUDE.md` — Service layer gotchas (caching, rate limits, fallbacks)
 - `src/routers/CLAUDE.md` — Router patterns
 - `AGENTS.md` — Full API reference (74 endpoints)
+
+## Bug-Handling Agent System
+
+Four specialized agents handle the full bug lifecycle. The **Orchestrator** coordinates all handoffs.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    ORCHESTRATOR                          │
+│  .claude/agents/orchestrator.md                         │
+│  Coordinates pipeline, owns deploy & verify steps       │
+├─────────┬─────────────┬──────────────┬──────────────────┤
+│ TESTER  │ REPRODUCER  │  DEVELOPER   │   REVIEWER       │
+│ tester  │ reproducer  │  developer   │   reviewer       │
+│ .md     │ .md         │  .md         │   .md            │
+│ Finds   │ Confirms    │  Fixes       │   Tracks &       │
+│ bugs    │ bugs        │  bugs        │   verifies       │
+└─────────┴─────────────┴──────────────┴──────────────────┘
+```
+
+**When to use**: Any time a bug is reported, discovered in tests, or needs verification. Start with the Orchestrator — it will invoke the right agents in the right order.
+
+**Pipeline**: Report → Tester → Reproducer → Developer → Orchestrator (deploy) → Tester (live verify) → Reviewer (close)

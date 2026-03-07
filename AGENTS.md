@@ -2,6 +2,22 @@
 
 > **Purpose of this file**: This document gives AI coding agents (GitHub Copilot, Cursor, etc.) the full context needed to navigate, debug, extend, and test this codebase. Keep it updated when adding new features.
 
+## Bug-Handling Agent System
+
+This project uses **four specialized agents** coordinated by an **Orchestrator** to handle the full bug lifecycle. See `.claude/agents/` for full definitions.
+
+| Agent | File | Role |
+|-------|------|------|
+| **Orchestrator** | `.claude/agents/orchestrator.md` | Coordinates pipeline, owns deploy & verify steps |
+| **Tester** | `.claude/agents/tester.md` | Runs tests, finds bugs, generates Bug Cards |
+| **Bug Reproducer** | `.claude/agents/reproducer.md` | Confirms bugs, produces verified reproduction steps |
+| **Developer** | `.claude/agents/developer.md` | Diagnoses root cause, implements minimal fix |
+| **Bug Reviewer** | `.claude/agents/reviewer.md` | Tracks open bugs, verifies fixes on live site, maintains ledger |
+
+**Bug tracker**: `.claude/bugs/open.md` — live ledger of all tracked bugs.
+
+**Pipeline**: User report → Tester → Reproducer → Developer → Orchestrator (deploy) → Tester (live verify) → Reviewer (close)
+
 ## Project Overview
 
 InvestAI is a full-stack personal investment advisory web application. It combines personal finance tracking (transactions, budgets) with advanced investment tools: stock screening, portfolio management, technical analysis, AI-driven advisory, DCA planning, value investing scanners, and more.

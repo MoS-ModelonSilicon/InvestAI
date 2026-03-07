@@ -2,6 +2,10 @@
 
 Every bug — whether reported by a user, found in testing, or noticed during development — must go through this complete lifecycle. **A bug is NOT fixed until it is validated on the live site.**
 
+> **Agent system**: This lifecycle is automated by specialized agents in `.claude/agents/`. The **Orchestrator** coordinates: Tester → Reproducer → Developer → deploy → verify → Reviewer (close). See `.claude/agents/orchestrator.md` for the full pipeline.
+>
+> **Bug tracker**: `.claude/bugs/open.md` — live ledger maintained by the Bug Reviewer Agent.
+
 ## Phase 1: Report & Triage
 
 **Goal**: Understand what's broken and where.
