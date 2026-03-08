@@ -353,7 +353,7 @@ def restore_all_caches():
     except Exception:
         logger.exception("Failed to restore smart advisor cache")
 
-    # 6. Restore screener snapshot
+    # 6. Restore screener snapshot (or build from restored market cache)
     try:
         data = load_scan("screener_snapshot")
         if data and isinstance(data, list) and len(data) > 0:
@@ -361,6 +361,21 @@ def restore_all_caches():
 
             restore_screener_snapshot(data)
             logger.info("Restored screener snapshot: %d instruments", len(data))
+        else:
+            # No snapshot in DB yet (first deploy with this feature).
+            # Build one immediately from the market cache we just restored
+            # in step 4 so the screener is usable right away instead of
+            # waiting 1-2 min for the cache warmer to finish.
+            from src.services.screener import refresh_screener_snapshot
+
+            count = refresh_screener_snapshot()
+            if count > 0:
+                logger.info(
+                    "Built screener snapshot from restored market cache: %d instruments",
+                    count,
+                )
+            else:
+                logger.info("No market data to build screener snapshot — will build after cache warm")
     except Exception:
         logger.exception("Failed to restore screener snapshot")
 

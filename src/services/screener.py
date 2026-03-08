@@ -442,9 +442,25 @@ def refresh_screener_snapshot() -> int:
 
     rows.sort(key=lambda x: x.get("market_cap", 0), reverse=True)
 
+    # Don't overwrite an existing (possibly DB-restored) snapshot with
+    # a smaller one — e.g. if the warm cycle only fetched a fraction
+    # of the universe so far.
     with _snapshot_lock:
-        _screener_snapshot.clear()
-        _screener_snapshot.extend(rows)
+        if len(rows) >= len(_screener_snapshot):
+            _screener_snapshot.clear()
+            _screener_snapshot.extend(rows)
+        elif len(rows) == 0:
+            logger.info("Skipping empty snapshot refresh (keeping %d existing rows)", len(_screener_snapshot))
+            elapsed = time.time() - t0
+            return len(_screener_snapshot)
+        else:
+            logger.info(
+                "New snapshot (%d) smaller than existing (%d) — keeping existing",
+                len(rows),
+                len(_screener_snapshot),
+            )
+            elapsed = time.time() - t0
+            return len(_screener_snapshot)
 
     # Persist to DB for instant cold-start restore
     try:
