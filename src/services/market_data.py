@@ -19,7 +19,10 @@ except Exception:
 _cache: dict[str, tuple[float, Any]] = {}
 _cache_lock = threading.Lock()
 CACHE_TTL = 1200  # 20 min — overlap with 15-min scheduler so cache never goes cold
-CACHE_MAX_ENTRIES = 600 if not _LOW_MEMORY else 300  # cap to prevent unbounded growth
+# Must hold at least ALL_UNIVERSE × 2 (info: + quote: per symbol) + extras.
+# 300 was too small — the warmer evicted Phase-1 info: entries (like INTC)
+# before Phase 3 built the screener snapshot, causing missing search results.
+CACHE_MAX_ENTRIES = 800
 
 _warming = False
 _warm_done = threading.Event()

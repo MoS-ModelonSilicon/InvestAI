@@ -215,7 +215,10 @@ def restore_market_cache() -> dict[str, tuple[float, dict]]:
         now = time.time()
         # Prefixes whose entries should be stamped "now" so they survive
         # the short QUOTE_CACHE_TTL / CACHE_TTL checks on first access.
-        REFRESH_PREFIXES = ("quote:", "live_quotes:", "sparklines:")
+        # "info:" is included so that get_cache_status() counts them as
+        # fresh after a deploy (otherwise deploys > 20 min make them all
+        # expire and the "Loading market data…" banner stays up).
+        REFRESH_PREFIXES = ("info:", "quote:", "live_quotes:", "sparklines:")
         for k, entry in snapshot.items():
             ts = entry.get("ts", 0)
             data = entry.get("data")
@@ -354,13 +357,15 @@ def restore_all_caches():
         logger.exception("Failed to restore smart advisor cache")
 
     # 6. Restore screener snapshot (or build from restored market cache)
+    snapshot_size = 0
     try:
         data = load_scan("screener_snapshot")
         if data and isinstance(data, list) and len(data) > 0:
             from src.services.screener import restore_screener_snapshot
 
             restore_screener_snapshot(data)
-            logger.info("Restored screener snapshot: %d instruments", len(data))
+            snapshot_size = len(data)
+            logger.info("Restored screener snapshot: %d instruments", snapshot_size)
         else:
             # No snapshot in DB yet (first deploy with this feature).
             # Build one immediately from the market cache we just restored
@@ -369,6 +374,7 @@ def restore_all_caches():
             from src.services.screener import refresh_screener_snapshot
 
             count = refresh_screener_snapshot()
+            snapshot_size = count
             if count > 0:
                 logger.info(
                     "Built screener snapshot from restored market cache: %d instruments",
@@ -378,5 +384,24 @@ def restore_all_caches():
                 logger.info("No market data to build screener snapshot — will build after cache warm")
     except Exception:
         logger.exception("Failed to restore screener snapshot")
+
+    # 7. Mark cache as "ready" if we restored enough data so the frontend
+    #    hides the "Loading market data…" banner immediately instead of
+    #    waiting for the background warmer to finish Phase 1.
+    try:
+        from src.services.market_data import _warm_done, _cache, _cache_lock, ALL_UNIVERSE
+
+        with _cache_lock:
+            info_count = sum(1 for k in _cache if k.startswith("info:"))
+        # If we restored a majority of symbols, signal readiness right away.
+        if info_count >= len(ALL_UNIVERSE) * 0.5 or snapshot_size >= len(ALL_UNIVERSE) * 0.5:
+            _warm_done.set()
+            logger.info(
+                "Set warm_done early: %d info entries, %d snapshot instruments",
+                info_count,
+                snapshot_size,
+            )
+    except Exception:
+        logger.exception("Failed to set warm_done early")
 
     logger.info("Cache restoration complete")
