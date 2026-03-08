@@ -32,7 +32,11 @@ param(
 
     [int]$DeployWaitSec = 150,           # seconds to wait for Render deploy
 
-    [string]$LiveUrl = "https://finance-tracker-staging.onrender.com"
+    [string]$LiveUrl = "https://finance-tracker-staging.onrender.com",
+
+    [string]$ProdDeployHook = $env:RENDER_PROD_DEPLOY_HOOK,  # auto-promote prod after staging E2E passes
+
+    [string]$ProdUrl = "https://investai-utho.onrender.com"
 )
 
 $ErrorActionPreference = "Stop"
@@ -468,9 +472,32 @@ if (-not $NoMerge) {
     $e2eExitCode = $LASTEXITCODE
 
     if ($e2eExitCode -eq 0) {
-        Write-OK "E2E tests passed on live site!"
+        Write-OK "E2E tests passed on staging!"
+
+        # ── Auto-promote to production ──
+        $promoted = $false
+        if ($ProdDeployHook) {
+            Write-Step "Phase 8b: Promoting to production"
+            try {
+                $response = Invoke-WebRequest -Uri $ProdDeployHook -Method Post -ContentType "application/json" -TimeoutSec 30 -UseBasicParsing
+                if ($response.StatusCode -eq 200) {
+                    Write-OK "Production deploy triggered!"
+                    $promoted = $true
+                    gh issue comment $IssueNumber --repo $Repo --body "🚀 **Production promoted** — deploy hook triggered after staging E2E passed." 2>&1 | Out-Null
+                } else {
+                    Write-Warn "Deploy hook returned HTTP $($response.StatusCode)"
+                }
+            } catch {
+                Write-Warn "Failed to trigger production deploy hook: $_"
+            }
+        } else {
+            Write-Warn "No RENDER_PROD_DEPLOY_HOOK set — skipping auto-promote. Set env var or pass -ProdDeployHook."
+        }
+
+        $promoteStatus = if ($promoted) { "[x] Production promoted via deploy hook" } else { "[ ] Promote manually: Actions → Promote to Production" }
+
         gh issue comment $IssueNumber --repo $Repo --body @"
-✅ **E2E verification passed** on $LiveUrl
+✅ **E2E verification passed** on staging ($LiveUrl)
 
 All critical-path tests passed after deploy.
 
@@ -482,7 +509,7 @@ All critical-path tests passed after deploy.
 - [x] Auto-merged to master
 - [x] Deployed to staging
 - [x] E2E verification passed on staging
-- [ ] Production promote: nightly auto-promote or manual via Actions > Promote to Production
+- $promoteStatus
 "@ 2>&1 | Out-Null
 
     } else {
@@ -523,7 +550,7 @@ if (-not $NoMerge -and $e2eExitCode -eq 0) {
     gh issue close $IssueNumber --repo $Repo --reason completed 2>&1 | Out-Null
     Write-OK "Issue #$IssueNumber closed — delivery complete!"
 } elseif (-not $NoMerge -and $e2eExitCode -ne 0) {
-    Write-Warn "Issue #$IssueNumber left open — E2E verification needs attention"
+    Write-Warn "Issue #$IssueNumber left open — E2E verification needs attention. Production NOT promoted."
 }
 
 # ══════════════════════════════════════════════════════════════
