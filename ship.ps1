@@ -42,6 +42,11 @@ param(
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
+# ── Resolve deploy hook from user-level env if not in current session ──
+if (-not $ProdDeployHook) {
+    $ProdDeployHook = [Environment]::GetEnvironmentVariable("RENDER_PROD_DEPLOY_HOOK", "User")
+}
+
 # ── Constants ──────────────────────────────────────────────
 $Repo      = "MoS-ModelonSilicon/InvestAI"
 $BaseBranch = "master"
