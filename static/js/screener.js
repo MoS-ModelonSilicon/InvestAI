@@ -55,6 +55,7 @@ async function runScreener(page) {
 
     const params = new URLSearchParams();
     const v = (id) => document.getElementById(id).value;
+    if (v("scr-query")) params.set("query", v("scr-query").trim());
     if (v("scr-asset-type")) params.set("asset_type", v("scr-asset-type"));
     if (v("scr-sector")) params.set("sector", v("scr-sector"));
     if (v("scr-region")) params.set("region", v("scr-region"));
@@ -284,7 +285,7 @@ function buildDetailPanel(r) {
 }
 
 function clearScreener() {
-    ["scr-asset-type", "scr-sector", "scr-region", "scr-mcap-min", "scr-mcap-max", "scr-pe-min", "scr-pe-max", "scr-div-min", "scr-beta-min", "scr-beta-max", "scr-signal"]
+    ["scr-query", "scr-asset-type", "scr-sector", "scr-region", "scr-mcap-min", "scr-mcap-max", "scr-pe-min", "scr-pe-max", "scr-div-min", "scr-beta-min", "scr-beta-max", "scr-signal"]
         .forEach((id) => { const el = document.getElementById(id); if (el) el.value = ""; });
     const countEl = document.getElementById("scr-result-count");
     if (countEl) countEl.textContent = "";

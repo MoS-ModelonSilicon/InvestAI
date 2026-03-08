@@ -26,6 +26,7 @@ def run_screener(
     beta_min: Optional[float] = None,
     beta_max: Optional[float] = None,
     signal: Optional[str] = None,
+    query: Optional[str] = None,
     page: int = 1,
     per_page: int = 50,
 ):
@@ -41,6 +42,7 @@ def run_screener(
         beta_min=beta_min,
         beta_max=beta_max,
         signal=signal,
+        query=query,
     )
     total = len(all_results)
     start = (page - 1) * per_page

@@ -368,6 +368,7 @@ def screen_instruments(
     beta_min: Optional[float] = None,
     beta_max: Optional[float] = None,
     signal: Optional[str] = None,
+    query: Optional[str] = None,
 ) -> list[dict]:
     if asset_type == "ETF":
         universe = ETF_UNIVERSE
@@ -379,7 +380,13 @@ def screen_instruments(
     all_data = fetch_batch(universe, cached_only=True)
 
     filtered = []
+    query_lower = query.strip().lower() if query else None
     for d in all_data:
+        if query_lower:
+            sym = (d.get("symbol") or "").lower()
+            name = (d.get("name") or "").lower()
+            if query_lower not in sym and query_lower not in name:
+                continue
         if asset_type and d.get("asset_type") != asset_type:
             continue
         if sector and d.get("sector", "").lower() != sector.lower():

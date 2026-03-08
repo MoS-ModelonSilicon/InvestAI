@@ -1045,6 +1045,29 @@ body {
 .screener-filters .form-group input,
 .screener-filters .form-group select { padding: 7px 10px; font-size: 0.82rem; }
 
+.scr-search-wrap {
+    display: flex;
+    gap: 0;
+    margin-top: 4px;
+}
+.scr-search-wrap input {
+    flex: 1;
+    border-radius: var(--radius) 0 0 var(--radius);
+    border-right: none;
+}
+.scr-search-btn {
+    padding: 7px 12px;
+    background: var(--primary);
+    color: #fff;
+    border: 1px solid var(--primary);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    transition: background 0.15s;
+}
+.scr-search-btn:hover { background: var(--primary-dark, #2563eb); }
+
 .preset-buttons {
     display: flex;
     flex-wrap: wrap;

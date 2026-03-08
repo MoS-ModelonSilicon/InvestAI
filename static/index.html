@@ -240,6 +240,13 @@
             <div class="screener-layout">
                 <aside class="screener-filters">
                     <h3>Filters</h3>
+                    <div class="form-group">
+                        <label>Search Stock / ETF</label>
+                        <div class="scr-search-wrap">
+                            <input type="text" id="scr-query" placeholder="e.g. NVIDIA, AAPL, Amazon..." onkeydown="if(event.key==='Enter')runScreener()">
+                            <button class="scr-search-btn" onclick="runScreener()" title="Search">&#128269;</button>
+                        </div>
+                    </div>
                     <div class="form-group"><label>Asset Type <span class="help-icon" data-help="asset_type" tabindex="0" role="button" aria-label="Help">?</span></label>
                         <select id="scr-asset-type"><option value="">All</option><option value="Stock">Stocks</option><option value="ETF">ETFs</option></select>
                     </div>
