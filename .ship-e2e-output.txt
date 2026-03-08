@@ -15,4 +15,4 @@ tests/test_live_site.py::TestDCAPlanner::test_dca_page_loads[chromium] PASSED [ 
 tests/test_live_site.py::TestPerformance::test_login_page_loads_fast[chromium] PASSED [ 75%]
 tests/test_live_site.py::TestPerformance::test_dashboard_loads_after_login[chromium] PASSED [100%]
 
-===================== 4 passed, 101 deselected in 47.84s ======================
+===================== 4 passed, 101 deselected in 57.64s ======================

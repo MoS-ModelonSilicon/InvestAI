@@ -99,7 +99,7 @@ def get_portfolio_performance(db: Session, user_id: int) -> dict:
     if not holdings:
         return {"dates": [], "portfolio": [], "benchmark": []}
 
-    cache_key = "portfolio_perf"
+    cache_key = f"portfolio_perf:{user_id}"
     cached = _get_cached(cache_key)
     if isinstance(cached, dict):
         return cast(dict[str, Any], cached)
