@@ -1,0 +1,19 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0 -- C:\Program Files\Python314\python.exe
+cachedir: .pytest_cache
+metadata: {'Python': '3.14.0', 'Platform': 'Windows-11-10.0.26100-SP0', 'Packages': {'pytest': '9.0.2', 'pluggy': '1.6.0'}, 'Plugins': {'anyio': '4.12.1', 'base-url': '2.1.0', 'html': '4.2.0', 'json-report': '1.5.0', 'metadata': '3.1.1', 'playwright': '0.7.2', 'timeout': '2.4.0'}, 'Base URL': ''}
+rootdir: C:\Users\yklein3\OneDrive - Intel Corporation\PycharmProjects\cursor\finance-tracker
+configfile: pytest.ini
+plugins: anyio-4.12.1, base-url-2.1.0, html-4.2.0, json-report-1.5.0, metadata-3.1.1, playwright-0.7.2, timeout-2.4.0
+timeout: 60.0s
+timeout method: thread
+timeout func_only: False
+collecting ... collected 105 items / 100 deselected / 5 selected
+
+tests/test_live_site.py::TestStockDetail::test_stock_detail_opens_from_market_card[chromium] PASSED [ 20%]
+tests/test_live_site.py::TestDCAPlanner::test_dca_page_loads[chromium] PASSED [ 40%]
+tests/test_live_site.py::TestAPIHealth::test_dashboard_api[chromium] PASSED [ 60%]
+tests/test_live_site.py::TestPerformance::test_login_page_loads_fast[chromium] PASSED [ 80%]
+tests/test_live_site.py::TestPerformance::test_dashboard_loads_after_login[chromium] PASSED [100%]
+
+================ 5 passed, 100 deselected in 63.02s (0:01:03) =================

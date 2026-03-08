@@ -1331,10 +1331,23 @@ class TestSchedulerNewTasks:
 
     def test_run_smart_advisor_scan(self):
         """_run_smart_advisor_scan should call scan_and_score."""
-        from src.services.background_scheduler import _run_smart_advisor_scan
+        from unittest.mock import patch
 
-        result = _run_smart_advisor_scan()
-        assert result is True
+        fake_rankings = [
+            {"rank": i, "symbol": s, "name": s, "score": 90 - i, "sector": "Tech",
+             "price": 100 + i, "signal": "BUY", "confidence": "high",
+             "technical_score": 80, "fundamental_score": 70, "momentum_score": 60,
+             "berkshire_score": 50, "rsi": 55, "macd_signal": "bullish",
+             "sma_trend": "up", "entry_price": 100, "target_price": 120,
+             "stop_loss": 90, "risk_reward": 2.0, "signals": [], "reasoning": "test"}
+            for i, s in enumerate(["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA"])
+        ]
+
+        with patch("src.services.smart_advisor.scan_and_score", return_value=fake_rankings):
+            from src.services.background_scheduler import _run_smart_advisor_scan
+
+            result = _run_smart_advisor_scan()
+            assert result is True
 
     def test_refresh_active_symbols_exists(self):
         """market_data.refresh_active_symbols should be importable and callable."""
