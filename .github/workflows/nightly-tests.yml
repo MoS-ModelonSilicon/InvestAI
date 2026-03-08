@@ -70,7 +70,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest-html pytest-json-report pytest-timeout
+          pip install pytest-html pytest-json-report pytest-timeout pytest-playwright
           playwright install chromium --with-deps
 
       - name: Warm up site before tests
@@ -124,7 +124,7 @@ jobs:
           tree = ET.parse('results/junit.xml')
           failures = []
           for tc in tree.iter('testcase'):
-              fail = tc.find('failure')
+              fail = tc.find('failure') or tc.find('error')
               if fail is not None:
                   failures.append({
                       'class': tc.get('classname', ''),
