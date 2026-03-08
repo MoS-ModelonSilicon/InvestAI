@@ -1,0 +1,518 @@
+# ──────────────────────────────────────────────────────────────
+# InvestAI — ship.ps1
+#
+# Full feature-delivery pipeline: branch → commit → push → PR →
+# CI watch → auto-fix → auto-merge → deploy → E2E verify → close.
+#
+# Usage:
+#   .\ship.ps1 "feat: dark mode toggle"
+#   .\ship.ps1 "fix: cache key mismatch" -Description "Users reported stale data..."
+#   .\ship.ps1 "feat: add DCA calculator" -NoMerge   # skip auto-merge
+#
+# Prerequisites:
+#   - gh CLI authenticated (gh auth status)
+#   - claude CLI logged in  (claude --version)
+#   - git proxy configured  (Intel network)
+# ──────────────────────────────────────────────────────────────
+
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory, Position = 0)]
+    [string]$Title,                      # e.g. "feat: dark mode toggle"
+
+    [string]$Description = "",           # optional longer description for issue body
+
+    [switch]$NoMerge,                    # skip auto-merge (leave PR open for review)
+
+    [int]$MaxFixAttempts = 3,            # max Claude auto-fix loops
+
+    [int]$CIPollIntervalSec = 15,        # seconds between CI status checks
+
+    [int]$CITimeoutMin = 12,             # max minutes to wait for CI
+
+    [int]$DeployWaitSec = 150,           # seconds to wait for Render deploy
+
+    [string]$LiveUrl = "https://investai-utho.onrender.com"
+)
+
+$ErrorActionPreference = "Stop"
+Set-Location $PSScriptRoot
+
+# ── Constants ──────────────────────────────────────────────
+$Repo      = "MoS-ModelonSilicon/InvestAI"
+$BaseBranch = "master"
+$Timestamp  = Get-Date -Format "yyyyMMdd-HHmmss"
+
+# ── Colors ─────────────────────────────────────────────────
+function Write-Step  { param([string]$msg) Write-Host "`n▶ $msg" -ForegroundColor Cyan }
+function Write-OK    { param([string]$msg) Write-Host "  ✅ $msg" -ForegroundColor Green }
+function Write-Warn  { param([string]$msg) Write-Host "  ⚠️  $msg" -ForegroundColor Yellow }
+function Write-Fail  { param([string]$msg) Write-Host "  ❌ $msg" -ForegroundColor Red }
+function Write-Info  { param([string]$msg) Write-Host "  ℹ️  $msg" -ForegroundColor Gray }
+
+# ══════════════════════════════════════════════════════════════
+#  PHASE 0 — PREFLIGHT CHECKS
+# ══════════════════════════════════════════════════════════════
+
+Write-Step "Phase 0: Preflight checks"
+
+# Ensure we're on master and clean
+$currentBranch = git rev-parse --abbrev-ref HEAD
+if ($currentBranch -ne $BaseBranch) {
+    Write-Fail "Must start from $BaseBranch (currently on: $currentBranch)"
+    exit 1
+}
+
+# Check for staged changes (required — these are what we're shipping)
+$staged = git diff --cached --name-only
+$unstaged = git diff --name-only
+$untracked = git ls-files --others --exclude-standard
+
+if (-not $staged -and -not $unstaged -and -not $untracked) {
+    Write-Fail "No changes to ship. Stage your changes first (git add)."
+    exit 1
+}
+
+# Ensure gh CLI is authenticated
+try { gh auth status 2>&1 | Out-Null } catch {
+    Write-Fail "gh CLI not authenticated. Run: gh auth login"
+    exit 1
+}
+Write-OK "gh CLI authenticated"
+
+# Ensure Intel proxy is set
+git config --global http.proxy http://proxy-dmz.intel.com:911 2>$null
+Write-OK "Git proxy configured"
+
+# ══════════════════════════════════════════════════════════════
+#  PHASE 1 — PARSE COMMIT INFO
+# ══════════════════════════════════════════════════════════════
+
+Write-Step "Phase 1: Parsing commit info"
+
+# Extract type and short title from conventional commit format
+# "feat: dark mode toggle" → Type=feat, ShortTitle="dark mode toggle"
+if ($Title -match "^(feat|fix|perf|test|docs|ci|security|refactor|chore):\s*(.+)$") {
+    $CommitType  = $Matches[1]
+    $ShortTitle  = $Matches[2]
+} else {
+    Write-Warn "Title doesn't follow conventional commits. Assuming 'feat:'"
+    $CommitType  = "feat"
+    $ShortTitle  = $Title
+}
+
+# Generate branch name: feat/dark-mode-toggle-20260308
+$BranchSlug = ($ShortTitle -replace '[^a-zA-Z0-9]+', '-').Trim('-').ToLower()
+if ($BranchSlug.Length -gt 40) { $BranchSlug = $BranchSlug.Substring(0, 40) }
+$BranchName = "$CommitType/$BranchSlug-$($Timestamp.Substring(0,8))"
+
+# Map type to label
+$LabelMap = @{
+    "feat"     = "enhancement"
+    "fix"      = "bug"
+    "perf"     = "performance"
+    "security" = "security"
+}
+$IssueLabel = if ($LabelMap.ContainsKey($CommitType)) { $LabelMap[$CommitType] } else { "enhancement" }
+
+Write-OK "Type: $CommitType | Branch: $BranchName"
+
+# ══════════════════════════════════════════════════════════════
+#  PHASE 2 — CREATE GITHUB ISSUE
+# ══════════════════════════════════════════════════════════════
+
+Write-Step "Phase 2: Creating GitHub Issue"
+
+$IssueBody = @"
+## $($CommitType.ToUpper()): $ShortTitle
+
+$Description
+
+---
+
+### Ship Pipeline
+
+- [ ] Branch created: ``$BranchName``
+- [ ] PR created
+- [ ] CI Gate passed
+- [ ] Auto-merged to master
+- [ ] Deployed to Render
+- [ ] E2E verification passed on live site
+
+*Auto-generated by ship.ps1*
+"@
+
+$IssueUrl = gh issue create `
+    --repo $Repo `
+    --title "$($CommitType): $ShortTitle" `
+    --body $IssueBody `
+    --label $IssueLabel `
+    2>&1
+
+# Extract issue number from URL
+$IssueNumber = ($IssueUrl -split '/')[-1]
+Write-OK "Created Issue #$IssueNumber — $IssueUrl"
+
+# ══════════════════════════════════════════════════════════════
+#  PHASE 3 — CREATE BRANCH, COMMIT, PUSH
+# ══════════════════════════════════════════════════════════════
+
+Write-Step "Phase 3: Branch + Commit + Push"
+
+# Stage everything if not already staged
+if (-not $staged) {
+    Write-Info "No staged changes — staging all modified/new files"
+    git add -A
+}
+
+# Create feature branch from current state
+git checkout -b $BranchName 2>&1 | Out-Null
+Write-OK "Created branch: $BranchName"
+
+# Commit with conventional commit message
+$CommitMsg = "$($CommitType): $ShortTitle (closes #$IssueNumber)"
+git commit -m $CommitMsg 2>&1 | Out-Null
+Write-OK "Committed: $CommitMsg"
+
+# Push
+git push origin $BranchName 2>&1
+Write-OK "Pushed to origin/$BranchName"
+
+# ══════════════════════════════════════════════════════════════
+#  PHASE 4 — CREATE PULL REQUEST
+# ══════════════════════════════════════════════════════════════
+
+Write-Step "Phase 4: Creating Pull Request"
+
+$PRBody = @"
+## $($CommitType): $ShortTitle
+
+Closes #$IssueNumber
+
+### Changes
+$Description
+
+### Ship Pipeline Status
+This PR was created by ``ship.ps1`` and will be auto-monitored:
+1. ⏳ CI Gate — waiting for smoke tests + lint + type-check
+2. ⬜ Auto-fix — if CI fails, Claude Code will attempt a fix
+3. ⬜ Auto-merge — when CI is green
+4. ⬜ Deploy — Render auto-deploys from master
+5. ⬜ E2E verify — live site validation after deploy
+
+---
+*Automated delivery pipeline — [ship.ps1](./ship.ps1)*
+"@
+
+$PRUrl = gh pr create `
+    --repo $Repo `
+    --base $BaseBranch `
+    --head $BranchName `
+    --title $Title `
+    --body $PRBody `
+    2>&1
+
+$PRNumber = ($PRUrl -split '/')[-1]
+Write-OK "Created PR #$PRNumber — $PRUrl"
+
+# Update issue with PR link
+gh issue comment $IssueNumber --repo $Repo --body "🔗 PR #$PRNumber created: $PRUrl" 2>&1 | Out-Null
+
+# ══════════════════════════════════════════════════════════════
+#  PHASE 5 — WAIT FOR CI + AUTO-FIX LOOP
+# ══════════════════════════════════════════════════════════════
+
+Write-Step "Phase 5: CI Gate — watching for results"
+
+$FixAttempt = 0
+$CIGreen = $false
+
+while (-not $CIGreen -and $FixAttempt -le $MaxFixAttempts) {
+
+    # ── Wait for CI run to appear and complete ──
+    Write-Info "Waiting for CI Gate to start (attempt $FixAttempt)..."
+    Start-Sleep -Seconds 10
+
+    # Find the latest CI run for this branch
+    $CIDeadline = (Get-Date).AddMinutes($CITimeoutMin)
+    $RunConclusion = $null
+    $RunId = $null
+
+    while ((Get-Date) -lt $CIDeadline) {
+        # Get the latest CI Gate run for our branch
+        $runsJson = gh run list `
+            --repo $Repo `
+            --workflow "CI Gate" `
+            --branch $BranchName `
+            --limit 1 `
+            --json databaseId,status,conclusion 2>&1
+
+        $runs = $runsJson | ConvertFrom-Json -ErrorAction SilentlyContinue
+
+        if ($runs -and $runs.Count -gt 0) {
+            $RunId = $runs[0].databaseId
+            $status = $runs[0].status
+            $RunConclusion = $runs[0].conclusion
+
+            if ($status -eq "completed") {
+                break
+            }
+            Write-Host "." -NoNewline
+        }
+        Start-Sleep -Seconds $CIPollIntervalSec
+    }
+
+    if (-not $RunId) {
+        Write-Fail "CI Gate never started within $CITimeoutMin minutes"
+        gh issue comment $IssueNumber --repo $Repo --body "❌ CI Gate never started. Manual investigation needed." 2>&1 | Out-Null
+        git checkout $BaseBranch 2>&1 | Out-Null
+        exit 1
+    }
+
+    Write-Host ""  # newline after dots
+
+    if ($RunConclusion -eq "success") {
+        $CIGreen = $true
+        Write-OK "CI Gate passed! (Run #$RunId)"
+        gh issue comment $IssueNumber --repo $Repo --body "✅ CI Gate passed (Run #$RunId, attempt $FixAttempt)" 2>&1 | Out-Null
+        break
+    }
+
+    # ── CI FAILED — attempt auto-fix ──
+    $FixAttempt++
+    Write-Warn "CI Gate failed (Run #$RunId) — auto-fix attempt $FixAttempt/$MaxFixAttempts"
+
+    if ($FixAttempt -gt $MaxFixAttempts) {
+        Write-Fail "Max fix attempts ($MaxFixAttempts) exceeded. Manual intervention needed."
+        gh issue comment $IssueNumber --repo $Repo --body @"
+❌ CI Gate failed after $MaxFixAttempts auto-fix attempts.
+
+**Last CI Run:** https://github.com/$Repo/actions/runs/$RunId
+**Manual investigation required.**
+"@ 2>&1 | Out-Null
+        git checkout $BaseBranch 2>&1 | Out-Null
+        exit 1
+    }
+
+    # Comment on issue
+    gh issue comment $IssueNumber --repo $Repo --body "🔧 CI failed (Run #$RunId). Starting auto-fix attempt $FixAttempt/$MaxFixAttempts..." 2>&1 | Out-Null
+
+    # ── Fetch failure logs ──
+    Write-Info "Fetching failure logs..."
+    $FailLogs = gh run view $RunId --repo $Repo --log-failed 2>&1
+    if (-not $FailLogs) { $FailLogs = "Could not fetch logs" }
+
+    # Truncate to last 200 lines to stay within prompt limits
+    $LogLines = ($FailLogs -split "`n")
+    if ($LogLines.Count -gt 200) {
+        $FailLogs = ($LogLines | Select-Object -Last 200) -join "`n"
+    }
+
+    # ── Run Claude Code to fix ──
+    Write-Info "Running Claude Code to diagnose and fix..."
+
+    $ClaudePrompt = @"
+You are an AI engineer fixing CI failures in the InvestAI project.
+
+FIRST: Read the CLAUDE.md file for full project context, rules, and conventions.
+
+HERE ARE THE CI FAILURES from GitHub Actions Run #$RunId:
+
+$FailLogs
+
+YOUR TASK:
+1. Diagnose the root cause from the error logs above
+2. Fix the source code to resolve ALL failures
+3. Verify your fix by running the relevant checks:
+   - For lint errors:  ruff check src/ tests/ && ruff format --check src/ tests/
+   - For type errors:  mypy src/ --config-file=pyproject.toml
+   - For test errors:  python -m pytest tests/test_api_smoke.py -m 'smoke and not external' --timeout=30
+4. Only modify files under src/ and tests/ — do NOT touch workflow files, configs, or CLAUDE.md
+
+RULES (from CLAUDE.md):
+- Vanilla JS only in static/ (no frameworks)
+- No raw SQL — use SQLAlchemy ORM
+- No secrets in code
+- Keep files under 400 lines
+- Run ruff format after any Python changes
+"@
+
+    claude -p $ClaudePrompt `
+        --allowedTools "Edit,Read,Write,Bash(ruff*),Bash(mypy*),Bash(python*),Bash(pip*),Bash(cat*),Bash(grep*),Bash(find*),Bash(head*),Bash(tail*),Bash(wc*)" `
+        2>&1 | Out-Null
+
+    # ── Check if Claude made changes ──
+    $changes = git diff --name-only
+    $newFiles = git ls-files --others --exclude-standard
+    if (-not $changes -and -not $newFiles) {
+        Write-Warn "Claude Code made no changes. Retrying with different context..."
+        continue
+    }
+
+    # ── Commit and push the fix ──
+    git add -A
+    $FixMsg = "fix: auto-fix CI failure (attempt $FixAttempt for #$IssueNumber)"
+    git commit -m $FixMsg 2>&1 | Out-Null
+    git push origin $BranchName 2>&1
+    Write-OK "Fix committed and pushed: $FixMsg"
+
+    # Loop back to wait for CI again...
+}
+
+if (-not $CIGreen) {
+    Write-Fail "CI did not pass. Aborting."
+    git checkout $BaseBranch 2>&1 | Out-Null
+    exit 1
+}
+
+# ══════════════════════════════════════════════════════════════
+#  PHASE 6 — AUTO-MERGE PR
+# ══════════════════════════════════════════════════════════════
+
+if ($NoMerge) {
+    Write-Step "Phase 6: Auto-merge SKIPPED (-NoMerge flag)"
+    Write-OK "PR #$PRNumber is ready for manual review and merge."
+    gh issue comment $IssueNumber --repo $Repo --body "✅ CI green. PR #$PRNumber ready for manual merge." 2>&1 | Out-Null
+} else {
+    Write-Step "Phase 6: Auto-merging PR #$PRNumber"
+
+    gh pr merge $PRNumber `
+        --repo $Repo `
+        --squash `
+        --delete-branch `
+        --subject "$Title (closes #$IssueNumber)" `
+        2>&1
+
+    Write-OK "PR #$PRNumber merged to $BaseBranch"
+    gh issue comment $IssueNumber --repo $Repo --body "🔀 PR #$PRNumber auto-merged to master." 2>&1 | Out-Null
+
+    # Switch back to master and pull
+    git checkout $BaseBranch 2>&1 | Out-Null
+    git pull origin $BaseBranch 2>&1 | Out-Null
+}
+
+# ══════════════════════════════════════════════════════════════
+#  PHASE 7 — WAIT FOR RENDER DEPLOY
+# ══════════════════════════════════════════════════════════════
+
+if (-not $NoMerge) {
+    Write-Step "Phase 7: Waiting for Render deploy (~$($DeployWaitSec/60) min)"
+
+    gh issue comment $IssueNumber --repo $Repo --body "🚀 Merged. Waiting for Render deploy ($($DeployWaitSec)s)..." 2>&1 | Out-Null
+
+    $elapsed = 0
+    while ($elapsed -lt $DeployWaitSec) {
+        Write-Host "." -NoNewline
+        Start-Sleep -Seconds 15
+        $elapsed += 15
+
+        # Ping the site to check if it's responsive
+        try {
+            $response = Invoke-WebRequest -Uri "$LiveUrl/login" -TimeoutSec 10 -UseBasicParsing -ErrorAction SilentlyContinue
+            if ($response.StatusCode -eq 200 -and $elapsed -gt 60) {
+                # After at least 60s, if site is up, it's probably deployed
+                break
+            }
+        } catch { }
+    }
+    Write-Host ""
+    Write-OK "Render deploy window complete"
+}
+
+# ══════════════════════════════════════════════════════════════
+#  PHASE 8 — E2E VERIFICATION ON LIVE SITE
+# ══════════════════════════════════════════════════════════════
+
+if (-not $NoMerge) {
+    Write-Step "Phase 8: E2E verification on live site"
+
+    gh issue comment $IssueNumber --repo $Repo --body "🧪 Running E2E tests against $LiveUrl..." 2>&1 | Out-Null
+
+    # Run a subset of live site tests (critical paths only)
+    $e2eResult = python -m pytest tests/test_live_site.py `
+        --live-url $LiveUrl `
+        -m "not deep" `
+        --timeout=180 `
+        --maxfail=5 `
+        -v --tb=short `
+        2>&1
+
+    $e2eExitCode = $LASTEXITCODE
+
+    if ($e2eExitCode -eq 0) {
+        Write-OK "E2E tests passed on live site!"
+        gh issue comment $IssueNumber --repo $Repo --body @"
+✅ **E2E verification passed** on $LiveUrl
+
+All critical-path tests passed after deploy.
+
+---
+### Ship Pipeline Complete
+- [x] Branch created: ``$BranchName``
+- [x] PR #$PRNumber created
+- [x] CI Gate passed
+- [x] Auto-merged to master
+- [x] Deployed to Render
+- [x] E2E verification passed on live site
+"@ 2>&1 | Out-Null
+
+    } else {
+        Write-Warn "E2E tests failed on live site!"
+
+        # Capture last 50 lines of output
+        $e2eTail = ($e2eResult -split "`n") | Select-Object -Last 50
+        $e2eSummary = $e2eTail -join "`n"
+
+        gh issue comment $IssueNumber --repo $Repo --body @"
+⚠️ **E2E verification failed** on $LiveUrl
+
+The code merged and deployed, but live-site E2E tests detected issues.
+This may indicate a deploy-time problem or an environment difference.
+
+<details>
+<summary>Test output (last 50 lines)</summary>
+
+``````
+$e2eSummary
+``````
+</details>
+
+**Action needed:** Investigate the E2E failures. The nightly pipeline will also pick this up.
+"@ 2>&1 | Out-Null
+
+        Write-Warn "E2E failures logged to Issue #$IssueNumber. Nightly pipeline will also monitor."
+    }
+}
+
+# ══════════════════════════════════════════════════════════════
+#  PHASE 9 — CLOSE ISSUE (if everything passed)
+# ══════════════════════════════════════════════════════════════
+
+if (-not $NoMerge -and $e2eExitCode -eq 0) {
+    Write-Step "Phase 9: Closing Issue #$IssueNumber"
+    gh issue close $IssueNumber --repo $Repo --reason completed 2>&1 | Out-Null
+    Write-OK "Issue #$IssueNumber closed — delivery complete!"
+} elseif (-not $NoMerge -and $e2eExitCode -ne 0) {
+    Write-Warn "Issue #$IssueNumber left open — E2E verification needs attention"
+}
+
+# ══════════════════════════════════════════════════════════════
+#  DONE
+# ══════════════════════════════════════════════════════════════
+
+Write-Host ""
+Write-Host "═══════════════════════════════════════════════" -ForegroundColor Cyan
+if (-not $NoMerge -and $e2eExitCode -eq 0) {
+    Write-Host "  🎉 SHIP COMPLETE — $Title" -ForegroundColor Green
+} elseif ($NoMerge) {
+    Write-Host "  📋 PR READY — $Title (merge manually)" -ForegroundColor Yellow
+} else {
+    Write-Host "  ⚠️  SHIPPED WITH WARNINGS — check E2E" -ForegroundColor Yellow
+}
+Write-Host "  Issue:  #$IssueNumber" -ForegroundColor Gray
+if ($PRNumber) {
+    Write-Host "  PR:     #$PRNumber" -ForegroundColor Gray
+}
+Write-Host "  Branch: $BranchName" -ForegroundColor Gray
+Write-Host "═══════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host ""

@@ -114,7 +114,18 @@ git config --global http.proxy http://proxy-dmz.intel.com:911
 
 This only needs to be set once per machine, but may be cleared by IT policy or reinstalls. If `git push` fails with `Failed to connect to github.com port 443`, re-run the command above.
 
-### Deploy Cycle
+### Deploy Cycle — Ship Pipeline (PREFERRED)
+
+```powershell
+# The automated way — one command does everything:
+.\ship.ps1 "feat: describe what changed"
+
+# This will: create issue → branch → commit → PR → wait for CI →
+# auto-fix if failures → auto-merge → wait for deploy → E2E verify → close issue
+# See docs/ship-pipeline.md for full details.
+```
+
+### Deploy Cycle — Manual (fallback)
 
 ```bash
 # 1. Commit
@@ -155,6 +166,9 @@ git push origin master
 
 ## Key Context Files
 
+- `ship.ps1` — **Ship pipeline**: one-command feature delivery (issue → PR → CI → fix → merge → deploy → E2E)
+- `docs/ship-pipeline.md` — Full pipeline documentation and architecture
+- `.vscode/tasks.json` — VS Code Ctrl+Shift+B integration for ship pipeline
 - `.claude/skills/` — Reusable workflows (debugging, code review, new features, bug lifecycle)
 - `.claude/skills/bug-lifecycle.md` — **Mandatory 8-phase bug flow**: report → reproduce → diagnose → fix → validate → deploy → verify live → close
 - `.claude/agents/` — **Specialized bug-handling agents** (see below)
