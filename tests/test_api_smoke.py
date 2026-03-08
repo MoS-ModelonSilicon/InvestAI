@@ -1334,12 +1334,29 @@ class TestSchedulerNewTasks:
         from unittest.mock import patch
 
         fake_rankings = [
-            {"rank": i, "symbol": s, "name": s, "score": 90 - i, "sector": "Tech",
-             "price": 100 + i, "signal": "BUY", "confidence": "high",
-             "technical_score": 80, "fundamental_score": 70, "momentum_score": 60,
-             "berkshire_score": 50, "rsi": 55, "macd_signal": "bullish",
-             "sma_trend": "up", "entry_price": 100, "target_price": 120,
-             "stop_loss": 90, "risk_reward": 2.0, "signals": [], "reasoning": "test"}
+            {
+                "rank": i,
+                "symbol": s,
+                "name": s,
+                "score": 90 - i,
+                "sector": "Tech",
+                "price": 100 + i,
+                "signal": "BUY",
+                "confidence": "high",
+                "technical_score": 80,
+                "fundamental_score": 70,
+                "momentum_score": 60,
+                "berkshire_score": 50,
+                "rsi": 55,
+                "macd_signal": "bullish",
+                "sma_trend": "up",
+                "entry_price": 100,
+                "target_price": 120,
+                "stop_loss": 90,
+                "risk_reward": 2.0,
+                "signals": [],
+                "reasoning": "test",
+            }
             for i, s in enumerate(["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA"])
         ]
 
