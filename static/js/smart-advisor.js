@@ -120,6 +120,12 @@ function renderAdvisorResults(data) {
     renderAdvisorReport(data.advisor_report);
     renderAdvisorRankings(data.rankings);
     renderAdvisorPortfolios(data.portfolios, data.backtest, data.selected_risk);
+
+    // Update the subtitle with the actual number of stocks analyzed
+    const countEl = document.getElementById("adv-scan-count");
+    if (countEl && data.rankings && data.rankings.length) {
+        countEl.textContent = data.rankings.length;
+    }
 }
 
 /* ── Advisor Report Card ─────────────────────────── */
