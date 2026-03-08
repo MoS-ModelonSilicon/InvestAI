@@ -16,4 +16,4 @@ tests/test_live_site.py::TestAPIHealth::test_dashboard_api[chromium] PASSED [ 60
 tests/test_live_site.py::TestPerformance::test_login_page_loads_fast[chromium] PASSED [ 80%]
 tests/test_live_site.py::TestPerformance::test_dashboard_loads_after_login[chromium] PASSED [100%]
 
-===================== 5 passed, 100 deselected in 58.67s ======================
+================ 5 passed, 100 deselected in 67.35s (0:01:07) =================

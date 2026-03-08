@@ -69,11 +69,20 @@ def _evaluate_pick(pick: dict) -> dict:
         "worst_loss_pct": None,
         "pnl_pct": None,
         "days_held": None,
+        "risk_reward": None,
+        "speed_score": None,
     }
 
     if not entry or not call_date:
         result["status"] = "no_entry"
         return result
+
+    # Compute Risk/Reward ratio from entry/target/stop
+    first_target = targets[0] if targets else None
+    if first_target and stop and entry and entry != stop:
+        reward = abs(first_target - entry)
+        risk = abs(entry - stop)
+        result["risk_reward"] = round(reward / risk, 1) if risk > 0 else None
 
     try:
         call_dt = _parse_date(call_date)
@@ -109,7 +118,8 @@ def _evaluate_pick(pick: dict) -> dict:
 
         stop_hit_first = False
         target_hit_first = False
-        first_target = targets[0] if targets else None
+        first_target_local = targets[0] if targets else None
+        first_target_day = None
 
         for i, _ts_val in enumerate(timestamps):
             h = highs[i]
@@ -117,11 +127,16 @@ def _evaluate_pick(pick: dict) -> dict:
             if stop and l <= stop and not target_hit_first:
                 stop_hit_first = True
                 break
-            if first_target and h >= first_target:
+            if first_target_local and h >= first_target_local:
                 target_hit_first = True
+                first_target_day = i + 1
                 break
 
         result["stopped_out"] = stop_hit_first
+
+        # Speed score: how many days to hit first target (lower = faster)
+        if first_target_day is not None:
+            result["speed_score"] = first_target_day
 
         if stop_hit_first:
             result["status"] = "stopped"
@@ -181,6 +196,20 @@ def evaluate_all_picks(pick_type: Optional[str] = None) -> dict:
     best_pick = max(with_entry, key=lambda p: p.get("best_gain_pct") or 0) if with_entry else None
     worst_pick = min(with_entry, key=lambda p: p.get("worst_loss_pct") or 0) if with_entry else None
 
+    # Additional aggregate stats
+    all_rr = [p["risk_reward"] for p in with_entry if p.get("risk_reward") is not None]
+    avg_rr = round(sum(all_rr) / len(all_rr), 1) if all_rr else None
+    total_pnl = round(sum(all_pnl), 1) if all_pnl else 0
+    all_days = [p["days_held"] for p in with_entry if p.get("days_held") is not None]
+    avg_days = round(sum(all_days) / len(all_days)) if all_days else None
+    speed_scores = [p["speed_score"] for p in winners if p.get("speed_score") is not None]
+    avg_speed = round(sum(speed_scores) / len(speed_scores), 1) if speed_scores else None
+
+    # Profit factor: gross wins / gross losses
+    gross_wins = sum(p["pnl_pct"] for p in with_entry if (p.get("pnl_pct") or 0) > 0)
+    gross_losses = abs(sum(p["pnl_pct"] for p in with_entry if (p.get("pnl_pct") or 0) < 0))
+    profit_factor = round(gross_wins / gross_losses, 2) if gross_losses > 0 else None
+
     result = {
         "picks": evaluated,
         "stats": {
@@ -197,6 +226,11 @@ def evaluate_all_picks(pick_type: Optional[str] = None) -> dict:
             "best_gain_pct": best_pick["best_gain_pct"] if best_pick else None,
             "worst_pick": worst_pick["symbol"] if worst_pick else None,
             "worst_loss_pct": worst_pick["worst_loss_pct"] if worst_pick else None,
+            "avg_risk_reward": avg_rr,
+            "total_pnl_pct": total_pnl,
+            "avg_days_held": avg_days,
+            "avg_speed_days": avg_speed,
+            "profit_factor": profit_factor,
         },
     }
 

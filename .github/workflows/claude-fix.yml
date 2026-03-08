@@ -178,12 +178,14 @@ jobs:
 
       # ── Run Claude Code to diagnose and fix ──────────────────
       - name: Run Claude Code
+        id: claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CI: "true"
         run: |
           FAILURE_CONTEXT=$(cat failure_context.md)
 
+          set +e
           claude -p "You are an AI engineer fixing CI failures in the InvestAI project.
 
           FIRST: Read the CLAUDE.md file for full project context, rules, and conventions.
@@ -207,11 +209,27 @@ jobs:
           - Keep files under 400 lines
           - Run ruff format after any Python changes" \
             --allowedTools "Edit,Read,Write,Bash(ruff*),Bash(mypy*),Bash(python*),Bash(pip*),Bash(cat*),Bash(grep*),Bash(find*),Bash(head*),Bash(tail*),Bash(wc*)"
+          CLAUDE_EXIT=$?
+          set -e
+
+          if [ $CLAUDE_EXIT -ne 0 ]; then
+            echo "claude_failed=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Claude Code exited with code $CLAUDE_EXIT — likely API credit or auth issue. Skipping auto-fix."
+          else
+            echo "claude_failed=false" >> "$GITHUB_OUTPUT"
+          fi
 
       # ── Create fix branch and PR ─────────────────────────────
       - name: Check for changes
         id: changes
         run: |
+          if [ "${{ steps.claude.outputs.claude_failed }}" = "true" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Claude Code could not run (API error). No changes to commit."
+            echo "::warning::Auto-fix skipped — Claude Code API unavailable. Manual investigation needed."
+            exit 0
+          fi
+
           if git diff --quiet; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
             echo "No changes made by Claude Code"
@@ -289,5 +307,10 @@ jobs:
       - name: No changes needed
         if: steps.changes.outputs.has_changes == 'false'
         run: |
-          echo "✅ Claude Code found no changes needed — the failure may require manual investigation."
-          echo "::warning::Claude Code did not produce any fixes. Manual investigation needed."
+          if [ "${{ steps.claude.outputs.claude_failed }}" = "true" ]; then
+            echo "⚠️ Claude Code could not run (API credit/auth issue). Auto-fix skipped."
+            echo "::warning::Claude Code API unavailable — auto-fix skipped. Manual investigation needed."
+          else
+            echo "✅ Claude Code found no changes needed — the failure may require manual investigation."
+            echo "::warning::Claude Code did not produce any fixes. Manual investigation needed."
+          fi
