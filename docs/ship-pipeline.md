@@ -57,18 +57,19 @@ YOU: "feat: add DCA calculator"
 │  Squash-merge PR into master, delete feature branch              │
 │  (skip with -NoMerge flag for manual review)                     │
 ├──────────────────────────────────────────────────────────────────┤
-│  PHASE 7 — Deploy Wait                                           │
-│  Wait ~2.5 min for Render to deploy from master                  │
-│  Pings live site to detect when deploy is ready                  │
+│  PHASE 7 — Staging Deploy Wait                                   │
+│  Wait ~2.5 min for staging to deploy from master                 │
+│  Pings staging site to detect when deploy is ready               │
 ├──────────────────────────────────────────────────────────────────┤
-│  PHASE 8 — E2E Verification                                      │
-│  Run Playwright E2E tests against live site                      │
-│  tests/test_live_site.py --live-url https://investai-utho...     │
+│  PHASE 8 — E2E Verification on Staging                            │
+│  Run E2E smoke tests against staging                             │
+│  tests/test_live_site.py --live-url staging-url                  │
 │  Results posted to the GitHub Issue                              │
 ├──────────────────────────────────────────────────────────────────┤
 │  PHASE 9 — Close Issue                                           │
 │  If E2E passes → close issue as completed                        │
-│  If E2E fails → leave open, nightly pipeline will also catch it  │
+│  If E2E fails → leave open, production NOT promoted              │
+│  Note: Production promote happens via nightly auto-promote       │
 └──────────────────────────────────────────────────────────────────┘
  │
  ▼
@@ -203,7 +204,7 @@ Every step is logged to the GitHub Issue:
 │            └──────────────────────────────────────┐          │
 │                                                   ▼          │
 │  ┌───────────┐  ┌──────────────┐  ┌─────────────────────┐  │
-│  │Auto-Merge │→ │ Render       │→ │ E2E Live Site Test  │  │
+│  │Auto-Merge │→ │ Staging      │→ │ E2E Staging Test    │  │
 │  │(squash)   │  │ Deploy Wait  │  │ (Playwright)        │  │
 │  └───────────┘  └──────────────┘  └──────────┬──────────┘  │
 │                                               │              │
@@ -233,7 +234,7 @@ The PR triggers the existing CI Gate workflow (`.github/workflows/pr-tests.yml`)
 | `smoke-tests` | **YES** | API smoke tests with TestClient |
 | `lint` | **YES** | Ruff lint + format + import check |
 | `type-check` | Advisory | Mypy type checking |
-| `deploy` | — | Triggers Render deploy hook (only on master) |
+| `deploy-staging` | — | Confirms staging will auto-deploy (only on master) |
 
 ## Auto-Fix: How Claude Code Works Locally
 

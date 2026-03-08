@@ -236,17 +236,18 @@
                 <button class="merge-tab active" onclick="navigateTo('screener')">Custom Filters</button>
                 <button class="merge-tab" onclick="navigateTo('value-scanner')">Value Investing</button>
             </div>
+            <div class="scr-global-search">
+                <div class="scr-global-search-inner">
+                    <span class="scr-global-search-icon">&#128269;</span>
+                    <input type="text" id="scr-query" placeholder="Search all stocks & ETFs across all markets…  e.g. NVIDIA, AAPL, Amazon" oninput="onScreenerSearchInput()" onkeydown="if(event.key==='Enter'){clearTimeout(_scrDebounce);runScreener()}">
+                    <button class="scr-global-clear-btn" id="scr-query-clear" onclick="clearScreenerSearch()" style="display:none;" title="Clear search">&times;</button>
+                </div>
+                <div class="scr-search-hint" id="scr-search-hint" style="display:none;">Showing results across <strong>all markets &amp; asset types</strong> — filters are bypassed while searching</div>
+            </div>
             <div class="scr-cache-banner" id="scr-cache-banner" style="display:none;"></div>
             <div class="screener-layout">
                 <aside class="screener-filters">
                     <h3>Filters</h3>
-                    <div class="form-group">
-                        <label>Search Stock / ETF</label>
-                        <div class="scr-search-wrap">
-                            <input type="text" id="scr-query" placeholder="e.g. NVIDIA, AAPL, Amazon..." onkeydown="if(event.key==='Enter')runScreener()">
-                            <button class="scr-search-btn" onclick="runScreener()" title="Search">&#128269;</button>
-                        </div>
-                    </div>
                     <div class="form-group"><label>Asset Type <span class="help-icon" data-help="asset_type" tabindex="0" role="button" aria-label="Help">?</span></label>
                         <select id="scr-asset-type"><option value="">All</option><option value="Stock">Stocks</option><option value="ETF">ETFs</option></select>
                     </div>

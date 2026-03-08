@@ -115,18 +115,36 @@ Logout → delete cookie
 GitHub (master branch)
        │ push
        ▼
-Render (auto-deploy)
-       │
-       ├── Build: pip install -r requirements.txt
-       ├── Start: uvicorn src.main:app
-       ├── Startup sequence:
-       │     1. Create tables (auto-migrate)
-       │     2. Seed admin user
-       │     3. Restore caches from PostgreSQL
-       │     4. Start background warmer thread
-       │     5. Start scanner threads
-       └── External services:
-             ├── Supabase PostgreSQL (data persistence)
-             ├── Finnhub API (market data)
-             └── GitHub Actions (nightly E2E tests)
+┌──────────────────────┐     ┌──────────────────────┐
+│  Staging (auto-deploy)│     │  Production           │
+│  finance-tracker-     │     │  finance-tracker      │
+│  staging.onrender.com │     │  investai-utho.       │
+│                       │     │  onrender.com         │
+│  DB: investai-staging │     │  DB: investai         │
+│  (Supabase)           │     │  (Supabase)           │
+└───────────┬───────────┘     └───────────▲───────────┘
+            │                             │
+            ▼                             │
+   Nightly E2E Tests ────── pass ─────────┘
+   (2 AM UTC)              (auto-promote via deploy hook)
+
+Pipeline: push → staging auto-deploy → nightly E2E → promote to prod
+          Weekly full regression runs against production (Sun 4 AM UTC)
+```
+
+### Startup Sequence (both environments)
+
+```
+├── Build: pip install -r requirements.txt
+├── Start: uvicorn src.main:app
+├── Startup sequence:
+│     1. Create tables (auto-migrate)
+│     2. Seed admin user
+│     3. Restore caches from PostgreSQL
+│     4. Start background warmer thread
+│     5. Start scanner threads
+└── External services:
+      ├── Supabase PostgreSQL (data persistence)
+      ├── Finnhub API (market data)
+      └── GitHub Actions (nightly E2E + weekly regression)
 ```

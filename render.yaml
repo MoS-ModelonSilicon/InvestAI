@@ -1,12 +1,23 @@
+# ──────────────────────────────────────────────────────────────
+# InvestAI – Render Infrastructure-as-Code
+#
+# Two services: production (manual deploy) and staging (auto-deploy).
+# Pipeline: push → staging auto-deploy → nightly E2E → promote to prod
+# ──────────────────────────────────────────────────────────────
+
 services:
+  # ── Production ──────────────────────────────────────────────
   - type: web
     name: finance-tracker
     runtime: python
+    autoDeploy: false              # deployed via promote-to-prod workflow
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.3"
+      - key: ENVIRONMENT
+        value: "production"
       - key: DISABLE_YAHOO
         value: "1"
       - key: LOW_MEMORY
@@ -17,5 +28,38 @@ services:
         sync: false   # set in Render dashboard
       - key: ADMIN_PASSWORD
         sync: false   # set in Render dashboard
+      - key: INVESTAI_SECRET
+        sync: false   # set in Render dashboard
+      - key: FINNHUB_API_KEY
+        sync: false   # set in Render dashboard
       - key: RESEND_API_KEY
         sync: false   # set in Render dashboard (resend.com free tier)
+
+  # ── Staging ─────────────────────────────────────────────────
+  - type: web
+    name: finance-tracker-staging
+    runtime: python
+    autoDeploy: true               # auto-deploys on every push to master
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      - key: ENVIRONMENT
+        value: "staging"
+      - key: DISABLE_YAHOO
+        value: "1"
+      - key: LOW_MEMORY
+        value: "1"
+      - key: DATABASE_URL
+        sync: false   # set in Render dashboard (staging Supabase URL)
+      - key: ADMIN_EMAIL
+        sync: false   # set in Render dashboard
+      - key: ADMIN_PASSWORD
+        sync: false   # set in Render dashboard
+      - key: INVESTAI_SECRET
+        sync: false   # set in Render dashboard
+      - key: FINNHUB_API_KEY
+        sync: false   # set in Render dashboard
+      - key: RESEND_API_KEY
+        sync: false   # set in Render dashboard

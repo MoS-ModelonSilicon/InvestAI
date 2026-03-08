@@ -1,11 +1,13 @@
 # ──────────────────────────────────────────────────────────────
 # InvestAI Nightly Smoke Tests
 #
-# Runs every night at 2 AM UTC against the live Render site.
+# Runs every night at 2 AM UTC against STAGING.
 # Only runs SMOKE-marked tests (fast, resilient to cold-starts).
-# Full regression suite runs weekly — see weekly-tests.yml.
+# On success: auto-promotes staging → production via deploy hook.
 # On failure: creates a GitHub Issue with full details.
-# Can also be triggered manually from the Actions tab.
+# Full regression suite runs weekly on PRODUCTION — see weekly-tests.yml.
+#
+# Pipeline: push → staging auto-deploy → nightly E2E (this) → promote to prod
 # ──────────────────────────────────────────────────────────────
 name: Nightly Smoke Tests
 
@@ -24,25 +26,31 @@ on:
           - smoke
           - live-site
           - e2e
+      skip_promote:
+        description: 'Skip auto-promote to production after tests pass'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write                # for auto-fix commits
   issues: write                  # for failure issue creation
 
 env:
-  LIVE_URL: https://investai-utho.onrender.com
+  STAGING_URL: https://finance-tracker-staging.onrender.com
+  PROD_URL: https://investai-utho.onrender.com
   PYTHON_VERSION: '3.12'
 
 jobs:
-  # ── Step 1: Wake the Render site (free tier goes to sleep) ──
+  # ── Step 1: Wake the staging site (free tier goes to sleep) ──
   wake-site:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping site to wake it
+      - name: Ping staging to wake it
         run: |
-          echo "Waking up ${{ env.LIVE_URL }}..."
+          echo "Waking up ${{ env.STAGING_URL }}..."
           for i in 1 2 3 4 5 6; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.LIVE_URL }}/login" --max-time 60) || true
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.STAGING_URL }}/login" --max-time 60) || true
             echo "Attempt $i: HTTP $STATUS"
             if [ "$STATUS" = "200" ]; then
               echo "Site is awake!"

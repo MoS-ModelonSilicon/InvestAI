@@ -22,7 +22,8 @@ This project uses **four specialized agents** coordinated by an **Orchestrator**
 
 InvestAI is a full-stack personal investment advisory web application. It combines personal finance tracking (transactions, budgets) with advanced investment tools: stock screening, portfolio management, technical analysis, AI-driven advisory, DCA planning, value investing scanners, and more.
 
-**Live site**: https://investai-utho.onrender.com
+**Production**: https://investai-utho.onrender.com
+**Staging**: https://finance-tracker-staging.onrender.com (auto-deploys on push to master)
 
 ## Tech Stack
 
@@ -36,7 +37,7 @@ InvestAI is a full-stack personal investment advisory web application. It combin
 | Israeli Funds | funder.co.il scraper | Static JSON fallback if scrape fails |
 | Frontend | Vanilla HTML/CSS/JS | No React/Vue/Angular — single-page app |
 | Charts | Chart.js 4.x | Dashboard, portfolio, stock history, advisor charts |
-| Deployment | Render (free tier) | See `render.yaml`, `LowMemoryMiddleware` for OOM prevention |
+| Deployment | Render (free tier) | Staging (auto-deploy) + Production (manual promote). See `render.yaml` |
 | Android | Kotlin + Jetpack Compose | WebView wrapper, see `android/` folder |
 
 ## Architecture

@@ -2,7 +2,11 @@
 
 ## Purpose
 
-InvestAI is a full-stack personal investment advisory platform. FastAPI backend + vanilla JS frontend. Live at https://investai-utho.onrender.com. Cookie-based JWT auth, SQLite locally / PostgreSQL on Render. Market data from Finnhub (primary) with Yahoo Finance fallback.
+InvestAI is a full-stack personal investment advisory platform. FastAPI backend + vanilla JS frontend. Cookie-based JWT auth, SQLite locally / PostgreSQL on Render. Market data from Finnhub (primary) with Yahoo Finance fallback.
+
+**Environments:**
+- **Production**: https://investai-utho.onrender.com (manual promote only)
+- **Staging**: https://finance-tracker-staging.onrender.com (auto-deploys on push to master)
 
 ## Repo Map
 
@@ -82,7 +86,7 @@ python -m uvicorn src.main:app --reload --host 0.0.0.0
 
 ### Branch
 
-Single branch: `master`. Render auto-deploys on every push to `master`.
+Single branch: `master`. Staging auto-deploys on every push to `master`. Production is promoted after nightly E2E tests pass on staging.
 
 ### Commit Convention
 
@@ -123,7 +127,8 @@ This only needs to be set once per machine, but may be cleared by IT policy or r
 .\ship.ps1 "feat: describe what changed"
 
 # This will: create issue → branch → commit → PR → wait for CI →
-# auto-fix if failures → auto-merge → wait for deploy → E2E verify → close issue
+# auto-fix if failures → auto-merge → wait for staging deploy → E2E verify staging → close issue
+# Production is promoted automatically by the nightly pipeline after staging E2E passes.
 # See docs/ship-pipeline.md for full details.
 ```
 
@@ -137,34 +142,33 @@ git commit -m "fix: describe what changed"
 # 2. Ensure proxy is set (Intel network)
 git config --global http.proxy http://proxy-dmz.intel.com:911
 
-# 3. Push → GitHub CI runs smoke tests automatically
+# 3. Push → staging auto-deploys, CI runs smoke tests
 git push origin master
 
 # 4. VERIFY CI passes (MANDATORY — do not skip):
 #    Fetch: https://github.com/MoS-ModelonSilicon/InvestAI/actions/workflows/pr-tests.yml
-#    Find the run matching your commit SHA
-#    ✅ "completed successfully" → Render deploy is triggered
+#    ✅ "completed successfully" → staging deploys automatically
 #    ❌ Failed → Read logs, fix, commit, push, re-check. Repeat until green.
-#    ⚠️  The task is NOT done until CI shows green.
 
-# 5. Verify live site after deploy (~2 min):
-#    https://investai-utho.onrender.com
+# 5. Verify staging after deploy (~2 min):
+#    https://finance-tracker-staging.onrender.com
+
+# 6. Promote to production (choose one):
+#    a) Wait for nightly E2E — auto-promotes if tests pass
+#    b) Manual: Actions → "Promote to Production" → Run workflow
+#    c) Direct: curl -X POST "$RENDER_PROD_DEPLOY_HOOK"
 ```
 
-### CI Pipeline (`.github/workflows/pr-tests.yml`)
+### CI Pipeline (4 workflows)
 
-| Job | Blocking? | Purpose |
-|-----|-----------|---------|
-| `smoke-tests` | **YES** | API smoke tests with TestClient — must pass |
-| `lint` | **YES** | Ruff lint + import verification |
-| `type-check` | No | Mypy advisory only |
-| `deploy` | — | Triggers Render deploy hook (only runs if smoke-tests + lint pass) |
+| Workflow | Trigger | Target | Purpose |
+|----------|---------|--------|---------|
+| `pr-tests.yml` | Push to master | Local (TestClient) | Smoke tests + lint gate |
+| `nightly-tests.yml` | 2 AM UTC daily | Staging | E2E smoke tests, auto-promote to prod on success |
+| `weekly-tests.yml` | 4 AM UTC Sunday | Production | Full regression suite |
+| `promote-to-prod.yml` | Manual dispatch | Production | On-demand staging → prod promotion |
 
-**To fully gate deploys on CI (recommended):**
-1. In Render dashboard → Settings → disable "Auto-Deploy"
-2. Copy the Deploy Hook URL from Render → Settings
-3. Add it as GitHub secret: `RENDER_DEPLOY_HOOK`
-4. Now deploys ONLY happen when smoke tests pass
+**Pipeline**: push → staging auto-deploy → nightly E2E on staging → auto-promote to prod
 
 ## Key Context Files
 

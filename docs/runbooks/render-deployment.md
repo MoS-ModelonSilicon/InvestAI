@@ -1,10 +1,27 @@
 # Runbook: Render Deployment & Troubleshooting
 
+## Environments
+
+| Environment | URL | Auto-Deploy? | Database |
+|-------------|-----|-------------|----------|
+| **Production** | https://investai-utho.onrender.com | No (manual promote) | Supabase `investai` |
+| **Staging** | https://finance-tracker-staging.onrender.com | Yes (on push to master) | Supabase `investai-staging` |
+
 ## Normal Deploy
 
 1. Push to `master` on GitHub
-2. Render auto-deploys (build → install deps → start server)
+2. **Staging** auto-deploys (build → install deps → start server)
 3. First request triggers startup sequence (migrations, cache restore, warmer)
+4. Nightly E2E runs against staging at 2 AM UTC
+5. If tests pass → production auto-promoted via deploy hook
+
+## Promoting to Production
+
+| Method | How |
+|--------|-----|
+| **Automatic** | Nightly E2E passes on staging → deploy hook fires → production deploys |
+| **Manual (GitHub)** | Actions → "Promote to Production" → Run workflow |
+| **Manual (curl)** | `curl -X POST "$RENDER_PROD_DEPLOY_HOOK"` (see DEPLOY-KEYS.md) |
 
 ## Cold Start (Site Sleeping)
 
