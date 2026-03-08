@@ -1006,20 +1006,39 @@ class TestAPIHealth:
 
         Retries on transient network errors (e.g. "Failed to fetch") that can
         occur with Render cold-starts or corporate-proxy hiccups.
+        On 401 (stale cookie after deploy), re-authenticates and retries once.
         """
         for attempt in range(retries):
             try:
-                return page.evaluate(f"""
+                result = page.evaluate(f"""
                     async () => {{
                         const r = await fetch('{path}');
                         return {{ status: r.status, body: await r.text() }};
                     }}
                 """)
+                if result and result.get("status") == 401 and attempt < retries - 1:
+                    # Re-authenticate: cookie may be stale after a deploy
+                    self._reauth(page)
+                    continue
+                return result
             except Exception:
                 if attempt == retries - 1:
                     raise
                 page.wait_for_timeout(3000)
         return None  # unreachable; satisfies RET503
+
+    @staticmethod
+    def _reauth(page: Page):
+        """Re-login via the browser to refresh the auth cookie."""
+        from tests.conftest import TEST_USER_EMAIL, TEST_USER_PASSWORD
+
+        base = page.url.split("//")[0] + "//" + page.url.split("//")[1].split("/")[0]
+        page.goto(f"{base}/login", wait_until="domcontentloaded", timeout=60_000)
+        page.fill("#login-email", TEST_USER_EMAIL)
+        page.fill("#login-password", TEST_USER_PASSWORD)
+        page.click("#login-btn")
+        page.wait_for_url(f"{base}/", timeout=60_000)
+        page.wait_for_load_state("domcontentloaded")
 
     def test_dashboard_api(self, authenticated_page: Page):
         resp = self._fetch(authenticated_page, "/api/dashboard")

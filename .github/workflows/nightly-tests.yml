@@ -75,14 +75,14 @@ jobs:
           pip install pytest-html pytest-json-report pytest-timeout pytest-playwright
           playwright install chromium --with-deps
 
-      - name: Warm up site before tests
+      - name: Warm up staging site before tests
         run: |
-          echo "Warming up site for test runner..."
+          echo "Warming up staging site for test runner..."
           for i in 1 2 3; do
             curl -s -o /dev/null -w "  Attempt $i: HTTP %{http_code} (%{time_total}s)\n" \
-              "${{ env.LIVE_URL }}/login" --max-time 60 || true
+              "${{ env.STAGING_URL }}/login" --max-time 60 || true
             curl -s -o /dev/null -w "  Dashboard: HTTP %{http_code} (%{time_total}s)\n" \
-              "${{ env.LIVE_URL }}/api/dashboard/summary" --max-time 60 || true
+              "${{ env.STAGING_URL }}/api/dashboard/summary" --max-time 60 || true
             sleep 5
           done
 
@@ -95,7 +95,7 @@ jobs:
           # Scheduled runs use smoke (fast, ~28 tests, ~5 min).
           # Manual dispatch can pick any suite including the full live-site.
           SUITE="${{ github.event.inputs.test_suite || 'smoke' }}"
-          COMMON_ARGS="--live-url ${{ env.LIVE_URL }} --junitxml=results/junit.xml --html=results/report.html --self-contained-html --json-report --json-report-file=results/report.json -v --tb=long --timeout=180 --timeout-method=thread --maxfail=15"
+          COMMON_ARGS="--live-url ${{ env.STAGING_URL }} --junitxml=results/junit.xml --html=results/report.html --self-contained-html --json-report --json-report-file=results/report.json -v --tb=long --timeout=180 --timeout-method=thread --maxfail=15"
 
           mkdir -p results
 
@@ -274,7 +274,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue.number,
-                body: `## ✅ All tests passing now!\n\nClosed automatically by [run #${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`,
+                body: `## ✅ All staging tests passing now!\n\nClosed automatically by [run #${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).\n\nStaging verified and promoted to production.`,
               });
               await github.rest.issues.update({
                 owner: context.repo.owner,
@@ -284,3 +284,29 @@ jobs:
               });
               console.log(`Closed issue #${issue.number}`);
             }
+
+  # ── Step 5: On success → promote staging to production ─────
+  promote-to-prod:
+    needs: test
+    if: success() && github.event.inputs.skip_promote != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger production deploy
+        run: |
+          if [ -z "${{ secrets.RENDER_PROD_DEPLOY_HOOK }}" ]; then
+            echo "⚠️ RENDER_PROD_DEPLOY_HOOK secret not set — cannot promote."
+            echo "Add the production deploy hook as a GitHub secret."
+            exit 1
+          fi
+          echo "🚀 Staging E2E passed! Promoting to production..."
+          HTTP_CODE=$(curl -s -X POST "${{ secrets.RENDER_PROD_DEPLOY_HOOK }}" \
+            -o /dev/null -w "%{http_code}")
+          echo "Deploy hook response: HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Production deploy triggered!"
+            echo "  Staging:    ${{ env.STAGING_URL }}"
+            echo "  Production: ${{ env.PROD_URL }}"
+          else
+            echo "❌ Deploy hook returned HTTP $HTTP_CODE"
+            exit 1
+          fi

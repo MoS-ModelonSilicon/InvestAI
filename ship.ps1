@@ -459,7 +459,7 @@ if (-not $NoMerge) {
     $e2eOutputFile = "$PSScriptRoot\.ship-e2e-output.txt"
     python -m pytest tests/test_live_site.py `
         --live-url $LiveUrl `
-        -k "test_login_page_loads or test_stock_detail_opens or test_dca_page_loads or test_dashboard or test_market_page" `
+        -k "test_login_page_loads or test_stock_detail_opens or test_dca_page_loads or test_dashboard_loads or test_market_page" `
         --timeout=60 `
         --maxfail=3 `
         -v --tb=short `
