@@ -1,5 +1,7 @@
 # InvestAI — Investment Advisory Platform
 
+[![CI Gate](https://github.com/MoS-ModelonSilicon/InvestAI/actions/workflows/pr-tests.yml/badge.svg)](https://github.com/MoS-ModelonSilicon/InvestAI/actions/workflows/pr-tests.yml)
+
 A full-stack investment advisory web app with live market data, global stock screening, portfolio tracking, Israeli mutual fund comparison, and personalized recommendations.
 
 **Live demo:** Start the server and share via `http://<your-ip>:8000` (access key required).

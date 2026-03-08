@@ -316,7 +316,7 @@ You are an AI engineer fixing CI failures in the InvestAI project.
 
 FIRST: Read the CLAUDE.md file for full project context, rules, and conventions.
 
-HERE ARE THE CI FAILURES from GitHub Actions Run #$RunId:
+HERE ARE THE CI FAILURES from GitHub Actions Run #${RunId}:
 
 $FailLogs
 
