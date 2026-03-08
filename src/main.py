@@ -319,7 +319,7 @@ def _send_reset_email(to_email: str, code: str, logger=None) -> bool:
 
     subject = "InvestAI \u2014 Password Reset Code"
     body_text = f"Your InvestAI password reset code is: {code}\n\nThis code expires in 15 minutes."
-    email_from = os.environ.get("EMAIL_FROM", "InvestAI <noreply@investai-mail.com>")
+    email_from = os.environ.get("EMAIL_FROM", "InvestAI <onboarding@resend.dev>")
 
     # --- 1. Resend API (preferred) ---
     resend_key = os.environ.get("RESEND_API_KEY")

@@ -1331,7 +1331,7 @@ class TestSchedulerNewTasks:
 
     def test_run_smart_advisor_scan(self):
         """_run_smart_advisor_scan should call scan_and_score."""
-        from unittest.mock import patch
+        from unittest.mock import patch, MagicMock
 
         fake_rankings = [
             {
@@ -1365,6 +1365,12 @@ class TestSchedulerNewTasks:
             "backtest": {"dates": ["2025-01-01"]},
         }
 
+        # _stop_event.wait(timeout=3) sleeps 3s per combo (12 combos = 36s).
+        # Use a mock whose wait() returns False instantly (not stopped).
+        fast_event = MagicMock()
+        fast_event.wait = MagicMock(return_value=False)
+        fast_event.is_set = MagicMock(return_value=False)
+
         with (
             patch(
                 "src.services.smart_advisor.scan_and_score",
@@ -1373,6 +1379,24 @@ class TestSchedulerNewTasks:
             patch(
                 "src.services.smart_advisor.run_full_analysis",
                 return_value=fake_analysis,
+            ),
+            patch(
+                "src.services.market_data._set_cache",
+            ),
+            patch(
+                "src.services.market_data._get_cached",
+                return_value=None,
+            ),
+            patch(
+                "src.services.persistence.save_scan",
+            ),
+            patch(
+                "src.services.persistence.load_scan",
+                return_value=None,
+            ),
+            patch(
+                "src.services.background_scheduler._stop_event",
+                fast_event,
             ),
         ):
             from src.services.background_scheduler import _run_smart_advisor_scan
