@@ -310,6 +310,63 @@ def get_me(request: Request):
         db.close()
 
 
+def _send_reset_email(to_email: str, code: str, logger=None) -> bool:
+    """Send password-reset email. Tries Resend API first, then SMTP, then logs."""
+    import os, logging
+
+    if logger is None:
+        logger = logging.getLogger("investai")
+
+    subject = "InvestAI \u2014 Password Reset Code"
+    body_text = f"Your InvestAI password reset code is: {code}\n\nThis code expires in 15 minutes."
+    email_from = os.environ.get("EMAIL_FROM", "InvestAI <noreply@investai-mail.com>")
+
+    # --- 1. Resend API (preferred) ---
+    resend_key = os.environ.get("RESEND_API_KEY")
+    if resend_key:
+        try:
+            import requests as _req
+
+            resp = _req.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                json={"from": email_from, "to": [to_email], "subject": subject, "text": body_text},
+                timeout=10,
+            )
+            if resp.status_code in (200, 201):
+                logger.info(f"Reset code sent via Resend to {to_email}")
+                return True
+            logger.warning(f"Resend API {resp.status_code}: {resp.text[:200]}")
+        except Exception as e:
+            logger.warning(f"Resend API error for {to_email}: {e}")
+
+    # --- 2. SMTP fallback ---
+    smtp_host = os.environ.get("SMTP_HOST")
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_pass = os.environ.get("SMTP_PASS")
+    if smtp_host and smtp_user:
+        try:
+            import smtplib
+            from email.mime.text import MIMEText
+
+            msg = MIMEText(body_text)
+            msg["Subject"] = subject
+            msg["From"] = smtp_user
+            msg["To"] = to_email
+            with smtplib.SMTP(smtp_host, int(os.environ.get("SMTP_PORT", 587))) as s:
+                s.starttls()
+                s.login(smtp_user, smtp_pass or "")
+                s.send_message(msg)
+            logger.info(f"Reset code sent via SMTP to {to_email}")
+            return True
+        except Exception as e:
+            logger.warning(f"SMTP failed for {to_email}: {e}")
+
+    # --- 3. Log-only ---
+    logger.info(f"[NO EMAIL] Password reset code for {to_email}: {code}")
+    return False
+
+
 class ForgotPasswordBody(BaseModel):
     email: str
 
@@ -323,8 +380,8 @@ class ResetPasswordBody(BaseModel):
 @app.post("/auth/forgot-password")
 @limiter.limit("3/minute")
 def forgot_password(body: ForgotPasswordBody, request: Request):
-    """Generate a 6-digit reset code. Sends via email if SMTP is configured, otherwise logs it."""
-    import secrets as _secrets, os, logging
+    """Generate a 6-digit reset code. Sends via email if configured, otherwise logs it."""
+    import secrets as _secrets, logging
 
     logger = logging.getLogger("investai")
     db: Session = next(get_db())
@@ -344,34 +401,12 @@ def forgot_password(body: ForgotPasswordBody, request: Request):
         db.add(reset)
         db.commit()
 
-        # Try sending email
-        smtp_host = os.environ.get("SMTP_HOST")
-        smtp_user = os.environ.get("SMTP_USER")
-        smtp_pass = os.environ.get("SMTP_PASS")
-        email_sent = False
-        if smtp_host and smtp_user:
-            try:
-                import smtplib
-                from email.mime.text import MIMEText
-
-                msg = MIMEText(f"Your InvestAI password reset code is: {code}\n\nThis code expires in 15 minutes.")
-                msg["Subject"] = "InvestAI \u2014 Password Reset Code"
-                msg["From"] = smtp_user
-                msg["To"] = user.email
-                with smtplib.SMTP(smtp_host, int(os.environ.get("SMTP_PORT", 587))) as s:
-                    s.starttls()
-                    s.login(smtp_user, smtp_pass or "")
-                    s.send_message(msg)
-                logger.info(f"Reset code sent to {user.email}")
-                email_sent = True
-            except Exception as e:
-                logger.warning(f"SMTP failed, code for {user.email}: {code} ({e})")
-        else:
-            logger.info(f"[NO SMTP] Password reset code for {user.email}: {code}")
+        # Try sending email (Resend API → SMTP → log-only)
+        email_sent = _send_reset_email(user.email, code, logger)
 
         if email_sent:
             return JSONResponse(content={"ok": True, "message": "A reset code has been sent to your email."})
-        # No email service — log code but never return it in response
+        # No email service — code was logged server-side only
         return JSONResponse(content={"ok": True, "message": "If that email is registered, a reset code has been sent."})
     finally:
         db.close()

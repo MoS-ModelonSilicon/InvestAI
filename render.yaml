@@ -17,3 +17,5 @@ services:
         sync: false   # set in Render dashboard
       - key: ADMIN_PASSWORD
         sync: false   # set in Render dashboard
+      - key: RESEND_API_KEY
+        sync: false   # set in Render dashboard (resend.com free tier)
