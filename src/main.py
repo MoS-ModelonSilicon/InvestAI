@@ -203,6 +203,7 @@ def health_check():
     return {
         "status": "ok",
         "version": _GIT_SHA,
+        "environment": _os.environ.get("ENVIRONMENT", "development"),
         "cache_ready": _warm_done.is_set(),
         "cache_entries": len(_cache),
         "advisor_combos": advisor_combos,
