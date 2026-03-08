@@ -42,9 +42,6 @@ const HELP = {
     // Alerts
     price_alert: "Set a target price to get notified when a stock reaches that level — either rising above or dropping below your target.",
 
-    // Comparison
-    normalized_chart: "Shows each stock's performance starting from the same point (0%). Useful for comparing stocks at different price levels on equal footing.",
-
     // Trading Advisor — category tabs
     ta_hidden_gems: "Hidden Gems are stocks flying under the radar — they show early signs of momentum like price-volume divergences or quiet accumulation before the crowd notices. These are higher-risk but can deliver outsized returns if you catch them early.",
     ta_smart_money: "Smart Money Flow tracks unusual volume and trading patterns that suggest big institutions (hedge funds, banks) are quietly buying. When the 'smart money' moves in, the stock often follows upward.",

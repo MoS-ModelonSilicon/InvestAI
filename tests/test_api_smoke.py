@@ -683,12 +683,6 @@ class TestAllEndpointsSmoke:
         r = _authed_get("/api/news/AAPL", self.c)
         assert r.status_code != 500
 
-    # ── Comparison (external API) ──
-    @pytest.mark.external
-    def test_compare_stocks(self):
-        r = _authed_get("/api/compare?symbols=AAPL,MSFT", self.c)
-        assert r.status_code != 500
-
     # ── Recommendations (needs profile + may call external APIs) ──
     @pytest.mark.external
     def test_recommendations(self):

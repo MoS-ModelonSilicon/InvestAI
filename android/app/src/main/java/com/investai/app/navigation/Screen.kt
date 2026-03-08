@@ -30,7 +30,6 @@ sealed class Screen(val route: String) {
     data object ValueScanner : Screen("value_scanner")
     data object SmartAdvisor : Screen("smart_advisor")
     data object TradingAdvisor : Screen("trading_advisor")
-    data object Comparison : Screen("comparison")
     data object ILFunds : Screen("il_funds")
     data object News : Screen("news")
     data object Calendar : Screen("calendar")

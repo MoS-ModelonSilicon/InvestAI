@@ -12,7 +12,6 @@ import com.investai.app.ui.auth.LoginScreen
 import com.investai.app.ui.autopilot.AutoPilotScreen
 import com.investai.app.ui.budgets.BudgetsScreen
 import com.investai.app.ui.calendar.CalendarScreen
-import com.investai.app.ui.comparison.ComparisonScreen
 import com.investai.app.ui.education.EducationScreen
 import com.investai.app.ui.home.HomeScreen
 import com.investai.app.ui.ilfunds.ILFundsScreen
@@ -160,12 +159,6 @@ fun InvestAINavGraph(
         }
         composable(Screen.TradingAdvisor.route) {
             TradingAdvisorScreen(
-                onStockClick = { symbol -> navController.navigate(Screen.StockDetail.createRoute(symbol)) },
-                onBack = { navController.popBackStack() },
-            )
-        }
-        composable(Screen.Comparison.route) {
-            ComparisonScreen(
                 onStockClick = { symbol -> navController.navigate(Screen.StockDetail.createRoute(symbol)) },
                 onBack = { navController.popBackStack() },
             )

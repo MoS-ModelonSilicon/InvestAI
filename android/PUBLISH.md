@@ -145,7 +145,6 @@ InvestAI is your all-in-one investing companion that combines real-time market d
 📰 MARKET INTELLIGENCE
 • Curated financial news feed
 • Stock-specific news on detail pages
-• Compare multiple stocks side-by-side
 • Israeli funds data
 
 🔒 SECURE & PRIVATE

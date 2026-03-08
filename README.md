@@ -12,7 +12,6 @@ A full-stack investment advisory web app with live market data, global stock scr
 - **Live Market Dashboard** — real-time ticker bar + featured stock cards with sparkline charts
 - **Stock & ETF Screener** — 280+ global symbols across 12 regions (US, China/HK, Japan, Europe, India, Israel, etc.) with 10 filter dimensions, region filtering, and quick presets
 - **Stock Detail Pages** — full company overview, interactive price charts with timeframes, analyst price targets, risk analysis, news
-- **Stock Comparison** — side-by-side normalized chart + metrics table for 2-4 stocks
 - **Market News** — aggregated news from watchlist and portfolio holdings
 
 ### Portfolio & Tracking
@@ -89,7 +88,7 @@ src/
 │   ├── portfolio.py        # Holdings CRUD + performance
 │   ├── israeli_funds.py    # IL fund explorer API
 │   ├── alerts.py           # Price alert CRUD + trigger check
-│   └── ...                 # comparison, news, calendar, education, etc.
+│   └── ...                 # news, calendar, education, etc.
 ├── schemas/                # Pydantic request/response models
 └── services/               # Business logic
     ├── market_data.py      # yfinance integration, caching, batch fetch
