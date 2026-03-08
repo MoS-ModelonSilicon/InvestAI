@@ -159,13 +159,22 @@ def authenticated_page(page: Page, live_url: str) -> Page:
             break
         except Exception:
             time.sleep(5)
-    page.goto(f"{live_url}/login", wait_until="domcontentloaded", timeout=120_000)
-    page.fill("#login-email", TEST_USER_EMAIL)
-    page.fill("#login-password", TEST_USER_PASSWORD)
-    page.click("#login-btn")
-    page.wait_for_url(f"{live_url}/", timeout=120_000)
-    page.wait_for_load_state("domcontentloaded")
-    return page
+
+    last_err = None
+    for attempt in range(3):
+        try:
+            page.goto(f"{live_url}/login", wait_until="domcontentloaded", timeout=120_000)
+            page.fill("#login-email", TEST_USER_EMAIL)
+            page.fill("#login-password", TEST_USER_PASSWORD)
+            page.click("#login-btn")
+            page.wait_for_url(f"{live_url}/", timeout=120_000)
+            page.wait_for_load_state("domcontentloaded")
+            return page
+        except Exception as exc:
+            last_err = exc
+            if attempt < 2:
+                page.wait_for_timeout(5_000)
+    raise last_err  # type: ignore[misc]
 
 
 @pytest.fixture(scope="session")

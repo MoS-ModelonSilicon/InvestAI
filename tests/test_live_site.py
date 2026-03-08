@@ -16,6 +16,7 @@ Run against local server:
 import re
 import uuid
 
+import pytest
 from playwright.sync_api import Page, expect
 
 from conftest import TEST_USER_EMAIL, TEST_USER_PASSWORD, TEST_USER_NAME
@@ -34,6 +35,29 @@ def _nav(page: Page, page_id: str):
     page.wait_for_timeout(500)
 
 
+def _wait_for_content(page: Page, container_sel: str, *, min_len: int = 100,
+                      timeout: int = 30_000, poll: int = 1_000):
+    """Poll until the container has meaningful content (HTML length >= min_len).
+
+    Replaces dumb ``wait_for_timeout`` for data-dependent assertions.
+    Returns the inner HTML once it exceeds *min_len*, or the last snapshot
+    if we time out (the caller can still assert on it).
+    """
+    import time as _t
+    deadline = _t.monotonic() + timeout / 1000
+    html = ""
+    while _t.monotonic() < deadline:
+        loc = page.locator(container_sel)
+        if loc.count() > 0:
+            html = loc.inner_html()
+            # Content is considered "loaded" when it has enough HTML and
+            # spinner/loading indicators have disappeared.
+            if len(html) >= min_len and "loading" not in html.lower():
+                return html
+        page.wait_for_timeout(poll)
+    return html  # best-effort snapshot
+
+
 def _unique(prefix: str = "") -> str:
     return f"{prefix}{uuid.uuid4().hex[:8]}"
 
@@ -43,6 +67,7 @@ def _unique(prefix: str = "") -> str:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestStockDetail:
     """Navigate to a stock detail page and verify all sections render."""
 
@@ -79,10 +104,7 @@ class TestStockDetail:
         if cards.count() == 0:
             return
         cards.first.click()
-        # Wait for stock data to load (API can be slow on Render)
-        authenticated_page.wait_for_timeout(20000)
-        detail = authenticated_page.locator("#page-stock-detail")
-        html = detail.inner_html()
+        html = _wait_for_content(authenticated_page, "#page-stock-detail", min_len=200, timeout=30_000)
         # Should show loaded content (not just spinner)
         assert "loading" not in html.lower() or "$" in html, (
             f"Stock detail still loading or missing data. HTML: {html[:500]}"
@@ -96,7 +118,7 @@ class TestStockDetail:
         if cards.count() == 0:
             return
         cards.first.click()
-        authenticated_page.wait_for_timeout(25000)
+        _wait_for_content(authenticated_page, "#page-stock-detail", min_len=200, timeout=30_000)
         # Look for the chart canvas
         canvas = authenticated_page.locator("#page-stock-detail canvas")
         if canvas.count() > 0:
@@ -112,7 +134,7 @@ class TestStockDetail:
         if cards.count() == 0:
             return
         cards.first.click()
-        authenticated_page.wait_for_timeout(20000)
+        _wait_for_content(authenticated_page, "#page-stock-detail", min_len=200, timeout=30_000)
         # Look for timeframe buttons
         btns = authenticated_page.locator("#page-stock-detail .timeframe-btn, #page-stock-detail .tf-btn")
         if btns.count() > 0:
@@ -126,7 +148,7 @@ class TestStockDetail:
         if cards.count() == 0:
             return
         cards.first.click()
-        authenticated_page.wait_for_timeout(20000)
+        _wait_for_content(authenticated_page, "#page-stock-detail", min_len=200, timeout=30_000)
         detail = authenticated_page.locator("#page-stock-detail")
         html = detail.inner_html()
         # Should have action buttons
@@ -143,6 +165,7 @@ class TestStockDetail:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestDCAPlanner:
     """Test the Dollar Cost Averaging planner feature."""
 
@@ -206,6 +229,7 @@ class TestDCAPlanner:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestAutopilotAIPicks:
     """Test the Autopilot strategy profiles and simulation."""
 
@@ -268,9 +292,7 @@ class TestAutopilotAIPicks:
 
         btn.click(force=True)
         # Wait for results (this can be slow with live data)
-        authenticated_page.wait_for_timeout(20000)
-        container = authenticated_page.locator("#page-autopilot")
-        html = container.inner_html()
+        html = _wait_for_content(authenticated_page, "#page-autopilot", min_len=500, timeout=30_000)
         # Results should show dollar values, percentages, or stock symbols
         has_results = "$" in html or "%" in html or "return" in html.lower()
         assert has_results, f"Simulation produced no visible results. HTML: {html[:500]}"
@@ -288,6 +310,7 @@ class TestAutopilotAIPicks:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestSmartAdvisor:
     """Test the Smart Advisor (long-term stock analysis)."""
 
@@ -321,8 +344,7 @@ class TestSmartAdvisor:
             return
         btn.first.click(force=True)
         # Wait for the long analysis (scanning 80+ stocks)
-        authenticated_page.wait_for_timeout(30000)
-        html = authenticated_page.locator("#page-smart-advisor").inner_html()
+        html = _wait_for_content(authenticated_page, "#page-smart-advisor", min_len=1000, timeout=45_000)
         # Should show results with stock symbols, scores, or portfolio data
         has_results = "$" in html or "score" in html.lower() or "rank" in html.lower()
         assert has_results or len(html) > 2000, f"Advisor analysis produced no visible results. HTML: {html[:500]}"
@@ -344,6 +366,7 @@ class TestSmartAdvisor:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestTradingAdvisor:
     """Test the Trading Advisor (short-term picks with technical analysis)."""
 
@@ -398,6 +421,7 @@ class TestTradingAdvisor:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestPicksTracker:
     """Test the Discord picks tracker and evaluation page."""
 
@@ -447,6 +471,7 @@ class TestPicksTracker:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestValueScanner:
     """Test the Value Scanner (Graham-Buffett criteria stock screening)."""
 
@@ -493,6 +518,7 @@ class TestValueScanner:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestWatchlistInteraction:
     """Full watchlist interaction tests including add, view, and remove."""
 
@@ -537,6 +563,7 @@ class TestWatchlistInteraction:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestPortfolioAdvanced:
     """Advanced portfolio tests: multiple holdings, allocation, delete."""
 
@@ -612,6 +639,7 @@ class TestPortfolioAdvanced:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestAlertsAdvanced:
     """Advanced alert tests: multiple conditions, dismiss, search."""
 
@@ -666,6 +694,7 @@ class TestAlertsAdvanced:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestTransactionsAdvanced:
     """Advanced transaction tests: edit, delete, date filtering."""
 
@@ -737,6 +766,7 @@ class TestTransactionsAdvanced:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestBudgetsAdvanced:
     """Advanced budget tests: multiple budgets, progress tracking."""
 
@@ -769,6 +799,7 @@ class TestBudgetsAdvanced:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestComparisonAdvanced:
     """Advanced comparison tests: multiple stocks, chart rendering."""
 
@@ -781,8 +812,7 @@ class TestComparisonAdvanced:
         self._go(authenticated_page)
         authenticated_page.fill("#compare-input", "AAPL, MSFT, GOOGL")
         authenticated_page.get_by_role("button", name="Compare").click()
-        authenticated_page.wait_for_timeout(25000)
-        html = authenticated_page.locator("#compare-results").inner_html()
+        html = _wait_for_content(authenticated_page, "#compare-results", min_len=200, timeout=35_000)
         for sym in ["AAPL", "MSFT", "GOOGL"]:
             assert sym.lower() in html.lower(), f"Comparison results don't contain {sym}. HTML: {html[:500]}"
 
@@ -791,7 +821,7 @@ class TestComparisonAdvanced:
         self._go(authenticated_page)
         authenticated_page.fill("#compare-input", "AAPL, TSLA")
         authenticated_page.get_by_role("button", name="Compare").click()
-        authenticated_page.wait_for_timeout(25000)
+        _wait_for_content(authenticated_page, "#compare-results", min_len=200, timeout=35_000)
         canvases = authenticated_page.locator("#compare-results canvas, #compare-chart")
         if canvases.count() > 0:
             box = canvases.first.bounding_box()
@@ -803,8 +833,7 @@ class TestComparisonAdvanced:
         self._go(authenticated_page)
         authenticated_page.fill("#compare-input", "AAPL, MSFT")
         authenticated_page.get_by_role("button", name="Compare").click()
-        authenticated_page.wait_for_timeout(25000)
-        html = authenticated_page.locator("#compare-results").inner_html()
+        html = _wait_for_content(authenticated_page, "#compare-results", min_len=200, timeout=35_000)
         # Should show comparison metrics
         has_metrics = any(kw in html.lower() for kw in ["p/e", "market cap", "dividend", "return", "beta"])
         assert has_metrics or "$" in html, f"Comparison missing metric details. HTML: {html[:500]}"
@@ -815,6 +844,7 @@ class TestComparisonAdvanced:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestRiskProfileComplete:
     """Test completing the risk profile wizard end-to-end."""
 
@@ -857,6 +887,7 @@ class TestRiskProfileComplete:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.smoke
 class TestThemeToggle:
     """Test the dark/light mode theme toggle."""
 
@@ -911,6 +942,7 @@ class TestThemeToggle:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestMobileLayout:
     """Test mobile responsive behavior."""
 
@@ -965,6 +997,7 @@ class TestMobileLayout:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.smoke
 class TestAPIHealth:
     """Direct API health checks via the browser's fetch — no CORS issues."""
 
@@ -1071,6 +1104,7 @@ class TestAPIHealth:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.smoke
 class TestNavComplete:
     """Verify every sidebar nav page loads without JS errors."""
 
@@ -1123,6 +1157,7 @@ class TestNavComplete:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.smoke
 class TestContextMenus:
     """Test right-click context menus on stock items."""
 
@@ -1150,6 +1185,7 @@ class TestContextMenus:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestEducationInteraction:
     """Test deeper education page interactions."""
 
@@ -1198,6 +1234,7 @@ class TestEducationInteraction:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestCalendarInteraction:
     """Test calendar page tab switching and event display."""
 
@@ -1231,6 +1268,7 @@ class TestCalendarInteraction:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestILFundsAdvanced:
     """Advanced Israeli funds tests: presets, sorting, pagination."""
 
@@ -1278,6 +1316,7 @@ class TestILFundsAdvanced:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestNewsAdvanced:
     """Advanced news tests: search, symbol tags."""
 
@@ -1321,6 +1360,7 @@ class TestNewsAdvanced:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestFullUserJourney:
     """End-to-end journey: register → login → build portfolio → set alerts → view."""
 
@@ -1409,6 +1449,7 @@ class TestFullUserJourney:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestMultiUserLive:
     """Two users should never see each other's data — tested via browser fetch."""
 
@@ -1459,10 +1500,11 @@ class TestMultiUserLive:
         assert "UNIQUE_TEST" in symbols_a, f"User A can't see own holding: {symbols_a}"
 
         # User B: open new context, login, check
-        ctx_b = browser.new_context(
-            viewport={"width": 1280, "height": 1024},
-            proxy={"server": "http://proxy-dmz.intel.com:912", "bypass": "127.0.0.1,localhost"},
-        )
+        from conftest import _NEED_PROXY
+        ctx_opts = {"viewport": {"width": 1280, "height": 1024}}
+        if _NEED_PROXY:
+            ctx_opts["proxy"] = {"server": "http://proxy-dmz.intel.com:912", "bypass": "127.0.0.1,localhost"}
+        ctx_b = browser.new_context(**ctx_opts)
         page_b = ctx_b.new_page()
         self._register_and_login(page_b, live_url, email_b, "Bob12345", "Bob")
         resp_b = page_b.evaluate("async () => (await fetch('/api/portfolio/holdings')).json()")
@@ -1476,6 +1518,7 @@ class TestMultiUserLive:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestErrorHandling:
     """Test how the app handles edge cases and invalid inputs."""
 
@@ -1551,6 +1594,7 @@ class TestErrorHandling:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.smoke
 class TestPerformance:
     """Verify critical pages load within acceptable timeframes."""
 
@@ -1585,6 +1629,7 @@ class TestPerformance:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.deep
 class TestScreenerFull:
     """Complete screener interaction tests."""
 
@@ -1659,6 +1704,7 @@ class TestScreenerFull:
 # ════════════════════════════════════════════════════════════
 
 
+@pytest.mark.smoke
 class TestSparklineCharts:
     """Validate that sparkline charts render on every market card in the dashboard."""
 
