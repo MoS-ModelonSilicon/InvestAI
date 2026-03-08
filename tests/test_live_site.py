@@ -1738,14 +1738,12 @@ class TestSparklineCharts:
     def test_sparkline_api_returns_data_for_all_symbols(self, live_url: str):
         """The /api/market/home API should return sparkline arrays with >1 point for all featured stocks."""
         import requests
-
-        proxies = {"http": "http://proxy-dmz.intel.com:911", "https": "http://proxy-dmz.intel.com:912"}
-        px = proxies if "127.0.0.1" not in live_url and "localhost" not in live_url else None
+        from tests.conftest import _PROXIES
 
         # Register + login via API to get a session
         s = requests.Session()
-        if px:
-            s.proxies.update(px)
+        if _PROXIES:
+            s.proxies.update(_PROXIES)
         s.post(
             f"{live_url}/auth/register",
             json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD, "name": TEST_USER_NAME},
@@ -1782,14 +1780,12 @@ class TestSparklineCharts:
         """
         import requests
         import time
-
-        proxies = {"http": "http://proxy-dmz.intel.com:911", "https": "http://proxy-dmz.intel.com:912"}
-        px = proxies if "127.0.0.1" not in live_url and "localhost" not in live_url else None
+        from tests.conftest import _PROXIES
 
         # Register + login via API to get a session
         s = requests.Session()
-        if px:
-            s.proxies.update(px)
+        if _PROXIES:
+            s.proxies.update(_PROXIES)
         s.post(
             f"{live_url}/auth/register",
             json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD, "name": TEST_USER_NAME},
