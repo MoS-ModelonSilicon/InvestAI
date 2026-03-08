@@ -27,6 +27,8 @@ python -m pytest tests/test_live_site.py -v
 - `conftest.py` sets up TestClient and test fixtures — read this before adding tests
 - E2E tests expect specific DOM structure — if you change `index.html` sections, tests may break
 - Live site tests depend on Render being awake and data being cached
+- **Ship pipeline runs only 4 E2E tests** via `-k` filter: `test_login_page_loads`, `test_stock_detail_opens`, `test_dca_page_loads`, `test_dashboard_loads`. Use exact names — `test_dashboard` would also match `test_dashboard_api`
+- `TestAPIHealth._fetch()` auto-recovers from 401 by calling `_reauth()` to re-login via browser — handles stale cookies after Render deploy
 
 ## Adding a New Smoke Test
 

@@ -256,11 +256,24 @@ Bash(cat*), Bash(grep*), Bash(find*), Bash(head*), Bash(tail*), Bash(wc*)
 
 ## E2E Verification
 
-After merge + deploy, the script runs `tests/test_live_site.py` against the real production URL. This catches:
+After merge + deploy, the script runs `tests/test_live_site.py` against the real production URL with a focused `-k` filter:
+
+```
+test_login_page_loads or test_stock_detail_opens or test_dca_page_loads or test_dashboard_loads or test_market_page
+```
+
+This selects **4 critical-path tests** (not the full 105-test suite — that's for nightly). The filter uses `test_dashboard_loads` (not `test_dashboard`) to avoid accidentally matching `test_dashboard_api` and other API health tests.
+
+### 401 Auto-Recovery
+
+The `TestAPIHealth._fetch()` helper includes automatic 401 recovery. If a fetch returns 401 (stale auth cookie after deploy — e.g., `INVESTAI_SECRET` regenerated), it calls `_reauth()` to re-login via the browser and retries. This makes API health tests resilient to Render restarts.
+
+### What it catches
 
 - Deploy-time issues (missing env vars, migration failures)
 - Environment differences (Render vs local)
 - Feature regressions on the live site
+- Stale auth cookies after deploy (via auto-recovery)
 
 If E2E fails, the issue stays open and the nightly pipeline will also flag it.
 
