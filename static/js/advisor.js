@@ -321,15 +321,15 @@ function _renderTADetailModal(data) {
                 <div class="ta-detail-signals"><h4>Classic Indicators</h4>${signals}</div>
                 <div class="ta-detail-chart-area">
                     <h4>Price &amp; Indicators</h4>
-                    <canvas id="ta-detail-canvas" height="300"></canvas>
+                    <canvas id="ta-detail-canvas" height="180"></canvas>
                 </div>
                 <div class="ta-detail-chart-area">
                     <h4>RSI (14)</h4>
-                    <canvas id="ta-rsi-canvas" height="120"></canvas>
+                    <canvas id="ta-rsi-canvas" height="80"></canvas>
                 </div>
                 <div class="ta-detail-chart-area">
                     <h4>MACD (12, 26, 9)</h4>
-                    <canvas id="ta-macd-canvas" height="140"></canvas>
+                    <canvas id="ta-macd-canvas" height="90"></canvas>
                 </div>
             </div>
         </div>`;

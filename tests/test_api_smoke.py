@@ -1360,7 +1360,21 @@ class TestSchedulerNewTasks:
             for i, s in enumerate(["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA"])
         ]
 
-        with patch("src.services.smart_advisor.scan_and_score", return_value=fake_rankings):
+        fake_analysis = {
+            "rankings": fake_rankings,
+            "backtest": {"dates": ["2025-01-01"]},
+        }
+
+        with (
+            patch(
+                "src.services.smart_advisor.scan_and_score",
+                return_value=fake_rankings,
+            ),
+            patch(
+                "src.services.smart_advisor.run_full_analysis",
+                return_value=fake_analysis,
+            ),
+        ):
             from src.services.background_scheduler import _run_smart_advisor_scan
 
             result = _run_smart_advisor_scan()
