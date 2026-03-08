@@ -12,8 +12,35 @@ collecting ... collected 105 items / 100 deselected / 5 selected
 
 tests/test_live_site.py::TestStockDetail::test_stock_detail_opens_from_market_card[chromium] PASSED [ 20%]
 tests/test_live_site.py::TestDCAPlanner::test_dca_page_loads[chromium] PASSED [ 40%]
-tests/test_live_site.py::TestAPIHealth::test_dashboard_api[chromium] PASSED [ 60%]
+tests/test_live_site.py::TestAPIHealth::test_dashboard_api[chromium] FAILED [ 60%]
 tests/test_live_site.py::TestPerformance::test_login_page_loads_fast[chromium] PASSED [ 80%]
 tests/test_live_site.py::TestPerformance::test_dashboard_loads_after_login[chromium] PASSED [100%]
 
-================ 5 passed, 100 deselected in 63.02s (0:01:03) =================
+================================== FAILURES ===================================
+_________________ TestAPIHealth.test_dashboard_api[chromium] __________________
+tests\test_live_site.py:981: in test_dashboard_api
+    resp = self._fetch(authenticated_page, "/api/dashboard")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_live_site.py:973: in _fetch
+    return page.evaluate(f"""
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:8566: in evaluate
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_page.py:464: in evaluate
+    return await self._main_frame.evaluate(expression, arg)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:320: in evaluate
+    await self._channel.send(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.Error: Page.evaluate: TypeError: Failed to fetch
+E       at eval (eval at evaluate (:290:30), <anonymous>:2:33)
+E       at UtilityScript.evaluate (<anonymous>:297:18)
+E       at UtilityScript.<anonymous> (<anonymous>:1:44)
+=========================== short test summary info ===========================
+FAILED tests/test_live_site.py::TestAPIHealth::test_dashboard_api[chromium] - playwright._impl._errors.Error: Page.evaluate: TypeError: Failed to fetch
+    at eval (eval at evaluate (:290:30), <anonymous>:2:33)
+    at UtilityScript.evaluate (<anonymous>:297:18)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+=========== 1 failed, 4 passed, 100 deselected in 67.31s (0:01:07) ============
