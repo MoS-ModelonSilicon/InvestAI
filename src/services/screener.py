@@ -1,12 +1,25 @@
 from typing import Optional
+import logging
+import threading
 
 from src.services.market_data import (
     fetch_batch,
     STOCK_UNIVERSE,
     ETF_UNIVERSE,
+    ALL_UNIVERSE,
     KNOWN_NAMES,
     format_market_cap,
 )
+
+logger = logging.getLogger(__name__)
+
+# ── Pre-computed screener snapshot ───────────────────────────
+# Built by refresh_screener_snapshot() after the cache warmer
+# finishes, and restored from the DB on startup.  screen_instruments()
+# reads from this list so every query is an instant in-memory filter
+# instead of a slow fetch_batch + API call.
+_snapshot_lock = threading.Lock()
+_screener_snapshot: list[dict] = []
 
 
 def _compute_signal(d: dict) -> dict:
@@ -362,6 +375,107 @@ def _build_analyst_view(d: dict) -> dict | None:
     }
 
 
+def _build_instrument_row(d: dict) -> dict:
+    """Transform a raw market-data dict into a screener output row."""
+    sig = _compute_signal(d)
+    risk = _build_risk_analysis(d)
+    analyst = _build_analyst_view(d)
+    summary_text = d.get("summary", "")
+    if summary_text and len(summary_text) > 250:
+        summary_text = summary_text[:247] + "..."
+
+    return {
+        "symbol": d["symbol"],
+        "name": d.get("name") or KNOWN_NAMES.get(d["symbol"], d["symbol"]),
+        "sector": d.get("sector", "N/A"),
+        "industry": d.get("industry", "N/A"),
+        "price": round(d.get("price", 0), 2),
+        "market_cap": d.get("market_cap", 0),
+        "market_cap_fmt": format_market_cap(d.get("market_cap", 0)),
+        "pe_ratio": round(d["pe_ratio"], 2) if d.get("pe_ratio") else None,
+        "forward_pe": round(d["forward_pe"], 2) if d.get("forward_pe") else None,
+        "dividend_yield": d.get("dividend_yield"),
+        "beta": round(d["beta"], 2) if d.get("beta") else None,
+        "year_change": d.get("year_change"),
+        "recommendation": d.get("recommendation"),
+        "signal": sig["signal"],
+        "signal_reason": sig["reason"],
+        "week52_high": round(d["week52_high"], 2) if d.get("week52_high") else None,
+        "week52_low": round(d["week52_low"], 2) if d.get("week52_low") else None,
+        "pct_from_high": d.get("pct_from_high"),
+        "revenue_growth": d.get("revenue_growth"),
+        "earnings_growth": d.get("earnings_growth"),
+        "profit_margin": d.get("profit_margin"),
+        "return_on_equity": d.get("return_on_equity"),
+        "debt_to_equity": d.get("debt_to_equity"),
+        "risk_analysis": risk,
+        "analyst_targets": analyst,
+        "summary": summary_text,
+        "asset_type": d.get("asset_type", "Stock"),
+        "region": d.get("region", "US"),
+    }
+
+
+# ── Snapshot refresh (called by cache warmer) ────────────────
+
+
+def refresh_screener_snapshot() -> int:
+    """Re-build the full screener snapshot from cached market data.
+
+    Called after the cache warmer finishes so every instrument's data
+    is already in the in-memory cache.  The result is stored both in
+    _screener_snapshot (for instant queries) and in the database
+    (for instant restore after a restart).
+
+    Returns the number of instruments in the snapshot.
+    """
+    import time
+
+    t0 = time.time()
+    all_data = fetch_batch(ALL_UNIVERSE, cached_only=True)
+    rows = []
+    for d in all_data:
+        try:
+            rows.append(_build_instrument_row(d))
+        except Exception:
+            logger.warning("Failed to build screener row for %s", d.get("symbol"))
+
+    rows.sort(key=lambda x: x.get("market_cap", 0), reverse=True)
+
+    with _snapshot_lock:
+        _screener_snapshot.clear()
+        _screener_snapshot.extend(rows)
+
+    # Persist to DB for instant cold-start restore
+    try:
+        from src.services.persistence import save_scan
+
+        save_scan("screener_snapshot", rows)
+    except Exception:
+        logger.exception("Failed to persist screener snapshot to DB")
+
+    elapsed = time.time() - t0
+    logger.info("Screener snapshot refreshed: %d instruments in %.1fs", len(rows), elapsed)
+    return len(rows)
+
+
+def restore_screener_snapshot(data: list[dict]) -> None:
+    """Restore the screener snapshot from DB data (called at startup)."""
+    with _snapshot_lock:
+        _screener_snapshot.clear()
+        _screener_snapshot.extend(data)
+    logger.info("Restored screener snapshot: %d instruments", len(data))
+
+
+def get_screener_snapshot() -> list[dict]:
+    """Return a copy of the current snapshot (for diagnostics)."""
+    with _snapshot_lock:
+        return list(_screener_snapshot)
+
+
+# ── Main screener query (reads from snapshot) ────────────────
+
+
 def screen_instruments(
     asset_type: Optional[str] = None,
     sector: Optional[str] = None,
@@ -378,39 +492,44 @@ def screen_instruments(
 ) -> list[dict]:
     query_lower = query.strip().lower() if query else None
 
-    # When searching by keyword, pre-filter the universe using the static
-    # KNOWN_NAMES table so we can match by company name even before the
-    # cache warmer has fetched data from Finnhub.  Then only fetch those
-    # matching symbols (with live fallback) instead of the whole universe.
-    if query_lower:
-        full_universe = STOCK_UNIVERSE + ETF_UNIVERSE
-        matched_syms = []
-        for sym in full_universe:
-            sym_lower = sym.lower()
-            name_lower = KNOWN_NAMES.get(sym, sym).lower()
-            if query_lower in sym_lower or query_lower in name_lower:
-                matched_syms.append(sym)
-        # Fetch only matching symbols — allow live fetch (not cached_only)
-        # so results appear even when the cache hasn't warmed yet.
-        all_data = fetch_batch(matched_syms, cached_only=False) if matched_syms else []
-    elif asset_type == "ETF":
-        universe = ETF_UNIVERSE
-        all_data = fetch_batch(universe, cached_only=True)
-    elif asset_type == "Stock":
-        universe = STOCK_UNIVERSE
-        all_data = fetch_batch(universe, cached_only=True)
-    else:
-        universe = STOCK_UNIVERSE + ETF_UNIVERSE
-        all_data = fetch_batch(universe, cached_only=True)
+    # Read from the pre-computed snapshot (instant).
+    with _snapshot_lock:
+        snapshot = list(_screener_snapshot)
 
-    filtered = []
-    for d in all_data:
+    # If the snapshot is empty (first startup, warmer not done yet),
+    # fall back to the old live-fetch path so users still get results.
+    if not snapshot:
+        logger.info("Screener snapshot empty — falling back to live fetch")
         if query_lower:
-            sym = (d.get("symbol") or "").lower()
-            name = (d.get("name") or "").lower()
-            known = KNOWN_NAMES.get(d.get("symbol", ""), "").lower()
-            sector_val = (d.get("sector") or "").lower()
-            industry_val = (d.get("industry") or "").lower()
+            matched_syms = [
+                sym
+                for sym in ALL_UNIVERSE
+                if query_lower in sym.lower() or query_lower in KNOWN_NAMES.get(sym, sym).lower()
+            ]
+            all_data = fetch_batch(matched_syms, cached_only=False) if matched_syms else []
+        elif asset_type == "ETF":
+            all_data = fetch_batch(ETF_UNIVERSE, cached_only=True)
+        elif asset_type == "Stock":
+            all_data = fetch_batch(STOCK_UNIVERSE, cached_only=True)
+        else:
+            all_data = fetch_batch(ALL_UNIVERSE, cached_only=True)
+        snapshot = []
+        for d in all_data:
+            try:
+                snapshot.append(_build_instrument_row(d))
+            except Exception:
+                pass
+        snapshot.sort(key=lambda x: x.get("market_cap", 0), reverse=True)
+
+    # ── Filter the snapshot ──────────────────────────────────
+    filtered = []
+    for row in snapshot:
+        if query_lower:
+            sym = (row.get("symbol") or "").lower()
+            name = (row.get("name") or "").lower()
+            known = KNOWN_NAMES.get(row.get("symbol", ""), "").lower()
+            sector_val = (row.get("sector") or "").lower()
+            industry_val = (row.get("industry") or "").lower()
             if (
                 query_lower not in sym
                 and query_lower not in name
@@ -420,69 +539,31 @@ def screen_instruments(
             ):
                 continue
             # When query is active, skip asset_type/sector/region filters
-            # so results span the entire universe
         else:
-            if asset_type and d.get("asset_type") != asset_type:
+            if asset_type and row.get("asset_type") != asset_type:
                 continue
-            if sector and d.get("sector", "").lower() != sector.lower():
+            if sector and (row.get("sector") or "").lower() != sector.lower():
                 continue
-            if region and d.get("region", "US") != region:
+            if region and row.get("region", "US") != region:
                 continue
-        if market_cap_min and (d.get("market_cap") or 0) < market_cap_min:
+        if market_cap_min and (row.get("market_cap") or 0) < market_cap_min:
             continue
-        if market_cap_max and (d.get("market_cap") or 0) > market_cap_max:
+        if market_cap_max and (row.get("market_cap") or 0) > market_cap_max:
             continue
-        if pe_min and (d.get("pe_ratio") is None or d["pe_ratio"] < pe_min):
+        if pe_min and (row.get("pe_ratio") is None or row["pe_ratio"] < pe_min):
             continue
-        if pe_max and (d.get("pe_ratio") is None or d["pe_ratio"] > pe_max):
+        if pe_max and (row.get("pe_ratio") is None or row["pe_ratio"] > pe_max):
             continue
-        if dividend_yield_min and (d.get("dividend_yield") is None or d["dividend_yield"] < dividend_yield_min):
+        if dividend_yield_min and (row.get("dividend_yield") is None or row["dividend_yield"] < dividend_yield_min):
             continue
-        if beta_min and (d.get("beta") is None or d["beta"] < beta_min):
+        if beta_min and (row.get("beta") is None or row["beta"] < beta_min):
             continue
-        if beta_max and (d.get("beta") is None or d["beta"] > beta_max):
+        if beta_max and (row.get("beta") is None or row["beta"] > beta_max):
+            continue
+        if signal and (row.get("signal") or "").lower() != signal.lower():
             continue
 
-        sig = _compute_signal(d)
-        if signal and sig["signal"].lower() != signal.lower():
-            continue
-        risk = _build_risk_analysis(d)
-        analyst = _build_analyst_view(d)
-        summary_text = d.get("summary", "")
-        if summary_text and len(summary_text) > 250:
-            summary_text = summary_text[:247] + "..."
-
-        filtered.append(
-            {
-                "symbol": d["symbol"],
-                "name": d["name"],
-                "sector": d.get("sector", "N/A"),
-                "industry": d.get("industry", "N/A"),
-                "price": round(d.get("price", 0), 2),
-                "market_cap": d.get("market_cap", 0),
-                "market_cap_fmt": format_market_cap(d.get("market_cap", 0)),
-                "pe_ratio": round(d["pe_ratio"], 2) if d.get("pe_ratio") else None,
-                "forward_pe": round(d["forward_pe"], 2) if d.get("forward_pe") else None,
-                "dividend_yield": d.get("dividend_yield"),
-                "beta": round(d["beta"], 2) if d.get("beta") else None,
-                "year_change": d.get("year_change"),
-                "recommendation": d.get("recommendation"),
-                "signal": sig["signal"],
-                "signal_reason": sig["reason"],
-                "week52_high": round(d["week52_high"], 2) if d.get("week52_high") else None,
-                "week52_low": round(d["week52_low"], 2) if d.get("week52_low") else None,
-                "pct_from_high": d.get("pct_from_high"),
-                "revenue_growth": d.get("revenue_growth"),
-                "earnings_growth": d.get("earnings_growth"),
-                "profit_margin": d.get("profit_margin"),
-                "return_on_equity": d.get("return_on_equity"),
-                "debt_to_equity": d.get("debt_to_equity"),
-                "risk_analysis": risk,
-                "analyst_targets": analyst,
-                "summary": summary_text,
-                "region": d.get("region", "US"),
-            }
-        )
+        filtered.append(row)
 
     filtered.sort(key=lambda x: x.get("market_cap", 0), reverse=True)
     return filtered

@@ -26,7 +26,7 @@ from src.services.market_data import (
 )
 
 logger = logging.getLogger(__name__)
-_MAX_WORKERS = 2 if _LOW_MEMORY else 4
+_MAX_WORKERS = 2 if _LOW_MEMORY else 6
 
 PERIOD_DAYS = {"1m": 30, "3m": 90, "6m": 180, "1y": 365}
 
@@ -356,7 +356,10 @@ def scan_and_score(period: str = "1y") -> list[dict]:
         key=lambda d: _fundamental_score(d),
         reverse=True,
     )
-    top_symbols = [d["symbol"] for d in fund_sorted[: 40 if _LOW_MEMORY else 80]]
+    # Scan the FULL universe — candles are pre-fetched by the background
+    # scheduler so there's no per-request API cost.  On LOW_MEMORY (Render
+    # free tier) keep a reasonable cap to avoid OOM.
+    top_symbols = [d["symbol"] for d in fund_sorted[: 60 if _LOW_MEMORY else len(fund_sorted)]]
 
     to_ts = int(time.time())
     from_ts = to_ts - CANDLE_LOOKBACK_DAYS * 86400

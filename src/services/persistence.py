@@ -353,4 +353,15 @@ def restore_all_caches():
     except Exception:
         logger.exception("Failed to restore smart advisor cache")
 
+    # 6. Restore screener snapshot
+    try:
+        data = load_scan("screener_snapshot")
+        if data and isinstance(data, list) and len(data) > 0:
+            from src.services.screener import restore_screener_snapshot
+
+            restore_screener_snapshot(data)
+            logger.info("Restored screener snapshot: %d instruments", len(data))
+    except Exception:
+        logger.exception("Failed to restore screener snapshot")
+
     logger.info("Cache restoration complete")
