@@ -127,8 +127,8 @@ This only needs to be set once per machine, but may be cleared by IT policy or r
 .\ship.ps1 "feat: describe what changed"
 
 # This will: create issue → branch → commit → PR → wait for CI →
-# auto-fix if failures → auto-merge → wait for staging deploy → E2E verify staging → close issue
-# Production is promoted automatically by the nightly pipeline after staging E2E passes.
+# auto-fix if failures → auto-merge → wait for staging deploy → E2E verify staging → promote to prod → close issue
+# Set RENDER_PROD_DEPLOY_HOOK env var for auto-promote (see DEPLOY-KEYS.md).
 # See docs/ship-pipeline.md for full details.
 ```
 
@@ -168,7 +168,7 @@ git push origin master
 | `weekly-tests.yml` | 4 AM UTC Sunday | Production | Full regression suite |
 | `promote-to-prod.yml` | Manual dispatch | Production | On-demand staging → prod promotion |
 
-**Pipeline**: push → staging auto-deploy → nightly E2E on staging → auto-promote to prod
+**Pipeline**: push → staging auto-deploy → E2E on staging → auto-promote to prod (immediate if via ship.ps1, nightly as fallback)
 
 ## Key Context Files
 
