@@ -182,6 +182,182 @@ class TestAuthSmoke:
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Password Reset Email Tests
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from unittest.mock import patch, MagicMock
+
+
+@pytest.mark.smoke
+class TestPasswordResetEmail:
+    """Tests for _send_reset_email() and the forgot→reset round-trip."""
+
+    # -- Unit tests for _send_reset_email --
+
+    def test_send_email_resend_success(self):
+        """Resend API returns 200 → function returns True."""
+        from src.main import _send_reset_email
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = '{"id":"abc123"}'
+
+        with (
+            patch.dict(os.environ, {"RESEND_API_KEY": "re_test_key123"}, clear=False),
+            patch("requests.post", return_value=mock_resp) as mock_post,
+        ):
+            result = _send_reset_email("user@example.com", "123456")
+            assert result is True
+            mock_post.assert_called_once()
+            call_kwargs = mock_post.call_args
+            assert call_kwargs[1]["json"]["to"] == ["user@example.com"]
+            assert "123456" in call_kwargs[1]["json"]["text"]
+            assert "Bearer re_test_key123" in call_kwargs[1]["headers"]["Authorization"]
+
+    def test_send_email_resend_failure_returns_false(self):
+        """Resend API returns 403 (unverified domain), no SMTP → returns False."""
+        from src.main import _send_reset_email
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 403
+        mock_resp.text = "domain not verified"
+
+        env_overrides = {"RESEND_API_KEY": "re_test_key"}
+        for k in ("SMTP_HOST", "SMTP_USER", "SMTP_PASS"):
+            env_overrides[k] = ""
+        with (
+            patch.dict(os.environ, env_overrides, clear=False),
+            patch("requests.post", return_value=mock_resp),
+        ):
+            result = _send_reset_email("user@example.com", "654321")
+            assert result is False
+
+    def test_send_email_resend_exception_falls_through(self):
+        """Resend API throws network error → function falls through gracefully."""
+        from src.main import _send_reset_email
+
+        env_overrides = {"RESEND_API_KEY": "re_test_key"}
+        for k in ("SMTP_HOST", "SMTP_USER", "SMTP_PASS"):
+            env_overrides[k] = ""
+        with (
+            patch.dict(os.environ, env_overrides, clear=False),
+            patch("requests.post", side_effect=ConnectionError("network down")),
+        ):
+            result = _send_reset_email("user@example.com", "111111")
+            assert result is False
+
+    def test_send_email_no_services_configured(self):
+        """No RESEND_API_KEY, no SMTP → returns False (log-only mode)."""
+        from src.main import _send_reset_email
+
+        env_overrides = {}
+        for k in ("RESEND_API_KEY", "SMTP_HOST", "SMTP_USER", "SMTP_PASS"):
+            env_overrides[k] = ""
+        with patch.dict(os.environ, env_overrides, clear=False):
+            result = _send_reset_email("user@example.com", "999999")
+            assert result is False
+
+    def test_send_email_uses_correct_sender(self):
+        """Default sender should be onboarding@resend.dev (Resend free tier)."""
+        from src.main import _send_reset_email
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = '{"id":"xyz"}'
+
+        env_overrides = {"RESEND_API_KEY": "re_test"}
+        # Remove any EMAIL_FROM override to test default
+        os.environ.pop("EMAIL_FROM", None)
+        with (
+            patch.dict(os.environ, env_overrides, clear=False),
+            patch("requests.post", return_value=mock_resp) as mock_post,
+        ):
+            _send_reset_email("user@example.com", "000000")
+            call_json = mock_post.call_args[1]["json"]
+            assert "onboarding@resend.dev" in call_json["from"]
+
+    def test_send_email_custom_sender(self):
+        """EMAIL_FROM env var overrides the default sender."""
+        from src.main import _send_reset_email
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = '{"id":"xyz"}'
+
+        with (
+            patch.dict(os.environ, {"RESEND_API_KEY": "re_test", "EMAIL_FROM": "noreply@mydomain.com"}),
+            patch("requests.post", return_value=mock_resp) as mock_post,
+        ):
+            _send_reset_email("user@example.com", "000000")
+            call_json = mock_post.call_args[1]["json"]
+            assert call_json["from"] == "noreply@mydomain.com"
+
+    # -- Integration: forgot-password triggers email --
+
+    def test_forgot_password_calls_send_email(self):
+        """forgot-password endpoint tries to send an email for a registered user."""
+        email = _fresh_email()
+        client.post("/auth/register", json={"email": email, "password": "Str0ngPass!99", "name": "EmailTest"})
+
+        with patch("src.main._send_reset_email", return_value=True) as mock_send:
+            r = client.post("/auth/forgot-password", json={"email": email})
+            assert r.status_code == 200
+            assert r.json()["ok"] is True
+            mock_send.assert_called_once()
+            called_email, called_code = mock_send.call_args[0][:2]
+            assert called_email == email
+            assert len(called_code) == 6 and called_code.isdigit()
+
+    def test_forgot_password_unknown_email_no_send(self):
+        """forgot-password for unknown email returns ok but never calls send."""
+        with patch("src.main._send_reset_email") as mock_send:
+            r = client.post("/auth/forgot-password", json={"email": "ghost@nowhere.com"})
+            assert r.status_code == 200
+            assert r.json()["ok"] is True
+            mock_send.assert_not_called()
+
+    # -- Integration: forgot-password + reset-password round-trip --
+
+    def test_forgot_then_reset_roundtrip(self):
+        """Full flow: register → forgot-password → capture code → reset-password."""
+        email = _fresh_email()
+        original_pw = "Original1!"
+        new_pw = "BrandNew99!"
+
+        # Register
+        client.post("/auth/register", json={"email": email, "password": original_pw, "name": "RoundTrip"})
+
+        # Forgot password — capture the raw code from the mock
+        captured_code = None
+
+        def _capture_send(to, code, logger=None):
+            nonlocal captured_code
+            captured_code = code
+            return True
+
+        with patch("src.main._send_reset_email", side_effect=_capture_send):
+            r = client.post("/auth/forgot-password", json={"email": email})
+            assert r.status_code == 200
+
+        assert captured_code is not None, "Code was not captured from _send_reset_email"
+
+        # Reset password with the captured code
+        r = client.post(
+            "/auth/reset-password",
+            json={"email": email, "code": captured_code, "new_password": new_pw},
+        )
+        assert r.status_code == 200
+        assert r.json()["ok"] is True
+
+        # Verify: login with new password works
+        r = client.post("/auth/login", json={"email": email, "password": new_pw})
+        assert r.status_code == 200
+
+        # Verify: login with old password fails
+        r = client.post("/auth/login", json={"email": email, "password": original_pw})
+        assert r.status_code != 200
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # Tier 1B — All API endpoints return non-500 (smoke)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
