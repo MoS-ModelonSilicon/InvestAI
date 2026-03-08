@@ -190,9 +190,9 @@ class TestAuthSmoke:
 class TestAllEndpointsSmoke:
     """Every API endpoint should return a non-500 response when authed."""
 
-    @pytest.fixture(autouse=True)
+    @pytest.fixture(autouse=True, scope="class")
     def setup_auth(self):
-        self.c, self.email = _register_and_login()
+        type(self).c, type(self).email = _register_and_login()
 
     # ── Dashboard ──
     def test_dashboard(self):
@@ -656,19 +656,21 @@ class TestAllEndpointsSmoke:
 class TestAdminSmoke:
     """Admin panel endpoints — requires admin user."""
 
-    @pytest.fixture(autouse=True)
+    @pytest.fixture(autouse=True, scope="class")
     def setup_admin(self):
         """Create a user and promote them to admin directly in DB."""
         from src.database import get_db
         from src.models import User
 
-        self.c, self.email = _register_and_login()
+        c, email = _register_and_login()
         db = next(get_db())
         try:
-            user = db.query(User).filter(User.email == self.email).first()
+            user = db.query(User).filter(User.email == email).first()
             user.is_admin = 1
             db.commit()
-            self.user_id = user.id
+            type(self).c = c
+            type(self).email = email
+            type(self).user_id = user.id
         finally:
             db.close()
 
@@ -821,15 +823,14 @@ class TestSecuritySmoke:
 class TestUserIsolationSmoke:
     """Ensure one user cannot access another user's data."""
 
-    def test_transaction_isolation(self):
+    def test_cross_user_isolation(self):
+        """Transactions, alerts, and holdings are isolated per-user."""
         cookies1, _ = _register_and_login()
         cookies2, _ = _register_and_login()
 
-        # Get a category_id for user 1
+        # ── Transaction isolation ──
         cats = _authed_get("/api/categories", cookies1).json()
         cat_id = cats[0]["id"] if cats else 1
-
-        # User 1 creates a transaction
         r = _authed_post(
             "/api/transactions",
             cookies1,
@@ -842,25 +843,17 @@ class TestUserIsolationSmoke:
             },
         )
         assert r.status_code == 200
-
-        # User 2 should not see it
         r2 = _authed_get("/api/transactions", cookies2)
         descriptions = [t.get("description", "") for t in r2.json()] if isinstance(r2.json(), list) else []
         assert "user1 only" not in descriptions
 
-    def test_alert_isolation(self):
-        cookies1, _ = _register_and_login()
-        cookies2, _ = _register_and_login()
-
+        # ── Alert isolation ──
         _authed_post("/api/alerts", cookies1, json={"symbol": "TSLA", "condition": "above", "target_price": 9999.0})
         r2 = _authed_get("/api/alerts", cookies2)
         symbols = [a.get("symbol", "") for a in r2.json()] if isinstance(r2.json(), list) else []
         assert "TSLA" not in symbols or len(symbols) == 0
 
-    def test_portfolio_isolation(self):
-        cookies1, _ = _register_and_login()
-        cookies2, _ = _register_and_login()
-
+        # ── Portfolio isolation ──
         _authed_post(
             "/api/portfolio/holdings",
             cookies1,
@@ -878,43 +871,7 @@ class TestUserIsolationSmoke:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
-@pytest.mark.smoke
-class TestDataIntegritySmoke:
-    """Verify response structures are correct."""
-
-    @pytest.fixture(autouse=True)
-    def setup_auth(self):
-        self.c, _ = _register_and_login()
-
-    def test_dashboard_has_expected_keys(self):
-        r = _authed_get("/api/dashboard", self.c)
-        data = r.json()
-        # Dashboard should have some financial summary keys
-        assert isinstance(data, dict)
-
-    def test_education_returns_content(self):
-        r = _authed_get("/api/education", self.c)
-        data = r.json()
-        assert isinstance(data, (list, dict))
-
-    def test_screener_sectors_returns_list(self):
-        r = _authed_get("/api/screener/sectors", self.c)
-        data = r.json()
-        assert isinstance(data, (list, dict))
-
-    def test_categories_seeded_on_startup(self):
-        r = _authed_get("/api/categories", self.c)
-        cats = r.json()
-        assert len(cats) >= 5, "Default categories should be seeded"
-
-    def test_autopilot_profiles_structure(self):
-        r = _authed_get("/api/autopilot/profiles", self.c)
-        data = r.json()
-        assert isinstance(data, (list, dict))
-
-    def test_il_funds_meta_has_data(self):
-        r = _authed_get("/api/il-funds/meta", self.c)
-        assert r.status_code == 200
+# TestDataIntegritySmoke removed — checks already covered by TestAllEndpointsSmoke
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
