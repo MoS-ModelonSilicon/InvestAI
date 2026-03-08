@@ -169,8 +169,8 @@ if (-not $staged) {
 git checkout -b $BranchName 2>&1 | Out-Null
 Write-OK "Created branch: $BranchName"
 
-# Commit with conventional commit message
-$CommitMsg = "$($CommitType): $ShortTitle `(closes #$IssueNumber`)"
+# Commit with conventional commit message (no 'closes' — we close the issue in Phase 9 after E2E)
+$CommitMsg = "$($CommitType): $ShortTitle (refs #$IssueNumber)"
 git commit -m $CommitMsg 2>&1 | Out-Null
 Write-OK "Committed: $CommitMsg"
 
@@ -380,7 +380,7 @@ if ($NoMerge) {
         --repo $Repo `
         --squash `
         --delete-branch `
-        --subject "$Title `(closes #$IssueNumber`)" `
+        --subject "$Title (#$IssueNumber)" `
         2>&1
 
     Write-OK "PR #$PRNumber merged to $BaseBranch"
@@ -426,16 +426,18 @@ if (-not $NoMerge) {
 if (-not $NoMerge) {
     Write-Step "Phase 8: E2E verification on live site"
 
-    gh issue comment $IssueNumber --repo $Repo --body "🧪 Running E2E tests against $LiveUrl..." 2>&1 | Out-Null
+    gh issue comment $IssueNumber --repo $Repo --body "🧪 Running E2E smoke tests against $LiveUrl..." 2>&1 | Out-Null
 
-    # Run a subset of live site tests (critical paths only)
-    $e2eResult = python -m pytest tests/test_live_site.py `
+    # Run ONLY critical-path smoke tests (fast, ~30s total)
+    # Full E2E suite is 105 tests — too slow for post-deploy check; nightly handles that.
+    $e2eOutputFile = "$PSScriptRoot\.ship-e2e-output.txt"
+    python -m pytest tests/test_live_site.py `
         --live-url $LiveUrl `
-        -m "not deep" `
-        --timeout=180 `
-        --maxfail=5 `
+        -k "test_login_page_loads or test_stock_detail_opens or test_dca_page_loads or test_dashboard or test_market_page" `
+        --timeout=60 `
+        --maxfail=3 `
         -v --tb=short `
-        2>&1
+        2>&1 | Tee-Object -FilePath $e2eOutputFile
 
     $e2eExitCode = $LASTEXITCODE
 
@@ -459,9 +461,9 @@ All critical-path tests passed after deploy.
     } else {
         Write-Warn "E2E tests failed on live site!"
 
-        # Capture last 50 lines of output
-        $e2eTail = ($e2eResult -split "`n") | Select-Object -Last 50
-        $e2eSummary = $e2eTail -join "`n"
+        # Capture last 50 lines of output from file
+        $e2eTail = Get-Content $e2eOutputFile -Tail 50 -ErrorAction SilentlyContinue
+        $e2eSummary = if ($e2eTail) { $e2eTail -join "`n" } else { "(no output captured)" }
 
         gh issue comment $IssueNumber --repo $Repo --body @"
 ⚠️ **E2E verification failed** on $LiveUrl
