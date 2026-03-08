@@ -459,11 +459,28 @@ def run_full_scan():
 
     Runs a complete scan synchronously (blocking).  Safe to call from
     any thread — guards against concurrent scans internally.
+
+    Skips the scan if the cache already contains complete, fresh data
+    (e.g. restored from the database after a deploy).  This avoids
+    wiping persisted results and forcing users to wait for a re-scan.
     """
     global _scan_running
     with _scan_lock:
         if _scan_running:
             logger.info("Value scanner: scan already in progress, skipping")
+            return
+        # Skip if cache has complete results that are younger than 2x TTL
+        if (
+            _scan_cache["complete"]
+            and _scan_cache["candidates"]
+            and _scan_cache["updated_at"]
+            and (time.time() - _scan_cache["updated_at"]) < SCAN_CACHE_TTL * 2
+        ):
+            logger.info(
+                "Value scanner: cache is fresh (%ds old, TTL=%ds), skipping scan",
+                int(time.time() - _scan_cache["updated_at"]),
+                SCAN_CACHE_TTL,
+            )
             return
         _scan_running = True
         _scan_cache["complete"] = False

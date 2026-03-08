@@ -255,6 +255,10 @@ def _scheduler_loop():
     # Smart advisor FIRST — it's the most user-visible feature and the
     # DB-restored data has a limited TTL.  Run it before lighter scans
     # that may exhaust API rate limits or block for a long time.
+    #
+    # Each scanner's run_full_scan() will skip if its cache already
+    # has fresh data (e.g. from restore_all_caches).  So these calls
+    # are cheap no-ops when the DB had recent results.
     _run_smart_advisor_scan()  # smart advisor (heaviest but most important)
     if _stop_event.wait(timeout=10):
         return
