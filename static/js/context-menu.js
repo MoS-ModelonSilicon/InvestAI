@@ -35,10 +35,6 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 Set Price Alert
             </button>
-            <button class="ctx-menu-item" onclick="ctxAction('compare')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-                Compare
-            </button>
         `;
         document.body.appendChild(_menu);
         return _menu;
@@ -123,11 +119,6 @@
                         const alertSym = document.getElementById("alert-symbol");
                         if (alertSym) alertSym.value = sym;
                     }, 50);
-                }
-                break;
-            case "compare":
-                if (typeof addToComparison === "function") {
-                    addToComparison(sym);
                 }
                 break;
         }

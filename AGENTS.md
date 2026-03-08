@@ -57,7 +57,6 @@ src/
 │   ├── budgets.py              # /api/budgets — budget CRUD + status
 │   ├── calendar_router.py      # /api/calendar — earnings + economic events
 │   ├── categories.py           # /api/categories — income/expense categories
-│   ├── comparison.py           # /api/compare — side-by-side stock comparison
 │   ├── dashboard.py            # /api/dashboard — financial summary + charts
 │   ├── dca.py                  # /api/dca — DCA plans, dip detection, allocation
 │   ├── education.py            # /api/education — educational articles
@@ -117,7 +116,6 @@ static/
     ├── stock-detail.js         # Stock page: Chart.js price chart, fundamentals, SMA, news
     ├── screener.js             # Filter panel, result cards, presets, watchlist integration
     ├── watchlist.js            # Live watchlist with prices
-    ├── comparison.js           # Side-by-side metrics + normalized overlay chart
     ├── smart-advisor.js        # Rankings, portfolio tabs, backtest chart, Company DNA modal
     ├── advisor.js              # Trading advisor: mood donut, strategy tabs, indicator charts
     ├── value-scanner.js        # Progress, stats, sector tabs, quality bars, action plan
@@ -222,12 +220,6 @@ static/
 | GET | `/api/screener/watchlist/live` | Watchlist with live prices + fundamentals |
 | POST | `/api/screener/watchlist` | Add to watchlist |
 | DELETE | `/api/screener/watchlist/{id}` | Remove from watchlist |
-
-### Stock Comparison
-
-| Method | Path | Action |
-|--------|------|--------|
-| GET | `/api/compare?symbols=AAPL,MSFT,GOOGL` | Side-by-side fundamentals + normalized price history (up to 4) |
 
 ### Smart Advisor (AI-driven)
 

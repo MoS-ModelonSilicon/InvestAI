@@ -795,52 +795,7 @@ class TestBudgetsAdvanced:
 
 
 # ════════════════════════════════════════════════════════════
-#  13. COMPARISON — advanced flows
-# ════════════════════════════════════════════════════════════
-
-
-@pytest.mark.deep
-class TestComparisonAdvanced:
-    """Advanced comparison tests: multiple stocks, chart rendering."""
-
-    def _go(self, page: Page):
-        _nav(page, "comparison")
-        page.wait_for_timeout(2000)
-
-    def test_compare_three_stocks(self, authenticated_page: Page):
-        """Compare 3 stocks and verify all appear in results."""
-        self._go(authenticated_page)
-        authenticated_page.fill("#compare-input", "AAPL, MSFT, GOOGL")
-        authenticated_page.get_by_role("button", name="Compare").click()
-        html = _wait_for_content(authenticated_page, "#compare-results", min_len=200, timeout=35_000)
-        for sym in ["AAPL", "MSFT", "GOOGL"]:
-            assert sym.lower() in html.lower(), f"Comparison results don't contain {sym}. HTML: {html[:500]}"
-
-    def test_comparison_chart_renders(self, authenticated_page: Page):
-        """Comparison should render an overlay chart with all symbols."""
-        self._go(authenticated_page)
-        authenticated_page.fill("#compare-input", "AAPL, TSLA")
-        authenticated_page.get_by_role("button", name="Compare").click()
-        _wait_for_content(authenticated_page, "#compare-results", min_len=200, timeout=35_000)
-        canvases = authenticated_page.locator("#compare-results canvas, #compare-chart")
-        if canvases.count() > 0:
-            box = canvases.first.bounding_box()
-            assert box is not None, "Comparison chart has no bounding box"
-            assert box["width"] > 0, "Comparison chart has zero width"
-
-    def test_comparison_metric_cards(self, authenticated_page: Page):
-        """Should show side-by-side metric cards with financials."""
-        self._go(authenticated_page)
-        authenticated_page.fill("#compare-input", "AAPL, MSFT")
-        authenticated_page.get_by_role("button", name="Compare").click()
-        html = _wait_for_content(authenticated_page, "#compare-results", min_len=200, timeout=35_000)
-        # Should show comparison metrics
-        has_metrics = any(kw in html.lower() for kw in ["p/e", "market cap", "dividend", "return", "beta"])
-        assert has_metrics or "$" in html, f"Comparison missing metric details. HTML: {html[:500]}"
-
-
-# ════════════════════════════════════════════════════════════
-#  14. RISK PROFILE — wizard completion
+#  13. RISK PROFILE — wizard completion
 # ════════════════════════════════════════════════════════════
 
 

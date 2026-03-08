@@ -258,10 +258,6 @@ interface InvestAIApi {
     @GET("api/education")
     suspend fun getEducation(): EducationResponse
 
-    // ── Comparison ────────────────────────────────────────
-
-    @GET("api/compare")
-    suspend fun compareStocks(@Query("symbols") symbols: String): ComparisonResponse
 
     // ── Israeli Funds ─────────────────────────────────────
 

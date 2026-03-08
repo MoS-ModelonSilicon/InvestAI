@@ -39,7 +39,6 @@ private val investFeatures = listOf(
     InvestFeature(Screen.SmartAdvisor, "Smart Advisor", "Long-term picks", Icons.Filled.Psychology),
     InvestFeature(Screen.TradingAdvisor, "Trading Advisor", "Short-term signals", Icons.Filled.TrendingUp),
     InvestFeature(Screen.ILFunds, "IL Funds", "481 funds", Icons.Filled.AccountBalance),
-    InvestFeature(Screen.Comparison, "Compare", "Side by side", Icons.Filled.CompareArrows),
 )
 
 @Composable

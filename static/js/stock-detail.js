@@ -1,5 +1,8 @@
 let detailChart = null;
 let _currentDetailSymbol = null;
+let _spyOverlayActive = false;
+let _lastHistory = null;
+let _lastSpyHistory = null;
 
 function navigateToStock(symbol) {
     _currentDetailSymbol = symbol;
@@ -56,7 +59,7 @@ function renderStockDetail(info, history, news) {
     <div class="sd-actions">
         <button class="btn btn-primary btn-sm" onclick="addToWatchlistFromDetail('${info.symbol}','${(info.name || "").replace(/'/g, "\\'")}')">+ Watchlist</button>
         <button class="btn btn-sm" onclick="openAddHoldingModal('${info.symbol}','${(info.name || "").replace(/'/g, "\\'")}', ${info.price})">+ Portfolio</button>
-        <button class="btn btn-sm" onclick="addToComparison('${info.symbol}')">Compare</button>
+
     </div>
 
     <div class="sd-chart-section">
@@ -66,6 +69,8 @@ function renderStockDetail(info, history, news) {
             <button class="sd-tf" onclick="changeTimeframe('${info.symbol}','6mo','1d',this)">6M</button>
             <button class="sd-tf" onclick="changeTimeframe('${info.symbol}','1y','1d',this)">1Y</button>
             <button class="sd-tf" onclick="changeTimeframe('${info.symbol}','5y','1wk',this)">5Y</button>
+            <span class="sd-tf-divider"></span>
+            <button class="sd-tf sd-spy-toggle" id="spy-toggle-btn" onclick="toggleSpyOverlay('${info.symbol}')">vs SPY</button>
         </div>
         <div class="sd-chart-wrapper">
             <canvas id="sd-price-chart"></canvas>
@@ -147,12 +152,15 @@ function renderStockDetail(info, history, news) {
     }
 
     container.innerHTML = html;
+    _spyOverlayActive = false;
+    _lastSpyHistory = null;
     if (history && history.close && history.close.length > 0) {
+        _lastHistory = history;
         renderDetailChart(history);
     }
 }
 
-function renderDetailChart(history) {
+function renderDetailChart(history, spyHistory) {
     const canvas = document.getElementById("sd-price-chart");
     if (!canvas) return;
     if (detailChart) detailChart.destroy();
@@ -169,34 +177,76 @@ function renderDetailChart(history) {
         return Math.round(slice.reduce((a, b) => a + b, 0) / 50 * 100) / 100;
     });
 
+    const datasets = [
+        {
+            label: "Price",
+            data: closes,
+            borderColor: color,
+            borderWidth: 2,
+            fill: true,
+            backgroundColor: bgColor,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.1,
+            yAxisID: "y",
+        },
+        {
+            label: "SMA 50",
+            data: sma50,
+            borderColor: "rgba(99, 102, 241, 0.6)",
+            borderWidth: 1.5,
+            borderDash: [5, 3],
+            pointRadius: 0,
+            fill: false,
+            tension: 0.1,
+            yAxisID: "y",
+        },
+    ];
+
+    const scales = {
+        x: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
+        y: { display: true, position: "left", ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => "$" + v }, grid: { color: "rgba(42,45,62,0.3)" } },
+    };
+
+    // SPY overlay — normalized % change on secondary axis
+    if (spyHistory && spyHistory.close && spyHistory.close.length > 0) {
+        const normalize = (arr) => {
+            const base = arr[0];
+            return base ? arr.map(v => v != null ? +((v / base - 1) * 100).toFixed(2) : null) : arr;
+        };
+        const stockPct = normalize(closes);
+        const spyPct = normalize(spyHistory.close);
+
+        // Replace price dataset with % change version
+        datasets[0] = {
+            label: _currentDetailSymbol + " %",
+            data: stockPct,
+            borderColor: color,
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.1,
+            yAxisID: "y",
+        };
+        // Remove SMA when in overlay mode
+        datasets[1] = {
+            label: "SPY %",
+            data: spyPct,
+            borderColor: "rgba(251, 191, 36, 0.85)",
+            borderWidth: 2,
+            borderDash: [4, 2],
+            pointRadius: 0,
+            fill: false,
+            tension: 0.1,
+            yAxisID: "y",
+        };
+        scales.y.ticks.callback = v => v + "%";
+    }
+
     detailChart = new Chart(canvas, {
         type: "line",
-        data: {
-            labels: history.dates,
-            datasets: [
-                {
-                    label: "Price",
-                    data: closes,
-                    borderColor: color,
-                    borderWidth: 2,
-                    fill: true,
-                    backgroundColor: bgColor,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    tension: 0.1,
-                },
-                {
-                    label: "SMA 50",
-                    data: sma50,
-                    borderColor: "rgba(99, 102, 241, 0.6)",
-                    borderWidth: 1.5,
-                    borderDash: [5, 3],
-                    pointRadius: 0,
-                    fill: false,
-                    tension: 0.1,
-                },
-            ],
-        },
+        data: { labels: history.dates, datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -210,10 +260,7 @@ function renderDetailChart(history) {
                     bodyColor: "#e4e4e7",
                 },
             },
-            scales: {
-                x: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
-                y: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => "$" + v }, grid: { color: "rgba(42,45,62,0.3)" } },
-            },
+            scales,
             interaction: { mode: "index", intersect: false },
         },
     });
@@ -222,12 +269,49 @@ function renderDetailChart(history) {
 async function changeTimeframe(symbol, period, interval, btn) {
     document.querySelectorAll(".sd-tf").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
+    _lastSpyHistory = null; // reset SPY cache on timeframe change
     try {
         const history = await api.get(`/api/stock/${symbol}/history?period=${period}&interval=${interval}`);
         if (history && history.close && history.close.length > 0) {
-            renderDetailChart(history);
+            _lastHistory = history;
+            if (_spyOverlayActive) {
+                const spy = await api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`);
+                _lastSpyHistory = spy;
+                renderDetailChart(history, spy);
+            } else {
+                renderDetailChart(history);
+            }
         }
     } catch (e) { /* ignore */ }
+}
+
+async function toggleSpyOverlay(symbol) {
+    const btn = document.getElementById("spy-toggle-btn");
+    _spyOverlayActive = !_spyOverlayActive;
+    if (btn) btn.classList.toggle("active", _spyOverlayActive);
+
+    if (!_lastHistory) return;
+
+    if (_spyOverlayActive) {
+        // Determine current timeframe from active button
+        const activeBtn = document.querySelector(".sd-tf.active:not(.sd-spy-toggle)");
+        const periodMap = { "1M": "1mo", "3M": "3mo", "6M": "6mo", "1Y": "1y", "5Y": "5y" };
+        const intervalMap = { "1M": "1d", "3M": "1d", "6M": "1d", "1Y": "1d", "5Y": "1wk" };
+        const label = activeBtn ? activeBtn.textContent.trim() : "1Y";
+        const period = periodMap[label] || "1y";
+        const interval = intervalMap[label] || "1d";
+
+        try {
+            const spy = await api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`);
+            _lastSpyHistory = spy;
+            renderDetailChart(_lastHistory, spy);
+        } catch (e) {
+            _spyOverlayActive = false;
+            if (btn) btn.classList.remove("active");
+        }
+    } else {
+        renderDetailChart(_lastHistory);
+    }
 }
 
 async function addToWatchlistFromDetail(symbol, name) {
@@ -237,19 +321,6 @@ async function addToWatchlistFromDetail(symbol, name) {
     } catch (e) {
         showToast(`${symbol} is already in your watchlist`, "info");
     }
-}
-
-function addToComparison(symbol) {
-    const input = document.getElementById("compare-input");
-    if (input) {
-        const current = input.value.trim();
-        const symbols = current ? current.split(",").map(s => s.trim()).filter(Boolean) : [];
-        if (!symbols.includes(symbol) && symbols.length < 4) {
-            symbols.push(symbol);
-            input.value = symbols.join(", ");
-        }
-    }
-    navigateTo("comparison");
 }
 
 function formatMarketCapLocal(cap) {

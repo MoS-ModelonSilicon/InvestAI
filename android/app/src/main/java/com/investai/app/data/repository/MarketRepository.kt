@@ -195,10 +195,6 @@ class MarketRepository @Inject constructor(
     suspend fun getEconomicCalendar(): Result<List<EconomicEvent>> =
         runCatching { api.getEconomicCalendar() }
 
-    // ── Comparison ─────────────────────────────────────
-
-    suspend fun compareStocks(symbols: String): Result<ComparisonResponse> =
-        runCatching { api.compareStocks(symbols) }
 
     // ── Israeli Funds ──────────────────────────────────
 

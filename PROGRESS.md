@@ -42,7 +42,6 @@
   - Portfolio tracker with virtual holdings, gain/loss, sector allocation
   - Performance analytics vs S&P 500 benchmark
   - News feed aggregating articles from watchlist/holdings
-  - Stock comparison tool (2-4 stocks side-by-side)
   - Price alerts with bell notifications and auto-polling
   - Education center with categorized articles
   - Earnings & economic events calendar

@@ -118,7 +118,6 @@ class TestNavigation:
         ("profile", "Risk Profile"),
         ("screener", "Stock & Fund Screener"),
         ("recommendations", "For You"),
-        ("comparison", "Compare Stocks"),
         ("alerts", "Price Alerts"),
         ("calendar", "Earnings & Events Calendar"),
         ("education", "Learn to Invest"),
@@ -904,24 +903,6 @@ class TestPortfolioChartHeight:
         height_attr = canvas.get_attribute("height")
         # Chart.js may set a computed height attr at runtime, but NOT "200"
         assert height_attr != "200", "Canvas still has the old hardcoded height='200' attribute"
-
-
-# ────────────────────────────────────────────
-#  Comparison — compare stocks flow
-# ────────────────────────────────────────────
-
-
-class TestComparisonFlow:
-    def test_compare_stocks_returns_data(self, authenticated_page: Page):
-        """Enter symbols and compare — should show a chart and table."""
-        _nav_click(authenticated_page, "comparison")
-        authenticated_page.fill("#compare-input", "AAPL, MSFT")
-        authenticated_page.get_by_role("button", name="Compare").click()
-        authenticated_page.wait_for_timeout(20000)
-        results = authenticated_page.locator("#compare-results")
-        html = results.inner_html()
-        assert len(html) > 50, f"Comparison returned no results for AAPL, MSFT. /api/compare failed. HTML: {html[:300]}"
-        assert "AAPL" in html or "aapl" in html.lower(), f"Comparison results don't mention AAPL. HTML: {html[:500]}"
 
 
 # ────────────────────────────────────────────

@@ -1911,6 +1911,11 @@ body {
 .sd-tf:hover { color: var(--text); border-color: var(--primary); }
 .sd-tf.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
+.sd-tf-divider { width: 1px; background: var(--border); align-self: stretch; margin: 2px 4px; }
+.sd-spy-toggle { font-size: 0.75rem; padding: 5px 10px; color: #fbbf24; border-color: rgba(251,191,36,0.3); }
+.sd-spy-toggle:hover { border-color: #fbbf24; }
+.sd-spy-toggle.active { background: rgba(251,191,36,0.15); border-color: #fbbf24; color: #fbbf24; }
+
 .sd-chart-wrapper { height: 350px; position: relative; }
 
 .sd-grid-2col {
@@ -2102,80 +2107,6 @@ body {
     font-size: 0.7rem;
     font-weight: 700;
 }
-
-/* ── Comparison Page ─────────────────────────── */
-
-.comp-search {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 24px;
-}
-
-.comp-input {
-    flex: 1;
-    padding: 12px 16px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    background: var(--bg-card);
-    color: var(--text);
-    font-size: 1rem;
-}
-
-.comp-input:focus { outline: none; border-color: var(--primary); }
-
-.comp-chart-section {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 20px;
-    height: 320px;
-}
-
-.comp-chart-section h3 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: var(--primary); }
-
-.comp-table {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-}
-
-.comp-header, .comp-row {
-    display: grid;
-    gap: 0;
-    padding: 0;
-}
-
-.comp-header {
-    background: var(--bg-sidebar);
-    border-bottom: 1px solid var(--border);
-}
-
-.comp-header span, .comp-row span {
-    padding: 12px 14px;
-    font-size: 0.85rem;
-    border-right: 1px solid var(--border);
-}
-
-.comp-header span:last-child, .comp-row span:last-child { border-right: none; }
-
-.comp-header span {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-muted);
-    font-weight: 700;
-}
-
-.comp-sym { font-weight: 700 !important; font-size: 0.9rem !important; }
-.comp-sym small { font-weight: 400; }
-.comp-label { color: var(--text-muted); font-weight: 500; }
-
-.comp-row { border-bottom: 1px solid var(--border); }
-.comp-row:last-child { border-bottom: none; }
-.comp-row:hover span { background: var(--bg-card-hover); }
-.comp-best { color: var(--green) !important; font-weight: 700 !important; }
 
 /* ── Alerts Page ─────────────────────────────── */
 
@@ -5722,14 +5653,6 @@ body {
         gap: 10px;
     }
     .sd-price-area { text-align: left; }
-
-    /* Comparison page */
-    .comp-search {
-        flex-direction: column;
-    }
-    .comp-input {
-        width: 100%;
-    }
 
     /* Israeli Funds */
     .il-highlight-row { grid-template-columns: 1fr !important; }

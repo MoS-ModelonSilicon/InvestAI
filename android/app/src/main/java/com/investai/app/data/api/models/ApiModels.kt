@@ -712,27 +712,6 @@ data class EconomicEvent(
     val impact: String = "",
 )
 
-// ── Comparison ───────────────────────────────────────────
-
-@Serializable
-data class ComparisonResponse(
-    val stocks: List<ComparisonStock> = emptyList(),
-    val histories: Map<String, List<Double>> = emptyMap(),
-)
-
-@Serializable
-data class ComparisonStock(
-    val symbol: String = "",
-    val name: String = "",
-    val price: Double = 0.0,
-    @SerialName("change_pct") val changePct: Double = 0.0,
-    @SerialName("market_cap") val marketCap: Double? = null,
-    val pe: Double? = null,
-    @SerialName("dividend_yield") val dividendYield: Double? = null,
-    val beta: Double? = null,
-    val sector: String? = null,
-)
-
 // ── Israeli Funds ────────────────────────────────────────
 
 @Serializable

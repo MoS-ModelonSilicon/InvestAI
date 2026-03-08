@@ -75,7 +75,7 @@ Every night, the full Playwright E2E suite runs against the live site to catch r
 - Full user journeys (register → profile → portfolio → screener → advisor)
 - Mobile layout, theme toggle, search bars
 - Performance checks (page load times)
-- Advanced feature flows (DCA, autopilot, advisor, comparison, stock detail)
+- Advanced feature flows (DCA, autopilot, advisor, stock detail)
 
 **If this fails → GitHub Issue auto-created with failure details.**
 

@@ -30,7 +30,6 @@ from src.routers import (
     stock_detail,
     portfolio,
     news,
-    comparison,
     alerts,
     education,
     calendar_router,
@@ -163,7 +162,6 @@ app.include_router(market.router)
 app.include_router(stock_detail.router)
 app.include_router(portfolio.router)
 app.include_router(news.router)
-app.include_router(comparison.router)
 app.include_router(alerts.router)
 app.include_router(education.router)
 app.include_router(calendar_router.router)
