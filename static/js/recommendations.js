@@ -53,12 +53,38 @@ function renderRecommendations(data) {
             </button>
         </div>`;
 
-    const cards = data.recommendations.map((r) => {
+    const cards = data.recommendations.map((r, idx) => {
         const riskColors = { Low: "var(--green)", Medium: "#eab308", High: "var(--red)" };
         const matchColor = r.match_score >= 75 ? "var(--green)" : r.match_score >= 50 ? "#eab308" : "var(--red)";
         const safeName = (r.name || "").replace(/'/g, "\\'");
+
+        // Build a richer "Why Selected" explanation from available data
+        let whyParts = [];
+        if (r.match_score >= 80) whyParts.push(`Excellent ${r.match_score}% match for your ${data.profile_label.toLowerCase()} risk profile`);
+        else if (r.match_score >= 60) whyParts.push(`Good ${r.match_score}% match for your ${data.profile_label.toLowerCase()} risk profile`);
+        else whyParts.push(`${r.match_score}% match for your ${data.profile_label.toLowerCase()} risk profile`);
+
+        if (r.risk_level === "Low" && r.beta != null && r.beta < 1) whyParts.push(`Low volatility (beta ${r.beta.toFixed(2)}) provides stability`);
+        if (r.dividend_yield != null && r.dividend_yield > 2) whyParts.push(`${r.dividend_yield.toFixed(2)}% dividend provides passive income`);
+        if (r.pe_ratio != null && r.pe_ratio > 0 && r.pe_ratio < 20) whyParts.push(`Reasonable valuation with P/E of ${r.pe_ratio.toFixed(1)}`);
+        if (r.year_change != null && r.year_change > 10) whyParts.push(`Strong momentum with ${r.year_change.toFixed(1)}% year-over-year growth`);
+        if (r.year_change != null && r.year_change < -10) whyParts.push(`Currently discounted (${r.year_change.toFixed(1)}% YoY) — potential recovery opportunity`);
+
+        const whyDetailHtml = whyParts.length > 0
+            ? `<div class="rec-why-detail" id="rec-detail-${idx}" style="display:none;">
+                <div class="rec-why-title">Why ${r.symbol} Was Selected</div>
+                <div class="rec-why-text">${whyParts.join(". ")}.</div>
+                <div class="rec-why-metrics">
+                    ${r.pe_ratio != null ? `<div class="rec-why-metric"><span>P/E</span><strong>${r.pe_ratio.toFixed(1)}</strong></div>` : ""}
+                    ${r.beta != null ? `<div class="rec-why-metric"><span>Beta</span><strong>${r.beta.toFixed(2)}</strong></div>` : ""}
+                    ${r.dividend_yield != null ? `<div class="rec-why-metric"><span>Div Yield</span><strong>${r.dividend_yield.toFixed(2)}%</strong></div>` : ""}
+                    ${r.year_change != null ? `<div class="rec-why-metric"><span>1Y Change</span><strong style="color:${r.year_change >= 0 ? 'var(--green)' : 'var(--red)'}">${r.year_change >= 0 ? '+' : ''}${r.year_change.toFixed(1)}%</strong></div>` : ""}
+                </div>
+               </div>`
+            : "";
+
         return `
-        <div class="rec-card" data-asset-type="${r.asset_type}" data-symbol="${r.symbol}" data-stock-name="${(r.name||"").replace(/"/g,'&quot;')}" data-stock-price="${r.price}">
+        <div class="rec-card" data-asset-type="${r.asset_type}" data-symbol="${r.symbol}" data-stock-name="${(r.name||"").replace(/"/g,'&quot;')}" data-stock-price="${r.price}" onclick="toggleRecDetail(${idx})">
             <div class="rec-card-header">
                 <div>
                     <div class="rec-symbol">${r.symbol}</div>
@@ -78,7 +104,8 @@ function renderRecommendations(data) {
                 <div><span class="metric-label">Beta ${helpIcon("beta")}</span><span class="metric-value">${r.beta != null ? r.beta.toFixed(2) : "—"}</span></div>
             </div>
             <div class="rec-reason">${r.reason}</div>
-            <div class="rec-actions" style="display:flex;gap:8px;margin-top:10px;">
+            ${whyDetailHtml}
+            <div class="rec-actions" style="display:flex;gap:8px;margin-top:10px;" onclick="event.stopPropagation()">
                 <button class="btn btn-sm btn-primary" onclick="openAddHoldingModal('${r.symbol}','${safeName}',${r.price})" title="Add to portfolio">+ Portfolio</button>
                 <button class="btn btn-sm" onclick="addToWatchlistFromDetail('${r.symbol}','${safeName}')" title="Add to watchlist">+ Watch</button>
                 <button class="btn btn-sm" onclick="navigateToStock('${r.symbol}')" title="View details">📈 Details</button>
@@ -128,4 +155,10 @@ function buyRecommendationsBundle() {
         allocation_pct: r.match_score,
     }));
     buyStockBundle(stocks);
+}
+
+function toggleRecDetail(idx) {
+    const el = document.getElementById(`rec-detail-${idx}`);
+    if (!el) return;
+    el.style.display = el.style.display === "none" ? "block" : "none";
 }
