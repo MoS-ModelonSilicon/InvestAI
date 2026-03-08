@@ -662,6 +662,7 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
     ichi = ta.ichimoku(highs, lows, closes)
     ichi_sig = ta.ichimoku_signal(closes, ichi)
     fib = ta.fibonacci_levels(closes)
+    cup_handle = ta.cup_and_handle(closes)
 
     rs_data = None
     with _benchmark_lock:
@@ -753,6 +754,7 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
             "edge_signals": comp.get("edge_signals", []),
         },
         "fibonacci": fib,
+        "cup_and_handle": cup_handle,
         "volume_analysis": vol_anom,
         "relative_strength": rs_data,
     }
