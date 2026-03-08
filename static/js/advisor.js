@@ -43,7 +43,7 @@ function _renderTAMood(mood, progress) {
     const regCls = regime.includes("Bullish") ? "ta-regime-bull" : regime.includes("Bearish") ? "ta-regime-bear" : "ta-regime-mixed";
 
     el.innerHTML = `
-        <div class="ta-mood-card">
+        <div class="ta-mood-card" data-help="ta_market_mood">
             <div class="ta-mood-left">
                 <span class="ta-regime ${regCls}">${regime}</span>
                 <span class="ta-mood-sub">${total} stocks scanned</span>
@@ -83,11 +83,11 @@ function _renderTATabs(packages) {
     if (!el || !packages) return;
 
     const tabs = [
-        { id: "hidden", icon: "🔍" },
-        { id: "institutional", icon: "🏦" },
-        { id: "momentum", icon: "⚡" },
-        { id: "swing", icon: "↗" },
-        { id: "oversold", icon: "💎" },
+        { id: "hidden", icon: "🔍", helpKey: "ta_hidden_gems" },
+        { id: "institutional", icon: "🏦", helpKey: "ta_smart_money" },
+        { id: "momentum", icon: "⚡", helpKey: "ta_momentum" },
+        { id: "swing", icon: "↗", helpKey: "ta_swing" },
+        { id: "oversold", icon: "💎", helpKey: "ta_oversold" },
     ];
 
     el.innerHTML = tabs.map(t => {
@@ -98,6 +98,7 @@ function _renderTATabs(packages) {
         return `<button class="ta-tab ${active}" onclick="switchTATab('${t.id}')">
             <span class="ta-tab-icon">${t.icon}</span>
             <span class="ta-tab-name">${pkg.name}</span>
+            ${helpIcon(t.helpKey)}
             <span class="ta-tab-count">${count}</span>
         </button>`;
     }).join("");
@@ -134,7 +135,7 @@ function _renderTAPackage(pkg) {
             </div>
             <div class="ta-pkg-meta">
                 <span class="ta-pkg-tf">${pkg.timeframe}</span>
-                <span class="ta-pkg-risk ${riskCls}">${pkg.risk_level} Risk</span>
+                <span class="ta-pkg-risk ${riskCls}" data-help="ta_risk_level">${pkg.risk_level} Risk</span>
             </div>
         </div>
         <div class="ta-picks-grid">`;
@@ -157,10 +158,10 @@ function _renderPickCard(p) {
     const signalsList = (p.signals_text || []).slice(0, 4).map(s => `<li>${s}</li>`).join("");
 
     let edgeBadges = "";
-    if (p.has_divergence) edgeBadges += '<span class="ta-edge-badge ta-edge-div">Divergence</span>';
-    if (p.quiet_accumulation || p.has_institutional_signal) edgeBadges += '<span class="ta-edge-badge ta-edge-inst">Smart Money</span>';
-    if (p.rs_outperforming) edgeBadges += '<span class="ta-edge-badge ta-edge-rs">Outperformer</span>';
-    if (p.boll_squeeze) edgeBadges += '<span class="ta-edge-badge ta-edge-squeeze">Squeeze</span>';
+    if (p.has_divergence) edgeBadges += '<span class="ta-edge-badge ta-edge-div" data-help="ta_divergence">Divergence</span>';
+    if (p.quiet_accumulation || p.has_institutional_signal) edgeBadges += '<span class="ta-edge-badge ta-edge-inst" data-help="ta_smart_money_badge">Smart Money</span>';
+    if (p.rs_outperforming) edgeBadges += '<span class="ta-edge-badge ta-edge-rs" data-help="ta_outperformer">Outperformer</span>';
+    if (p.boll_squeeze) edgeBadges += '<span class="ta-edge-badge ta-edge-squeeze" data-help="ta_squeeze">Squeeze</span>';
 
     return `
     <div class="ta-pick-card" data-symbol="${p.symbol}" data-stock-name="${(p.name||"").replace(/"/g,'&quot;')}" data-stock-price="${p.entry}" onclick="showTADetail('${p.symbol}')">
@@ -169,20 +170,20 @@ function _renderPickCard(p) {
                 <strong>${p.symbol}</strong>
                 <span class="ta-pick-name">${p.name}</span>
             </div>
-            <span class="signal-badge ${sigCls}">${p.verdict} ${p.confidence}%</span>
+            <span class="signal-badge ${sigCls}" data-help="ta_confidence">${p.verdict} ${p.confidence}%</span>
         </div>
         ${edgeBadges ? '<div class="ta-edge-badges">' + edgeBadges + '</div>' : ''}
         <div class="ta-pick-prices">
-            <div><span class="ta-lbl">Entry</span><span class="ta-val">$${p.entry.toFixed(2)}</span></div>
-            <div><span class="ta-lbl">Target</span><span class="ta-val ta-green">$${p.target.toFixed(2)}</span></div>
-            <div><span class="ta-lbl">Stop</span><span class="ta-val ta-red">$${p.stop_loss.toFixed(2)}</span></div>
-            <div><span class="ta-lbl">R/R</span><span class="ta-val">${p.risk_reward.toFixed(1)}x</span></div>
+            <div data-help="ta_entry"><span class="ta-lbl">Entry</span><span class="ta-val">$${p.entry.toFixed(2)}</span></div>
+            <div data-help="ta_target"><span class="ta-lbl">Target</span><span class="ta-val ta-green">$${p.target.toFixed(2)}</span></div>
+            <div data-help="ta_stop_loss"><span class="ta-lbl">Stop</span><span class="ta-val ta-red">$${p.stop_loss.toFixed(2)}</span></div>
+            <div data-help="ta_risk_reward"><span class="ta-lbl">R/R</span><span class="ta-val">${p.risk_reward.toFixed(1)}x</span></div>
         </div>
         <div class="ta-pick-spark"><canvas id="ta-spark-${p.symbol}" width="260" height="50"></canvas></div>
         <ul class="ta-pick-signals">${signalsList}</ul>
         <div class="ta-pick-foot">
             <span class="ta-pick-sector">${p.sector}</span>
-            <span class="ta-pick-score">Score ${p.score}</span>
+            <span class="ta-pick-score" data-help="ta_score">Score ${p.score}</span>
         </div>
         <div class="ta-pick-actions" style="display:flex;gap:6px;margin-top:8px;" onclick="event.stopPropagation()">
             <button class="btn btn-sm btn-primary" onclick="openAddHoldingModal('${p.symbol}','${(p.name||"").replace(/'/g,"\\\\'")}',${p.entry})" title="Add to portfolio">+ Buy</button>
