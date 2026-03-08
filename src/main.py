@@ -204,9 +204,7 @@ def health_check():
     now = _htime.time()
     with _cache_lock:
         info_total = sum(1 for k in _cache if k.startswith("info:"))
-        info_fresh = sum(
-            1 for k, (ts, _) in _cache.items() if k.startswith("info:") and now - ts < CACHE_TTL
-        )
+        info_fresh = sum(1 for k, (ts, _) in _cache.items() if k.startswith("info:") and now - ts < CACHE_TTL)
         quote_count = sum(1 for k in _cache if k.startswith("quote:"))
 
     # Screener snapshot diagnostics
