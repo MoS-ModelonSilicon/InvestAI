@@ -1,0 +1,106 @@
+# ──────────────────────────────────────────────────────────────
+# InvestAI — Promote Staging to Production
+#
+# Manual workflow to promote staging → production at any time.
+# Optionally runs a quick smoke test on staging before promoting.
+# ──────────────────────────────────────────────────────────────
+name: Promote to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_smoke:
+        description: 'Skip staging smoke test before promoting'
+        required: false
+        default: false
+        type: boolean
+      reason:
+        description: 'Reason for promotion (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  STAGING_URL: https://finance-tracker-staging.onrender.com
+  PROD_URL: https://investai-utho.onrender.com
+
+jobs:
+  # ── Optional: quick smoke on staging before promoting ──────
+  smoke-staging:
+    name: "Smoke Test Staging"
+    runs-on: ubuntu-latest
+    if: github.event.inputs.skip_smoke != 'true'
+    timeout-minutes: 10
+    steps:
+      - name: Wake staging
+        run: |
+          echo "Waking staging..."
+          for i in 1 2 3 4; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.STAGING_URL }}/login" --max-time 60) || true
+            echo "Attempt $i: HTTP $STATUS"
+            [ "$STATUS" = "200" ] && exit 0
+            sleep 20
+          done
+
+      - name: Quick health check
+        run: |
+          echo "Checking staging health..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.STAGING_URL }}/api/dashboard/summary" --max-time 30)
+          echo "Dashboard API: HTTP $STATUS"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "Staging is healthy"
+          else
+            echo "Staging is not responding correctly (HTTP $STATUS)"
+            exit 1
+          fi
+
+  # ── Promote: trigger production deploy ─────────────────────
+  promote:
+    name: "Deploy to Production"
+    needs: smoke-staging
+    if: always() && (needs.smoke-staging.result == 'success' || needs.smoke-staging.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger production deploy
+        run: |
+          REASON="${{ github.event.inputs.reason || 'Manual promotion' }}"
+          echo "Reason: $REASON"
+          echo "Promoting staging to production..."
+          echo ""
+
+          if [ -z "${{ secrets.RENDER_PROD_DEPLOY_HOOK }}" ]; then
+            echo "RENDER_PROD_DEPLOY_HOOK secret not set!"
+            exit 1
+          fi
+
+          HTTP_CODE=$(curl -s -X POST "${{ secrets.RENDER_PROD_DEPLOY_HOOK }}" \
+            -o /dev/null -w "%{http_code}")
+          echo "Deploy hook response: HTTP $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo ""
+            echo "Production deploy triggered!"
+            echo "  Staging:    ${{ env.STAGING_URL }}"
+            echo "  Production: ${{ env.PROD_URL }}"
+            echo "  By:         ${{ github.actor }}"
+            echo "  Reason:     $REASON"
+          else
+            echo "Deploy hook returned HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+      - name: Wait for production to come up
+        run: |
+          echo "Waiting 120s for production to deploy..."
+          sleep 120
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.PROD_URL }}/login" --max-time 60) || true
+          echo "Production status: HTTP $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "Production is live!"
+          else
+            echo "Production returned HTTP $STATUS — may still be deploying"
+          fi

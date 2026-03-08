@@ -1,8 +1,9 @@
 # ──────────────────────────────────────────────────────────────
 # InvestAI Weekly Full Regression Tests
 #
-# Runs every Sunday at 4 AM UTC against the live Render site.
+# Runs every Sunday at 4 AM UTC against PRODUCTION.
 # Executes ALL live-site tests (smoke + deep) — the comprehensive suite.
+# This runs against production, NOT staging (staging is tested nightly).
 # On failure: creates a GitHub Issue with full details.
 # Can also be triggered manually from the Actions tab.
 # ──────────────────────────────────────────────────────────────

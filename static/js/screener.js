@@ -2,6 +2,40 @@ let screenerLoaded = false;
 let _lastResults = [];
 let _scrPage = 1;
 const _scrPerPage = 50;
+let _scrDebounce = null;
+
+/* ── Global search helpers ─── */
+function onScreenerSearchInput() {
+    const val = document.getElementById("scr-query").value.trim();
+    const clearBtn = document.getElementById("scr-query-clear");
+    const hint = document.getElementById("scr-search-hint");
+    const filtersEl = document.querySelector(".screener-filters");
+
+    if (clearBtn) clearBtn.style.display = val ? "block" : "none";
+    if (hint) hint.style.display = val ? "block" : "none";
+    if (filtersEl) filtersEl.classList.toggle("filters-dimmed", !!val);
+
+    clearTimeout(_scrDebounce);
+    if (val.length >= 2) {
+        _scrDebounce = setTimeout(() => runScreener(), 350);
+    } else if (val.length === 0) {
+        // Cleared — reset
+        const resultsEl = document.getElementById("scr-results-area");
+        const countEl = document.getElementById("scr-result-count");
+        const empty = document.getElementById("scr-empty");
+        if (resultsEl) resultsEl.innerHTML = "";
+        if (countEl) countEl.textContent = "";
+        if (empty) { empty.style.display = "block"; empty.innerHTML = `<p>Use the filters or presets on the left, then click "Search" to find stocks and ETFs.</p>`; }
+        const pagEl = document.getElementById("scr-pagination");
+        if (pagEl) pagEl.innerHTML = "";
+    }
+}
+
+function clearScreenerSearch() {
+    const input = document.getElementById("scr-query");
+    if (input) { input.value = ""; input.focus(); }
+    onScreenerSearchInput();
+}
 
 async function initScreener() {
     if (!screenerLoaded) {
@@ -292,6 +326,13 @@ function clearScreener() {
     _scrPage = 1;
     const pagEl = document.getElementById("scr-pagination");
     if (pagEl) pagEl.innerHTML = "";
+    // Reset global search bar UI
+    const clearBtn = document.getElementById("scr-query-clear");
+    if (clearBtn) clearBtn.style.display = "none";
+    const hint = document.getElementById("scr-search-hint");
+    if (hint) hint.style.display = "none";
+    const filtersEl = document.querySelector(".screener-filters");
+    if (filtersEl) filtersEl.classList.remove("filters-dimmed");
 }
 
 async function addToWLFromScreener(symbol, name) {

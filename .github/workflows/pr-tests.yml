@@ -1,9 +1,9 @@
 # ──────────────────────────────────────────────────────────────
-# InvestAI Commit Gate — Smoke Tests + Lint + Deploy
+# InvestAI CI Gate — Smoke Tests + Lint
 #
 # Runs on every push to master (if src/static/tests changed).
-# Smoke tests are REQUIRED — if they fail, deploy is skipped.
-# Flow: push → smoke tests → if pass → Render deploy hook
+# Smoke tests are REQUIRED — if they fail, staging won't deploy.
+# Flow: push → smoke tests → staging auto-deploys → nightly E2E → promote to prod
 # ──────────────────────────────────────────────────────────────
 name: CI Gate
 
@@ -115,30 +115,24 @@ jobs:
       - name: Run mypy
         run: mypy src/ --config-file=pyproject.toml
 
-  # ── Deploy to Render (only if smoke tests pass) ─────────────
-  deploy:
-    name: "Deploy to Render"
+  # ── Confirm staging deploy (auto-deploys on push to master) ──
+  deploy-staging:
+    name: "Staging Auto-Deploy"
     needs: [smoke-tests, lint]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    timeout-minutes: 5
+    timeout-minutes: 2
 
     steps:
-      - name: Trigger Render deploy
+      - name: Confirm staging deploy
         run: |
-          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK }}" ]; then
-            echo "⚠️ RENDER_DEPLOY_HOOK secret not set — skipping deploy trigger."
-            echo "Render auto-deploys on push. Set RENDER_DEPLOY_HOOK to gate deploys on CI."
-            echo ""
-            echo "To enable gated deploys:"
-            echo "1. In Render dashboard → Settings → disable 'Auto-Deploy'"
-            echo "2. Copy the Deploy Hook URL from Render → Settings"
-            echo "3. Add it as GitHub secret: RENDER_DEPLOY_HOOK"
-            exit 0
-          fi
-          echo "🚀 Smoke tests passed! Triggering Render deploy..."
-          curl -s -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}" \
-            -H "Content-Type: application/json" \
-            -o /dev/null -w "HTTP %{http_code}"
+          echo "CI passed — staging will auto-deploy via Render."
           echo ""
-          echo "✅ Deploy triggered. Check https://dashboard.render.com for status."
+          echo "Pipeline:"
+          echo "  1. Staging auto-deploys on push to master"
+          echo "  2. Nightly E2E tests verify staging"
+          echo "  3. On success: production promote via deploy hook"
+          echo "  4. Manual promote: Actions > Promote to Production"
+          echo ""
+          echo "Staging:    https://finance-tracker-staging.onrender.com"
+          echo "Production: https://investai-utho.onrender.com"

@@ -370,7 +370,13 @@ def screen_instruments(
     signal: Optional[str] = None,
     query: Optional[str] = None,
 ) -> list[dict]:
-    if asset_type == "ETF":
+    query_lower = query.strip().lower() if query else None
+
+    # When searching by keyword, always search the full universe
+    # (all stocks + ETFs across all regions) to give maximum results.
+    if query_lower:
+        universe = STOCK_UNIVERSE + ETF_UNIVERSE
+    elif asset_type == "ETF":
         universe = ETF_UNIVERSE
     elif asset_type == "Stock":
         universe = STOCK_UNIVERSE
@@ -380,19 +386,28 @@ def screen_instruments(
     all_data = fetch_batch(universe, cached_only=True)
 
     filtered = []
-    query_lower = query.strip().lower() if query else None
     for d in all_data:
         if query_lower:
             sym = (d.get("symbol") or "").lower()
             name = (d.get("name") or "").lower()
-            if query_lower not in sym and query_lower not in name:
+            sector_val = (d.get("sector") or "").lower()
+            industry_val = (d.get("industry") or "").lower()
+            if (
+                query_lower not in sym
+                and query_lower not in name
+                and query_lower not in sector_val
+                and query_lower not in industry_val
+            ):
                 continue
-        if asset_type and d.get("asset_type") != asset_type:
-            continue
-        if sector and d.get("sector", "").lower() != sector.lower():
-            continue
-        if region and d.get("region", "US") != region:
-            continue
+            # When query is active, skip asset_type/sector/region filters
+            # so results span the entire universe
+        else:
+            if asset_type and d.get("asset_type") != asset_type:
+                continue
+            if sector and d.get("sector", "").lower() != sector.lower():
+                continue
+            if region and d.get("region", "US") != region:
+                continue
         if market_cap_min and (d.get("market_cap") or 0) < market_cap_min:
             continue
         if market_cap_max and (d.get("market_cap") or 0) > market_cap_max:

@@ -32,7 +32,7 @@ param(
 
     [int]$DeployWaitSec = 150,           # seconds to wait for Render deploy
 
-    [string]$LiveUrl = "https://investai-utho.onrender.com"
+    [string]$LiveUrl = "https://finance-tracker-staging.onrender.com"
 )
 
 $ErrorActionPreference = "Stop"
@@ -418,13 +418,13 @@ if ($NoMerge) {
 }
 
 # ══════════════════════════════════════════════════════════════
-#  PHASE 7 — WAIT FOR RENDER DEPLOY
+#  PHASE 7 — WAIT FOR STAGING DEPLOY
 # ══════════════════════════════════════════════════════════════
 
 if (-not $NoMerge) {
-    Write-Step "Phase 7: Waiting for Render deploy (~$($DeployWaitSec/60) min)"
+    Write-Step "Phase 7: Waiting for staging deploy (~$($DeployWaitSec/60) min)"
 
-    gh issue comment $IssueNumber --repo $Repo --body "🚀 Merged. Waiting for Render deploy ($($DeployWaitSec)s)..." 2>&1 | Out-Null
+    gh issue comment $IssueNumber --repo $Repo --body "🚀 Merged. Waiting for staging deploy ($($DeployWaitSec)s)..." 2>&1 | Out-Null
 
     $elapsed = 0
     while ($elapsed -lt $DeployWaitSec) {
@@ -446,13 +446,13 @@ if (-not $NoMerge) {
 }
 
 # ══════════════════════════════════════════════════════════════
-#  PHASE 8 — E2E VERIFICATION ON LIVE SITE
+#  PHASE 8 — E2E VERIFICATION ON STAGING
 # ══════════════════════════════════════════════════════════════
 
 if (-not $NoMerge) {
-    Write-Step "Phase 8: E2E verification on live site"
+    Write-Step "Phase 8: E2E verification on staging"
 
-    gh issue comment $IssueNumber --repo $Repo --body "🧪 Running E2E smoke tests against $LiveUrl..." 2>&1 | Out-Null
+    gh issue comment $IssueNumber --repo $Repo --body "🧪 Running E2E smoke tests against staging ($LiveUrl)..." 2>&1 | Out-Null
 
     # Run ONLY critical-path smoke tests (fast, ~30s total)
     # Full E2E suite is 105 tests — too slow for post-deploy check; nightly handles that.
@@ -480,22 +480,23 @@ All critical-path tests passed after deploy.
 - [x] PR #$PRNumber created
 - [x] CI Gate passed
 - [x] Auto-merged to master
-- [x] Deployed to Render
-- [x] E2E verification passed on live site
+- [x] Deployed to staging
+- [x] E2E verification passed on staging
+- [ ] Production promote: nightly auto-promote or manual via Actions > Promote to Production
 "@ 2>&1 | Out-Null
 
     } else {
-        Write-Warn "E2E tests failed on live site!"
+        Write-Warn "E2E tests failed on staging!"
 
         # Capture last 50 lines of output from file
         $e2eTail = Get-Content $e2eOutputFile -Tail 50 -ErrorAction SilentlyContinue
         $e2eSummary = if ($e2eTail) { $e2eTail -join "`n" } else { "(no output captured)" }
 
         gh issue comment $IssueNumber --repo $Repo --body @"
-⚠️ **E2E verification failed** on $LiveUrl
+⚠️ **E2E verification failed** on staging ($LiveUrl)
 
-The code merged and deployed, but live-site E2E tests detected issues.
-This may indicate a deploy-time problem or an environment difference.
+The code merged and deployed to staging, but E2E tests detected issues.
+Production was NOT promoted. Fix and re-ship.
 
 <details>
 <summary>Test output (last 50 lines)</summary>
@@ -505,7 +506,8 @@ $e2eSummary
 ``````
 </details>
 
-**Action needed:** Investigate the E2E failures. The nightly pipeline will also pick this up.
+**Action needed:** Investigate the E2E failures. Production was NOT promoted.
+The nightly pipeline will also pick this up.
 "@ 2>&1 | Out-Null
 
         Write-Warn "E2E failures logged to Issue #$IssueNumber. Nightly pipeline will also monitor."
