@@ -44,6 +44,31 @@ const HELP = {
 
     // Comparison
     normalized_chart: "Shows each stock's performance starting from the same point (0%). Useful for comparing stocks at different price levels on equal footing.",
+
+    // Trading Advisor — category tabs
+    ta_hidden_gems: "Hidden Gems are stocks flying under the radar — they show early signs of momentum like price-volume divergences or quiet accumulation before the crowd notices. These are higher-risk but can deliver outsized returns if you catch them early.",
+    ta_smart_money: "Smart Money Flow tracks unusual volume and trading patterns that suggest big institutions (hedge funds, banks) are quietly buying. When the 'smart money' moves in, the stock often follows upward.",
+    ta_momentum: "Momentum Plays are stocks already trending up with strong technical signals. The idea is simple: winners tend to keep winning in the short term. Ride the wave, but use a stop-loss in case it reverses.",
+    ta_swing: "Swing Trades target stocks at key turning points — bouncing off support levels or breaking through resistance. You hold for a few days to a couple of weeks, aiming to catch a price 'swing' in your favor.",
+    ta_oversold: "Oversold Bargains are stocks that have dropped significantly and may be due for a bounce. Technical indicators (like RSI below 30) suggest selling is overdone. These are patient-buyer opportunities — the price may recover.",
+
+    // Trading Advisor — edge badges
+    ta_divergence: "Divergence means the price is moving one way but a key indicator (like RSI or MACD) is moving the other way. This often signals the current trend is losing steam and a reversal may be coming.",
+    ta_smart_money_badge: "This stock shows unusual volume patterns — possibly large institutions quietly building a position. When big players accumulate shares, it's often a bullish sign.",
+    ta_outperformer: "This stock is beating its sector or the overall market in relative strength. Outperformers tend to keep outperforming, making them attractive momentum plays.",
+    ta_squeeze: "A Bollinger Band squeeze means the stock's price range has gotten very tight — like a coiled spring. When it 'uncoils', a big move often follows. The direction isn't guaranteed, but combined with other signals it can be powerful.",
+
+    // Trading Advisor — pick card fields
+    ta_entry: "Entry Price — the suggested price to buy the stock at. Try to get in at or below this level for the best risk/reward setup.",
+    ta_target: "Target Price — where the analysis expects the stock to reach. This is your potential profit level. Consider selling some or all of your position here.",
+    ta_stop_loss: "Stop-Loss — the price where you should sell to limit your loss if the trade goes against you. Always use a stop-loss to protect your capital. No trade is guaranteed.",
+    ta_risk_reward: "Risk/Reward Ratio — compares the potential profit to the potential loss. A 2:1 ratio means you could gain $2 for every $1 you risk. Higher is better; aim for at least 1.5x.",
+    ta_confidence: "Confidence shows how many technical signals agree on this trade setup. Higher confidence means more indicators are aligned, but no score guarantees success.",
+    ta_score: "A composite score (0–100) combining trend strength, momentum, volume patterns, and risk signals. Higher scores suggest a stronger overall setup.",
+
+    // Trading Advisor — market mood
+    ta_market_mood: "Market Mood shows the overall sentiment across all scanned stocks. Bullish = most stocks trending up. Bearish = most trending down. Mixed = no clear direction. This helps you decide how aggressive to be.",
+    ta_risk_level: "Risk Level indicates how volatile this trading strategy is. Low = smaller price swings, steadier. Medium = moderate ups and downs. High = big potential gains but also bigger losses.",
 };
 
 let activeTooltip = null;

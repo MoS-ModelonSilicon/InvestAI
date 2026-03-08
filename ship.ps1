@@ -59,7 +59,7 @@ Write-Step "Phase 0: Preflight checks"
 # Ensure we're on master and clean
 $currentBranch = git rev-parse --abbrev-ref HEAD
 if ($currentBranch -ne $BaseBranch) {
-    Write-Fail "Must start from $BaseBranch (currently on: $currentBranch)"
+    Write-Fail "Must start from $BaseBranch `(currently on: $currentBranch`)"
     exit 1
 }
 
@@ -170,7 +170,7 @@ git checkout -b $BranchName 2>&1 | Out-Null
 Write-OK "Created branch: $BranchName"
 
 # Commit with conventional commit message
-$CommitMsg = "$($CommitType): $ShortTitle (closes #$IssueNumber)"
+$CommitMsg = "$($CommitType): $ShortTitle `(closes #$IssueNumber`)"
 git commit -m $CommitMsg 2>&1 | Out-Null
 Write-OK "Committed: $CommitMsg"
 
@@ -230,7 +230,7 @@ $CIGreen = $false
 while (-not $CIGreen -and $FixAttempt -le $MaxFixAttempts) {
 
     # ── Wait for CI run to appear and complete ──
-    Write-Info "Waiting for CI Gate to start (attempt $FixAttempt)..."
+    Write-Info "Waiting for CI Gate to start `(attempt $FixAttempt`)..."
     Start-Sleep -Seconds 10
 
     # Find the latest CI run for this branch
@@ -273,17 +273,17 @@ while (-not $CIGreen -and $FixAttempt -le $MaxFixAttempts) {
 
     if ($RunConclusion -eq "success") {
         $CIGreen = $true
-        Write-OK "CI Gate passed! (Run #$RunId)"
-        gh issue comment $IssueNumber --repo $Repo --body "✅ CI Gate passed (Run #$RunId, attempt $FixAttempt)" 2>&1 | Out-Null
+        Write-OK "CI Gate passed! `(Run #$RunId`)"
+        gh issue comment $IssueNumber --repo $Repo --body "✅ CI Gate passed `(Run #$RunId, attempt $FixAttempt`)" 2>&1 | Out-Null
         break
     }
 
     # ── CI FAILED — attempt auto-fix ──
     $FixAttempt++
-    Write-Warn "CI Gate failed (Run #$RunId) — auto-fix attempt $FixAttempt/$MaxFixAttempts"
+    Write-Warn "CI Gate failed `(Run #$RunId`) — auto-fix attempt $FixAttempt/$MaxFixAttempts"
 
     if ($FixAttempt -gt $MaxFixAttempts) {
-        Write-Fail "Max fix attempts ($MaxFixAttempts) exceeded. Manual intervention needed."
+        Write-Fail "Max fix attempts `($MaxFixAttempts`) exceeded. Manual intervention needed."
         gh issue comment $IssueNumber --repo $Repo --body @"
 ❌ CI Gate failed after $MaxFixAttempts auto-fix attempts.
 
@@ -295,7 +295,7 @@ while (-not $CIGreen -and $FixAttempt -le $MaxFixAttempts) {
     }
 
     # Comment on issue
-    gh issue comment $IssueNumber --repo $Repo --body "🔧 CI failed (Run #$RunId). Starting auto-fix attempt $FixAttempt/$MaxFixAttempts..." 2>&1 | Out-Null
+    gh issue comment $IssueNumber --repo $Repo --body "🔧 CI failed `(Run #$RunId`). Starting auto-fix attempt $FixAttempt/$MaxFixAttempts..." 2>&1 | Out-Null
 
     # ── Fetch failure logs ──
     Write-Info "Fetching failure logs..."
@@ -351,7 +351,7 @@ RULES (from CLAUDE.md):
 
     # ── Commit and push the fix ──
     git add -A
-    $FixMsg = "fix: auto-fix CI failure (attempt $FixAttempt for #$IssueNumber)"
+    $FixMsg = "fix: auto-fix CI failure `(attempt $FixAttempt for #$IssueNumber`)"
     git commit -m $FixMsg 2>&1 | Out-Null
     git push origin $BranchName 2>&1
     Write-OK "Fix committed and pushed: $FixMsg"
@@ -380,7 +380,7 @@ if ($NoMerge) {
         --repo $Repo `
         --squash `
         --delete-branch `
-        --subject "$Title (closes #$IssueNumber)" `
+        --subject "$Title `(closes #$IssueNumber`)" `
         2>&1
 
     Write-OK "PR #$PRNumber merged to $BaseBranch"
