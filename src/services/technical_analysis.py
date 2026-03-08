@@ -742,6 +742,148 @@ def fibonacci_levels(closes: list[float], lookback: int = 120) -> dict[str, Any]
 
 
 # ---------------------------------------------------------------------------
+# Cup & Handle Pattern Detection
+# A bullish continuation pattern:
+#  1. Left rim — a local high
+#  2. "Cup" — a U-shaped decline and recovery back to approximately the rim level
+#  3. "Handle" — a smaller pullback from the right rim, then resumption
+# The breakout target is rim + cup_depth.
+# ---------------------------------------------------------------------------
+
+_CUP_EMPTY: dict[str, Any] = {
+    "detected": False,
+    "confidence": 0,
+    "left_rim_idx": None,
+    "cup_bottom_idx": None,
+    "right_rim_idx": None,
+    "handle_low_idx": None,
+    "rim_level": None,
+    "cup_depth": None,
+    "detail": "",
+}
+
+
+def cup_and_handle(
+    closes: list[float],
+    lookback: int = 120,
+    min_cup_width: int = 15,
+    max_cup_width: int = 90,
+    cup_depth_pct_min: float = 0.05,
+    cup_depth_pct_max: float = 0.35,
+    handle_retrace_max: float = 0.50,
+) -> dict[str, Any]:
+    """
+    Detect a cup-and-handle pattern in the recent price series.
+
+    Returns dict with detected, confidence, key indices, rim_level, detail.
+    Indices are relative to the *full* closes array (not the slice).
+    """
+    n = len(closes)
+    if n < min_cup_width + 5:
+        return {**_CUP_EMPTY}
+
+    start = max(0, n - lookback)
+    window = closes[start:]
+    wn = len(window)
+
+    # Step 1: Find candidate left rims (local peaks in first half)
+    best: dict[str, Any] | None = None
+
+    for li in range(0, wn // 2):
+        # Left rim must be a local peak (higher than 3 neighbours each side)
+        if li < 3 or li > wn - min_cup_width - 5:
+            continue
+        rim_val = window[li]
+        if not all(rim_val >= window[li - k] for k in range(1, min(4, li + 1))):
+            continue
+        if not all(rim_val >= window[li + k] for k in range(1, min(4, wn - li))):
+            continue
+
+        # Step 2: Find cup bottom — lowest point after left rim
+        search_end = min(li + max_cup_width, wn - 3)
+        if search_end - li < min_cup_width:
+            continue
+        cup_slice = window[li : search_end]
+        bi_local = int(cup_slice.index(min(cup_slice)))  # type: ignore[arg-type]
+        bi = li + bi_local
+        bottom_val = window[bi]
+
+        depth_pct = (rim_val - bottom_val) / rim_val if rim_val > 0 else 0
+        if depth_pct < cup_depth_pct_min or depth_pct > cup_depth_pct_max:
+            continue
+        # Bottom should not be at edges
+        if bi_local < 3 or bi_local > len(cup_slice) - 4:
+            continue
+
+        # Step 3: Find right rim — price recovering near left rim level after bottom
+        right_rim_idx = None
+        for ri in range(bi + 3, min(bi + max_cup_width, wn)):
+            if window[ri] >= rim_val * 0.97:  # within 3% of left rim
+                right_rim_idx = ri
+                break
+        if right_rim_idx is None:
+            continue
+
+        # Cup width check
+        cup_width = right_rim_idx - li
+        if cup_width < min_cup_width or cup_width > max_cup_width:
+            continue
+
+        # U-shape check: mid-points of cup should be below rim
+        mid = (li + right_rim_idx) // 2
+        quarter1 = (li + mid) // 2
+        quarter3 = (mid + right_rim_idx) // 2
+        if window[quarter1] > rim_val * 0.98 or window[quarter3] > rim_val * 0.98:
+            continue  # too flat — not a cup
+
+        right_rim_val = window[right_rim_idx]
+        rim_level = (rim_val + right_rim_val) / 2
+
+        # Step 4: Handle — small pullback after right rim
+        handle_start = right_rim_idx
+        handle_end = min(handle_start + max(10, cup_width // 3), wn)
+        if handle_end <= handle_start + 2:
+            # No room for handle — still valid cup, just no handle yet
+            handle_low_idx = None
+            handle_confidence = 60
+        else:
+            handle_slice = window[handle_start:handle_end]
+            handle_low_local = int(handle_slice.index(min(handle_slice)))  # type: ignore[arg-type]
+            handle_low_val = handle_slice[handle_low_local]
+            handle_retrace = (rim_level - handle_low_val) / (rim_level - bottom_val) if rim_level > bottom_val else 0
+
+            if handle_retrace > handle_retrace_max:
+                continue  # handle too deep — not valid
+            handle_low_idx = handle_start + handle_low_local
+            handle_confidence = 80 if handle_retrace < 0.33 else 70
+
+        # Score this candidate
+        symmetry = 1.0 - abs((bi - li) - (right_rim_idx - bi)) / cup_width
+        rim_match = 1.0 - abs(rim_val - right_rim_val) / rim_val if rim_val > 0 else 0
+        confidence = int(handle_confidence * 0.5 + symmetry * 25 + rim_match * 25)
+        confidence = max(0, min(100, confidence))
+
+        if best is None or confidence > best["confidence"]:
+            best = {
+                "detected": True,
+                "confidence": confidence,
+                "left_rim_idx": start + li,
+                "cup_bottom_idx": start + bi,
+                "right_rim_idx": start + right_rim_idx,
+                "handle_low_idx": (start + handle_low_idx) if handle_low_idx is not None else None,
+                "rim_level": round(rim_level, 2),
+                "cup_depth": round(rim_level - bottom_val, 2),
+                "detail": (
+                    f"Cup & Handle pattern: rim ~${rim_level:.2f}, "
+                    f"depth ${rim_level - bottom_val:.2f} ({depth_pct * 100:.0f}%), "
+                    f"width {cup_width} days, confidence {confidence}%"
+                ),
+            }
+
+    return best if best else {**_CUP_EMPTY}
+
+
+# ---------------------------------------------------------------------------
 # Relative Strength vs Benchmark
 # Compares stock performance to a benchmark (SPY) over multiple periods.
 # Outperformance during market weakness = institutional quality.

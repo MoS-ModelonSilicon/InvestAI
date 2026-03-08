@@ -4368,6 +4368,36 @@ body {
     padding: 6px;
 }
 
+/* Pattern tags below chart title */
+#ta-chart-pattern-badge {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+.ta-pattern-tag {
+    font-size: .72em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+.ta-tag-support {
+    background: rgba(34,197,94,0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34,197,94,0.3);
+}
+.ta-tag-resist {
+    background: rgba(239,68,68,0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239,68,68,0.3);
+}
+.ta-tag-pattern {
+    background: rgba(251,191,36,0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(251,191,36,0.3);
+}
+
 /* Edge badges on pick cards */
 .ta-edge-badges {
     display: flex;

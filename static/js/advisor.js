@@ -321,6 +321,7 @@ function _renderTADetailModal(data) {
                 <div class="ta-detail-signals"><h4>Classic Indicators</h4>${signals}</div>
                 <div class="ta-detail-chart-area">
                     <h4>Price &amp; Indicators</h4>
+                    <div id="ta-chart-pattern-badge"></div>
                     <canvas id="ta-detail-canvas" height="180"></canvas>
                 </div>
                 <div class="ta-detail-chart-area">
@@ -344,9 +345,81 @@ function _drawTADetailCharts(data) {
     const dates = data.dates;
     const closes = data.price.close;
     const ind = data.indicators;
+    const fib = data.fibonacci || {};
 
     const isUp = closes[closes.length - 1] >= closes[0];
     const mainColor = isUp ? "rgba(34,197,94,1)" : "rgba(239,68,68,1)";
+
+    /* ── Support / Resistance horizontal lines ─────── */
+    const srDatasets = [];
+    if (fib.nearest_support) {
+        srDatasets.push({
+            label: `Support $${fib.nearest_support.toFixed(2)}`,
+            data: dates.map(() => fib.nearest_support),
+            borderColor: "rgba(34,197,94,0.7)",
+            borderWidth: 1.5,
+            borderDash: [8, 4],
+            pointRadius: 0,
+            fill: false,
+            tension: 0,
+        });
+    }
+    if (fib.nearest_resistance) {
+        srDatasets.push({
+            label: `Resist $${fib.nearest_resistance.toFixed(2)}`,
+            data: dates.map(() => fib.nearest_resistance),
+            borderColor: "rgba(239,68,68,0.7)",
+            borderWidth: 1.5,
+            borderDash: [8, 4],
+            pointRadius: 0,
+            fill: false,
+            tension: 0,
+        });
+    }
+
+    /* ── Cup & Handle pattern markers ──────────────── */
+    const patternDatasets = [];
+    const cup = data.cup_and_handle;
+    if (cup && cup.detected) {
+        // Key points: left rim, cup bottom, right rim, handle low
+        const cupPts = new Array(dates.length).fill(null);
+        if (cup.cup_bottom_idx != null) cupPts[cup.cup_bottom_idx] = closes[cup.cup_bottom_idx];
+        if (cup.left_rim_idx != null) cupPts[cup.left_rim_idx] = closes[cup.left_rim_idx];
+        if (cup.right_rim_idx != null) cupPts[cup.right_rim_idx] = closes[cup.right_rim_idx];
+        if (cup.handle_low_idx != null) cupPts[cup.handle_low_idx] = closes[cup.handle_low_idx];
+
+        patternDatasets.push({
+            label: "Cup & Handle",
+            data: cupPts,
+            borderColor: "rgba(251,191,36,0)",
+            pointBackgroundColor: "rgba(251,191,36,1)",
+            pointBorderColor: "rgba(251,191,36,1)",
+            pointRadius: cupPts.map(v => v != null ? 6 : 0),
+            pointStyle: cupPts.map((v, i) => {
+                if (v == null) return "circle";
+                if (i === cup.cup_bottom_idx) return "triangle";
+                if (i === cup.handle_low_idx) return "rectRot";
+                return "circle";
+            }),
+            fill: false,
+            showLine: false,
+            tension: 0,
+        });
+
+        // Rim-level horizontal line
+        if (cup.rim_level) {
+            patternDatasets.push({
+                label: `Rim $${cup.rim_level.toFixed(2)}`,
+                data: dates.map(() => cup.rim_level),
+                borderColor: "rgba(251,191,36,0.5)",
+                borderWidth: 1,
+                borderDash: [4, 4],
+                pointRadius: 0,
+                fill: false,
+                tension: 0,
+            });
+        }
+    }
 
     if (_taPriceChart) _taPriceChart.destroy();
     const priceCanvas = document.getElementById("ta-detail-canvas");
@@ -361,10 +434,22 @@ function _drawTADetailCharts(data) {
                     { label: "SMA 200", data: ind.sma_200, borderColor: "rgba(234,179,8,0.7)", borderWidth: 1.5, borderDash: [4,4], pointRadius: 0, fill: false, tension: 0.1 },
                     { label: "BB Upper", data: ind.bollinger.upper, borderColor: "rgba(156,163,175,0.3)", borderWidth: 1, pointRadius: 0, fill: false, tension: 0.1 },
                     { label: "BB Lower", data: ind.bollinger.lower, borderColor: "rgba(156,163,175,0.3)", borderWidth: 1, pointRadius: 0, fill: "+1", backgroundColor: "rgba(156,163,175,0.05)", tension: 0.1 },
+                    ...srDatasets,
+                    ...patternDatasets,
                 ],
             },
             options: _chartOpts("$"),
         });
+    }
+
+    /* ── Pattern badge below chart title ───────────── */
+    const badgeEl = document.getElementById("ta-chart-pattern-badge");
+    if (badgeEl) {
+        const parts = [];
+        if (fib.nearest_support) parts.push(`<span class="ta-pattern-tag ta-tag-support">&#x25BE; Support $${fib.nearest_support.toFixed(2)}</span>`);
+        if (fib.nearest_resistance) parts.push(`<span class="ta-pattern-tag ta-tag-resist">&#x25B4; Resistance $${fib.nearest_resistance.toFixed(2)}</span>`);
+        if (cup && cup.detected) parts.push(`<span class="ta-pattern-tag ta-tag-pattern">&#9749; Cup &amp; Handle (${cup.confidence}%)</span>`);
+        badgeEl.innerHTML = parts.join(" ");
     }
 
     if (_taRsiChart) _taRsiChart.destroy();
