@@ -218,8 +218,10 @@ function renderCandidates(candidates) {
         </div>`;
 
     candidates.forEach((c, i) => {
-        html += `<div class="vs-table-row" data-symbol="${c.symbol}" data-stock-name="${(c.name||"").replace(/"/g,'&quot;')}" data-stock-price="${c.price || 0}" onclick="navigateToStock('${c.symbol}')">
-            <div class="vs-col-rank">${pageOffset + i + 1}</div>
+        const globalIdx = pageOffset + i;
+        html += `<div class="vs-row-wrap" id="vs-row-${globalIdx}">
+        <div class="vs-table-row" data-symbol="${c.symbol}" data-stock-name="${(c.name||"").replace(/"/g,'&quot;')}" data-stock-price="${c.price || 0}" onclick="toggleVSDetail(${globalIdx})">
+            <div class="vs-col-rank">${globalIdx + 1}</div>
             <div class="vs-col-signal">${vsSignalBadge(c.signal)}</div>
             <div class="vs-col-ticker"><strong>${c.symbol}</strong></div>
             <div class="vs-col-company">${c.name}</div>
@@ -237,6 +239,8 @@ function renderCandidates(candidates) {
                 <a href="https://finviz.com/quote.ashx?t=${c.symbol}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Finviz">FV</a>
                 ${stockQuickActions(c.symbol, c.name, c.price, {hideDetail: true})}
             </div>
+        </div>
+        <div class="vs-detail" id="vs-detail-${globalIdx}" style="display:none;"></div>
         </div>`;
     });
 
@@ -552,6 +556,100 @@ function renderActionPlanModal(data, amount) {
 
 function refreshActionPlan() {
     openActionPlanModal();
+}
+
+// ── Expandable "Why Selected" detail per row ──────────────
+
+function toggleVSDetail(globalIdx) {
+    const el = document.getElementById(`vs-detail-${globalIdx}`);
+    if (!el) return;
+
+    if (el.style.display !== "none") {
+        el.style.display = "none";
+        return;
+    }
+
+    // Find the candidate from current data
+    const pageOffset = (_vsCurrentPage - 1) * VS_PER_PAGE;
+    const localIdx = globalIdx - pageOffset;
+    const c = _vsData && _vsData.candidates ? _vsData.candidates[localIdx] : null;
+    if (!c) return;
+
+    el.innerHTML = buildVSDetailPanel(c);
+    el.style.display = "block";
+}
+
+function buildVSDetailPanel(c) {
+    // Build "Why Selected" rationale from criteria + metrics
+    const passed = (c.criteria || []).filter(cr => cr.passed);
+    const failed = (c.criteria || []).filter(cr => !cr.passed);
+
+    let reasonParts = [];
+    // Quality assessment
+    if (c.quality >= 70) reasonParts.push(`High quality score (${c.quality}/100) indicates a fundamentally strong company`);
+    else if (c.quality >= 50) reasonParts.push(`Decent quality score (${c.quality}/100) shows reasonable fundamentals`);
+    else reasonParts.push(`Quality score of ${c.quality}/100 — may need extra due diligence`);
+
+    // Margin of safety
+    if (c.mos != null && c.mos > 0) reasonParts.push(`Trading ${c.mos.toFixed(0)}% below estimated intrinsic value (margin of safety)`);
+    else if (c.mos != null && c.mos <= 0) reasonParts.push(`Trading near or above estimated intrinsic value — limited margin of safety`);
+
+    // Key strengths from passed criteria
+    if (passed.length > 0) {
+        reasonParts.push(`Passes ${passed.length}/${c.criteria.length} Graham criteria`);
+    }
+
+    const reasonText = reasonParts.join(". ") + ".";
+
+    // Criteria detail breakdown
+    const criteriaHtml = (c.criteria || []).map(cr => {
+        const icon = cr.passed ? "✓" : "✗";
+        const cls = cr.passed ? "vs-crit-detail-pass" : "vs-crit-detail-fail";
+        return `<div class="vs-crit-detail-row ${cls}">
+            <span class="vs-crit-detail-icon">${icon}</span>
+            <span class="vs-crit-detail-label">${cr.label}</span>
+            <span class="vs-crit-detail-val">${cr.detail}</span>
+        </div>`;
+    }).join("");
+
+    // Strengths & weaknesses tags
+    const strengthsHtml = passed.map(cr => `<span class="vs-why-tag vs-why-tag-green">✓ ${cr.detail}</span>`).join("");
+    const weaknessesHtml = failed.map(cr => `<span class="vs-why-tag vs-why-tag-red">✗ ${cr.detail}</span>`).join("");
+
+    // Key metrics grid
+    const metrics = [
+        ["P/E Ratio", c.pe_ratio != null ? c.pe_ratio.toFixed(1) : "—"],
+        ["Return on Equity", c.roe != null ? c.roe.toFixed(1) + "%" : "—"],
+        ["Debt/Equity", c.debt_to_equity != null ? c.debt_to_equity.toFixed(2) : "—"],
+        ["Profit Margin", c.profit_margin != null ? c.profit_margin.toFixed(1) + "%" : "—"],
+        ["FCF Yield", c.fcf_yield != null ? c.fcf_yield.toFixed(1) + "%" : "—"],
+        ["Dividend Yield", c.dividend_yield != null ? c.dividend_yield.toFixed(2) + "%" : "—"],
+        ["Current Ratio", c.current_ratio != null ? c.current_ratio.toFixed(2) : "—"],
+        ["Revenue Growth", c.revenue_growth != null ? (c.revenue_growth > 0 ? "+" : "") + c.revenue_growth.toFixed(1) + "%" : "—"],
+    ].filter(r => r[1] !== "—");
+
+    const metricsHtml = metrics.map(([label, val]) =>
+        `<div class="vs-why-metric"><span class="vs-why-metric-label">${label}</span><span class="vs-why-metric-val">${val}</span></div>`
+    ).join("");
+
+    return `<div class="vs-why-panel">
+        <div class="vs-why-header">
+            <div class="vs-why-title">Why ${c.symbol} Was Selected</div>
+            <button class="btn btn-sm" onclick="event.stopPropagation();navigateToStock('${c.symbol}')" title="Full stock detail">📈 Full Detail</button>
+        </div>
+        <div class="vs-why-reason">${reasonText}</div>
+        <div class="vs-why-tags">${strengthsHtml}${weaknessesHtml}</div>
+        <div class="vs-why-sections">
+            <div class="vs-why-criteria">
+                <div class="vs-why-section-title">Graham Criteria Breakdown</div>
+                ${criteriaHtml}
+            </div>
+            <div class="vs-why-metrics">
+                <div class="vs-why-section-title">Key Fundamentals</div>
+                <div class="vs-why-metrics-grid">${metricsHtml}</div>
+            </div>
+        </div>
+    </div>`;
 }
 
 function buyActionPlanBundle() {

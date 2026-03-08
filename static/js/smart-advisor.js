@@ -181,9 +181,10 @@ function renderAdvisorRankings(rankings) {
         const sigCls = _signalClass(r.signal);
         const rsiCls = r.rsi != null ? (r.rsi > 70 ? "adv-warn" : r.rsi < 30 ? "adv-good" : "") : "";
         const bk = _berkshireGrade(r.berkshire_score);
+        const reasonPreview = r.reasoning ? r.reasoning.substring(0, 100) + (r.reasoning.length > 100 ? "..." : "") : "";
         return `<tr class="adv-rank-row" data-symbol="${r.symbol}" data-stock-name="${(r.name||"").replace(/"/g,'&quot;')}" data-stock-price="${r.entry_price}" onclick="showAdvisorDetail('${r.symbol}')">
             <td>${r.rank}</td>
-            <td><strong>${r.symbol}</strong><br><span class="adv-subtext">${r.name}</span></td>
+            <td><strong>${r.symbol}</strong><br><span class="adv-subtext">${r.name}</span>${reasonPreview ? `<div class="adv-reason-preview">${reasonPreview}</div>` : ""}</td>
             <td><span class="adv-score-pill">${r.score}</span></td>
             <td><span class="bk-grade ${bk.cls}" title="Berkshire Score: ${r.berkshire_score ?? '—'}/100">${bk.grade}</span></td>
             <td><span class="signal-badge ${sigCls}">${r.signal}</span></td>
