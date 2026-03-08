@@ -4555,6 +4555,128 @@ body {
 .pk-status-open { background: rgba(234,179,8,.15); color: var(--yellow); }
 .pk-status-nodata { background: rgba(100,116,139,.12); color: var(--text-muted); }
 
+/* ── Picks Tracker Toolbar ──────────────────────── */
+.pk-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+    gap: 8px;
+}
+.pk-export-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: .82em;
+    cursor: pointer;
+    transition: all .15s;
+}
+.pk-export-btn:hover {
+    border-color: var(--primary);
+    color: var(--text);
+    background: rgba(99,102,241,.06);
+}
+
+/* ── Picks Ticker Cell ──────────────────────────── */
+.pk-ticker-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.pk-ticker-link {
+    color: var(--primary);
+    cursor: pointer;
+    transition: color .12s;
+}
+.pk-ticker-link:hover {
+    color: var(--primary-light, #818cf8);
+    text-decoration: underline;
+}
+.pk-note-sub {
+    font-size: .72em;
+    color: var(--text-muted);
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+/* ── Target Progress Bar ────────────────────────── */
+.pk-progress-cell {
+    min-width: 80px;
+}
+.pk-progress-wrap {
+    height: 6px;
+    background: rgba(100,116,139,.15);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 3px;
+}
+.pk-progress-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width .3s ease;
+}
+.pk-progress-label {
+    font-size: .78em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+/* ── Expanded Row Indicator ─────────────────────── */
+.pk-row-expanded {
+    background: rgba(99,102,241,.04) !important;
+}
+.pk-row-expanded td:first-child::before {
+    content: "▾ ";
+    color: var(--primary);
+    font-size: .8em;
+}
+
+/* ── Expandable Detail Row ──────────────────────── */
+.pk-detail-row td {
+    padding: 0 12px 14px 12px !important;
+    border-bottom: 2px solid var(--primary);
+    background: rgba(99,102,241,.02);
+}
+.pk-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    padding: 12px 8px 4px;
+    animation: pkDetailSlide .15s ease-out;
+}
+@keyframes pkDetailSlide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.pk-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.pk-detail-label {
+    font-size: .7em;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.pk-detail-value {
+    font-size: .92em;
+    font-weight: 600;
+}
+.pk-detail-notes {
+    grid-column: 1 / -1;
+}
+.pk-detail-notes .pk-detail-value {
+    font-weight: 400;
+    font-style: italic;
+    color: var(--text-muted);
+}
+
 @media (max-width: 700px) {
     .pk-stats-row { grid-template-columns: repeat(2, 1fr); }
     .pk-table { font-size: .78em; }

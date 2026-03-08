@@ -148,9 +148,16 @@ $IssueUrl = gh issue create `
     --body $IssueBody `
     --label $IssueLabel `
     2>&1
+$ghIssueExit = $LASTEXITCODE
 
 # Extract issue number from URL
 $IssueNumber = ($IssueUrl -split '/')[-1]
+
+# Validate issue creation succeeded (URL must end with a number)
+if ($ghIssueExit -ne 0 -or $IssueNumber -notmatch '^\d+$') {
+    Write-Fail "Failed to create GitHub Issue. gh output: $IssueUrl"
+    exit 1
+}
 Write-OK "Created Issue #$IssueNumber — $IssueUrl"
 
 # ══════════════════════════════════════════════════════════════
@@ -166,16 +173,35 @@ if (-not $staged) {
 }
 
 # Create feature branch from current state
-git checkout -b $BranchName 2>&1 | Out-Null
+$branchOut = git checkout -b $BranchName 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "Failed to create branch '$BranchName': $branchOut"
+    gh issue comment $IssueNumber --repo $Repo --body "❌ Failed to create branch. Aborting." 2>&1 | Out-Null
+    exit 1
+}
 Write-OK "Created branch: $BranchName"
 
 # Commit with conventional commit message (no 'closes' — we close the issue in Phase 9 after E2E)
 $CommitMsg = "$($CommitType): $ShortTitle (refs #$IssueNumber)"
-git commit -m $CommitMsg 2>&1 | Out-Null
+$commitOut = git commit -m $CommitMsg 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "Failed to commit: $commitOut"
+    git checkout $BaseBranch 2>&1 | Out-Null
+    git branch -D $BranchName 2>&1 | Out-Null
+    gh issue comment $IssueNumber --repo $Repo --body "❌ Failed to commit. Aborting." 2>&1 | Out-Null
+    exit 1
+}
 Write-OK "Committed: $CommitMsg"
 
 # Push
-git push origin $BranchName 2>&1
+$pushOut = git push origin $BranchName 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "Failed to push: $pushOut"
+    git checkout $BaseBranch 2>&1 | Out-Null
+    git branch -D $BranchName 2>&1 | Out-Null
+    gh issue comment $IssueNumber --repo $Repo --body "❌ Failed to push branch. Aborting." 2>&1 | Out-Null
+    exit 1
+}
 Write-OK "Pushed to origin/$BranchName"
 
 # ══════════════════════════════════════════════════════════════

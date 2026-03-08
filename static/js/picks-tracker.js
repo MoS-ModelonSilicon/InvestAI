@@ -26,6 +26,8 @@ function renderPicksStats(stats) {
 
     const winColor = stats.win_rate >= 50 ? "var(--green)" : "var(--red)";
     const avgColor = stats.avg_pnl_pct >= 0 ? "var(--green)" : "var(--red)";
+    const totalColor = (stats.total_pnl_pct || 0) >= 0 ? "var(--green)" : "var(--red)";
+    const pfColor = (stats.profit_factor || 0) >= 1.5 ? "var(--green)" : (stats.profit_factor || 0) >= 1 ? "var(--yellow)" : "var(--red)";
 
     row.innerHTML = `
         <div class="pk-stat-card">
@@ -60,6 +62,22 @@ function renderPicksStats(stats) {
             <div class="pk-stat-value" style="color:${avgColor}">${stats.avg_pnl_pct > 0 ? "+" : ""}${stats.avg_pnl_pct}%</div>
             <div class="pk-stat-label">Avg P&L</div>
         </div>
+        <div class="pk-stat-card">
+            <div class="pk-stat-value" style="color:${totalColor}">${(stats.total_pnl_pct || 0) > 0 ? "+" : ""}${stats.total_pnl_pct || 0}%</div>
+            <div class="pk-stat-label">Total P&L</div>
+        </div>
+        ${stats.profit_factor != null ? `<div class="pk-stat-card">
+            <div class="pk-stat-value" style="color:${pfColor}">${stats.profit_factor}x</div>
+            <div class="pk-stat-label">Profit Factor</div>
+        </div>` : ""}
+        ${stats.avg_risk_reward != null ? `<div class="pk-stat-card">
+            <div class="pk-stat-value">${stats.avg_risk_reward}:1</div>
+            <div class="pk-stat-label">Avg R/R</div>
+        </div>` : ""}
+        ${stats.avg_days_held != null ? `<div class="pk-stat-card">
+            <div class="pk-stat-value">${stats.avg_days_held}d</div>
+            <div class="pk-stat-label">Avg Hold</div>
+        </div>` : ""}
     `;
 }
 
@@ -86,19 +104,23 @@ function renderPicksTable(picks) {
         { key: "stop", label: "Stop" },
         { key: "current_price", label: "Current" },
         { key: "high_after", label: "High" },
-        { key: "targets_hit", label: "Tgts Hit" },
+        { key: "targets_hit", label: "Progress" },
+        { key: "risk_reward", label: "R/R" },
+        { key: "days_held", label: "Days" },
         { key: "pnl_pct", label: "P&L %" },
         { key: "status", label: "Status" },
     ];
 
-    let html = '<div class="pk-table-wrap"><table class="pk-table"><thead><tr>';
+    // Export button
+    let html = '<div class="pk-toolbar"><button class="pk-export-btn" onclick="exportPicksCSV()" title="Export to CSV">&#128196; Export CSV</button></div>';
+    html += '<div class="pk-table-wrap"><table class="pk-table"><thead><tr>';
     headers.forEach(h => {
-        const arrow = picksSortCol === h.key ? (picksSortAsc ? " ▲" : " ▼") : "";
+        const arrow = picksSortCol === h.key ? (picksSortAsc ? " \u25b2" : " \u25bc") : "";
         html += `<th class="pk-th-sort" onclick="sortPicks('${h.key}')">${h.label}${arrow}</th>`;
     });
     html += "</tr></thead><tbody>";
 
-    sorted.forEach(p => {
+    sorted.forEach((p, idx) => {
         const statusCls = {
             winner: "pk-status-win",
             stopped: "pk-status-stop",
@@ -122,30 +144,114 @@ function renderPicksTable(picks) {
         }[p.status] || p.status;
 
         const pnlCls = (p.pnl_pct || 0) >= 0 ? "stock-up" : "stock-down";
-        const pnlStr = p.pnl_pct != null ? `${p.pnl_pct > 0 ? "+" : ""}${p.pnl_pct}%` : "—";
-        const targetsStr = (p.targets || []).map(t => fmtPrice(t)).join(", ") || "—";
-        const entryStr = p.entry != null ? fmtPrice(p.entry) : "—";
-        const stopStr = p.stop != null ? fmtPrice(p.stop) : "—";
-        const curStr = p.current_price != null ? fmtPrice(p.current_price) : "—";
-        const highStr = p.high_after != null ? fmtPrice(p.high_after) : "—";
+        const pnlStr = p.pnl_pct != null ? `${p.pnl_pct > 0 ? "+" : ""}${p.pnl_pct}%` : "\u2014";
+        const targetsArr = p.targets || [];
+        const targetsStr = targetsArr.map(t => fmtPrice(t)).join(", ") || "\u2014";
+        const entryStr = p.entry != null ? fmtPrice(p.entry) : "\u2014";
+        const stopStr = p.stop != null ? fmtPrice(p.stop) : "\u2014";
+        const curStr = p.current_price != null ? fmtPrice(p.current_price) : "\u2014";
+        const highStr = p.high_after != null ? fmtPrice(p.high_after) : "\u2014";
+        const rrStr = p.risk_reward != null ? `${p.risk_reward}:1` : "\u2014";
+        const daysStr = p.days_held != null ? `${p.days_held}d` : "\u2014";
 
-        html += `<tr class="pk-row" data-symbol="${p.symbol}" data-stock-name="${p.symbol}" onclick="navigateToStock('${p.symbol}')" title="${p.notes || ''}">
+        // Target progress bar
+        const tHit = p.targets_hit || 0;
+        const tTotal = targetsArr.length;
+        const progressPct = tTotal > 0 ? Math.round((tHit / tTotal) * 100) : 0;
+        const progressColor = tHit === tTotal && tTotal > 0 ? "var(--green)" : tHit > 0 ? "var(--yellow)" : "var(--text-muted)";
+        const progressHtml = tTotal > 0
+            ? `<div class="pk-progress-wrap">
+                <div class="pk-progress-bar" style="width:${progressPct}%;background:${progressColor}"></div>
+               </div>
+               <span class="pk-progress-label">${tHit}/${tTotal}</span>`
+            : "\u2014";
+
+        // Notes subtitle
+        const noteSub = p.notes ? `<div class="pk-note-sub">${_pkEsc(p.notes)}</div>` : "";
+
+        const rowId = `pk-detail-${idx}`;
+
+        html += `<tr class="pk-row" data-symbol="${p.symbol}" data-stock-name="${p.symbol}" data-detail="${rowId}">
             <td>${p.date}</td>
-            <td><strong>${p.symbol}</strong></td>
+            <td>
+                <div class="pk-ticker-cell">
+                    <strong class="pk-ticker-link" onclick="event.stopPropagation();navigateToStock('${p.symbol}')">${p.symbol}</strong>
+                    ${noteSub}
+                </div>
+            </td>
             <td><span class="pk-type pk-type-${p.type}">${p.type}</span></td>
             <td>${entryStr}</td>
             <td class="pk-targets-cell">${targetsStr}</td>
             <td>${stopStr}</td>
             <td>${curStr}</td>
             <td>${highStr}</td>
-            <td>${p.targets_hit || 0}/${(p.targets || []).length}</td>
+            <td class="pk-progress-cell">${progressHtml}</td>
+            <td>${rrStr}</td>
+            <td>${daysStr}</td>
             <td class="${pnlCls}"><strong>${pnlStr}</strong></td>
             <td><span class="pk-status ${statusCls}">${statusLabel}</span></td>
+        </tr>`;
+
+        // Expandable detail row
+        const bestGainStr = p.best_gain_pct != null ? `+${p.best_gain_pct}%` : "\u2014";
+        const worstLossStr = p.worst_loss_pct != null ? `${p.worst_loss_pct}%` : "\u2014";
+        const lowStr = p.low_after != null ? fmtPrice(p.low_after) : "\u2014";
+        const speedStr = p.speed_score != null ? `${p.speed_score} day${p.speed_score !== 1 ? "s" : ""}` : "\u2014";
+        const sourceStr = p.source || "\u2014";
+
+        html += `<tr class="pk-detail-row" id="${rowId}" style="display:none">
+            <td colspan="${headers.length}">
+                <div class="pk-detail-grid">
+                    <div class="pk-detail-item">
+                        <span class="pk-detail-label">Best Gain</span>
+                        <span class="pk-detail-value stock-up">${bestGainStr}</span>
+                    </div>
+                    <div class="pk-detail-item">
+                        <span class="pk-detail-label">Max Drawdown</span>
+                        <span class="pk-detail-value stock-down">${worstLossStr}</span>
+                    </div>
+                    <div class="pk-detail-item">
+                        <span class="pk-detail-label">Low After Entry</span>
+                        <span class="pk-detail-value">${lowStr}</span>
+                    </div>
+                    <div class="pk-detail-item">
+                        <span class="pk-detail-label">Speed to Target</span>
+                        <span class="pk-detail-value">${speedStr}</span>
+                    </div>
+                    <div class="pk-detail-item">
+                        <span class="pk-detail-label">Source</span>
+                        <span class="pk-detail-value">${sourceStr}</span>
+                    </div>
+                    ${p.notes ? `<div class="pk-detail-item pk-detail-notes">
+                        <span class="pk-detail-label">Notes</span>
+                        <span class="pk-detail-value">${_pkEsc(p.notes)}</span>
+                    </div>` : ""}
+                </div>
+            </td>
         </tr>`;
     });
 
     html += "</tbody></table></div>";
     container.innerHTML = html;
+
+    // Toggle detail rows on click
+    container.querySelectorAll(".pk-row").forEach(row => {
+        row.addEventListener("click", () => {
+            const detailId = row.dataset.detail;
+            const detail = document.getElementById(detailId);
+            if (detail) {
+                const isOpen = detail.style.display !== "none";
+                detail.style.display = isOpen ? "none" : "table-row";
+                row.classList.toggle("pk-row-expanded", !isOpen);
+            }
+        });
+    });
+}
+
+function _pkEsc(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
 }
 
 function fmtPrice(n) {
@@ -194,6 +300,12 @@ function filterPicks(query) {
         const type = (row.querySelector(".pk-type")?.textContent || "").toLowerCase();
         const match = !q || symbol.includes(q) || type.includes(q);
         row.style.display = match ? "" : "none";
+        // Also hide/show the corresponding detail row
+        const detailId = row.dataset.detail;
+        if (detailId) {
+            const detail = document.getElementById(detailId);
+            if (detail && !match) detail.style.display = "none";
+        }
         if (match) visible++;
     });
     let noRes = document.getElementById("picks-no-results");
@@ -209,4 +321,31 @@ function filterPicks(query) {
         }
         noRes.textContent = `No picks matching "${query}"`;
     }
+}
+
+function exportPicksCSV() {
+    if (!picksData || !picksData.picks) return;
+    const cols = ["date", "symbol", "type", "entry", "stop", "current_price", "high_after", "low_after",
+                  "targets_hit", "risk_reward", "days_held", "pnl_pct", "best_gain_pct", "worst_loss_pct",
+                  "speed_score", "status", "source", "notes"];
+    const header = cols.join(",");
+    const rows = picksData.picks.map(p => {
+        return cols.map(c => {
+            let v = p[c];
+            if (v == null) return "";
+            if (Array.isArray(v)) v = v.join(";");
+            if (typeof v === "string" && (v.includes(",") || v.includes('"'))) {
+                v = '"' + v.replace(/"/g, '""') + '"';
+            }
+            return v;
+        }).join(",");
+    });
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `picks-tracker-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
 }
