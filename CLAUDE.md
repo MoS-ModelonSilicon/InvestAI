@@ -55,6 +55,8 @@ docs/                    # Architecture, ADRs, runbooks
 - Use `Depends(require_admin)` on admin endpoints
 - Set `secure=True` on auth cookies
 - Wrap external API calls with try/except and fallback behavior
+- Run `ruff format src/ tests/` before shipping to avoid CI lint failures
+- Actively monitor GitHub CI logs during ship pipeline — use `gh run view --log-failed` on failures, never wait blindly
 
 ## Commands
 
@@ -171,6 +173,7 @@ git push origin master
 - `.vscode/tasks.json` — VS Code Ctrl+Shift+B integration for ship pipeline
 - `.claude/skills/` — Reusable workflows (debugging, code review, new features, bug lifecycle)
 - `.claude/skills/bug-lifecycle.md` — **Mandatory 8-phase bug flow**: report → reproduce → diagnose → fix → validate → deploy → verify live → close
+- `.claude/skills/ci-monitoring.md` — **CI monitoring during ship pipeline**: always check GitHub CI logs actively, never wait blindly; pre-ship lint check
 - `.claude/agents/` — **Specialized bug-handling agents** (see below)
 - `.claude/bugs/open.md` — Live bug tracker ledger maintained by Bug Reviewer Agent
 - `docs/architecture.md` — Full system architecture

@@ -968,14 +968,25 @@ class TestMobileLayout:
 class TestAPIHealth:
     """Direct API health checks via the browser's fetch — no CORS issues."""
 
-    def _fetch(self, page: Page, path: str):
-        """Fetch from the API using the browser session (preserves auth cookie)."""
-        return page.evaluate(f"""
-            async () => {{
-                const r = await fetch('{path}');
-                return {{ status: r.status, body: await r.text() }};
-            }}
-        """)
+    def _fetch(self, page: Page, path: str, retries: int = 3):
+        """Fetch from the API using the browser session (preserves auth cookie).
+
+        Retries on transient network errors (e.g. "Failed to fetch") that can
+        occur with Render cold-starts or corporate-proxy hiccups.
+        """
+        for attempt in range(retries):
+            try:
+                return page.evaluate(f"""
+                    async () => {{
+                        const r = await fetch('{path}');
+                        return {{ status: r.status, body: await r.text() }};
+                    }}
+                """)
+            except Exception:
+                if attempt == retries - 1:
+                    raise
+                page.wait_for_timeout(3000)
+        return None  # unreachable; satisfies RET503
 
     def test_dashboard_api(self, authenticated_page: Page):
         resp = self._fetch(authenticated_page, "/api/dashboard")
