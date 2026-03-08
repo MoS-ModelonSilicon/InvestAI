@@ -35,8 +35,7 @@ def _nav(page: Page, page_id: str):
     page.wait_for_timeout(500)
 
 
-def _wait_for_content(page: Page, container_sel: str, *, min_len: int = 100,
-                      timeout: int = 30_000, poll: int = 1_000):
+def _wait_for_content(page: Page, container_sel: str, *, min_len: int = 100, timeout: int = 30_000, poll: int = 1_000):
     """Poll until the container has meaningful content (HTML length >= min_len).
 
     Replaces dumb ``wait_for_timeout`` for data-dependent assertions.
@@ -44,6 +43,7 @@ def _wait_for_content(page: Page, container_sel: str, *, min_len: int = 100,
     if we time out (the caller can still assert on it).
     """
     import time as _t
+
     deadline = _t.monotonic() + timeout / 1000
     html = ""
     while _t.monotonic() < deadline:
@@ -1501,6 +1501,7 @@ class TestMultiUserLive:
 
         # User B: open new context, login, check
         from conftest import _NEED_PROXY
+
         ctx_opts = {"viewport": {"width": 1280, "height": 1024}}
         if _NEED_PROXY:
             ctx_opts["proxy"] = {"server": "http://proxy-dmz.intel.com:912", "bypass": "127.0.0.1,localhost"}
