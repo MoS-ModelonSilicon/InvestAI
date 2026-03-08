@@ -187,8 +187,10 @@ except Exception:
 @app.get("/health")
 def health_check():
     """Public health endpoint — returns git commit for deploy verification."""
-    from src.services.market_data import _warm_done, _cache
+    import time as _htime
 
+    from src.services.market_data import _warm_done, _cache, _cache_lock, ALL_UNIVERSE, CACHE_TTL
+    from src.services.screener import get_screener_snapshot
     from src.services.background_scheduler import _advisor_diag
 
     # Show which of the 12 advisor combos are cached
@@ -198,12 +200,37 @@ def health_check():
             key = f"advisor:full:10000:{risk}:{period}"
             advisor_combos[f"{risk}/{period}"] = key in _cache
 
+    # Cache breakdown by prefix
+    now = _htime.time()
+    with _cache_lock:
+        info_total = sum(1 for k in _cache if k.startswith("info:"))
+        info_fresh = sum(
+            1 for k, (ts, _) in _cache.items() if k.startswith("info:") and now - ts < CACHE_TTL
+        )
+        quote_count = sum(1 for k in _cache if k.startswith("quote:"))
+
+    # Screener snapshot diagnostics
+    snap = get_screener_snapshot()
+    snap_symbols = [r.get("symbol") for r in snap[:10]]  # first 10 as sample
+    intc_found = any(r.get("symbol") == "INTC" for r in snap)
+
     return {
         "status": "ok",
         "version": _GIT_SHA,
         "environment": _os.environ.get("ENVIRONMENT", "development"),
         "cache_ready": _warm_done.is_set(),
         "cache_entries": len(_cache),
+        "cache_breakdown": {
+            "info_total": info_total,
+            "info_fresh": info_fresh,
+            "quote": quote_count,
+            "universe_size": len(ALL_UNIVERSE),
+        },
+        "screener_snapshot": {
+            "size": len(snap),
+            "sample_symbols": snap_symbols,
+            "intc_found": intc_found,
+        },
         "advisor_combos": advisor_combos,
         "advisor_diag": dict(_advisor_diag) if _advisor_diag else "not_run_yet",
     }
