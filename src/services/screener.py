@@ -1,6 +1,12 @@
 from typing import Optional
 
-from src.services.market_data import fetch_batch, STOCK_UNIVERSE, ETF_UNIVERSE, format_market_cap
+from src.services.market_data import (
+    fetch_batch,
+    STOCK_UNIVERSE,
+    ETF_UNIVERSE,
+    KNOWN_NAMES,
+    format_market_cap,
+)
 
 
 def _compute_signal(d: dict) -> dict:
@@ -372,29 +378,43 @@ def screen_instruments(
 ) -> list[dict]:
     query_lower = query.strip().lower() if query else None
 
-    # When searching by keyword, always search the full universe
-    # (all stocks + ETFs across all regions) to give maximum results.
+    # When searching by keyword, pre-filter the universe using the static
+    # KNOWN_NAMES table so we can match by company name even before the
+    # cache warmer has fetched data from Finnhub.  Then only fetch those
+    # matching symbols (with live fallback) instead of the whole universe.
     if query_lower:
-        universe = STOCK_UNIVERSE + ETF_UNIVERSE
+        full_universe = STOCK_UNIVERSE + ETF_UNIVERSE
+        matched_syms = []
+        for sym in full_universe:
+            sym_lower = sym.lower()
+            name_lower = KNOWN_NAMES.get(sym, sym).lower()
+            if query_lower in sym_lower or query_lower in name_lower:
+                matched_syms.append(sym)
+        # Fetch only matching symbols — allow live fetch (not cached_only)
+        # so results appear even when the cache hasn't warmed yet.
+        all_data = fetch_batch(matched_syms, cached_only=False) if matched_syms else []
     elif asset_type == "ETF":
         universe = ETF_UNIVERSE
+        all_data = fetch_batch(universe, cached_only=True)
     elif asset_type == "Stock":
         universe = STOCK_UNIVERSE
+        all_data = fetch_batch(universe, cached_only=True)
     else:
         universe = STOCK_UNIVERSE + ETF_UNIVERSE
-
-    all_data = fetch_batch(universe, cached_only=True)
+        all_data = fetch_batch(universe, cached_only=True)
 
     filtered = []
     for d in all_data:
         if query_lower:
             sym = (d.get("symbol") or "").lower()
             name = (d.get("name") or "").lower()
+            known = KNOWN_NAMES.get(d.get("symbol", ""), "").lower()
             sector_val = (d.get("sector") or "").lower()
             industry_val = (d.get("industry") or "").lower()
             if (
                 query_lower not in sym
                 and query_lower not in name
+                and query_lower not in known
                 and query_lower not in sector_val
                 and query_lower not in industry_val
             ):
