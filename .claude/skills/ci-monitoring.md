@@ -56,6 +56,7 @@ Common CI failures and fixes:
 4. **On CI failure**: Immediately fetch logs with `gh run view --log-failed`
 5. **Don't duplicate auto-fix**: If ship's auto-fix is already running, check its progress instead of manually fixing the same issue
 6. **After merge**: Monitor E2E phase — transient network failures on live site are expected and logged to the issue
+7. **E2E 401 errors**: `TestAPIHealth._fetch()` auto-recovers from 401 by re-logging in via `_reauth()`. If 401 persists after retry, check that `INVESTAI_SECRET` env var is set (not ephemeral) on Render
 
 ## Pre-Ship Lint Check (Recommended)
 
