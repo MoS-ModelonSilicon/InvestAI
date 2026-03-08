@@ -1180,6 +1180,23 @@ def warm_cache():
             time.sleep(3)  # larger pause between phase-2 batches
         logger.info("Cache warm phase 2 done in %.1fs total", time.time() - t0)
 
+    # Phase 3 — build screener snapshot now that all data is cached
+    try:
+        from src.services.screener import refresh_screener_snapshot
+
+        refresh_screener_snapshot()
+    except Exception:
+        logger.exception("Failed to refresh screener snapshot after cache warm")
+
+    # Persist market cache snapshot to DB
+    try:
+        from src.services.persistence import save_market_cache_snapshot
+
+        with _cache_lock:
+            save_market_cache_snapshot(dict(_cache))
+    except Exception:
+        logger.exception("Failed to persist market cache snapshot")
+
     _warming = False
 
 
