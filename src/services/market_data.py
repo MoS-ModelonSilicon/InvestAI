@@ -368,6 +368,12 @@ ETF_UNIVERSE = [
 
 ALL_UNIVERSE = STOCK_UNIVERSE + ETF_UNIVERSE
 
+# Advisor-specific universe: excludes TASE (.TA) stocks which have a
+# dedicated data pipeline (tase_client) that always succeeds while US
+# sources may rate-limit.  Without this filter the advisor scanners
+# become dominated by Israeli stocks on Render free tier.
+ADVISOR_UNIVERSE = [s for s in ALL_UNIVERSE if not s.endswith(".TA")]
+
 # ── Static name lookup (enables search before cache warms) ──────
 # Maps symbol → display name so the screener can match by company name
 # even when the data provider cache hasn't fetched the symbol yet.
