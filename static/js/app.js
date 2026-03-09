@@ -200,5 +200,6 @@ window.addEventListener("popstate", (e) => {
     try { await loadCategories(); } catch (e) { console.warn("loadCategories failed:", e); }
     try { await loadDashboard(); } catch (e) { console.warn("loadDashboard failed:", e); }
 
+    if (typeof initWatchlistCache === "function") initWatchlistCache();
     if (typeof startAlertPolling === "function") startAlertPolling();
 })();

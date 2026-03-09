@@ -187,7 +187,7 @@ function _renderPickCard(p) {
         </div>
         <div class="ta-pick-actions" style="display:flex;gap:6px;margin-top:8px;" onclick="event.stopPropagation()">
             <button class="btn btn-sm btn-primary" onclick="openAddHoldingModal('${p.symbol}','${(p.name||"").replace(/'/g,"\\\\'")}',${p.entry})" title="Add to portfolio">+ Buy</button>
-            <button class="btn btn-sm" onclick="addToWatchlistFromDetail('${p.symbol}','${(p.name||"").replace(/'/g,"\\\\'")}')" title="Watch">+ Watch</button>
+            <button class="btn btn-sm${isInWatchlist(p.symbol) ? ' wl-watched' : ''}" data-wl-symbol="${p.symbol}" onclick="addToWatchlistFromDetail('${p.symbol}','${(p.name||"").replace(/'/g,"\\\\'")}')" title="${isInWatchlist(p.symbol) ? p.symbol + ' is in your watchlist' : 'Watch'}">${isInWatchlist(p.symbol) ? '✓ Watching' : '+ Watch'}</button>
         </div>
     </div>`;
 }

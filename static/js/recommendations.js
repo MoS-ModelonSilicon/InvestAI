@@ -107,7 +107,7 @@ function renderRecommendations(data) {
             ${whyDetailHtml}
             <div class="rec-actions" style="display:flex;gap:8px;margin-top:10px;" onclick="event.stopPropagation()">
                 <button class="btn btn-sm btn-primary" onclick="openAddHoldingModal('${r.symbol}','${safeName}',${r.price})" title="Add to portfolio">+ Portfolio</button>
-                <button class="btn btn-sm" onclick="addToWatchlistFromDetail('${r.symbol}','${safeName}')" title="Add to watchlist">+ Watch</button>
+                <button class="btn btn-sm${isInWatchlist(r.symbol) ? ' wl-watched' : ''}" data-wl-symbol="${r.symbol}" onclick="addToWatchlistFromDetail('${r.symbol}','${safeName}')" title="${isInWatchlist(r.symbol) ? r.symbol + ' is in your watchlist' : 'Add to watchlist'}">${isInWatchlist(r.symbol) ? '✓ Watching' : '+ Watch'}</button>
                 <button class="btn btn-sm" onclick="navigateToStock('${r.symbol}')" title="View details">📈 Details</button>
             </div>
         </div>`;

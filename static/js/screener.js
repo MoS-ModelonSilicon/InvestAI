@@ -184,7 +184,7 @@ function renderCard(r, idx) {
                 <span class="scr-card-sector">${r.sector}${r.region && r.region !== "US" ? ` <span class="region-badge">${r.region}</span>` : ""}</span>
                 <span class="scr-card-actions">
                     <button class="btn btn-sm" onclick="event.stopPropagation();navigateToStock('${r.symbol}')" title="Full detail">📈</button>
-                    <button class="btn btn-sm" onclick="event.stopPropagation();addToWLFromScreener('${r.symbol}','${(r.name||"").replace(/'/g,"\\'")}')">+ Watch</button>                    <button class="btn btn-sm" onclick="event.stopPropagation();openAddHoldingModal('${r.symbol}','${(r.name||"").replace(/'/g,"\\'")}',${r.price})" title="Add to portfolio">+ Buy</button>                </span>
+                    <button class="btn btn-sm${isInWatchlist(r.symbol) ? ' wl-watched' : ''}" data-wl-symbol="${r.symbol}" onclick="event.stopPropagation();addToWLFromScreener('${r.symbol}','${(r.name||"").replace(/'/g,"\\'")}')">${isInWatchlist(r.symbol) ? '✓ Watching' : '+ Watch'}</button>                    <button class="btn btn-sm" onclick="event.stopPropagation();openAddHoldingModal('${r.symbol}','${(r.name||"").replace(/'/g,"\\'")}',${r.price})" title="Add to portfolio">+ Buy</button>                </span>
             </div>
         </div>
         <div class="scr-detail" id="scr-detail-${idx}" style="display:none;"></div>
@@ -336,11 +336,18 @@ function clearScreener() {
 }
 
 async function addToWLFromScreener(symbol, name) {
+    const sym = symbol.toUpperCase();
+    if (isInWatchlist(sym)) {
+        if (typeof showToast === "function") showToast(`${sym} already in watchlist`, "info");
+        return;
+    }
     try {
-        await api.post(`/api/screener/watchlist?symbol=${symbol}&name=${encodeURIComponent(name)}`, {});
-        if (typeof showToast === "function") showToast(`${symbol} added to watchlist`);
+        await api.post(`/api/screener/watchlist?symbol=${sym}&name=${encodeURIComponent(name)}`, {});
+        _wlSymbolSet.add(sym);
+        if (typeof showToast === "function") showToast(`${sym} added to watchlist`);
+        _refreshWlButtons();
     } catch (e) {
-        if (typeof showToast === "function") showToast(`${symbol} already in watchlist`, "info");
+        if (typeof showToast === "function") showToast(`${sym} already in watchlist`, "info");
     }
 }
 
