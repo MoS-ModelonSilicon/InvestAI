@@ -247,7 +247,7 @@ def _get_evaluated_picks() -> list[dict]:
     # 1. Try in-memory cache
     cached = _get_cached(_EVAL_CACHE_KEY)
     if cached and isinstance(cached, list):
-        return cached
+        return cast(list[dict], cached)
 
     # 2. Try DB persistence (new format)
     try:
@@ -297,9 +297,7 @@ def evaluate_all_picks(pick_type: Optional[str] = None, source_filter: Optional[
     if pick_type:
         evaluated = [p for p in evaluated if p.get("type") == pick_type]
     if source_filter:
-        evaluated = [
-            p for p in evaluated if (p.get("source") or "").lower().startswith(source_filter.lower())
-        ]
+        evaluated = [p for p in evaluated if (p.get("source") or "").lower().startswith(source_filter.lower())]
 
     return _compute_stats(evaluated)
 

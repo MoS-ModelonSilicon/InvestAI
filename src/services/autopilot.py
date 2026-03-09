@@ -228,9 +228,7 @@ def _align_to_dates(target_dates: list[str], sym_dates: list[str], sym_closes: l
     return result
 
 
-def _batch_fetch_closes(
-    symbols: list[str], period: str
-) -> dict[str, dict]:
+def _batch_fetch_closes(symbols: list[str], period: str) -> dict[str, dict]:
     """Fetch daily closes for ALL symbols in a single HTTP call.
 
     Returns {symbol: {dates: [...], closes: [...]}}.
@@ -243,10 +241,7 @@ def _batch_fetch_closes(
         if batch:
             for sym, candles in batch.items():
                 if candles and candles.get("c") and candles.get("t"):
-                    dates = [
-                        datetime.fromtimestamp(t).strftime("%Y-%m-%d")
-                        for t in candles["t"]
-                    ]
+                    dates = [datetime.fromtimestamp(t).strftime("%Y-%m-%d") for t in candles["t"]]
                     result[sym] = {"dates": dates, "closes": candles["c"]}
     except Exception:
         pass  # fall through to per-symbol below
@@ -264,6 +259,7 @@ def _batch_fetch_closes(
             if sd:
                 result[sym] = sd
     return result
+
 
 # ---------------------------------------------------------------------------
 # Simulation engine
@@ -333,7 +329,7 @@ def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict
     bench_start_price = bench_closes[0]
 
     # Build portfolio: allocate capital across sleeves and symbols
-    holdings = []
+    holdings: list[dict[str, Any]] = []
     # Collect all unique symbols
     all_symbols = []
     for sleeve in cast(list[dict[str, Any]], profile["sleeves"]):
@@ -534,6 +530,7 @@ def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict
         _sim_cache[cache_key] = result
     try:
         from src.services.persistence import save_scan
+
         save_scan(cache_key, result)
     except Exception:
         pass
@@ -551,6 +548,4 @@ def run_full_warmup() -> None:
                 try:
                     simulate(profile_id, amount=amount, period=period)
                 except Exception:
-                    logger.exception(
-                        "Warmup failed for %s/%s/%s", profile_id, period, amount
-                    )
+                    logger.exception("Warmup failed for %s/%s/%s", profile_id, period, amount)

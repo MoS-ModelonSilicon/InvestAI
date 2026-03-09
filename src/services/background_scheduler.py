@@ -28,8 +28,8 @@ MARKET_DATA_INTERVAL = 120  # 2 min  — lightweight (quotes + sparklines)
 NEWS_INTERVAL = 900  # 15 min — 8 Finnhub calls
 SMART_ADVISOR_INTERVAL = 900  # 15 min — heavy scan (40-80 candles)
 CACHE_SNAPSHOT_INTERVAL = 600  # 10 min — persist market cache to DB
-AUTOPILOT_INTERVAL = 1800      # 30 min — Smart Portfolios warmup
-PICKS_EVAL_INTERVAL = 14400    # 4h — re-evaluate picks against market data
+AUTOPILOT_INTERVAL = 1800  # 30 min — Smart Portfolios warmup
+PICKS_EVAL_INTERVAL = 14400  # 4h — re-evaluate picks against market data
 
 
 # ── Individual scan runners ──────────────────────────────────
@@ -245,6 +245,7 @@ def _run_autopilot_warmup() -> bool:
     """Pre-compute Smart Portfolios for all profile/period/amount combos."""
     try:
         from src.services.autopilot import run_full_warmup
+
         logger.info("Scheduler: starting autopilot warmup")
         run_full_warmup()
         logger.info("Scheduler: autopilot warmup complete")
@@ -295,7 +296,7 @@ def _scheduler_loop():
     _run_smart_advisor_scan()  # smart advisor (heaviest but most important)
     if _stop_event.wait(timeout=10):
         return
-    _run_autopilot_warmup()   # Smart Portfolios pre-computation
+    _run_autopilot_warmup()  # Smart Portfolios pre-computation
     if _stop_event.wait(timeout=10):
         return
     _run_market_data_refresh()  # ~10 quote + 6 sparkline calls

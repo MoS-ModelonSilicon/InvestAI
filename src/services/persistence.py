@@ -404,7 +404,6 @@ def restore_all_caches():
     except Exception:
         logger.exception("Failed to set warm_done early")
 
-
     # 8. Restore autopilot (Smart Portfolios) pre-computed simulations
     try:
         from src.services.autopilot import (
