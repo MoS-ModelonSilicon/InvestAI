@@ -177,6 +177,27 @@ class DcaPlan(Base):
     __table_args__ = (UniqueConstraint("user_id", "symbol", name="uq_dca_user_symbol"),)
 
     owner: Mapped[User] = relationship(back_populates="dca_plans")
+    executions: Mapped[list[DcaExecution]] = relationship(back_populates="plan", cascade="all, delete-orphan")
+
+
+class DcaExecution(Base):
+    """Tracks each monthly DCA buy/skip action for a plan."""
+
+    __tablename__ = "dca_executions"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    plan_id: Mapped[int] = mapped_column(ForeignKey("dca_plans.id"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    date: Mapped[date]
+    amount_invested: Mapped[float] = mapped_column(default=0.0)
+    shares_bought: Mapped[float] = mapped_column(default=0.0)
+    price: Mapped[float] = mapped_column(default=0.0)
+    was_dip_buy: Mapped[int] = mapped_column(default=0)
+    skipped: Mapped[int] = mapped_column(default=0)
+    skip_reason: Mapped[str] = mapped_column(default="")
+    created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
+
+    plan: Mapped[DcaPlan] = relationship(back_populates="executions")
 
 
 class PasswordReset(Base):

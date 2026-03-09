@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 
 
 # ── DCA Plan CRUD ────────────────────────────────────────────
@@ -47,6 +47,87 @@ class DcaPlanUpdate(BaseModel):
     is_long_term: Optional[bool] = None
     notes: Optional[str] = None
     active: Optional[bool] = None
+
+
+# ── DCA Execution Tracking ───────────────────────────────────
+
+
+class DcaExecutionCreate(BaseModel):
+    plan_id: int
+    amount_invested: float = Field(0, ge=0)
+    shares_bought: float = Field(0, ge=0)
+    price: float = Field(0, ge=0)
+    was_dip_buy: bool = False
+    skipped: bool = False
+    skip_reason: str = ""
+    date: Optional[date] = None  # defaults to today
+
+
+class DcaExecutionOut(BaseModel):
+    id: int
+    plan_id: int
+    date: date
+    amount_invested: float
+    shares_bought: float
+    price: float
+    was_dip_buy: bool
+    skipped: bool
+    skip_reason: str
+    created_at: Optional[datetime] = None
+    symbol: str = ""
+
+    class Config:
+        from_attributes = True
+
+
+# ── Wizard Presets ───────────────────────────────────────────
+
+
+class DcaPreset(BaseModel):
+    key: str  # conservative, balanced, aggressive
+    label: str
+    dip_threshold: float
+    dip_multiplier: float
+    description: str
+
+
+class DcaWizardPreview(BaseModel):
+    """Stock info shown during wizard step 1."""
+
+    symbol: str
+    name: str
+    price: float
+    change_pct: Optional[float] = None
+    week52_high: Optional[float] = None
+    week52_low: Optional[float] = None
+    pct_from_high: Optional[float] = None
+    sector: str = ""
+    pe_ratio: Optional[float] = None
+    suggested_budget: Optional[float] = None
+    suggested_budget_range: Optional[list[float]] = None
+
+
+# ── Backtest ─────────────────────────────────────────────────
+
+
+class BacktestResult(BaseModel):
+    symbol: str
+    months: int
+    monthly_budget: float
+    dip_threshold: float
+    dip_multiplier: float
+    total_invested_dca: float
+    portfolio_value_dca: float
+    total_shares_dca: float
+    avg_cost_dca: float
+    total_invested_plain: float
+    portfolio_value_plain: float
+    total_shares_plain: float
+    avg_cost_plain: float
+    dca_return_pct: float
+    plain_dca_return_pct: float
+    dip_buys_count: int
+    monthly_data: list[dict]  # per-month breakdown
 
 
 # ── Monthly Allocation Recommendation ────────────────────────

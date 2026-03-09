@@ -1,12 +1,21 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.models import DcaPlan, User
-from src.schemas.dca import DcaPlanCreate, DcaPlanUpdate
-from src.services.dca import get_dca_dashboard, suggest_monthly_budget
+from src.schemas.dca import DcaPlanCreate, DcaPlanUpdate, DcaExecutionCreate
+from src.services.dca import (
+    get_dca_dashboard,
+    suggest_monthly_budget,
+    DCA_PRESETS,
+    get_wizard_preview,
+    log_execution,
+    get_execution_history,
+    backtest_dca,
+    get_rebalance_suggestions,
+)
 from src.auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -20,7 +29,18 @@ router = APIRouter(prefix="/api/dca", tags=["dca"])
 @router.get("/dashboard")
 def dca_dashboard(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     try:
-        return get_dca_dashboard(db, user.id)
+        data = get_dca_dashboard(db, user.id)
+        # Attach execution stats and rebalance suggestions
+        try:
+            hist = get_execution_history(db, user.id)
+            data["execution_stats"] = hist["plan_stats"]
+        except Exception:
+            data["execution_stats"] = []
+        try:
+            data["rebalance_suggestions"] = get_rebalance_suggestions(db, user.id)
+        except Exception:
+            data["rebalance_suggestions"] = []
+        return data
     except Exception as e:
         logger.error("dca_dashboard error: %s", e)
         return {
@@ -37,6 +57,8 @@ def dca_dashboard(db: Session = Depends(get_db), user: User = Depends(get_curren
             },
             "portfolio_dca_value": 0,
             "next_buy_date": "",
+            "execution_stats": [],
+            "rebalance_suggestions": [],
         }
 
 
@@ -50,6 +72,87 @@ def budget_suggestion(db: Session = Depends(get_db), user: User = Depends(get_cu
     except Exception as e:
         logger.error("budget_suggestion error: %s", e)
         return {"suggestions": ["Unable to load budget suggestions."], "monthly_budget": 0}
+
+
+# ── Wizard ───────────────────────────────────────────────────
+
+
+@router.get("/wizard/presets")
+def wizard_presets():
+    """Return the three strategy presets for the setup wizard."""
+    return {"presets": DCA_PRESETS}
+
+
+@router.get("/wizard/preview")
+def wizard_preview(
+    symbol: str = Query(..., min_length=1),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Get stock info + suggested budget for the wizard."""
+    return get_wizard_preview(symbol.upper().strip(), user.id, db)
+
+
+# ── Backtest ─────────────────────────────────────────────────
+
+
+@router.get("/backtest")
+def run_backtest(
+    symbol: str = Query(..., min_length=1),
+    monthly: float = Query(200, gt=0),
+    dip_threshold: float = Query(-15.0, le=0),
+    dip_multiplier: float = Query(2.0, ge=1.0),
+    months: int = Query(24, ge=3, le=120),
+):
+    """Run a historical DCA backtest simulation."""
+    try:
+        return backtest_dca(
+            symbol=symbol.upper().strip(),
+            monthly_budget=monthly,
+            dip_threshold=dip_threshold,
+            dip_multiplier=dip_multiplier,
+            months=months,
+        )
+    except Exception as e:
+        logger.error("backtest error: %s", e)
+        return {"error": str(e)}
+
+
+# ── Execution Tracking ───────────────────────────────────────
+
+
+@router.post("/executions")
+def create_execution(
+    payload: DcaExecutionCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Log a DCA buy or skip."""
+    result = log_execution(
+        db=db,
+        user_id=user.id,
+        plan_id=payload.plan_id,
+        amount_invested=payload.amount_invested,
+        shares_bought=payload.shares_bought,
+        price=payload.price,
+        was_dip_buy=payload.was_dip_buy,
+        skipped=payload.skipped,
+        skip_reason=payload.skip_reason,
+        exec_date=payload.date,
+    )
+    if "error" in result:
+        raise HTTPException(404, result["error"])
+    return result
+
+
+@router.get("/executions")
+def list_executions(
+    plan_id: int | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Get execution history with streak stats."""
+    return get_execution_history(db, user.id, plan_id)
 
 
 # ── CRUD for DCA Plans ───────────────────────────────────────

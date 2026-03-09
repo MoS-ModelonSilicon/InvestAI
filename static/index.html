@@ -859,26 +859,11 @@
         </div>
     </div>
 
-    <!-- ─── DCA Plan Modal ────────────────────── -->
+    <!-- ─── DCA Plan Wizard Modal ──────────────── -->
     <div id="dca-modal-overlay" class="modal-overlay" onclick="closeDcaModal(event)">
-        <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal dca-wizard-modal" onclick="event.stopPropagation()" style="max-width:560px;">
             <div class="modal-header"><h2>New DCA Plan</h2><button class="modal-close" onclick="closeDcaModal()">&times;</button></div>
-            <form id="dca-form" onsubmit="submitDcaPlan(event)">
-                <div class="form-row">
-                    <div class="form-group"><label>Symbol</label><input type="text" id="dca-symbol" required placeholder="AAPL"></div>
-                    <div class="form-group"><label>Name</label><input type="text" id="dca-name" placeholder="Apple Inc."></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label>Monthly Budget ($)</label><input type="number" id="dca-budget" step="1" min="1" required placeholder="200"></div>
-                    <div class="form-group"><label>Dip Threshold (%)</label><input type="number" id="dca-threshold" step="1" max="0" value="-15" required><small style="color:var(--text-muted);margin-top:2px">e.g. -15 = buy more when stock drops 15%</small></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label>Dip Multiplier (×)</label><input type="number" id="dca-multiplier" step="0.5" min="1" value="2" required><small style="color:var(--text-muted);margin-top:2px">How many × normal budget on dip (2 = double down)</small></div>
-                    <div class="form-group"><label>Notes</label><input type="text" id="dca-notes" placeholder="Long-term hold, buying dips"></div>
-                </div>
-                <div class="form-group"><label><input type="checkbox" id="dca-long-term" checked style="margin-right:6px">Long-term investment</label></div>
-                <div class="form-actions"><button type="button" class="btn btn-ghost" onclick="closeDcaModal()">Cancel</button><button type="submit" class="btn btn-primary">Create Plan</button></div>
-            </form>
+            <!-- Wizard content rendered dynamically by dca.js -->
         </div>
     </div>
 
