@@ -40,6 +40,7 @@ A full-stack investment advisory web app with live market data, global stock scr
 - **Admin Suggestions Dashboard** — view, filter, update suggestions with GitHub issue links
 
 ### Advisory
+- **Smart Portfolios (AI Picks)** — three strategy profiles (Daredevil, Strategist, Fortress) with historical backtests vs S&P 500, holdings breakdown, Sharpe ratio, max drawdown, and sleeve allocation charts — batch-fetched in a single HTTP call and pre-computed every 30 min by the background scheduler
 - **Risk Profile Wizard** — 6-step questionnaire → risk score → investor profile
 - **Personalized Recommendations** — allocation pie + scored instrument cards based on your profile
 - **Education Center** — investment articles by difficulty level
@@ -103,7 +104,7 @@ src/
 ├── auth.py                 # Access key middleware + session management
 ├── database.py             # SQLAlchemy engine + session
 ├── models.py               # ORM models (Holding, Alert, Watchlist, etc.)
-├── routers/                # 16 API route modules
+├── routers/                # 23 API route modules
 │   ├── market.py           # Live ticker + featured stocks
 │   ├── screener.py         # Stock/ETF screener + watchlist
 │   ├── stock_detail.py     # Per-stock detail + history + news
@@ -113,9 +114,12 @@ src/
 │   ├── assistant.py        # AI chat (SSE streaming) + suggestion CRUD
 │   └── ...                 # news, calendar, education, etc.
 ├── schemas/                # Pydantic request/response models
-└── services/               # Business logic
+└── services/               # Business logic (28 modules)
     ├── market_data.py      # yfinance integration, caching, batch fetch
+    ├── autopilot.py        # Smart Portfolios: 3 profiles, batch backtest, sim cache
     ├── assistant.py        # Two-tier AI routing, 16 tool functions, SSE streaming
+    ├── background_scheduler.py  # Daemon thread: 7 periodic tasks (market, scans, autopilot)
+    ├── persistence.py      # Save/restore 8 cache layers to PostgreSQL
     ├── github_issues.py   # GitHub REST API (create/close/reopen issues, comments)
     ├── funder_scraper.py   # Live scraper for funder.co.il
     ├── screener.py         # Multi-factor screening + signals
@@ -126,7 +130,7 @@ static/
 ├── index.html              # Single-page app shell
 ├── login.html              # Access key login page
 ├── style.css               # Dark theme (2200+ lines)
-└── js/                     # 20 modular JS files
+└── js/                     # 31 modular JS files
     ├── app.js, api.js      # Navigation + API client
     ├── assistant.js         # AI chat widget (SSE streaming, model routing)
     ├── tour.js             # Interactive guided tour (10 steps, spotlight overlay)

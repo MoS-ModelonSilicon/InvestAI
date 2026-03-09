@@ -24,7 +24,10 @@ _PICKS_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "static", "dat
 
 _cache: dict[str, tuple[float, object]] = {}
 _cache_lock = threading.Lock()
-CACHE_TTL = 900
+CACHE_TTL = 86400  # 24h — background job handles freshness
+
+# Cache key for the pre-computed evaluated picks list
+_EVAL_CACHE_KEY = "picks_evaluated_all"
 
 
 def _get_cached(key: str):
@@ -178,23 +181,9 @@ def _evaluate_pick(pick: dict) -> dict:
     return result
 
 
-def evaluate_all_picks(pick_type: Optional[str] = None, source_filter: Optional[str] = None) -> dict:
-    """Evaluate all picks and return results + summary stats."""
-    cache_key = f"picks_all_{pick_type or 'all'}_{source_filter or 'all'}"
-    cached = _get_cached(cache_key)
-    if cached:
-        if isinstance(cached, dict):
-            return cast(dict[str, Any], cached)
-
-    picks = load_picks(source_filter=source_filter)
-    if pick_type:
-        picks = [p for p in picks if p.get("type") == pick_type]
-
-    evaluated = []
-    for pick in picks:
-        evaluated.append(_evaluate_pick(pick))
-
-    with_entry = [p for p in evaluated if p.get("entry") and p["status"] != "no_entry"]
+def _compute_stats(evaluated: list[dict]) -> dict:
+    """Compute summary statistics from a list of already-evaluated picks."""
+    with_entry = [p for p in evaluated if p.get("entry") and p.get("status") != "no_entry"]
 
     winners = [p for p in with_entry if p["status"] == "winner"]
     stopped = [p for p in with_entry if p["status"] == "stopped"]
@@ -203,11 +192,11 @@ def evaluate_all_picks(pick_type: Optional[str] = None, source_filter: Optional[
     total_with_data = len([p for p in with_entry if p["status"] != "no_data"])
     win_rate = (len(winners) / total_with_data * 100) if total_with_data > 0 else 0
 
-    avg_win = 0
+    avg_win = 0.0
     if winners:
         avg_win = sum(p["pnl_pct"] for p in winners if p["pnl_pct"]) / len(winners)
 
-    avg_loss = 0
+    avg_loss = 0.0
     if stopped:
         avg_loss = sum(p["pnl_pct"] for p in stopped if p["pnl_pct"]) / len(stopped)
 
@@ -216,7 +205,6 @@ def evaluate_all_picks(pick_type: Optional[str] = None, source_filter: Optional[
     best_pick = max(with_entry, key=lambda p: p.get("best_gain_pct") or 0) if with_entry else None
     worst_pick = min(with_entry, key=lambda p: p.get("worst_loss_pct") or 0) if with_entry else None
 
-    # Additional aggregate stats
     all_rr = [p["risk_reward"] for p in with_entry if p.get("risk_reward") is not None]
     avg_rr = round(sum(all_rr) / len(all_rr), 1) if all_rr else None
     total_pnl = round(sum(all_pnl), 1) if all_pnl else 0
@@ -225,12 +213,11 @@ def evaluate_all_picks(pick_type: Optional[str] = None, source_filter: Optional[
     speed_scores = [p["speed_score"] for p in winners if p.get("speed_score") is not None]
     avg_speed = round(sum(speed_scores) / len(speed_scores), 1) if speed_scores else None
 
-    # Profit factor: gross wins / gross losses
     gross_wins = sum(p["pnl_pct"] for p in with_entry if (p.get("pnl_pct") or 0) > 0)
     gross_losses = abs(sum(p["pnl_pct"] for p in with_entry if (p.get("pnl_pct") or 0) < 0))
     profit_factor = round(gross_wins / gross_losses, 2) if gross_losses > 0 else None
 
-    result = {
+    return {
         "picks": evaluated,
         "stats": {
             "total_picks": len(evaluated),
@@ -254,19 +241,99 @@ def evaluate_all_picks(pick_type: Optional[str] = None, source_filter: Optional[
         },
     }
 
-    _set_cache(cache_key, result)
+
+def _get_evaluated_picks() -> list[dict]:
+    """Get pre-computed evaluated picks from cache or DB.  Never evaluates live."""
+    # 1. Try in-memory cache
+    cached = _get_cached(_EVAL_CACHE_KEY)
+    if cached and isinstance(cached, list):
+        return cast(list[dict], cached)
+
+    # 2. Try DB persistence (new format)
+    try:
+        from src.services.persistence import load_scan
+
+        data = load_scan("picks_evaluated")
+        if data and isinstance(data, list):
+            _set_cache(_EVAL_CACHE_KEY, data)
+            logger.info("Loaded %d pre-evaluated picks from DB", len(data))
+            return data
+    except Exception:
+        logger.warning("Failed to load picks evaluation from DB")
+
+    # 3. Try legacy cache format (backwards compat with old "picks_tracker" key)
+    try:
+        from src.services.persistence import load_scan
+
+        legacy = load_scan("picks_tracker")
+        if legacy and isinstance(legacy, dict):
+            # Old format: {cache_key: result_dict}
+            for _k, v in legacy.items():
+                if isinstance(v, dict) and "picks" in v:
+                    picks_list = v["picks"]
+                    if isinstance(picks_list, list) and picks_list:
+                        _set_cache(_EVAL_CACHE_KEY, picks_list)
+                        logger.info("Loaded %d picks from legacy cache format", len(picks_list))
+                        return picks_list
+    except Exception:
+        logger.warning("Failed to load legacy picks cache")
+
+    return []
+
+
+def evaluate_all_picks(pick_type: Optional[str] = None, source_filter: Optional[str] = None) -> dict:
+    """Serve pre-computed evaluation results.  Never calls market APIs.
+
+    The heavy evaluation work is done by ``refresh_picks_evaluation()`` which
+    runs in the background scheduler.  This function is a fast cache read +
+    in-memory filter + stats computation.
+    """
+    evaluated = _get_evaluated_picks()
+
+    if not evaluated:
+        return {"picks": [], "stats": {}, "pending": True}
+
+    # Apply filters in memory (trivial on pre-computed data)
+    if pick_type:
+        evaluated = [p for p in evaluated if p.get("type") == pick_type]
+    if source_filter:
+        evaluated = [p for p in evaluated if (p.get("source") or "").lower().startswith(source_filter.lower())]
+
+    return _compute_stats(evaluated)
+
+
+def refresh_picks_evaluation() -> int:
+    """Background job: evaluate ALL picks against market data and cache results.
+
+    Called by the background scheduler on a fixed interval.  Loads every pick
+    from the DB, fetches candle data, computes win/loss status, then stores
+    the evaluated list in the in-memory cache **and** the database so it
+    survives server restarts.
+
+    Returns the number of picks evaluated.
+    """
+    picks = load_picks()
+    if not picks:
+        logger.info("Picks evaluation: no picks to evaluate")
+        return 0
+
+    logger.info("Picks evaluation: starting evaluation of %d picks", len(picks))
+    evaluated: list[dict] = []
+    for pick in picks:
+        evaluated.append(_evaluate_pick(pick))
+
+    _set_cache(_EVAL_CACHE_KEY, evaluated)
 
     # Persist to DB so picks survive restarts
     try:
         from src.services.persistence import save_scan
 
-        with _cache_lock:
-            snapshot = {k: v for k, (_, v) in _cache.items()}
-        save_scan("picks_tracker", snapshot)
+        save_scan("picks_evaluated", evaluated)
     except Exception:
-        logger.exception("Picks tracker: failed to persist results")
+        logger.exception("Picks evaluation: failed to persist results")
 
-    return result
+    logger.info("Picks evaluation complete: %d picks evaluated", len(evaluated))
+    return len(evaluated)
 
 
 def get_unique_symbols() -> list[str]:

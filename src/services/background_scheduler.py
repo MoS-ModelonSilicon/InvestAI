@@ -28,6 +28,8 @@ MARKET_DATA_INTERVAL = 120  # 2 min  — lightweight (quotes + sparklines)
 NEWS_INTERVAL = 900  # 15 min — 8 Finnhub calls
 SMART_ADVISOR_INTERVAL = 900  # 15 min — heavy scan (40-80 candles)
 CACHE_SNAPSHOT_INTERVAL = 600  # 10 min — persist market cache to DB
+AUTOPILOT_INTERVAL = 1800  # 30 min — Smart Portfolios warmup
+PICKS_EVAL_INTERVAL = 14400  # 4h — re-evaluate picks against market data
 
 
 # ── Individual scan runners ──────────────────────────────────
@@ -239,6 +241,38 @@ def _run_cache_snapshot() -> bool:
         return False
 
 
+def _run_autopilot_warmup() -> bool:
+    """Pre-compute Smart Portfolios for all profile/period/amount combos."""
+    try:
+        from src.services.autopilot import run_full_warmup
+
+        logger.info("Scheduler: starting autopilot warmup")
+        run_full_warmup()
+        logger.info("Scheduler: autopilot warmup complete")
+        return True
+    except Exception:
+        logger.exception("Scheduler: autopilot warmup failed")
+        return False
+
+
+def _run_picks_evaluation() -> bool:
+    """Evaluate all community picks against real market data.
+
+    This pre-computes win/loss status, PnL, targets hit, etc. so the
+    GET /api/picks endpoint can serve results instantly from cache.
+    """
+    try:
+        from src.services.picks_tracker import refresh_picks_evaluation
+
+        logger.info("Scheduler: starting picks evaluation")
+        count = refresh_picks_evaluation()
+        logger.info("Scheduler: picks evaluation complete (%d picks)", count)
+        return True
+    except Exception:
+        logger.exception("Scheduler: picks evaluation failed")
+        return False
+
+
 # ── Main loop ────────────────────────────────────────────────
 def _scheduler_loop():
     """Blocking loop run inside a daemon thread."""
@@ -262,6 +296,9 @@ def _scheduler_loop():
     _run_smart_advisor_scan()  # smart advisor (heaviest but most important)
     if _stop_event.wait(timeout=10):
         return
+    _run_autopilot_warmup()  # Smart Portfolios pre-computation
+    if _stop_event.wait(timeout=10):
+        return
     _run_market_data_refresh()  # ~10 quote + 6 sparkline calls
     if _stop_event.wait(timeout=10):
         return
@@ -272,6 +309,9 @@ def _scheduler_loop():
     if _stop_event.wait(timeout=60):
         return
     _run_trading_scan()  # trading advisor
+    if _stop_event.wait(timeout=10):
+        return
+    _run_picks_evaluation()  # pre-evaluate picks against market data
 
     last_value = time.time()
     last_trading = time.time()
@@ -279,6 +319,8 @@ def _scheduler_loop():
     last_news = time.time()
     last_smart = time.time()
     last_snapshot = time.time()
+    last_autopilot = time.time()
+    last_picks_eval = time.time()
 
     while not _stop_event.is_set():
         now = time.time()
@@ -306,6 +348,14 @@ def _scheduler_loop():
         if now - last_snapshot >= CACHE_SNAPSHOT_INTERVAL:
             _run_cache_snapshot()
             last_snapshot = time.time()
+
+        if now - last_autopilot >= AUTOPILOT_INTERVAL:
+            _run_autopilot_warmup()
+            last_autopilot = time.time()
+
+        if now - last_picks_eval >= PICKS_EVAL_INTERVAL:
+            _run_picks_evaluation()
+            last_picks_eval = time.time()
 
         # Sleep in small increments so stop_event is responsive
         _stop_event.wait(timeout=30)

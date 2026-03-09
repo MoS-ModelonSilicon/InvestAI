@@ -404,4 +404,32 @@ def restore_all_caches():
     except Exception:
         logger.exception("Failed to set warm_done early")
 
+    # 8. Restore autopilot (Smart Portfolios) pre-computed simulations
+    try:
+        from src.services.autopilot import (
+            PROFILES,
+            AUTOPILOT_PERIODS,
+            AUTOPILOT_AMOUNTS,
+            _sim_cache,
+            _sim_lock,
+        )
+        from src.services.market_data import _cache, _cache_lock
+
+        ap_restored = 0
+        for profile_id in PROFILES:
+            for period in AUTOPILOT_PERIODS:
+                for amount in AUTOPILOT_AMOUNTS:
+                    db_key = f"autopilot:{profile_id}:{amount}:{period}"
+                    data = load_scan(db_key)
+                    if data and isinstance(data, dict) and data.get("stats"):
+                        with _sim_lock:
+                            _sim_cache[db_key] = data
+                        with _cache_lock:
+                            _cache[db_key] = (time.time() + 900, data)
+                        ap_restored += 1
+        if ap_restored:
+            logger.info("Restored %d autopilot simulation combos", ap_restored)
+    except Exception:
+        logger.exception("Failed to restore autopilot cache")
+
     logger.info("Cache restoration complete")
