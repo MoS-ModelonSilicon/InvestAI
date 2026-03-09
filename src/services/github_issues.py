@@ -128,7 +128,7 @@ def create_issue(
 | Field | Value |
 |-------|-------|
 | **Category** | {category} |
-| **Submitted by** | {user_email or 'anonymous'} |
+| **Submitted by** | {user_email or "anonymous"} |
 | **Source** | InvestAI Assistant / Suggestion Form |
 
 *Auto-created by InvestAI suggestion system*"""
