@@ -15,11 +15,10 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Optional
 
-# ── Candle cache: avoid re-fetching on rapid timeframe switches ──
+# ── Candle cache: daily candles barely change, avoid re-fetching every scan ──
 _candle_cache: dict[str, tuple[float, dict]] = {}
 _candle_cache_lock = threading.Lock()
 CANDLE_CACHE_TTL = 1800  # 30 min for daily candles
-CANDLE_CACHE_TTL_INTRADAY = 300  # 5 min for intraday candles
 CANDLE_CACHE_MAX = 500
 
 logger = logging.getLogger(__name__)
@@ -240,16 +239,19 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, f
     if not force and (not _yahoo_available() or not _yahoo_probe()):
         return None
     try:
-        interval_map = {"1": "1m", "3": "3m", "5": "5m", "15": "15m", "60": "1h", "D": "1d", "W": "1wk", "M": "1mo"}
+        interval_map = {"1": "1m", "2": "2m", "5": "5m", "15": "15m", "60": "1h", "D": "1d", "W": "1wk", "M": "1mo"}
         yf_interval = interval_map.get(resolution, "1d")
         period_secs = to_ts - from_ts
         period_days = period_secs // 86400
 
-        if yf_interval in ("1m",) and period_days > 7:
+        if yf_interval == "1m" and period_days > 7:
             period_days = 7
             from_ts = to_ts - 7 * 86400
+        elif yf_interval == "2m" and period_days > 60:
+            period_days = 60
+            from_ts = to_ts - 60 * 86400
 
-        is_intraday = yf_interval in ("1m", "3m", "5m", "15m", "1h")
+        is_intraday = yf_interval in ("1m", "2m", "5m", "15m", "1h")
         start = datetime.fromtimestamp(from_ts).strftime("%Y-%m-%d")
         end = (datetime.fromtimestamp(to_ts) + timedelta(days=1)).strftime("%Y-%m-%d")
         with _suppress_stderr():
@@ -260,7 +262,7 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, f
             # Fallback: use period= syntax — more reliable on cloud/first-call
             period_map_yf = {
                 "1m": "5d",
-                "3m": "5d",
+                "2m": "5d",
                 "5m": "5d",
                 "15m": "5d",
                 "1h": "5d",
@@ -417,15 +419,14 @@ def get_metrics(symbol: str) -> Optional[dict]:
 
 
 def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optional[dict]:
-    # Check candle cache first — all resolutions cached (different TTLs)
-    is_intraday = resolution in ("1", "3", "5", "15", "60")
-    ttl = CANDLE_CACHE_TTL_INTRADAY if is_intraday else CANDLE_CACHE_TTL
-    cache_key = f"{symbol}:{resolution}:{from_ts}:{to_ts}"
-    with _candle_cache_lock:
-        if cache_key in _candle_cache:
-            ts, data = _candle_cache[cache_key]
-            if time.time() - ts < ttl:
-                return data
+    # Check candle cache first (daily candles are stable)
+    if resolution == "D":
+        cache_key = f"{symbol}:{from_ts}:{to_ts}"
+        with _candle_cache_lock:
+            if cache_key in _candle_cache:
+                ts, data = _candle_cache[cache_key]
+                if time.time() - ts < CANDLE_CACHE_TTL:
+                    return data
 
     result = _try_yahoo_candles(symbol, resolution, from_ts, to_ts)
     if not result:
@@ -444,8 +445,9 @@ def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optio
         logger.info("Finnhub candles failed for %s, trying Yahoo as last resort", symbol)
         result = _try_yahoo_candles(symbol, resolution, from_ts, to_ts, force=True)
 
-    # Cache candles for all resolutions
-    if result:
+    # Cache daily candles
+    if result and resolution == "D":
+        cache_key = f"{symbol}:{from_ts}:{to_ts}"
         with _candle_cache_lock:
             _candle_cache[cache_key] = (time.time(), result)
             # Evict if too large

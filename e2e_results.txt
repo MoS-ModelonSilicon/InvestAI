@@ -1,0 +1,2624 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0 -- C:\Program Files\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\yelron\OneDrive - Intel Corporation\Documents\VS Code Projects\InvestAI
+configfile: pytest.ini
+plugins: anyio-4.12.1, base-url-2.1.0, playwright-0.7.2
+collecting ... collected 157 items
+
+tests/test_e2e.py::TestSiteLoads::test_login_page_loads[chromium] PASSED [  0%]
+tests/test_e2e.py::TestSiteLoads::test_unauthenticated_redirect[chromium] PASSED [  1%]
+tests/test_e2e.py::TestSiteLoads::test_page_title[chromium] PASSED       [  1%]
+tests/test_e2e.py::TestLogin::test_successful_login[chromium] FAILED     [  2%]
+tests/test_e2e.py::TestLogin::test_wrong_password_shows_error[chromium] PASSED [  3%]
+tests/test_e2e.py::TestLogin::test_logout_returns_to_login[chromium] PASSED [  3%]
+tests/test_e2e.py::TestLogin::test_logout_button_click_logs_out[chromium] PASSED [  4%]
+tests/test_e2e.py::TestLogin::test_logout_clears_session_cookie[chromium] PASSED [  5%]
+tests/test_e2e.py::TestNavigation::test_navigate_to_each_page[chromium] FAILED [  5%]
+tests/test_e2e.py::TestNavigation::test_browser_back_navigates_within_spa[chromium] PASSED [  6%]
+tests/test_e2e.py::TestNavigation::test_browser_forward_after_back[chromium] PASSED [  7%]
+tests/test_e2e.py::TestNavigation::test_url_hash_updates_on_navigation[chromium] FAILED [  7%]
+tests/test_e2e.py::TestDashboardFlow::test_dashboard_stats_show_dollar_values[chromium] PASSED [  8%]
+tests/test_e2e.py::TestDashboardFlow::test_market_grid_shows_live_data[chromium] PASSED [  8%]
+tests/test_e2e.py::TestDashboardFlow::test_sparkline_charts_render_on_market_cards[chromium] FAILED [  9%]
+tests/test_e2e.py::TestDashboardFlow::test_sparkline_charts_have_pixel_data[chromium] FAILED [ 10%]
+tests/test_e2e.py::TestDashboardFlow::test_sparkline_data_has_realistic_values[chromium] FAILED [ 10%]
+tests/test_e2e.py::TestDashboardFlow::test_ticker_strip_has_data[chromium] PASSED [ 11%]
+tests/test_e2e.py::TestDashboardFlow::test_chart_trend_renders[chromium] PASSED [ 12%]
+tests/test_e2e.py::TestDashboardFlow::test_budget_overview_section_present[chromium] PASSED [ 12%]
+tests/test_e2e.py::TestTransactionsFlow::test_create_and_see_transaction[chromium] PASSED [ 13%]
+tests/test_e2e.py::TestTransactionsFlow::test_transaction_table_has_rows[chromium] PASSED [ 14%]
+tests/test_e2e.py::TestTransactionsFlow::test_filter_by_type[chromium] PASSED [ 14%]
+tests/test_e2e.py::TestBudgetsFlow::test_create_budget_and_verify_card[chromium] PASSED [ 15%]
+tests/test_e2e.py::TestBudgetsFlow::test_budget_card_shows_progress[chromium] PASSED [ 15%]
+tests/test_e2e.py::TestProfileFlow::test_profile_wizard_loads[chromium] PASSED [ 16%]
+tests/test_e2e.py::TestProfileFlow::test_profile_wizard_has_interactive_options[chromium] PASSED [ 17%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_filters_populated_from_api[chromium] PASSED [ 17%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_search_returns_results[chromium] FAILED [ 18%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_preset_value_stocks[chromium] FAILED [ 19%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_preset_value_stocks_shows_cards[chromium] FAILED [ 19%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_preset_growth_tech[chromium] FAILED [ 20%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_preset_high_dividend[chromium] FAILED [ 21%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_preset_all_etfs[chromium] FAILED [ 21%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_card_has_metrics[chromium] FAILED [ 22%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_card_has_signal_badge[chromium] FAILED [ 22%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_clear_resets_filters[chromium] FAILED [ 23%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_signal_filter_exists[chromium] PASSED [ 24%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_signal_filter_buy_returns_only_buy[chromium] FAILED [ 24%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_signal_filter_avoid_returns_only_avoid[chromium] FAILED [ 25%]
+tests/test_e2e.py::TestScreenerFlow::test_screener_signal_filter_cleared_by_clear_button[chromium] FAILED [ 26%]
+tests/test_e2e.py::TestRecommendationsFlow::test_recommendations_loads_content_or_prompt[chromium] FAILED [ 26%]
+tests/test_e2e.py::TestWatchlistFlow::test_watchlist_loads[chromium] PASSED [ 27%]
+tests/test_e2e.py::TestNewsFlow::test_news_loads_articles[chromium] PASSED [ 28%]
+tests/test_e2e.py::TestNewsFlow::test_news_count_shown[chromium] PASSED  [ 28%]
+tests/test_e2e.py::TestPortfolioFlow::test_add_holding_and_verify[chromium] FAILED [ 29%]
+tests/test_e2e.py::TestPortfolioFlow::test_portfolio_summary_has_values[chromium] FAILED [ 29%]
+tests/test_e2e.py::TestPortfolioChartHeight::test_perf_chart_canvas_inside_wrap_container[chromium] FAILED [ 30%]
+tests/test_e2e.py::TestPortfolioChartHeight::test_perf_chart_height_is_bounded[chromium] FAILED [ 31%]
+tests/test_e2e.py::TestPortfolioChartHeight::test_alloc_chart_height_is_bounded[chromium] FAILED [ 31%]
+tests/test_e2e.py::TestPortfolioChartHeight::test_perf_chart_canvas_has_no_hardcoded_height[chromium] FAILED [ 32%]
+tests/test_e2e.py::TestAlertsFlow::test_create_alert_and_verify[chromium] FAILED [ 33%]
+tests/test_e2e.py::TestAlertsFlow::test_alerts_page_loads_list[chromium] PASSED [ 33%]
+tests/test_e2e.py::TestCalendarFlow::test_calendar_loads_content[chromium] PASSED [ 34%]
+tests/test_e2e.py::TestEducationFlow::test_education_loads_articles[chromium] PASSED [ 35%]
+tests/test_e2e.py::TestILFundsFlow::test_il_funds_filters_loaded[chromium] PASSED [ 35%]
+tests/test_e2e.py::TestILFundsFlow::test_il_funds_search_returns_results[chromium] FAILED [ 36%]
+tests/test_e2e.py::TestILFundsFlow::test_il_funds_best_deals_loaded[chromium] PASSED [ 36%]
+tests/test_e2e.py::TestRegistration::test_register_new_user_via_ui[chromium] FAILED [ 37%]
+tests/test_e2e.py::TestRegistration::test_duplicate_email_rejected[chromium] FAILED [ 38%]
+tests/test_e2e.py::TestRegistration::test_register_short_password_rejected[chromium] PASSED [ 38%]
+tests/test_e2e.py::TestAuthMe::test_me_returns_user_info[chromium] PASSED [ 39%]
+tests/test_e2e.py::TestFullWidthLayout::test_content_has_no_max_width_constraint[chromium] PASSED [ 40%]
+tests/test_e2e.py::TestFullWidthLayout::test_content_stretches_with_viewport[chromium] PASSED [ 40%]
+tests/test_e2e.py::TestFullWidthLayout::test_il_funds_table_is_wide[chromium] PASSED [ 41%]
+tests/test_e2e.py::TestSearchBars::test_search_bars_present_on_all_data_pages[chromium] FAILED [ 42%]
+tests/test_e2e.py::TestSearchBars::test_search_bar_has_icon_and_clear_button[chromium] FAILED [ 42%]
+tests/test_e2e.py::TestSearchBars::test_search_filters_education_cards[chromium] PASSED [ 43%]
+tests/test_e2e.py::TestSearchBars::test_search_filters_calendar_events[chromium] PASSED [ 43%]
+tests/test_e2e.py::TestSearchBars::test_search_no_results_message[chromium] PASSED [ 44%]
+tests/test_e2e.py::TestSearchBars::test_clear_button_resets_search[chromium] FAILED [ 45%]
+tests/test_e2e.py::TestForgotPasswordUI::test_forgot_link_visible_on_login_page[chromium] PASSED [ 45%]
+tests/test_e2e.py::TestForgotPasswordUI::test_forgot_link_shows_email_form[chromium] PASSED [ 46%]
+tests/test_e2e.py::TestForgotPasswordUI::test_back_link_returns_to_login[chromium] PASSED [ 47%]
+tests/test_e2e.py::TestForgotPasswordUI::test_submit_email_shows_code_form[chromium] PASSED [ 47%]
+tests/test_e2e.py::TestForgotPasswordUI::test_full_ui_reset_flow[chromium] FAILED [ 48%]
+tests/test_e2e.py::TestActionPlanUI::test_action_plan_button_visible[chromium] PASSED [ 49%]
+tests/test_e2e.py::TestActionPlanUI::test_action_plan_modal_opens[chromium] FAILED [ 49%]
+tests/test_e2e.py::TestActionPlanUI::test_action_plan_modal_shows_content[chromium] FAILED [ 50%]
+tests/test_e2e.py::TestActionPlanUI::test_action_plan_invest_amount_input[chromium] FAILED [ 50%]
+tests/test_e2e.py::TestActionPlanUI::test_action_plan_modal_closes[chromium] FAILED [ 51%]
+tests/test_e2e.py::TestActionPlanUI::test_action_plan_shows_signal_groups[chromium] FAILED [ 52%]
+tests/test_e2e.py::TestMarketDataIntegrity::test_no_http_error_text_on_dashboard[chromium] PASSED [ 52%]
+tests/test_e2e.py::TestMarketDataIntegrity::test_market_cards_show_real_prices[chromium] PASSED [ 53%]
+tests/test_e2e.py::TestMarketDataIntegrity::test_ticker_strip_renders[chromium] PASSED [ 54%]
+tests/test_e2e.py::TestMarketDataIntegrity::test_no_js_errors_during_market_load[chromium] PASSED [ 54%]
+tests/test_e2e.py::TestMarketDataIntegrity::test_market_cards_have_change_indicators[chromium] PASSED [ 55%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_dashboard_market_cards_show_all_featured[chromium] PASSED [ 56%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_dashboard_sparklines_draw_via_yahoo[chromium] SKIPPED [ 56%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_dashboard_no_error_messages_visible[chromium] PASSED [ 57%]
+tests/test_e2e.py::TestPerfOptimizations::test_budget_page_uses_status_endpoint[chromium] FAILED [ 57%]
+tests/test_e2e.py::TestPerfOptimizations::test_stock_detail_loads_via_combined_endpoint[chromium] FAILED [ 58%]
+tests/test_e2e.py::TestPerfOptimizations::test_sparklines_render_with_lightweight_canvas[chromium] FAILED [ 59%]
+tests/test_e2e.py::TestPerfOptimizations::test_smart_advisor_tab_switch_no_refetch[chromium] FAILED [ 59%]
+tests/test_e2e.py::TestPerfOptimizations::test_trading_advisor_skips_unchanged_rerender[chromium] FAILED [ 60%]
+tests/test_e2e.py::TestPerfOptimizations::test_init_parallel_load[chromium] PASSED [ 61%]
+tests/test_e2e.py::TestScreenerAPI::test_value_stocks_api_returns_results FAILED [ 61%]
+tests/test_e2e.py::TestScreenerAPI::test_dividend_yield_values_are_reasonable FAILED [ 62%]
+tests/test_e2e.py::TestScreenerAPI::test_pe_ratio_filter_is_respected FAILED [ 63%]
+tests/test_e2e.py::TestScreenerAPI::test_high_dividend_api_returns_results FAILED [ 63%]
+tests/test_e2e.py::TestScreenerAPI::test_cache_warming_provides_metrics FAILED [ 64%]
+tests/test_e2e.py::TestScreenerAPI::test_signal_filter_buy_returns_only_buy FAILED [ 64%]
+tests/test_e2e.py::TestScreenerAPI::test_signal_filter_hold_returns_only_hold FAILED [ 65%]
+tests/test_e2e.py::TestScreenerAPI::test_signal_filter_avoid_returns_only_avoid FAILED [ 66%]
+tests/test_e2e.py::TestScreenerAPI::test_signal_filter_no_filter_returns_mixed FAILED [ 66%]
+tests/test_e2e.py::TestAuthMe::test_me_unauthenticated_returns_redirect PASSED [ 67%]
+tests/test_e2e.py::TestMultiUserIsolation::test_watchlist_isolation FAILED [ 68%]
+tests/test_e2e.py::TestMultiUserIsolation::test_portfolio_isolation FAILED [ 68%]
+tests/test_e2e.py::TestMultiUserIsolation::test_transactions_isolation FAILED [ 69%]
+tests/test_e2e.py::TestMultiUserIsolation::test_alerts_isolation FAILED  [ 70%]
+tests/test_e2e.py::TestForgotPasswordAPI::test_forgot_password_returns_ok_for_existing_user PASSED [ 70%]
+tests/test_e2e.py::TestForgotPasswordAPI::test_forgot_password_returns_ok_for_unknown_email PASSED [ 71%]
+tests/test_e2e.py::TestForgotPasswordAPI::test_reset_password_with_valid_code FAILED [ 71%]
+tests/test_e2e.py::TestForgotPasswordAPI::test_reset_password_wrong_code_rejected PASSED [ 72%]
+tests/test_e2e.py::TestForgotPasswordAPI::test_reset_password_code_single_use FAILED [ 73%]
+tests/test_e2e.py::TestForgotPasswordAPI::test_reset_password_short_password_rejected FAILED [ 73%]
+tests/test_e2e.py::TestActionPlanAPI::test_action_plan_endpoint_returns_200 FAILED [ 74%]
+tests/test_e2e.py::TestActionPlanAPI::test_action_plan_summary_structure FAILED [ 75%]
+tests/test_e2e.py::TestActionPlanAPI::test_action_plan_plan_has_valid_signals FAILED [ 75%]
+tests/test_e2e.py::TestActionPlanAPI::test_action_plan_stocks_have_allocations FAILED [ 76%]
+tests/test_e2e.py::TestActionPlanAPI::test_action_plan_allocations_sum_to_investment FAILED [ 77%]
+tests/test_e2e.py::TestActionPlanAPI::test_action_plan_sector_filter FAILED [ 77%]
+tests/test_e2e.py::TestActionPlanAPI::test_action_plan_strengths_and_weaknesses FAILED [ 78%]
+tests/test_e2e.py::TestMarketDataIntegrity::test_market_api_returns_valid_data FAILED [ 78%]
+tests/test_e2e.py::TestOOMFixAPI::test_cache_status_returns_bounded_total FAILED [ 79%]
+tests/test_e2e.py::TestOOMFixAPI::test_pxd_not_in_stock_universe FAILED  [ 80%]
+tests/test_e2e.py::TestOOMFixAPI::test_pxd_not_in_trading_dashboard FAILED [ 80%]
+tests/test_e2e.py::TestOOMFixAPI::test_advisor_rankings_no_heavy_arrays FAILED [ 81%]
+tests/test_e2e.py::TestOOMFixAPI::test_trading_dashboard_picks_capped FAILED [ 82%]
+tests/test_e2e.py::TestOOMFixAPI::test_trading_dashboard_has_progress FAILED [ 82%]
+tests/test_e2e.py::TestOOMFixAPI::test_market_home_returns_data FAILED   [ 83%]
+tests/test_e2e.py::TestOOMFixAPI::test_value_scanner_returns_structure FAILED [ 84%]
+tests/test_e2e.py::TestOOMFixAPI::test_trading_dashboard_has_packages FAILED [ 84%]
+tests/test_e2e.py::TestOOMFixAPI::test_advisor_single_stock_still_has_indicators FAILED [ 85%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_featured_returns_all_six_stocks FAILED [ 85%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_featured_prices_are_realistic FAILED [ 86%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_featured_have_change_percent FAILED [ 87%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_featured_sparklines_have_data_points FAILED [ 87%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_sparkline_points_count FAILED [ 88%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_ticker_returns_all_symbols FAILED [ 89%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_home_returns_both_ticker_and_featured FAILED [ 89%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_home_featured_have_sparklines FAILED [ 90%]
+tests/test_e2e.py::TestYahooOnlyDataFlow::test_home_no_error_text_in_response FAILED [ 91%]
+tests/test_e2e.py::TestAdvisorPerfAPI::test_trading_advisor_total_matches_universe FAILED [ 91%]
+tests/test_e2e.py::TestAdvisorPerfAPI::test_trading_advisor_progress_fields FAILED [ 92%]
+tests/test_e2e.py::TestAdvisorPerfAPI::test_trading_advisor_all_five_packages FAILED [ 92%]
+tests/test_e2e.py::TestAdvisorPerfAPI::test_trading_advisor_responds_within_timeout FAILED [ 93%]
+tests/test_e2e.py::TestAdvisorPerfAPI::test_trading_advisor_market_mood_valid FAILED [ 94%]
+tests/test_e2e.py::TestAdvisorPerfAPI::test_cache_warmer_signals_ready FAILED [ 94%]
+tests/test_e2e.py::TestAdvisorPerfAPI::test_concurrent_api_calls_dont_block FAILED [ 95%]
+tests/test_e2e.py::TestAdvisorPerfAPI::test_candle_cache_speeds_up_repeat_calls FAILED [ 96%]
+tests/test_e2e.py::TestAdvisorPerfAPI::test_all_picks_capped_at_30 FAILED [ 96%]
+tests/test_e2e.py::TestAdvisorPerfAPI::test_stock_detail_returns_data FAILED [ 97%]
+tests/test_e2e.py::TestAdvisorPerfAPI::test_value_scanner_responds_with_stats FAILED [ 98%]
+tests/test_e2e.py::TestSmartAdvisorCacheHit::test_advisor_analyze_returns_under_5s FAILED [ 98%]
+tests/test_e2e.py::TestSmartAdvisorCacheHit::test_advisor_analyze_has_rankings FAILED [ 99%]
+tests/test_e2e.py::TestSmartAdvisorCacheHit::test_advisor_float_and_int_amount_same_result FAILED [100%]
+
+================================== FAILURES ===================================
+__________________ TestLogin.test_successful_login[chromium] __________________
+tests\test_e2e.py:64: in test_successful_login
+    page.wait_for_url(f"{live_url}/", timeout=15_000)
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:9197: in wait_for_url
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_page.py:580: in wait_for_url
+    return await self._main_frame.wait_for_url(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:263: in wait_for_url
+    async with self.expect_navigation(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_event_context_manager.py:33: in __aexit__
+    await self._future
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:239: in continuation
+    event = await waiter.result()
+            ^^^^^^^^^^^^^^^^^^^^^
+E   playwright._impl._errors.TimeoutError: Timeout 15000ms exceeded.
+E   =========================== logs ===========================
+E   waiting for navigation to "http://127.0.0.1:8091/" until 'load'
+E   ============================================================
+_____________ TestNavigation.test_navigate_to_each_page[chromium] _____________
+tests\test_e2e.py:131: in test_navigate_to_each_page
+    expect(section).to_have_class(re.compile("active"))
+E   AssertionError: Locator expected to have class 're.compile('active')'
+E   Actual value: page 
+E   Call log:
+E     - Expect "to_have_class" with timeout 5000ms
+E     - waiting for locator("#page-news")
+E       9 ╫ locator resolved to <section class="page" id="page-news">à</section>
+E         - unexpected value "page"
+________ TestNavigation.test_url_hash_updates_on_navigation[chromium] _________
+tests\test_e2e.py:183: in test_url_hash_updates_on_navigation
+    assert f"#{page_id}" in authenticated_page.url, (
+E   AssertionError: URL should contain #portfolio, got http://127.0.0.1:8091/#education
+E   assert '#portfolio' in 'http://127.0.0.1:8091/#education'
+E    +  where 'http://127.0.0.1:8091/#education' = <Page url='http://127.0.0.1:8091/#education'>.url
+__ TestDashboardFlow.test_sparkline_charts_render_on_market_cards[chromium] ___
+tests\test_e2e.py:219: in test_sparkline_charts_render_on_market_cards
+    authenticated_page.wait_for_function(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:11599: in wait_for_function
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_page.py:1110: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:878: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.Error: Page.wait_for_function: EvalError: Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script: script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net".
+E   
+E       at eval (<anonymous>)
+E       at predicate (eval at evaluate (:290:30), <anonymous>:4:56)
+E       at next (eval at evaluate (:290:30), <anonymous>:29:29)
+______ TestDashboardFlow.test_sparkline_charts_have_pixel_data[chromium] ______
+tests\test_e2e.py:235: in test_sparkline_charts_have_pixel_data
+    authenticated_page.wait_for_function(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:11599: in wait_for_function
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_page.py:1110: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:878: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.Error: Page.wait_for_function: EvalError: Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script: script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net".
+E   
+E       at eval (<anonymous>)
+E       at predicate (eval at evaluate (:290:30), <anonymous>:4:56)
+E       at next (eval at evaluate (:290:30), <anonymous>:29:29)
+____ TestDashboardFlow.test_sparkline_data_has_realistic_values[chromium] _____
+tests\test_e2e.py:263: in test_sparkline_data_has_realistic_values
+    authenticated_page.wait_for_function(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:11599: in wait_for_function
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_page.py:1110: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:878: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.Error: Page.wait_for_function: EvalError: Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script: script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net".
+E   
+E       at eval (<anonymous>)
+E       at predicate (eval at evaluate (:290:30), <anonymous>:4:56)
+E       at next (eval at evaluate (:290:30), <anonymous>:29:29)
+_______ TestScreenerFlow.test_screener_search_returns_results[chromium] _______
+tests\test_e2e.py:425: in test_screener_search_returns_results
+    authenticated_page.get_by_role("button", name="Search").first.click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="Search").first
+E       - locator resolved to <button class="btn btn-primary" onclick="runScreener()">Search</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       54 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+________ TestScreenerFlow.test_screener_preset_value_stocks[chromium] _________
+tests\test_e2e.py:435: in test_screener_preset_value_stocks
+    authenticated_page.get_by_role("button", name="Value Stocks").click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="Value Stocks")
+E       - locator resolved to <button class="btn btn-sm" data-help="preset_value" onclick="applyPreset('value')">Value Stocks</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       54 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+E       - waiting for element to be visible, enabled and stable
+__ TestScreenerFlow.test_screener_preset_value_stocks_shows_cards[chromium] ___
+tests\test_e2e.py:449: in test_screener_preset_value_stocks_shows_cards
+    authenticated_page.get_by_role("button", name="Value Stocks").click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="Value Stocks")
+E       - locator resolved to <button class="btn btn-sm" data-help="preset_value" onclick="applyPreset('value')">Value Stocks</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       53 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+_________ TestScreenerFlow.test_screener_preset_growth_tech[chromium] _________
+tests\test_e2e.py:462: in test_screener_preset_growth_tech
+    authenticated_page.get_by_role("button", name="Growth Tech").click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="Growth Tech")
+E       - locator resolved to <button class="btn btn-sm" data-help="preset_growth" onclick="applyPreset('growth')">Growth Tech</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       53 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+________ TestScreenerFlow.test_screener_preset_high_dividend[chromium] ________
+tests\test_e2e.py:471: in test_screener_preset_high_dividend
+    authenticated_page.get_by_role("button", name="High Dividend").click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="High Dividend")
+E       - locator resolved to <button class="btn btn-sm" data-help="preset_dividend" onclick="applyPreset('dividend')">High Dividend</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       54 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+__________ TestScreenerFlow.test_screener_preset_all_etfs[chromium] ___________
+tests\test_e2e.py:480: in test_screener_preset_all_etfs
+    authenticated_page.get_by_role("button", name="All ETFs").click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="All ETFs")
+E       - locator resolved to <button class="btn btn-sm" data-help="preset_etf" onclick="applyPreset('etf')">All ETFs</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       54 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+__________ TestScreenerFlow.test_screener_card_has_metrics[chromium] __________
+tests\test_e2e.py:489: in test_screener_card_has_metrics
+    authenticated_page.get_by_role("button", name="Search").first.click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="Search").first
+E       - locator resolved to <button class="btn btn-primary" onclick="runScreener()">Search</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       54 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+_______ TestScreenerFlow.test_screener_card_has_signal_badge[chromium] ________
+tests\test_e2e.py:509: in test_screener_card_has_signal_badge
+    authenticated_page.get_by_role("button", name="Search").first.click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="Search").first
+E       - locator resolved to <button class="btn btn-primary" onclick="runScreener()">Search</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       54 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+________ TestScreenerFlow.test_screener_clear_resets_filters[chromium] ________
+tests\test_e2e.py:523: in test_screener_clear_resets_filters
+    authenticated_page.get_by_role("button", name="Value Stocks").click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="Value Stocks")
+E       - locator resolved to <button class="btn btn-sm" data-help="preset_value" onclick="applyPreset('value')">Value Stocks</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       54 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+_ TestScreenerFlow.test_screener_signal_filter_buy_returns_only_buy[chromium] _
+tests\test_e2e.py:547: in test_screener_signal_filter_buy_returns_only_buy
+    authenticated_page.get_by_role("button", name="Search").first.click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="Search").first
+E       - locator resolved to <button class="btn btn-primary" onclick="runScreener()">Search</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       53 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+_ TestScreenerFlow.test_screener_signal_filter_avoid_returns_only_avoid[chromium] _
+tests\test_e2e.py:564: in test_screener_signal_filter_avoid_returns_only_avoid
+    authenticated_page.get_by_role("button", name="Search").first.click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="Search").first
+E       - locator resolved to <button class="btn btn-primary" onclick="runScreener()">Search</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       52 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+_ TestScreenerFlow.test_screener_signal_filter_cleared_by_clear_button[chromium] _
+tests\test_e2e.py:579: in test_screener_signal_filter_cleared_by_clear_button
+    authenticated_page.get_by_role("button", name="Clear").click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="Clear")
+E       - locator resolved to <button class="btn btn-ghost" onclick="clearScreener()">Clear</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       55 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+_ TestRecommendationsFlow.test_recommendations_loads_content_or_prompt[chromium] _
+tests\test_e2e.py:767: in test_recommendations_loads_content_or_prompt
+    _nav_click(authenticated_page, "recommendations")
+tests\test_e2e.py:22: in _nav_click
+    page.locator(f'.nav-link[data-page="{page_id}"]').click(force=True)
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator(".nav-link[data-page=\"recommendations\"]")
+___________ TestPortfolioFlow.test_add_holding_and_verify[chromium] ___________
+tests\test_e2e.py:836: in test_add_holding_and_verify
+    authenticated_page.locator('#holding-form button[type="submit"]').click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator("#holding-form button[type=\"submit\"]")
+E       - locator resolved to <button type="submit" class="btn btn-primary">Add Holding</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is not stable
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       47 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+E       - waiting for element to be visible, enabled and stable
+E       - element is visible, enabled and stable
+E       - scrolling into view if needed
+________ TestPortfolioFlow.test_portfolio_summary_has_values[chromium] ________
+tests\test_e2e.py:848: in test_portfolio_summary_has_values
+    assert "$" in html, f"Portfolio shows no dollar values ù summary didn't load. HTML: {html[:500]}"
+E   AssertionError: Portfolio shows no dollar values ù summary didn't load. HTML: <div class="empty-state"><p>No holdings yet. Add stocks from the <a href="#" onclick="navigateTo('screener');return false;" style="color:var(--primary)">Screener</a> or any stock detail page.</p></div>
+E   assert '$' in '<div class="empty-state"><p>No holdings yet. Add stocks from the <a href="#" onclick="navigateTo(\'screener\');return false;" style="color:var(--primary)">Screener</a> or any stock detail page.</p></div>'
+_ TestPortfolioChartHeight.test_perf_chart_canvas_inside_wrap_container[chromium] _
+tests\test_e2e.py:870: in test_perf_chart_canvas_inside_wrap_container
+    assert wrap.count() >= 2, "Expected at least 2 .pf-chart-wrap containers (allocation + performance)"
+E   AssertionError: Expected at least 2 .pf-chart-wrap containers (allocation + performance)
+E   assert 0 >= 2
+E    +  where 0 = count()
+E    +    where count = <Locator frame=<Frame name= url='http://127.0.0.1:8091/#portfolio'> selector='.pf-chart-wrap'>.count
+____ TestPortfolioChartHeight.test_perf_chart_height_is_bounded[chromium] _____
+tests\test_e2e.py:880: in test_perf_chart_height_is_bounded
+    box = wrap.bounding_box()
+          ^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15479: in bounding_box
+    self._sync(self._impl_obj.bounding_box(timeout=timeout))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:132: in bounding_box
+    return await self._with_element(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:113: in _with_element
+    handle = await self.element_handle(timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:319: in element_handle
+    handle = await self._frame.wait_for_selector(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:369: in wait_for_selector
+    await self._channel.send(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.bounding_box: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator(".pf-chart-wrap").nth(1)
+____ TestPortfolioChartHeight.test_alloc_chart_height_is_bounded[chromium] ____
+tests\test_e2e.py:892: in test_alloc_chart_height_is_bounded
+    box = wrap.bounding_box()
+          ^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15479: in bounding_box
+    self._sync(self._impl_obj.bounding_box(timeout=timeout))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:132: in bounding_box
+    return await self._with_element(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:113: in _with_element
+    handle = await self.element_handle(timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:319: in element_handle
+    handle = await self._frame.wait_for_selector(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:369: in wait_for_selector
+    await self._channel.send(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.bounding_box: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator(".pf-chart-wrap").first
+_ TestPortfolioChartHeight.test_perf_chart_canvas_has_no_hardcoded_height[chromium] _
+tests\test_e2e.py:903: in test_perf_chart_canvas_has_no_hardcoded_height
+    height_attr = canvas.get_attribute("height")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:16973: in get_attribute
+    self._sync(self._impl_obj.get_attribute(name=name, timeout=timeout))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:444: in get_attribute
+    return await self._frame.get_attribute(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:726: in get_attribute
+    return await self._channel.send(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.get_attribute: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator("#pf-perf-chart")
+____________ TestAlertsFlow.test_create_alert_and_verify[chromium] ____________
+tests\test_e2e.py:922: in test_create_alert_and_verify
+    authenticated_page.locator('#alert-form button[type="submit"]').click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator("#alert-form button[type=\"submit\"]")
+E       - locator resolved to <button type="submit" class="btn btn-primary">Create Alert</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is not stable
+E       - retrying click action
+E       - waiting 20ms
+E       - waiting for element to be visible, enabled and stable
+E       - element is not stable
+E     2 ╫ retrying click action
+E         - waiting 100ms
+E         - waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E     49 ╫ retrying click action
+E          - waiting 500ms
+E          - waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E     - retrying click action
+E       - waiting 500ms
+_______ TestILFundsFlow.test_il_funds_search_returns_results[chromium] ________
+tests\test_e2e.py:986: in test_il_funds_search_returns_results
+    authenticated_page.get_by_role("button", name="Search").first.click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for get_by_role("button", name="Search").first
+E       - locator resolved to <button class="btn btn-primary" onclick="runILSearch()">Search</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       55 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+__________ TestRegistration.test_register_new_user_via_ui[chromium] ___________
+tests\test_e2e.py:1025: in test_register_new_user_via_ui
+    page.wait_for_selector("nav.sidebar", timeout=30_000)
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:8217: in wait_for_selector
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_page.py:419: in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:369: in wait_for_selector
+    await self._channel.send(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator("nav.sidebar") to be visible
+__________ TestRegistration.test_duplicate_email_rejected[chromium] ___________
+tests\test_e2e.py:1041: in test_duplicate_email_rejected
+    expect(page.locator("#reg-error")).to_contain_text("already registered")
+E   AssertionError: Locator expected to contain text 'already registered'
+E   Actual value: [object Object] 
+E   Call log:
+E     - Expect "to_contain_text" with timeout 5000ms
+E     - waiting for locator("#reg-error")
+E       9 ╫ locator resolved to <div class="error" id="reg-error">[object Object]</div>
+E         - unexpected value "[object Object]"
+_____ TestSearchBars.test_search_bars_present_on_all_data_pages[chromium] _____
+tests\test_e2e.py:1242: in test_search_bars_present_on_all_data_pages
+    expect(search_input).to_be_visible(timeout=3_000)
+E   AssertionError: Locator expected to be visible
+E   Actual value: hidden 
+E   Call log:
+E     - Expect "to_be_visible" with timeout 3000ms
+E     - waiting for locator("#news-search")
+E       7 ╫ locator resolved to <input type="text" id="news-search" oninput="filterNews(this.value)" placeholder="Search news by title, symbol, or source..."/>
+E         - unexpected value "hidden"
+_____ TestSearchBars.test_search_bar_has_icon_and_clear_button[chromium] ______
+tests\test_e2e.py:1254: in test_search_bar_has_icon_and_clear_button
+    expect(bar.locator(".search-icon")).to_be_visible(timeout=2_000)
+E   AssertionError: Locator expected to be visible
+E   Actual value: hidden 
+E   Call log:
+E     - Expect "to_be_visible" with timeout 2000ms
+E     - waiting for locator("#news-search").locator("..").locator(".search-icon")
+E       6 ╫ locator resolved to <svg width="18" height="18" fill="none" stroke-width="2" class="search-icon" viewBox="0 0 24 24" stroke="currentColor">à</svg>
+E         - unexpected value "hidden"
+__________ TestSearchBars.test_clear_button_resets_search[chromium] ___________
+tests\test_e2e.py:1332: in test_clear_button_resets_search
+    assert val == "", f"Search input not cleared, value='{val}'"
+E   AssertionError: Search input not cleared, value='zzzznonexistent'
+E   assert 'zzzznonexistent' == ''
+E     
+E     + zzzznonexistent
+___________ TestForgotPasswordUI.test_full_ui_reset_flow[chromium] ____________
+tests\test_e2e.py:1607: in test_full_ui_reset_flow
+    .filter(PasswordReset.user_id == user.id, PasswordReset.used == 0)
+                                     ^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'id'
+___________ TestActionPlanUI.test_action_plan_modal_opens[chromium] ___________
+tests\test_e2e.py:1782: in test_action_plan_modal_opens
+    authenticated_page.locator(".vs-action-plan-btn").click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator(".vs-action-plan-btn")
+E       - locator resolved to <button onclick="openActionPlanModal()" class="btn btn-primary vs-action-plan-btn">à</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       54 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+_______ TestActionPlanUI.test_action_plan_modal_shows_content[chromium] _______
+tests\test_e2e.py:1793: in test_action_plan_modal_shows_content
+    authenticated_page.locator("button.merge-tab", has_text="Value Investing").first.click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator("button.merge-tab").filter(has_text="Value Investing").first
+E       - locator resolved to <button class="merge-tab" onclick="navigateTo('value-scanner')">Value Investing</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       55 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+_______ TestActionPlanUI.test_action_plan_invest_amount_input[chromium] _______
+tests\test_e2e.py:1812: in test_action_plan_invest_amount_input
+    authenticated_page.locator(".vs-action-plan-btn").click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator(".vs-action-plan-btn")
+E       - locator resolved to <button onclick="openActionPlanModal()" class="btn btn-primary vs-action-plan-btn">à</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       54 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+E       - waiting for element to be visible, enabled and stable
+E       - element is visible, enabled and stable
+E       - scrolling into view if needed
+E       - done scrolling
+__________ TestActionPlanUI.test_action_plan_modal_closes[chromium] ___________
+tests\test_e2e.py:1827: in test_action_plan_modal_closes
+    authenticated_page.locator(".vs-action-plan-btn").click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator(".vs-action-plan-btn")
+E       - locator resolved to <button onclick="openActionPlanModal()" class="btn btn-primary vs-action-plan-btn">à</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       55 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+_______ TestActionPlanUI.test_action_plan_shows_signal_groups[chromium] _______
+tests\test_e2e.py:1842: in test_action_plan_shows_signal_groups
+    authenticated_page.locator(".vs-action-plan-btn").click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator(".vs-action-plan-btn")
+E       - locator resolved to <button onclick="openActionPlanModal()" class="btn btn-primary vs-action-plan-btn">à</button>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       55 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+____ TestPerfOptimizations.test_budget_page_uses_status_endpoint[chromium] ____
+tests\test_e2e.py:2805: in test_budget_page_uses_status_endpoint
+    page.fill("#budget-limit", "200")
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:10177: in fill
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_page.py:893: in fill
+    return await self._main_frame.fill(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:607: in fill
+    await self._fill(**locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:619: in _fill
+    await self._channel.send("fill", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Page.fill: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator("#budget-limit")
+E       - locator resolved to <input min="1" step="0.01" required="" type="number" id="budget-limit" placeholder="500.00"/>
+E       - fill("200")
+E     - attempting fill action
+E       2 ╫ waiting for element to be visible, enabled and editable
+E         - element is not visible
+E       - retrying fill action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and editable
+E         - element is not visible
+E       - retrying fill action
+E         - waiting 100ms
+E       59 ╫ waiting for element to be visible, enabled and editable
+E          - element is not visible
+E        - retrying fill action
+E          - waiting 500ms
+_ TestPerfOptimizations.test_stock_detail_loads_via_combined_endpoint[chromium] _
+tests\test_e2e.py:2827: in test_stock_detail_loads_via_combined_endpoint
+    stock_link.click(force=True)
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.Error: Locator.click: Element is not visible
+E   Call log:
+E     - waiting for locator("tr[onclick*='navigateToStock'], .stock-row, [onclick*='navigateToStock']").first
+E       - locator resolved to <div data-symbol="AAPL" data-stock-name="AAPL" data-stock-price="257.46" class="market-card stock-up" onclick="navigateToStock('AAPL')">à</div>
+E     - attempting click action
+E       - scrolling into view if needed
+_ TestPerfOptimizations.test_sparklines_render_with_lightweight_canvas[chromium] _
+tests\test_e2e.py:2840: in test_sparklines_render_with_lightweight_canvas
+    _nav_click(page, "home")
+tests\test_e2e.py:22: in _nav_click
+    page.locator(f'.nav-link[data-page="{page_id}"]').click(force=True)
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator(".nav-link[data-page=\"home\"]")
+__ TestPerfOptimizations.test_smart_advisor_tab_switch_no_refetch[chromium] ___
+tests\test_e2e.py:2876: in test_smart_advisor_tab_switch_no_refetch
+    page.click("#run-advisor-btn", timeout=5000)
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:9962: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_page.py:854: in click
+    return await self._main_frame._click(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Page.click: Timeout 5000ms exceeded.
+E   Call log:
+E     - waiting for locator("#run-advisor-btn")
+_ TestPerfOptimizations.test_trading_advisor_skips_unchanged_rerender[chromium] _
+tests\test_e2e.py:2909: in test_trading_advisor_skips_unchanged_rerender
+    _nav_click(page, "advisor")
+tests\test_e2e.py:22: in _nav_click
+    page.locator(f'.nav-link[data-page="{page_id}"]').click(force=True)
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator(".nav-link[data-page=\"advisor\"]")
+____________ TestScreenerAPI.test_value_stocks_api_returns_results ____________
+tests\test_e2e.py:612: in test_value_stocks_api_returns_results
+    s = self._session(live_url, "screener_api@e2e.local", "Pass1234", "Screener Tester")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:596: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+__________ TestScreenerAPI.test_dividend_yield_values_are_reasonable __________
+tests\test_e2e.py:629: in test_dividend_yield_values_are_reasonable
+    s = self._session(live_url, "screener_div@e2e.local", "Pass1234", "Div Tester")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:596: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+______________ TestScreenerAPI.test_pe_ratio_filter_is_respected ______________
+tests\test_e2e.py:649: in test_pe_ratio_filter_is_respected
+    s = self._session(live_url, "screener_pe@e2e.local", "Pass1234", "PE Tester")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:596: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+___________ TestScreenerAPI.test_high_dividend_api_returns_results ____________
+tests\test_e2e.py:666: in test_high_dividend_api_returns_results
+    s = self._session(live_url, "screener_hidiv@e2e.local", "Pass1234", "HiDiv Tester")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:596: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_____________ TestScreenerAPI.test_cache_warming_provides_metrics _____________
+tests\test_e2e.py:679: in test_cache_warming_provides_metrics
+    s = self._session(live_url, "screener_cache@e2e.local", "Pass1234", "Cache Tester")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:596: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+___________ TestScreenerAPI.test_signal_filter_buy_returns_only_buy ___________
+tests\test_e2e.py:700: in test_signal_filter_buy_returns_only_buy
+    s = self._session(live_url, "screener_sigbuy@e2e.local", "Pass1234", "Signal Tester")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:596: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+__________ TestScreenerAPI.test_signal_filter_hold_returns_only_hold __________
+tests\test_e2e.py:715: in test_signal_filter_hold_returns_only_hold
+    s = self._session(live_url, "screener_sighold@e2e.local", "Pass1234", "Signal Tester")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:596: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_________ TestScreenerAPI.test_signal_filter_avoid_returns_only_avoid _________
+tests\test_e2e.py:730: in test_signal_filter_avoid_returns_only_avoid
+    s = self._session(live_url, "screener_sigavoid@e2e.local", "Pass1234", "Signal Tester")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:596: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_________ TestScreenerAPI.test_signal_filter_no_filter_returns_mixed __________
+tests\test_e2e.py:745: in test_signal_filter_no_filter_returns_mixed
+    s = self._session(live_url, "screener_sigmix@e2e.local", "Pass1234", "Signal Tester")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:596: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_______________ TestMultiUserIsolation.test_watchlist_isolation _______________
+tests\test_e2e.py:1093: in test_watchlist_isolation
+    s_a = self._session_for(live_url, f"alice_wl_{tag}@e2e.local", "Alice123", "Alice")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:1084: in _session_for
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for alice_wl_93b775@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_______________ TestMultiUserIsolation.test_portfolio_isolation _______________
+tests\test_e2e.py:1112: in test_portfolio_isolation
+    s_a = self._session_for(live_url, f"alice_pf_{tag}@e2e.local", "Alice123", "Alice PF")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:1084: in _session_for
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for alice_pf_0133b8@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_____________ TestMultiUserIsolation.test_transactions_isolation ______________
+tests\test_e2e.py:1138: in test_transactions_isolation
+    s_a = self._session_for(live_url, f"alice_tx_{tag}@e2e.local", "Alice123", "Alice TX")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:1084: in _session_for
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for alice_tx_baa1db@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+________________ TestMultiUserIsolation.test_alerts_isolation _________________
+tests\test_e2e.py:1162: in test_alerts_isolation
+    s_a = self._session_for(live_url, f"alice_al_{tag}@e2e.local", "Alice123", "Alice AL")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:1084: in _session_for
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for alice_al_297ef8@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+__________ TestForgotPasswordAPI.test_reset_password_with_valid_code __________
+tests\test_e2e.py:1408: in test_reset_password_with_valid_code
+    .filter(PasswordReset.user_id == user.id, PasswordReset.used == 0)
+                                     ^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'id'
+__________ TestForgotPasswordAPI.test_reset_password_code_single_use __________
+tests\test_e2e.py:1484: in test_reset_password_code_single_use
+    .filter(PasswordReset.user_id == user.id, PasswordReset.used == 0)
+                                     ^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'id'
+______ TestForgotPasswordAPI.test_reset_password_short_password_rejected ______
+tests\test_e2e.py:1516: in test_reset_password_short_password_rejected
+    assert "4 characters" in resp.json()["detail"]
+E   AssertionError: assert '4 characters' in 'Password must be at least 8 characters'
+___________ TestActionPlanAPI.test_action_plan_endpoint_returns_200 ___________
+tests\test_e2e.py:1661: in test_action_plan_endpoint_returns_200
+    s = self._session(live_url, "ap_api_basic@e2e.local", "Pass1234", "AP Tester")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:1656: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+____________ TestActionPlanAPI.test_action_plan_summary_structure _____________
+tests\test_e2e.py:1671: in test_action_plan_summary_structure
+    s = self._session(live_url, "ap_api_summary@e2e.local", "Pass1234", "AP Summary")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:1656: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+__________ TestActionPlanAPI.test_action_plan_plan_has_valid_signals __________
+tests\test_e2e.py:1682: in test_action_plan_plan_has_valid_signals
+    s = self._session(live_url, "ap_api_signals@e2e.local", "Pass1234", "AP Signals")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:1656: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_________ TestActionPlanAPI.test_action_plan_stocks_have_allocations __________
+tests\test_e2e.py:1696: in test_action_plan_stocks_have_allocations
+    s = self._session(live_url, "ap_api_alloc@e2e.local", "Pass1234", "AP Alloc")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:1656: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+______ TestActionPlanAPI.test_action_plan_allocations_sum_to_investment _______
+tests\test_e2e.py:1718: in test_action_plan_allocations_sum_to_investment
+    s = self._session(live_url, "ap_api_dollars@e2e.local", "Pass1234", "AP Dollars")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:1656: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+______________ TestActionPlanAPI.test_action_plan_sector_filter _______________
+tests\test_e2e.py:1731: in test_action_plan_sector_filter
+    s = self._session(live_url, "ap_api_sector@e2e.local", "Pass1234", "AP Sector")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:1656: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_________ TestActionPlanAPI.test_action_plan_strengths_and_weaknesses _________
+tests\test_e2e.py:1747: in test_action_plan_strengths_and_weaknesses
+    s = self._session(live_url, "ap_api_sw@e2e.local", "Pass1234", "AP SW")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:1656: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_________ TestMarketDataIntegrity.test_market_api_returns_valid_data __________
+tests\test_e2e.py:1975: in test_market_api_returns_valid_data
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+____________ TestOOMFixAPI.test_cache_status_returns_bounded_total ____________
+tests\test_e2e.py:2061: in test_cache_status_returns_bounded_total
+    s = self._session(live_url, "oom_cache@e2e.local", "Pass1234", "OOM Cache")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2054: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+________________ TestOOMFixAPI.test_pxd_not_in_stock_universe _________________
+tests\test_e2e.py:2078: in test_pxd_not_in_stock_universe
+    s = self._session(live_url, "oom_pxd@e2e.local", "Pass1234", "OOM PXD")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2054: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_______________ TestOOMFixAPI.test_pxd_not_in_trading_dashboard _______________
+tests\test_e2e.py:2089: in test_pxd_not_in_trading_dashboard
+    s = self._session(live_url, "oom_pxd_ta@e2e.local", "Pass1234", "OOM PXD TA")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2054: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_____________ TestOOMFixAPI.test_advisor_rankings_no_heavy_arrays _____________
+tests\test_e2e.py:2105: in test_advisor_rankings_no_heavy_arrays
+    s = self._session(live_url, "oom_advisor@e2e.local", "Pass1234", "OOM Advisor")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2054: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+______________ TestOOMFixAPI.test_trading_dashboard_picks_capped ______________
+tests\test_e2e.py:2141: in test_trading_dashboard_picks_capped
+    s = self._session(live_url, "oom_trading@e2e.local", "Pass1234", "OOM Trading")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2054: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+______________ TestOOMFixAPI.test_trading_dashboard_has_progress ______________
+tests\test_e2e.py:2152: in test_trading_dashboard_has_progress
+    s = self._session(live_url, "oom_ta_prog@e2e.local", "Pass1234", "OOM TA Prog")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2054: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_________________ TestOOMFixAPI.test_market_home_returns_data _________________
+tests\test_e2e.py:2169: in test_market_home_returns_data
+    s = self._session(live_url, "oom_mkt@e2e.local", "Pass1234", "OOM Market")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2054: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_____________ TestOOMFixAPI.test_value_scanner_returns_structure ______________
+tests\test_e2e.py:2189: in test_value_scanner_returns_structure
+    s = self._session(live_url, "oom_vs@e2e.local", "Pass1234", "OOM VS")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2054: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+______________ TestOOMFixAPI.test_trading_dashboard_has_packages ______________
+tests\test_e2e.py:2209: in test_trading_dashboard_has_packages
+    s = self._session(live_url, "oom_ta_pkg@e2e.local", "Pass1234", "OOM TA Pkg")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2054: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+________ TestOOMFixAPI.test_advisor_single_stock_still_has_indicators _________
+tests\test_e2e.py:2218: in test_advisor_single_stock_still_has_indicators
+    s = self._session(live_url, "oom_single@e2e.local", "Pass1234", "OOM Single")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2054: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_________ TestYahooOnlyDataFlow.test_featured_returns_all_six_stocks __________
+tests\test_e2e.py:2300: in test_featured_returns_all_six_stocks
+    s = self._session(live_url, "yahoo_feat@e2e.local", "Pass1234", "Yahoo Feat")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2276: in _session
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for yahoo_feat@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+__________ TestYahooOnlyDataFlow.test_featured_prices_are_realistic ___________
+tests\test_e2e.py:2314: in test_featured_prices_are_realistic
+    s = self._session(live_url, "yahoo_real@e2e.local", "Pass1234", "Yahoo Real")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2276: in _session
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for yahoo_real@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+___________ TestYahooOnlyDataFlow.test_featured_have_change_percent ___________
+tests\test_e2e.py:2326: in test_featured_have_change_percent
+    s = self._session(live_url, "yahoo_chg@e2e.local", "Pass1234", "Yahoo Chg")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2276: in _session
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for yahoo_chg@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_______ TestYahooOnlyDataFlow.test_featured_sparklines_have_data_points _______
+tests\test_e2e.py:2343: in test_featured_sparklines_have_data_points
+    s = self._session(live_url, "yahoo_spark@e2e.local", "Pass1234", "Yahoo Spark")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2276: in _session
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for yahoo_spark@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+______________ TestYahooOnlyDataFlow.test_sparkline_points_count ______________
+tests\test_e2e.py:2364: in test_sparkline_points_count
+    s = self._session(live_url, "yahoo_spcnt@e2e.local", "Pass1234", "Yahoo SpCnt")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2276: in _session
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for yahoo_spcnt@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+____________ TestYahooOnlyDataFlow.test_ticker_returns_all_symbols ____________
+tests\test_e2e.py:2378: in test_ticker_returns_all_symbols
+    s = self._session(live_url, "yahoo_tick@e2e.local", "Pass1234", "Yahoo Tick")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2276: in _session
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for yahoo_tick@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+______ TestYahooOnlyDataFlow.test_home_returns_both_ticker_and_featured _______
+tests\test_e2e.py:2394: in test_home_returns_both_ticker_and_featured
+    s = self._session(live_url, "yahoo_home@e2e.local", "Pass1234", "Yahoo Home")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2276: in _session
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for yahoo_home@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+__________ TestYahooOnlyDataFlow.test_home_featured_have_sparklines ___________
+tests\test_e2e.py:2406: in test_home_featured_have_sparklines
+    s = self._session(live_url, "yahoo_hmspark@e2e.local", "Pass1234", "Yahoo HmSp")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2276: in _session
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for yahoo_hmspark@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+__________ TestYahooOnlyDataFlow.test_home_no_error_text_in_response __________
+tests\test_e2e.py:2417: in test_home_no_error_text_in_response
+    s = self._session(live_url, "yahoo_noerr@e2e.local", "Pass1234", "Yahoo NoErr")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2276: in _session
+    assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
+E   AssertionError: Login failed for yahoo_noerr@e2e.local: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_______ TestAdvisorPerfAPI.test_trading_advisor_total_matches_universe ________
+tests\test_e2e.py:2536: in test_trading_advisor_total_matches_universe
+    s = self._session(live_url, "perf_total@e2e.local", "Pass1234", "Perf Total")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2528: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+___________ TestAdvisorPerfAPI.test_trading_advisor_progress_fields ___________
+tests\test_e2e.py:2552: in test_trading_advisor_progress_fields
+    s = self._session(live_url, "perf_prog@e2e.local", "Pass1234", "Perf Prog")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2528: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+__________ TestAdvisorPerfAPI.test_trading_advisor_all_five_packages __________
+tests\test_e2e.py:2571: in test_trading_advisor_all_five_packages
+    s = self._session(live_url, "perf_pkg@e2e.local", "Pass1234", "Perf Pkg")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2528: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_______ TestAdvisorPerfAPI.test_trading_advisor_responds_within_timeout _______
+tests\test_e2e.py:2594: in test_trading_advisor_responds_within_timeout
+    s = self._session(live_url, "perf_time@e2e.local", "Pass1234", "Perf Time")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2528: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+__________ TestAdvisorPerfAPI.test_trading_advisor_market_mood_valid __________
+tests\test_e2e.py:2608: in test_trading_advisor_market_mood_valid
+    s = self._session(live_url, "perf_mood@e2e.local", "Pass1234", "Perf Mood")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2528: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_____________ TestAdvisorPerfAPI.test_cache_warmer_signals_ready ______________
+tests\test_e2e.py:2627: in test_cache_warmer_signals_ready
+    s = self._session(live_url, "perf_warm@e2e.local", "Pass1234", "Perf Warm")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2528: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+___________ TestAdvisorPerfAPI.test_concurrent_api_calls_dont_block ___________
+tests\test_e2e.py:2663: in test_concurrent_api_calls_dont_block
+    s = self._session(live_url, "perf_conc@e2e.local", "Pass1234", "Perf Conc")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2528: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_________ TestAdvisorPerfAPI.test_candle_cache_speeds_up_repeat_calls _________
+tests\test_e2e.py:2703: in test_candle_cache_speeds_up_repeat_calls
+    s = self._session(live_url, "perf_cache@e2e.local", "Pass1234", "Perf Cache")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2528: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_______________ TestAdvisorPerfAPI.test_all_picks_capped_at_30 ________________
+tests\test_e2e.py:2738: in test_all_picks_capped_at_30
+    s = self._session(live_url, "perf_cap@e2e.local", "Pass1234", "Perf Cap")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2528: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+______________ TestAdvisorPerfAPI.test_stock_detail_returns_data ______________
+tests\test_e2e.py:2750: in test_stock_detail_returns_data
+    s = self._session(live_url, "perf_detail@e2e.local", "Pass1234", "Perf Detail")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2528: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+__________ TestAdvisorPerfAPI.test_value_scanner_responds_with_stats __________
+tests\test_e2e.py:2772: in test_value_scanner_responds_with_stats
+    s = self._session(live_url, "perf_vs@e2e.local", "Pass1234", "Perf VS")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2528: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_______ TestSmartAdvisorCacheHit.test_advisor_analyze_returns_under_5s ________
+tests\test_e2e.py:2967: in test_advisor_analyze_returns_under_5s
+    s = self._session(live_url, "cache_hit@e2e.local", "Pass1234", "Cache Hit")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2958: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+_________ TestSmartAdvisorCacheHit.test_advisor_analyze_has_rankings __________
+tests\test_e2e.py:2995: in test_advisor_analyze_has_rankings
+    s = self._session(live_url, "cache_rank@e2e.local", "Pass1234", "Cache Rank")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2958: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+___ TestSmartAdvisorCacheHit.test_advisor_float_and_int_amount_same_result ____
+tests\test_e2e.py:3022: in test_advisor_float_and_int_amount_same_result
+    s = self._session(live_url, "cache_eq@e2e.local", "Pass1234", "Cache Eq")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_e2e.py:2958: in _session
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":"Invalid email or password"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403]>.status_code
+=========================== short test summary info ===========================
+FAILED tests/test_e2e.py::TestLogin::test_successful_login[chromium] - playwright._impl._errors.TimeoutError: Timeout 15000ms exceeded.
+=========================== logs ===========================
+waiting for navigation to "http://127.0.0.1:8091/" until 'load'
+============================================================
+FAILED tests/test_e2e.py::TestNavigation::test_navigate_to_each_page[chromium] - AssertionError: Locator expected to have class 're.compile('active')'
+Actual value: page 
+Call log:
+  - Expect "to_have_class" with timeout 5000ms
+  - waiting for locator("#page-news")
+    9 ╫ locator resolved to <section class="page" id="page-news">à</section>
+      - unexpected value "page"
+FAILED tests/test_e2e.py::TestNavigation::test_url_hash_updates_on_navigation[chromium] - AssertionError: URL should contain #portfolio, got http://127.0.0.1:8091/#education
+assert '#portfolio' in 'http://127.0.0.1:8091/#education'
+ +  where 'http://127.0.0.1:8091/#education' = <Page url='http://127.0.0.1:8091/#education'>.url
+FAILED tests/test_e2e.py::TestDashboardFlow::test_sparkline_charts_render_on_market_cards[chromium] - playwright._impl._errors.Error: Page.wait_for_function: EvalError: Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script: script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net".
+
+    at eval (<anonymous>)
+    at predicate (eval at evaluate (:290:30), <anonymous>:4:56)
+    at next (eval at evaluate (:290:30), <anonymous>:29:29)
+FAILED tests/test_e2e.py::TestDashboardFlow::test_sparkline_charts_have_pixel_data[chromium] - playwright._impl._errors.Error: Page.wait_for_function: EvalError: Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script: script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net".
+
+    at eval (<anonymous>)
+    at predicate (eval at evaluate (:290:30), <anonymous>:4:56)
+    at next (eval at evaluate (:290:30), <anonymous>:29:29)
+FAILED tests/test_e2e.py::TestDashboardFlow::test_sparkline_data_has_realistic_values[chromium] - playwright._impl._errors.Error: Page.wait_for_function: EvalError: Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script: script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net".
+
+    at eval (<anonymous>)
+    at predicate (eval at evaluate (:290:30), <anonymous>:4:56)
+    at next (eval at evaluate (:290:30), <anonymous>:29:29)
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_search_returns_results[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Search").first
+    - locator resolved to <button class="btn btn-primary" onclick="runScreener()">Search</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    54 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_preset_value_stocks[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Value Stocks")
+    - locator resolved to <button class="btn btn-sm" data-help="preset_value" onclick="applyPreset('value')">Value Stocks</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    54 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+    - waiting for element to be visible, enabled and stable
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_preset_value_stocks_shows_cards[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Value Stocks")
+    - locator resolved to <button class="btn btn-sm" data-help="preset_value" onclick="applyPreset('value')">Value Stocks</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    53 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_preset_growth_tech[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Growth Tech")
+    - locator resolved to <button class="btn btn-sm" data-help="preset_growth" onclick="applyPreset('growth')">Growth Tech</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    53 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_preset_high_dividend[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="High Dividend")
+    - locator resolved to <button class="btn btn-sm" data-help="preset_dividend" onclick="applyPreset('dividend')">High Dividend</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    54 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_preset_all_etfs[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="All ETFs")
+    - locator resolved to <button class="btn btn-sm" data-help="preset_etf" onclick="applyPreset('etf')">All ETFs</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    54 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_card_has_metrics[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Search").first
+    - locator resolved to <button class="btn btn-primary" onclick="runScreener()">Search</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    54 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_card_has_signal_badge[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Search").first
+    - locator resolved to <button class="btn btn-primary" onclick="runScreener()">Search</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    54 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_clear_resets_filters[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Value Stocks")
+    - locator resolved to <button class="btn btn-sm" data-help="preset_value" onclick="applyPreset('value')">Value Stocks</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    54 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_signal_filter_buy_returns_only_buy[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Search").first
+    - locator resolved to <button class="btn btn-primary" onclick="runScreener()">Search</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    53 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_signal_filter_avoid_returns_only_avoid[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Search").first
+    - locator resolved to <button class="btn btn-primary" onclick="runScreener()">Search</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    52 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestScreenerFlow::test_screener_signal_filter_cleared_by_clear_button[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Clear")
+    - locator resolved to <button class="btn btn-ghost" onclick="clearScreener()">Clear</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    55 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestRecommendationsFlow::test_recommendations_loads_content_or_prompt[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".nav-link[data-page=\"recommendations\"]")
+FAILED tests/test_e2e.py::TestPortfolioFlow::test_add_holding_and_verify[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#holding-form button[type=\"submit\"]")
+    - locator resolved to <button type="submit" class="btn btn-primary">Add Holding</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is not stable
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    47 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+FAILED tests/test_e2e.py::TestPortfolioFlow::test_portfolio_summary_has_values[chromium] - AssertionError: Portfolio shows no dollar values ù summary didn't load. HTML: <div class="empty-state"><p>No holdings yet. Add stocks from the <a href="#" onclick="navigateTo('screener');return false;" style="color:var(--primary)">Screener</a> or any stock detail page.</p></div>
+assert '$' in '<div class="empty-state"><p>No holdings yet. Add stocks from the <a href="#" onclick="navigateTo(\'screener\');return false;" style="color:var(--primary)">Screener</a> or any stock detail page.</p></div>'
+FAILED tests/test_e2e.py::TestPortfolioChartHeight::test_perf_chart_canvas_inside_wrap_container[chromium] - AssertionError: Expected at least 2 .pf-chart-wrap containers (allocation + performance)
+assert 0 >= 2
+ +  where 0 = count()
+ +    where count = <Locator frame=<Frame name= url='http://127.0.0.1:8091/#portfolio'> selector='.pf-chart-wrap'>.count
+FAILED tests/test_e2e.py::TestPortfolioChartHeight::test_perf_chart_height_is_bounded[chromium] - playwright._impl._errors.TimeoutError: Locator.bounding_box: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".pf-chart-wrap").nth(1)
+FAILED tests/test_e2e.py::TestPortfolioChartHeight::test_alloc_chart_height_is_bounded[chromium] - playwright._impl._errors.TimeoutError: Locator.bounding_box: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".pf-chart-wrap").first
+FAILED tests/test_e2e.py::TestPortfolioChartHeight::test_perf_chart_canvas_has_no_hardcoded_height[chromium] - playwright._impl._errors.TimeoutError: Locator.get_attribute: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#pf-perf-chart")
+FAILED tests/test_e2e.py::TestAlertsFlow::test_create_alert_and_verify[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#alert-form button[type=\"submit\"]")
+    - locator resolved to <button type="submit" class="btn btn-primary">Create Alert</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is not stable
+    - retrying click action
+    - waiting 20ms
+    - waiting for element to be visible, enabled and stable
+    - element is not stable
+  2 ╫ retrying click action
+      - waiting 100ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+  49 ╫ retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+  - retrying click action
+    - waiting 500ms
+FAILED tests/test_e2e.py::TestILFundsFlow::test_il_funds_search_returns_results[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Search").first
+    - locator resolved to <button class="btn btn-primary" onclick="runILSearch()">Search</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    55 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestRegistration::test_register_new_user_via_ui[chromium] - playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("nav.sidebar") to be visible
+FAILED tests/test_e2e.py::TestRegistration::test_duplicate_email_rejected[chromium] - AssertionError: Locator expected to contain text 'already registered'
+Actual value: [object Object] 
+Call log:
+  - Expect "to_contain_text" with timeout 5000ms
+  - waiting for locator("#reg-error")
+    9 ╫ locator resolved to <div class="error" id="reg-error">[object Object]</div>
+      - unexpected value "[object Object]"
+FAILED tests/test_e2e.py::TestSearchBars::test_search_bars_present_on_all_data_pages[chromium] - AssertionError: Locator expected to be visible
+Actual value: hidden 
+Call log:
+  - Expect "to_be_visible" with timeout 3000ms
+  - waiting for locator("#news-search")
+    7 ╫ locator resolved to <input type="text" id="news-search" oninput="filterNews(this.value)" placeholder="Search news by title, symbol, or source..."/>
+      - unexpected value "hidden"
+FAILED tests/test_e2e.py::TestSearchBars::test_search_bar_has_icon_and_clear_button[chromium] - AssertionError: Locator expected to be visible
+Actual value: hidden 
+Call log:
+  - Expect "to_be_visible" with timeout 2000ms
+  - waiting for locator("#news-search").locator("..").locator(".search-icon")
+    6 ╫ locator resolved to <svg width="18" height="18" fill="none" stroke-width="2" class="search-icon" viewBox="0 0 24 24" stroke="currentColor">à</svg>
+      - unexpected value "hidden"
+FAILED tests/test_e2e.py::TestSearchBars::test_clear_button_resets_search[chromium] - AssertionError: Search input not cleared, value='zzzznonexistent'
+assert 'zzzznonexistent' == ''
+  
+  + zzzznonexistent
+FAILED tests/test_e2e.py::TestForgotPasswordUI::test_full_ui_reset_flow[chromium] - AttributeError: 'NoneType' object has no attribute 'id'
+FAILED tests/test_e2e.py::TestActionPlanUI::test_action_plan_modal_opens[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".vs-action-plan-btn")
+    - locator resolved to <button onclick="openActionPlanModal()" class="btn btn-primary vs-action-plan-btn">à</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    54 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestActionPlanUI::test_action_plan_modal_shows_content[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("button.merge-tab").filter(has_text="Value Investing").first
+    - locator resolved to <button class="merge-tab" onclick="navigateTo('value-scanner')">Value Investing</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    55 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestActionPlanUI::test_action_plan_invest_amount_input[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".vs-action-plan-btn")
+    - locator resolved to <button onclick="openActionPlanModal()" class="btn btn-primary vs-action-plan-btn">à</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    54 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+FAILED tests/test_e2e.py::TestActionPlanUI::test_action_plan_modal_closes[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".vs-action-plan-btn")
+    - locator resolved to <button onclick="openActionPlanModal()" class="btn btn-primary vs-action-plan-btn">à</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    55 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestActionPlanUI::test_action_plan_shows_signal_groups[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".vs-action-plan-btn")
+    - locator resolved to <button onclick="openActionPlanModal()" class="btn btn-primary vs-action-plan-btn">à</button>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    55 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestPerfOptimizations::test_budget_page_uses_status_endpoint[chromium] - playwright._impl._errors.TimeoutError: Page.fill: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#budget-limit")
+    - locator resolved to <input min="1" step="0.01" required="" type="number" id="budget-limit" placeholder="500.00"/>
+    - fill("200")
+  - attempting fill action
+    2 ╫ waiting for element to be visible, enabled and editable
+      - element is not visible
+    - retrying fill action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and editable
+      - element is not visible
+    - retrying fill action
+      - waiting 100ms
+    59 ╫ waiting for element to be visible, enabled and editable
+       - element is not visible
+     - retrying fill action
+       - waiting 500ms
+FAILED tests/test_e2e.py::TestPerfOptimizations::test_stock_detail_loads_via_combined_endpoint[chromium] - playwright._impl._errors.Error: Locator.click: Element is not visible
+Call log:
+  - waiting for locator("tr[onclick*='navigateToStock'], .stock-row, [onclick*='navigateToStock']").first
+    - locator resolved to <div data-symbol="AAPL" data-stock-name="AAPL" data-stock-price="257.46" class="market-card stock-up" onclick="navigateToStock('AAPL')">à</div>
+  - attempting click action
+    - scrolling into view if needed
+FAILED tests/test_e2e.py::TestPerfOptimizations::test_sparklines_render_with_lightweight_canvas[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".nav-link[data-page=\"home\"]")
+FAILED tests/test_e2e.py::TestPerfOptimizations::test_smart_advisor_tab_switch_no_refetch[chromium] - playwright._impl._errors.TimeoutError: Page.click: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("#run-advisor-btn")
+FAILED tests/test_e2e.py::TestPerfOptimizations::test_trading_advisor_skips_unchanged_rerender[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".nav-link[data-page=\"advisor\"]")
+FAILED tests/test_e2e.py::TestScreenerAPI::test_value_stocks_api_returns_results - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestScreenerAPI::test_dividend_yield_values_are_reasonable - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestScreenerAPI::test_pe_ratio_filter_is_respected - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestScreenerAPI::test_high_dividend_api_returns_results - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestScreenerAPI::test_cache_warming_provides_metrics - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestScreenerAPI::test_signal_filter_buy_returns_only_buy - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestScreenerAPI::test_signal_filter_hold_returns_only_hold - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestScreenerAPI::test_signal_filter_avoid_returns_only_avoid - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestScreenerAPI::test_signal_filter_no_filter_returns_mixed - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestMultiUserIsolation::test_watchlist_isolation - AssertionError: Login failed for alice_wl_93b775@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestMultiUserIsolation::test_portfolio_isolation - AssertionError: Login failed for alice_pf_0133b8@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestMultiUserIsolation::test_transactions_isolation - AssertionError: Login failed for alice_tx_baa1db@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestMultiUserIsolation::test_alerts_isolation - AssertionError: Login failed for alice_al_297ef8@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestForgotPasswordAPI::test_reset_password_with_valid_code - AttributeError: 'NoneType' object has no attribute 'id'
+FAILED tests/test_e2e.py::TestForgotPasswordAPI::test_reset_password_code_single_use - AttributeError: 'NoneType' object has no attribute 'id'
+FAILED tests/test_e2e.py::TestForgotPasswordAPI::test_reset_password_short_password_rejected - AssertionError: assert '4 characters' in 'Password must be at least 8 characters'
+FAILED tests/test_e2e.py::TestActionPlanAPI::test_action_plan_endpoint_returns_200 - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestActionPlanAPI::test_action_plan_summary_structure - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestActionPlanAPI::test_action_plan_plan_has_valid_signals - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestActionPlanAPI::test_action_plan_stocks_have_allocations - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestActionPlanAPI::test_action_plan_allocations_sum_to_investment - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestActionPlanAPI::test_action_plan_sector_filter - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestActionPlanAPI::test_action_plan_strengths_and_weaknesses - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestMarketDataIntegrity::test_market_api_returns_valid_data - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestOOMFixAPI::test_cache_status_returns_bounded_total - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestOOMFixAPI::test_pxd_not_in_stock_universe - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestOOMFixAPI::test_pxd_not_in_trading_dashboard - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestOOMFixAPI::test_advisor_rankings_no_heavy_arrays - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestOOMFixAPI::test_trading_dashboard_picks_capped - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestOOMFixAPI::test_trading_dashboard_has_progress - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestOOMFixAPI::test_market_home_returns_data - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestOOMFixAPI::test_value_scanner_returns_structure - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestOOMFixAPI::test_trading_dashboard_has_packages - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestOOMFixAPI::test_advisor_single_stock_still_has_indicators - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestYahooOnlyDataFlow::test_featured_returns_all_six_stocks - AssertionError: Login failed for yahoo_feat@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestYahooOnlyDataFlow::test_featured_prices_are_realistic - AssertionError: Login failed for yahoo_real@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestYahooOnlyDataFlow::test_featured_have_change_percent - AssertionError: Login failed for yahoo_chg@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestYahooOnlyDataFlow::test_featured_sparklines_have_data_points - AssertionError: Login failed for yahoo_spark@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestYahooOnlyDataFlow::test_sparkline_points_count - AssertionError: Login failed for yahoo_spcnt@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestYahooOnlyDataFlow::test_ticker_returns_all_symbols - AssertionError: Login failed for yahoo_tick@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestYahooOnlyDataFlow::test_home_returns_both_ticker_and_featured - AssertionError: Login failed for yahoo_home@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestYahooOnlyDataFlow::test_home_featured_have_sparklines - AssertionError: Login failed for yahoo_hmspark@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestYahooOnlyDataFlow::test_home_no_error_text_in_response - AssertionError: Login failed for yahoo_noerr@e2e.local: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestAdvisorPerfAPI::test_trading_advisor_total_matches_universe - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestAdvisorPerfAPI::test_trading_advisor_progress_fields - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestAdvisorPerfAPI::test_trading_advisor_all_five_packages - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestAdvisorPerfAPI::test_trading_advisor_responds_within_timeout - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestAdvisorPerfAPI::test_trading_advisor_market_mood_valid - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestAdvisorPerfAPI::test_cache_warmer_signals_ready - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestAdvisorPerfAPI::test_concurrent_api_calls_dont_block - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestAdvisorPerfAPI::test_candle_cache_speeds_up_repeat_calls - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestAdvisorPerfAPI::test_all_picks_capped_at_30 - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestAdvisorPerfAPI::test_stock_detail_returns_data - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestAdvisorPerfAPI::test_value_scanner_responds_with_stats - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestSmartAdvisorCacheHit::test_advisor_analyze_returns_under_5s - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestSmartAdvisorCacheHit::test_advisor_analyze_has_rankings - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+FAILED tests/test_e2e.py::TestSmartAdvisorCacheHit::test_advisor_float_and_int_amount_same_result - AssertionError: Login failed: {"detail":"Invalid email or password"}
+assert 403 == 200
+ +  where 403 = <Response [403]>.status_code
+=========== 100 failed, 56 passed, 1 skipped in 1285.56s (0:21:25) ============

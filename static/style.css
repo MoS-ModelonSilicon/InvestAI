@@ -1954,6 +1954,11 @@ body {
 .sd-spy-toggle:hover { border-color: #fbbf24; }
 .sd-spy-toggle.active { background: rgba(251,191,36,0.15); border-color: #fbbf24; color: #fbbf24; }
 
+.sd-zoom-controls { display: flex; gap: 2px; margin-left: 6px; }
+.sd-zoom-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--card); color: var(--text-muted); font-size: 0.85rem; cursor: pointer; transition: all 0.15s; }
+.sd-zoom-btn:hover { border-color: var(--primary); color: var(--primary); }
+.sd-zoom-reset { font-size: 0.9rem; }
+
 .sd-chart-wrapper { height: 380px; position: relative; }
 .sd-chart-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(var(--bg-rgb, 20,22,34), 0.6); z-index: 5; border-radius: var(--radius-sm); }
 .sd-chart-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.9rem; z-index: 4; }
