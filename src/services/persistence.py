@@ -328,6 +328,7 @@ def restore_all_caches():
     # 5. Restore ALL smart advisor scan + full analysis combos into market_data._cache
     try:
         from src.services.market_data import _cache, _cache_lock
+        from src.services.smart_advisor import _filter_tase_rankings, _filter_tase_full_result
 
         PERIODS = ["1y", "6m", "3m", "1m"]
         RISKS = ["balanced", "conservative", "aggressive"]
@@ -338,11 +339,12 @@ def restore_all_caches():
         # 35 min of validity instead of 20.
         restore_ts = time.time() + 900  # now + 15 min
 
-        # Restore scan results for all 4 periods
+        # Restore scan results for all 4 periods (filtering .TA stocks)
         scans_restored = 0
         for period in PERIODS:
             scan_data = load_scan(f"smart_advisor_scan:{period}")
             if scan_data and isinstance(scan_data, list) and len(scan_data) > 0:
+                scan_data = _filter_tase_rankings(scan_data)
                 with _cache_lock:
                     _cache[f"advisor:scan:{period}"] = (restore_ts, scan_data)
                 scans_restored += 1
@@ -353,12 +355,13 @@ def restore_all_caches():
         if scans_restored == 1:
             scan_1y = load_scan("smart_advisor_scan:1y")
             if scan_1y and isinstance(scan_1y, list):
+                scan_1y = _filter_tase_rankings(scan_1y)
                 with _cache_lock:
                     for period in PERIODS:
                         _cache[f"advisor:scan:{period}"] = (restore_ts, scan_1y)
                 logger.info("Replicated 1y scan to all period keys")
 
-        # Restore full analysis for ALL 12 risk x period combos
+        # Restore full analysis for ALL 12 risk x period combos (filtering .TA stocks)
         analyses_restored = 0
         for period in PERIODS:
             for risk in RISKS:
@@ -366,6 +369,7 @@ def restore_all_caches():
                 cache_key = f"advisor:full:{DEFAULT_AMOUNT}:{risk}:{period}"
                 full_data = load_scan(db_key)
                 if full_data and isinstance(full_data, dict) and full_data.get("rankings"):
+                    full_data = _filter_tase_full_result(full_data)
                     with _cache_lock:
                         _cache[cache_key] = (restore_ts, full_data)
                     analyses_restored += 1
