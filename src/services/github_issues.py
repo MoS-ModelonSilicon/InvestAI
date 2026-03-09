@@ -9,7 +9,6 @@ Required env vars:
   GITHUB_REPO  — owner/repo, e.g. "MoS-ModelonSilicon/InvestAI" (auto-detected from git remote if omitted)
 """
 
-import json
 import logging
 import os
 import re
