@@ -525,8 +525,8 @@ function renderCandlestickChart(history) {
     // Split candles into regular and extended datasets for different opacity
     let ohlcRegular, ohlcExtended;
     if (hasSessions) {
-        ohlcRegular = ohlc.map((d, i) => sessions[i] === "regular" ? d : null);
-        ohlcExtended = ohlc.map((d, i) => sessions[i] !== "regular" ? d : null);
+        ohlcRegular = ohlc.filter((_, i) => sessions[i] === "regular");
+        ohlcExtended = ohlc.filter((_, i) => sessions[i] !== "regular");
     }
 
     const ds = hasSessions ? [
