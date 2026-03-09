@@ -177,6 +177,27 @@ class DcaPlan(Base):
     __table_args__ = (UniqueConstraint("user_id", "symbol", name="uq_dca_user_symbol"),)
 
     owner: Mapped[User] = relationship(back_populates="dca_plans")
+    executions: Mapped[list[DcaExecution]] = relationship(back_populates="plan", cascade="all, delete-orphan")
+
+
+class DcaExecution(Base):
+    """Tracks each monthly DCA buy/skip action for a plan."""
+
+    __tablename__ = "dca_executions"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    plan_id: Mapped[int] = mapped_column(ForeignKey("dca_plans.id"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    date: Mapped[date]
+    amount_invested: Mapped[float] = mapped_column(default=0.0)
+    shares_bought: Mapped[float] = mapped_column(default=0.0)
+    price: Mapped[float] = mapped_column(default=0.0)
+    was_dip_buy: Mapped[int] = mapped_column(default=0)
+    skipped: Mapped[int] = mapped_column(default=0)
+    skip_reason: Mapped[str] = mapped_column(default="")
+    created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
+
+    plan: Mapped[DcaPlan] = relationship(back_populates="executions")
 
 
 class PasswordReset(Base):
@@ -207,6 +228,71 @@ class Suggestion(Base):
     created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
     owner: Mapped[User] = relationship(back_populates="suggestions")
+
+
+class Pick(Base):
+    """A trade pick from any source (Discord, Reddit, TradingView, Finviz, manual).
+
+    Stored in the database so picks survive server restarts / Render deploys
+    and are instantly available to every user.
+    """
+
+    __tablename__ = "picks"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    symbol: Mapped[str] = mapped_column(index=True)
+    date: Mapped[str]  # YYYY-MM-DD
+    pick_type: Mapped[str] = mapped_column(default="breakout")  # breakout/swing/options/short
+    entry: Mapped[Optional[float]] = mapped_column(default=None)
+    targets: Mapped[str] = mapped_column(Text, default="[]")  # JSON array of floats
+    stop: Mapped[Optional[float]] = mapped_column(default=None)
+    source: Mapped[str] = mapped_column(default="unknown", index=True)  # discord, reddit, tradingview, finviz
+    notes: Mapped[str] = mapped_column(Text, default="")
+    url: Mapped[Optional[str]] = mapped_column(default=None)
+    author: Mapped[Optional[str]] = mapped_column(default=None)
+    confidence: Mapped[Optional[float]] = mapped_column(default=None)  # 0-1 quality score
+    created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
+
+    # Dedup key: same symbol+date+entry = same pick
+    __table_args__ = (UniqueConstraint("symbol", "date", "entry", "source", name="uq_pick_sym_date_entry_src"),)
+
+    def to_dict(self) -> dict:
+        """Convert to the flat dict format expected by picks_tracker.py."""
+        import json as _json
+
+        return {
+            "date": self.date,
+            "symbol": self.symbol,
+            "type": self.pick_type,
+            "entry": self.entry,
+            "targets": _json.loads(self.targets) if self.targets else [],
+            "stop": self.stop,
+            "source": self.source,
+            "notes": self.notes or "",
+            "url": self.url or "",
+            "author": self.author or "",
+            "confidence": self.confidence,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> Pick:
+        """Create a Pick from a flat dict (discord-picks.json format)."""
+        import json as _json
+
+        targets = d.get("targets", [])
+        return cls(
+            symbol=d["symbol"].upper().strip(),
+            date=d.get("date", ""),
+            pick_type=d.get("type", "breakout"),
+            entry=d.get("entry"),
+            targets=_json.dumps(targets) if targets else "[]",
+            stop=d.get("stop"),
+            source=d.get("source", "unknown"),
+            notes=d.get("notes", ""),
+            url=d.get("url"),
+            author=d.get("author"),
+            confidence=d.get("confidence"),
+        )
 
 
 class ScanResult(Base):

@@ -54,7 +54,7 @@ Floating chat widget in bottom-right corner. Self-contained — no dependencies 
 
 Three integrated features for new user discovery:
 
-1. **Guided Tour** (`tour.js`) — 10-step spotlight walkthrough. Auto-triggers once on first login via `localStorage.investai_tour_completed`. Re-trigger: `window.startTour()` or Help drawer button. Keyboard: →/Enter (next), ← (back), Esc (close).
+1. **Guided Tour** (`tour.js`) — 11-step spotlight walkthrough starting with Risk Profile. Auto-triggers once on first login via `localStorage.investai_tour_completed`. Re-trigger: `window.startTour()` or Help drawer button. Keyboard: →/Enter (next), ← (back), Esc (close).
 
 2. **Help Drawer** (`help-drawer.js`) — Right slide-out panel opened by sidebar "? Help & Tour" button (`#help-drawer-btn`). Contains Quick Start checklist (8 items with progress bar, persisted in `localStorage.investai_checklist`), feature guide cards with click-to-navigate, and Hidden Gems pro tips.
 

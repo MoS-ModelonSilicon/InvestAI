@@ -22,6 +22,12 @@
             position: "bottom-right",
         },
         {
+            title: "🎯 Build Your Risk Profile",
+            body: "Start here! Answer 6 quick questions to get your personal risk score and investor profile. This powers personalized recommendations, DCA budgets, and match scores across the entire platform.",
+            selector: '[data-page="profile"]',
+            position: "right",
+        },
+        {
             title: "📊 Dashboard",
             body: "Your financial overview — income, expenses, monthly trends, and budget status all in one place. Use the date range picker to zoom in on any period.",
             selector: '[data-page="dashboard"]',

@@ -7,15 +7,19 @@ market data.  Key features:
   - Recommend 2X+ buying when dip is detected
   - Build monthly allocation plan based on investor budget
   - Provide portfolio-wide DCA dashboard
+  - Backtest DCA strategy with historical data
+  - Track execution history (bought / skipped)
+  - Guided wizard with strategy presets
 """
 
 import logging
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from sqlalchemy.orm import Session
 
-from src.models import DcaPlan, Holding, RiskProfile
+from src.models import DcaPlan, DcaExecution, Holding, RiskProfile
 from src.services.market_data import fetch_stock_info
+from src.services.data_provider import get_candles
 
 logger = logging.getLogger(__name__)
 
@@ -388,3 +392,401 @@ def suggest_monthly_budget(db: Session, user_id: int) -> dict:
         "max_per_stock": max_per_stock,
         "suggestions": suggestions,
     }
+
+
+# ── Wizard Presets ───────────────────────────────────────────
+
+DCA_PRESETS = [
+    {
+        "key": "conservative",
+        "label": "🛡️ Conservative",
+        "dip_threshold": -10.0,
+        "dip_multiplier": 1.5,
+        "description": "Buy 1.5× when stock dips 10%+. Lower risk, smaller extra buys.",
+    },
+    {
+        "key": "balanced",
+        "label": "⚖️ Balanced",
+        "dip_threshold": -15.0,
+        "dip_multiplier": 2.0,
+        "description": "Double down when stock dips 15%+. Good for most investors.",
+    },
+    {
+        "key": "aggressive",
+        "label": "🔥 Aggressive",
+        "dip_threshold": -25.0,
+        "dip_multiplier": 3.0,
+        "description": "Triple down on 25%+ dips. High conviction, deeper pockets.",
+    },
+]
+
+
+def get_wizard_preview(symbol: str, user_id: int, db: Session) -> dict:
+    """Fetch stock info + suggest budget for the wizard's first step."""
+    info = fetch_stock_info(symbol)
+    if not info or not info.get("price"):
+        return {"error": f"Could not find stock data for {symbol}"}
+
+    # Get risk profile for budget suggestion
+    profile = (
+        db.query(RiskProfile).filter(RiskProfile.user_id == user_id).order_by(RiskProfile.created_at.desc()).first()
+    )
+    monthly_investment: float = 500.0
+    if profile and profile.monthly_investment:
+        monthly_investment = float(profile.monthly_investment)
+
+    # Suggest 10-25% of monthly budget for this stock
+    suggested = round(monthly_investment * 0.15, 0)
+    suggested_range = [
+        max(round(monthly_investment * 0.05, 0), 25),
+        round(monthly_investment * 0.25, 0),
+    ]
+
+    return {
+        "symbol": info["symbol"],
+        "name": info.get("name", symbol),
+        "price": info["price"],
+        "change_pct": info.get("pct_from_high"),
+        "week52_high": info.get("week52_high"),
+        "week52_low": info.get("week52_low"),
+        "pct_from_high": info.get("pct_from_high"),
+        "sector": info.get("sector", ""),
+        "pe_ratio": info.get("pe_ratio"),
+        "suggested_budget": suggested,
+        "suggested_budget_range": suggested_range,
+    }
+
+
+# ── Execution Tracking ──────────────────────────────────────
+
+
+def log_execution(
+    db: Session,
+    user_id: int,
+    plan_id: int,
+    amount_invested: float = 0,
+    shares_bought: float = 0,
+    price: float = 0,
+    was_dip_buy: bool = False,
+    skipped: bool = False,
+    skip_reason: str = "",
+    exec_date: date | None = None,
+) -> dict:
+    """Record a DCA buy or skip for a plan."""
+    plan = db.query(DcaPlan).filter(DcaPlan.id == plan_id, DcaPlan.user_id == user_id).first()
+    if not plan:
+        return {"error": "Plan not found"}
+
+    execution = DcaExecution(
+        plan_id=plan_id,
+        user_id=user_id,
+        date=exec_date or date.today(),
+        amount_invested=amount_invested,
+        shares_bought=shares_bought,
+        price=price,
+        was_dip_buy=1 if was_dip_buy else 0,
+        skipped=1 if skipped else 0,
+        skip_reason=skip_reason,
+    )
+    db.add(execution)
+    db.commit()
+    db.refresh(execution)
+    return {
+        "id": execution.id,
+        "plan_id": execution.plan_id,
+        "symbol": plan.symbol,
+        "date": execution.date.isoformat(),
+        "amount_invested": execution.amount_invested,
+        "shares_bought": execution.shares_bought,
+        "price": execution.price,
+        "was_dip_buy": bool(execution.was_dip_buy),
+        "skipped": bool(execution.skipped),
+        "skip_reason": execution.skip_reason,
+    }
+
+
+def get_execution_history(db: Session, user_id: int, plan_id: int | None = None) -> dict:
+    """Get execution history with streak tracking."""
+    q = db.query(DcaExecution).filter(DcaExecution.user_id == user_id)
+    if plan_id:
+        q = q.filter(DcaExecution.plan_id == plan_id)
+    execs = q.order_by(DcaExecution.date.desc()).all()
+
+    # Build per-plan stats
+    plan_stats: dict[int, dict] = {}
+    for ex in execs:
+        pid = ex.plan_id
+        if pid not in plan_stats:
+            plan_stats[pid] = {
+                "plan_id": pid,
+                "total_invested": 0,
+                "total_shares": 0,
+                "buy_count": 0,
+                "skip_count": 0,
+                "dip_buy_count": 0,
+                "streak": 0,
+                "streak_counting": True,
+            }
+        s = plan_stats[pid]
+        if not ex.skipped:
+            s["total_invested"] += ex.amount_invested
+            s["total_shares"] += ex.shares_bought
+            s["buy_count"] += 1
+            if ex.was_dip_buy:
+                s["dip_buy_count"] += 1
+            if s["streak_counting"]:
+                s["streak"] += 1
+        else:
+            s["skip_count"] += 1
+            s["streak_counting"] = False
+
+    # Clean up internal field
+    for s in plan_stats.values():
+        del s["streak_counting"]
+        s["total_invested"] = round(s["total_invested"], 2)
+        s["total_shares"] = round(s["total_shares"], 4)
+        if s["total_shares"] > 0:
+            s["avg_cost"] = round(s["total_invested"] / s["total_shares"], 2)
+        else:
+            s["avg_cost"] = 0
+
+    exec_list = [
+        {
+            "id": ex.id,
+            "plan_id": ex.plan_id,
+            "date": ex.date.isoformat(),
+            "amount_invested": ex.amount_invested,
+            "shares_bought": ex.shares_bought,
+            "price": ex.price,
+            "was_dip_buy": bool(ex.was_dip_buy),
+            "skipped": bool(ex.skipped),
+            "skip_reason": ex.skip_reason,
+        }
+        for ex in execs
+    ]
+
+    return {
+        "executions": exec_list,
+        "plan_stats": list(plan_stats.values()),
+        "total_executions": len(exec_list),
+    }
+
+
+# ── Backtest Engine ──────────────────────────────────────────
+
+
+def backtest_dca(
+    symbol: str,
+    monthly_budget: float,
+    dip_threshold: float = -15.0,
+    dip_multiplier: float = 2.0,
+    months: int = 24,
+) -> dict:
+    """
+    Simulate a DCA strategy over historical data.
+    Compares smart-DCA (with dip amplification) vs plain DCA (same amount every month).
+    """
+    now = datetime.now()
+    start = now - timedelta(days=months * 31)  # approximate
+    from_ts = int(start.timestamp())
+    to_ts = int(now.timestamp())
+
+    candles = get_candles(symbol, "D", from_ts, to_ts)
+    if not candles or candles.get("s") != "ok" or not candles.get("c"):
+        # Return empty result if no data
+        return {
+            "symbol": symbol,
+            "months": months,
+            "monthly_budget": monthly_budget,
+            "dip_threshold": dip_threshold,
+            "dip_multiplier": dip_multiplier,
+            "total_invested_dca": 0,
+            "portfolio_value_dca": 0,
+            "total_shares_dca": 0,
+            "avg_cost_dca": 0,
+            "total_invested_plain": 0,
+            "portfolio_value_plain": 0,
+            "total_shares_plain": 0,
+            "avg_cost_plain": 0,
+            "dca_return_pct": 0,
+            "plain_dca_return_pct": 0,
+            "dip_buys_count": 0,
+            "monthly_data": [],
+            "error": "No historical data available",
+        }
+
+    closes = candles["c"]
+    timestamps = candles["t"]
+
+    # Group candles by month, take first trading day of each month
+    monthly_prices: list[tuple[str, float]] = []
+    seen_months: set[str] = set()
+    for i, ts in enumerate(timestamps):
+        dt = datetime.fromtimestamp(ts)
+        month_key = dt.strftime("%Y-%m")
+        if month_key not in seen_months:
+            seen_months.add(month_key)
+            monthly_prices.append((month_key, closes[i]))
+
+    if len(monthly_prices) < 2:
+        return {
+            "symbol": symbol,
+            "months": months,
+            "monthly_budget": monthly_budget,
+            "dip_threshold": dip_threshold,
+            "dip_multiplier": dip_multiplier,
+            "total_invested_dca": 0,
+            "portfolio_value_dca": 0,
+            "total_shares_dca": 0,
+            "avg_cost_dca": 0,
+            "total_invested_plain": 0,
+            "portfolio_value_plain": 0,
+            "total_shares_plain": 0,
+            "avg_cost_plain": 0,
+            "dca_return_pct": 0,
+            "plain_dca_return_pct": 0,
+            "dip_buys_count": 0,
+            "monthly_data": [],
+            "error": "Insufficient historical data",
+        }
+
+    # Simulate
+    smart_total_invested = 0.0
+    smart_total_shares = 0.0
+    plain_total_invested = 0.0
+    plain_total_shares = 0.0
+    dip_buys = 0
+    monthly_data = []
+
+    for i, (month, price) in enumerate(monthly_prices):
+        # Plain DCA: buy same amount every month
+        plain_shares = monthly_budget / price if price > 0 else 0
+        plain_total_invested += monthly_budget
+        plain_total_shares += plain_shares
+
+        # Smart DCA: check if price dipped from running avg cost
+        smart_avg = (smart_total_invested / smart_total_shares) if smart_total_shares > 0 else price
+        drop_pct = ((price - smart_avg) / smart_avg * 100) if smart_avg > 0 else 0
+
+        is_dip = drop_pct <= dip_threshold and i > 0
+        if is_dip:
+            # Extra escalation for very deep dips
+            if dip_threshold != 0 and drop_pct <= dip_threshold * 2:
+                mult = round(dip_multiplier * 1.5, 1)
+            else:
+                mult = dip_multiplier
+            invest_amount = monthly_budget * mult
+            dip_buys += 1
+        else:
+            mult = 1.0
+            invest_amount = monthly_budget
+
+        smart_shares = invest_amount / price if price > 0 else 0
+        smart_total_invested += invest_amount
+        smart_total_shares += smart_shares
+
+        monthly_data.append(
+            {
+                "month": month,
+                "price": round(price, 2),
+                "smart_invested": round(invest_amount, 2),
+                "smart_shares": round(smart_shares, 4),
+                "smart_total_shares": round(smart_total_shares, 4),
+                "smart_total_invested": round(smart_total_invested, 2),
+                "smart_value": round(smart_total_shares * price, 2),
+                "plain_invested": round(monthly_budget, 2),
+                "plain_shares": round(plain_shares, 4),
+                "plain_total_shares": round(plain_total_shares, 4),
+                "plain_total_invested": round(plain_total_invested, 2),
+                "plain_value": round(plain_total_shares * price, 2),
+                "dip_detected": is_dip,
+                "multiplier": mult,
+                "drop_pct": round(drop_pct, 2),
+            }
+        )
+
+    last_price = monthly_prices[-1][1] if monthly_prices else 0
+    smart_value = round(smart_total_shares * last_price, 2)
+    plain_value = round(plain_total_shares * last_price, 2)
+
+    smart_return = round((smart_value / smart_total_invested - 1) * 100, 2) if smart_total_invested > 0 else 0
+    plain_return = round((plain_value / plain_total_invested - 1) * 100, 2) if plain_total_invested > 0 else 0
+
+    return {
+        "symbol": symbol,
+        "months": months,
+        "monthly_budget": monthly_budget,
+        "dip_threshold": dip_threshold,
+        "dip_multiplier": dip_multiplier,
+        "total_invested_dca": round(smart_total_invested, 2),
+        "portfolio_value_dca": smart_value,
+        "total_shares_dca": round(smart_total_shares, 4),
+        "avg_cost_dca": round(smart_total_invested / smart_total_shares, 2) if smart_total_shares > 0 else 0,
+        "total_invested_plain": round(plain_total_invested, 2),
+        "portfolio_value_plain": plain_value,
+        "total_shares_plain": round(plain_total_shares, 4),
+        "avg_cost_plain": round(plain_total_invested / plain_total_shares, 2) if plain_total_shares > 0 else 0,
+        "dca_return_pct": smart_return,
+        "plain_dca_return_pct": plain_return,
+        "dip_buys_count": dip_buys,
+        "monthly_data": monthly_data,
+    }
+
+
+# ── Rebalance Suggestions ───────────────────────────────────
+
+
+def get_rebalance_suggestions(db: Session, user_id: int) -> list[dict]:
+    """Detect portfolio concentration drift and suggest DCA adjustments."""
+    holdings = db.query(Holding).filter(Holding.user_id == user_id).all()
+    plans = db.query(DcaPlan).filter(DcaPlan.user_id == user_id, DcaPlan.active == 1).all()
+
+    if not holdings or not plans:
+        return []
+
+    # Calculate current portfolio weights
+    symbol_values: dict[str, float] = {}
+    total_value = 0.0
+    for h in holdings:
+        info = fetch_stock_info(h.symbol)
+        if info and info.get("price"):
+            val = h.quantity * info["price"]
+            key = h.symbol.upper()
+            symbol_values[key] = symbol_values.get(key, 0) + val
+            total_value += val
+
+    if total_value == 0:
+        return []
+
+    suggestions = []
+    total_dca_budget = sum(p.monthly_budget for p in plans)
+    plan_symbols = {p.symbol.upper() for p in plans}
+
+    for sym, val in symbol_values.items():
+        weight = val / total_value * 100
+        if weight > 35 and sym in plan_symbols:
+            suggestions.append(
+                {
+                    "type": "overweight",
+                    "symbol": sym,
+                    "weight_pct": round(weight, 1),
+                    "message": (
+                        f"⚠️ {sym} is {weight:.0f}% of your portfolio. "
+                        f"Consider reducing its DCA budget and diversifying."
+                    ),
+                }
+            )
+        elif weight < 5 and sym in plan_symbols:
+            suggestions.append(
+                {
+                    "type": "underweight",
+                    "symbol": sym,
+                    "weight_pct": round(weight, 1),
+                    "message": (
+                        f"📈 {sym} is only {weight:.1f}% of your portfolio. "
+                        f"Consider increasing its DCA allocation to build this position."
+                    ),
+                }
+            )
+
+    return suggestions

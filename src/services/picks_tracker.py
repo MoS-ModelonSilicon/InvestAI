@@ -1,6 +1,9 @@
 """
-Picks Tracker: loads community trade alerts, backtests them against real price data,
-and computes win/loss statistics per pick and overall.
+Picks Tracker: loads community trade alerts from the **database**, backtests them
+against real price data, and computes win/loss statistics per pick and overall.
+
+Picks are stored in the `picks` table (see models.Pick) so they survive
+Render deploys and are available to every user immediately.
 """
 
 import json
@@ -16,6 +19,7 @@ from src.services.market_data import get_currency
 
 logger = logging.getLogger(__name__)
 
+# Legacy JSON path – kept only for fallback / one-time seed
 _PICKS_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "static", "data", "discord-picks.json")
 
 _cache: dict[str, tuple[float, object]] = {}
@@ -37,13 +41,27 @@ def _set_cache(key: str, val):
         _cache[key] = (time.time(), val)
 
 
-def load_picks() -> list[dict]:
+def load_picks(source_filter: Optional[str] = None) -> list[dict]:
+    """Load picks from the database. Falls back to JSON if DB is empty."""
+    try:
+        from src.services.scrapers.pipeline import _load_picks_from_db
+
+        picks = _load_picks_from_db(source_filter=source_filter)
+        if picks:
+            return picks
+    except Exception:
+        logger.warning("Failed to load picks from database — falling back to JSON")
+
+    # Fallback: read legacy JSON file
     path = os.path.normpath(_PICKS_FILE)
     if not os.path.exists(path):
         return []
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-        return cast(list[dict[str, Any]], data) if isinstance(data, list) else []
+        result = cast(list[dict[str, Any]], data) if isinstance(data, list) else []
+    if source_filter:
+        result = [p for p in result if (p.get("source") or "").lower().startswith(source_filter.lower())]
+    return result
 
 
 def _parse_date(d: str) -> datetime:
@@ -160,15 +178,15 @@ def _evaluate_pick(pick: dict) -> dict:
     return result
 
 
-def evaluate_all_picks(pick_type: Optional[str] = None) -> dict:
+def evaluate_all_picks(pick_type: Optional[str] = None, source_filter: Optional[str] = None) -> dict:
     """Evaluate all picks and return results + summary stats."""
-    cache_key = f"picks_all_{pick_type or 'all'}"
+    cache_key = f"picks_all_{pick_type or 'all'}_{source_filter or 'all'}"
     cached = _get_cached(cache_key)
     if cached:
         if isinstance(cached, dict):
             return cast(dict[str, Any], cached)
 
-    picks = load_picks()
+    picks = load_picks(source_filter=source_filter)
     if pick_type:
         picks = [p for p in picks if p.get("type") == pick_type]
 
