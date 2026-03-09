@@ -192,6 +192,7 @@ class RedditScraper(BaseScraper):
 
     def _scrape_subreddit(self, subreddit: str) -> list[UnifiedPick]:
         """Fetch posts from a single subreddit and extract picks."""
+        params: dict[str, str | int]
         if self.sort in ("top", "controversial"):
             url = f"https://www.reddit.com/r/{subreddit}/{self.sort}.json"
             params = {"limit": self.max_per_sub, "t": self.time_filter}
