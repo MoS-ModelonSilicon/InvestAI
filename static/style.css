@@ -1955,8 +1955,6 @@ body {
 .sd-spy-toggle.active { background: rgba(251,191,36,0.15); border-color: #fbbf24; color: #fbbf24; }
 
 .sd-chart-wrapper { height: 380px; position: relative; }
-.sd-chart-loading { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(var(--bg-rgb, 20,22,34), 0.6); z-index: 5; border-radius: var(--radius-sm); }
-.sd-chart-empty { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.9rem; z-index: 4; }
 
 /* Pattern legend */
 .sd-patterns-legend { margin-top: 16px; }
@@ -4560,13 +4558,29 @@ body {
     50% { opacity: 0.6; }
 }
 
+/* ── Collapsible TA Sections ───────────────────── */
+.ta-section { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: rgba(99,102,241,.02); }
+.ta-sec-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; cursor: pointer; user-select: none;
+    font-weight: 600; font-size: .92em; color: var(--text-primary);
+    background: rgba(99,102,241,.05); transition: background .15s;
+}
+.ta-sec-header:hover { background: rgba(99,102,241,.10); }
+.ta-sec-arrow {
+    display: inline-block; transition: transform .2s; font-size: .8em;
+}
+.ta-sec-collapsed .ta-sec-arrow { transform: rotate(-90deg); }
+.ta-sec-body { padding: 0 14px 14px; }
+.ta-sec-collapsed .ta-sec-body { display: none; }
+
 /* ── Decision Breakdown Section ────────────────── */
 .ta-decision-section {
     background: rgba(99,102,241,.04);
-    border: 1px solid rgba(99,102,241,.12);
+    border: none;
     border-radius: 10px;
     padding: 14px 16px;
-    margin-bottom: 18px;
+    margin-bottom: 0;
 }
 .ta-decision-section h4 {
     font-size: .95em;

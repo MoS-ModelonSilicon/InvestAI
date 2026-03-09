@@ -300,9 +300,28 @@ function _showTALoadingOverlay(symbol) {
 }
 
 /* Chart view mode: 'line' or 'candle' */
-let _taChartMode = 'candle';
+let _taChartMode = 'line';
 let _taOverlayToggles = { sma: true, bollinger: true, vwap: false, keltner: false, sar: false, ichimoku: false };
 let _taCurrentData = null;
+let _taCollapsed = {};  // track collapsed sections across re-renders
+
+function _taToggleSection(id) {
+    _taCollapsed[id] = !_taCollapsed[id];
+    const sec = document.getElementById('ta-sec-' + id);
+    if (sec) sec.classList.toggle('ta-sec-collapsed', !!_taCollapsed[id]);
+}
+function _taSecWrap(id, title, content, defaultOpen = true) {
+    if (!(id in _taCollapsed)) _taCollapsed[id] = !defaultOpen;
+    const cls = _taCollapsed[id] ? 'ta-sec-collapsed' : '';
+    const arrow = '&#9662;'; // ▾
+    return `<div class="ta-section ${cls}" id="ta-sec-${id}">
+        <div class="ta-sec-header" onclick="_taToggleSection('${id}')">
+            <span class="ta-sec-arrow">${arrow}</span>
+            <span>${title}</span>
+        </div>
+        <div class="ta-sec-body">${content}</div>
+    </div>`;
+}
 
 function _renderTADetailModal(data) {
     _taCurrentData = data;
@@ -384,60 +403,50 @@ function _renderTADetailModal(data) {
 
                 ${squeezeHTML}
 
-                <!-- ★ DECISION BREAKDOWN — "Why this score?" ★ -->
-                <div class="ta-decision-section">
-                    <h4>Why This Score? — Decision Breakdown</h4>
-                    <div class="ta-decision-desc">Each bar shows how an indicator pushed the score up (green) or down (red). The final score is the sum of all weighted contributions.</div>
-                    <div class="ta-waterfall-wrap">
-                        <canvas id="ta-waterfall-canvas" height="160"></canvas>
-                    </div>
-                    ${breakdownHTML}
-                </div>
-
-                <!-- Pattern badges -->
-                ${patBadges}
-
-                <!-- Price Chart with overlays -->
-                <div class="ta-detail-chart-area">
-                    <div class="ta-chart-header">
-                        <h4>Price Chart</h4>
-                        <div class="ta-chart-controls">
-                            <button class="ta-chart-mode-btn ${_taChartMode === 'candle' ? 'active' : ''}" onclick="_setChartMode('candle')">Candlestick</button>
-                            <button class="ta-chart-mode-btn ${_taChartMode === 'line' ? 'active' : ''}" onclick="_setChartMode('line')">Line</button>
+                ${_taSecWrap('breakdown', '📊 Decision Breakdown', `
+                    <div class="ta-decision-section">
+                        <div class="ta-decision-desc">Each bar shows how an indicator pushed the score up (green) or down (red). The final score is the sum of all weighted contributions.</div>
+                        <div class="ta-waterfall-wrap">
+                            <canvas id="ta-waterfall-canvas" height="160"></canvas>
                         </div>
+                        ${breakdownHTML}
                     </div>
-                    <div class="ta-overlay-toggles">${overlayBtns}</div>
-                    <div id="ta-chart-pattern-badge"></div>
-                    <canvas id="ta-detail-canvas" height="220"></canvas>
-                </div>
+                `, true)}
 
-                <!-- RSI -->
-                <div class="ta-detail-chart-area">
-                    <h4>RSI (14)</h4>
-                    <canvas id="ta-rsi-canvas" height="80"></canvas>
-                </div>
+                ${patBadges ? _taSecWrap('patterns', '🔍 Identified Patterns', patBadges, true) : ''}
 
-                <!-- MACD -->
-                <div class="ta-detail-chart-area">
-                    <h4>MACD (12, 26, 9)</h4>
-                    <canvas id="ta-macd-canvas" height="90"></canvas>
-                </div>
+                ${_taSecWrap('chart', '📈 Price Chart', `
+                    <div class="ta-detail-chart-area">
+                        <div class="ta-chart-header">
+                            <div class="ta-chart-controls">
+                                <button class="ta-chart-mode-btn ${_taChartMode === 'candle' ? 'active' : ''}" onclick="_setChartMode('candle')">Candlestick</button>
+                                <button class="ta-chart-mode-btn ${_taChartMode === 'line' ? 'active' : ''}" onclick="_setChartMode('line')">Line</button>
+                            </div>
+                        </div>
+                        <div class="ta-overlay-toggles">${overlayBtns}</div>
+                        <div id="ta-chart-pattern-badge"></div>
+                        <canvas id="ta-detail-canvas" height="220"></canvas>
+                    </div>
+                `, true)}
 
-                <!-- Stochastic -->
-                <div class="ta-detail-chart-area">
-                    <h4>Stochastic %K / %D</h4>
-                    <canvas id="ta-stoch-canvas" height="80"></canvas>
-                </div>
+                ${_taSecWrap('rsi', '📉 RSI (14)', `
+                    <div class="ta-detail-chart-area"><canvas id="ta-rsi-canvas" height="80"></canvas></div>
+                `, false)}
 
-                <!-- ADX -->
-                <div class="ta-detail-chart-area">
-                    <h4>ADX — Trend Strength</h4>
-                    <canvas id="ta-adx-canvas" height="80"></canvas>
-                </div>
+                ${_taSecWrap('macd', '📉 MACD (12, 26, 9)', `
+                    <div class="ta-detail-chart-area"><canvas id="ta-macd-canvas" height="90"></canvas></div>
+                `, false)}
 
-                <!-- Signals expandable -->
-                ${edgeSignals ? '<div class="ta-detail-edge"><h4>Advanced Signals</h4>' + edgeSignals + '</div>' : ''}
-                <div class="ta-detail-signals"><h4>Classic Indicators</h4>${signals}</div>
+                ${_taSecWrap('stoch', '📉 Stochastic %K / %D', `
+                    <div class="ta-detail-chart-area"><canvas id="ta-stoch-canvas" height="80"></canvas></div>
+                `, false)}
+
+                ${_taSecWrap('adx', '📉 ADX — Trend Strength', `
+                    <div class="ta-detail-chart-area"><canvas id="ta-adx-canvas" height="80"></canvas></div>
+                `, false)}
+
+                ${edgeSignals ? _taSecWrap('advsig', '★ Advanced Signals', '<div class="ta-detail-edge">' + edgeSignals + '</div>', false) : ''}
+                ${_taSecWrap('signals', '📋 Classic Indicators', '<div class="ta-detail-signals">' + signals + '</div>', false)}
 
                 <div class="ta-detail-reasoning"><strong>Summary:</strong> ${a.reasoning}</div>
             </div>
