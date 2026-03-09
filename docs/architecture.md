@@ -52,6 +52,7 @@
 │  └──────────────┘    │  • Trading scanner     │               │
 │                      │  • Value scanner       │               │
 │                      │  • Cache persistence   │               │
+│                      │  • Autopilot warmup    │               │
 │                      └───────────────────────┘               │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -98,6 +99,7 @@ User requests stock data
 | Full stock info | 15 minutes | In-memory dict | On-demand + warmer |
 | Sparkline coordinates | 15 minutes | In-memory dict | Background warmer |
 | Scan results (value, trading) | Until next scan | In-memory + PostgreSQL | Background scanner |
+| Smart Portfolios (autopilot) | 30 minutes | `_sim_cache` + PostgreSQL | Background scheduler (30 min) |
 | Israeli fund data | 1 hour | In-memory dict | On-demand |
 
 ## Authentication Flow
@@ -140,9 +142,10 @@ Pipeline: push → staging auto-deploy → nightly E2E → promote to prod
 ├── Startup sequence:
 │     1. Create tables (auto-migrate)
 │     2. Seed admin user
-│     3. Restore caches from PostgreSQL
+│     3. Restore caches from PostgreSQL (8 steps: value, trading,
+│        picks, market, smart advisor, screener, warm flag, autopilot)
 │     4. Start background warmer thread
-│     5. Start scanner threads
+│     5. Start scanner threads (incl. autopilot warmup every 30 min)
 └── External services:
       ├── Supabase PostgreSQL (data persistence)
       ├── Finnhub API (market data)

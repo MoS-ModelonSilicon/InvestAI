@@ -98,6 +98,7 @@ Custom amounts (e.g., 50000) compute fresh on first request, but the heavy `scan
 2. Copy scan results to `advisor:scan:6m`, `advisor:scan:3m`, `advisor:scan:1m` cache keys
 3. `run_full_analysis()` for each of 12 combos — these reuse the cached scan, so they're fast
 4. Total warm-up: ~2-3 min after Render starts
+5. `run_full_warmup()` for autopilot (3 profiles × 4 periods) — batch-fetches all symbols in one call
 
 ## AI Assistant (`assistant.py`)
 
@@ -125,6 +126,16 @@ Custom amounts (e.g., 50000) compute fresh on first request, but the heavy `scan
 - Has static JSON fallback if scrape fails (`static/data/funds_fallback.json`)
 - Hebrew text handling: ensure UTF-8 throughout
 - Fund data includes: name, manager, fee, return, type, kosher status
+
+## Smart Portfolios / Autopilot (`autopilot.py`)
+
+- Three profiles: Daredevil (high-growth tech), Strategist (balanced), Fortress (defensive)
+- `simulate()` runs historical backtests: portfolio vs S&P 500, daily returns, Sharpe, max drawdown
+- **Batch fetch**: `_batch_fetch_closes()` calls `dp.batch_download_candles()` (single `yf.download` HTTP call) for all 21+ symbols at once, with per-symbol `get_candles` fallback
+- **Module-level cache**: `_sim_cache` dict (guarded by `_sim_lock`) stores pre-computed results; checked before `_get_cached` (market_data in-memory cache)
+- **Persistence**: results saved via `save_scan(cache_key, result)` and restored in `persistence.py` step 8
+- **Background warmup**: `run_full_warmup()` pre-computes 12 combos (3 profiles × 4 periods) with `AUTOPILOT_AMOUNTS=[10000]`; called by scheduler every 30 min (`AUTOPILOT_INTERVAL`)
+- **Constants**: `PERIOD_TO_YF` maps period strings to yfinance format ("1y"→"1y", "6m"→"6mo", etc.); `AUTOPILOT_PERIODS` and `AUTOPILOT_AMOUNTS` define warmup matrix
 
 ## Picks Tracker (`picks_tracker.py`)
 

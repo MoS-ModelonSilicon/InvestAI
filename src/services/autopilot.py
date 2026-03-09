@@ -24,6 +24,11 @@ from src.services.market_data import _get_cached, _set_cache
 _sim_cache: dict[str, dict] = {}
 _sim_lock = threading.Lock()
 
+# Yahoo-Finance period strings for batch download
+PERIOD_TO_YF = {"1y": "1y", "6m": "6mo", "3m": "3mo", "1m": "1mo"}
+AUTOPILOT_PERIODS = list(PERIOD_TO_YF.keys())
+AUTOPILOT_AMOUNTS = [10000]
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -223,6 +228,43 @@ def _align_to_dates(target_dates: list[str], sym_dates: list[str], sym_closes: l
     return result
 
 
+def _batch_fetch_closes(
+    symbols: list[str], period: str
+) -> dict[str, dict]:
+    """Fetch daily closes for ALL symbols in a single HTTP call.
+
+    Returns {symbol: {dates: [...], closes: [...]}}.
+    Falls back to per-symbol get_candles on failure.
+    """
+    yf_period = PERIOD_TO_YF.get(period, "1y")
+    result: dict[str, dict] = {}
+    try:
+        batch = dp.batch_download_candles(symbols, period=yf_period)
+        if batch:
+            for sym, candles in batch.items():
+                if candles and candles.get("c") and candles.get("t"):
+                    dates = [
+                        datetime.fromtimestamp(t).strftime("%Y-%m-%d")
+                        for t in candles["t"]
+                    ]
+                    result[sym] = {"dates": dates, "closes": candles["c"]}
+    except Exception:
+        pass  # fall through to per-symbol below
+
+    # Fill any symbols that batch missed
+    from datetime import timedelta as _td
+
+    days = PERIOD_DAYS.get(period, 365)
+    now = datetime.now()
+    from_ts = int((now - _td(days=days)).timestamp())
+    to_ts = int(now.timestamp())
+    for sym in symbols:
+        if sym not in result:
+            sd = _fetch_daily_closes(sym, from_ts, to_ts)
+            if sd:
+                result[sym] = sd
+    return result
+
 # ---------------------------------------------------------------------------
 # Simulation engine
 # ---------------------------------------------------------------------------
@@ -260,6 +302,13 @@ def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict
     and performance statistics.
     """
     cache_key = f"autopilot:{profile_id}:{amount}:{period}"
+
+    # Fast path: module-level sim cache (populated by scheduler/persistence)
+    with _sim_lock:
+        if cache_key in _sim_cache:
+            return _sim_cache[cache_key]
+
+    # Medium path: market_data in-memory cache
     cached = _get_cached(cache_key)
     if isinstance(cached, dict):
         return cast(dict[str, Any], cached)
@@ -285,7 +334,27 @@ def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict
 
     # Build portfolio: allocate capital across sleeves and symbols
     holdings = []
-    all_symbol_prices = {}  # symbol -> aligned price list
+    # Collect all unique symbols
+    all_symbols = []
+    for sleeve in cast(list[dict[str, Any]], profile["sleeves"]):
+        all_symbols.extend(sleeve.get("symbols", []))
+    all_symbols = list(dict.fromkeys(["SPY", *all_symbols]))  # dedupe, SPY first
+
+    # Batch-fetch all symbols in a single HTTP call
+    fetched = _batch_fetch_closes(all_symbols, period)
+
+    # Benchmark
+    bench_data = fetched.get("SPY")
+    if not bench_data or len(bench_data.get("dates", [])) < 2:
+        return {"error": "Could not fetch benchmark data"}
+
+    trading_dates = bench_data["dates"]
+    bench_closes = bench_data["closes"]
+    bench_start_price = bench_closes[0]
+
+    # Build portfolio
+    holdings = []
+    all_symbol_prices = {}
 
     for sleeve in cast(list[dict[str, Any]], profile["sleeves"]):
         if not sleeve["symbols"]:
@@ -294,7 +363,7 @@ def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict
         per_symbol = sleeve_capital / len(sleeve["symbols"])
 
         for sym in sleeve["symbols"]:
-            sym_data = _fetch_daily_closes(sym, from_ts, to_ts)
+            sym_data = fetched.get(sym)
             if not sym_data or not sym_data["closes"]:
                 continue
 
@@ -461,4 +530,27 @@ def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict
     }
 
     _set_cache(cache_key, result)
+    with _sim_lock:
+        _sim_cache[cache_key] = result
+    try:
+        from src.services.persistence import save_scan
+        save_scan(cache_key, result)
+    except Exception:
+        pass
     return result
+
+
+def run_full_warmup() -> None:
+    """Pre-compute simulations for all profile/period/amount combos.
+
+    Called by background_scheduler to ensure instant API responses.
+    """
+    for profile_id in PROFILES:
+        for period in AUTOPILOT_PERIODS:
+            for amount in AUTOPILOT_AMOUNTS:
+                try:
+                    simulate(profile_id, amount=amount, period=period)
+                except Exception:
+                    logger.exception(
+                        "Warmup failed for %s/%s/%s", profile_id, period, amount
+                    )
