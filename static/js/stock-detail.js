@@ -6,6 +6,7 @@ let _lastSpyHistory = null;
 let _candleMode = false;
 let _currentPatterns = null;
 let _currentCurrency = "USD";
+let _zoomLevel = parseFloat(localStorage.getItem("sd-zoom") || "1");
 
 /* ── Market session shading plugin ─────────────────────────── */
 const sessionZonePlugin = {
@@ -83,7 +84,7 @@ const LINE_TF = [
 ];
 const CANDLE_TF = [
     { label: "1m", period: "1d", interval: "1m" },
-    { label: "3m", period: "5d", interval: "3m" },
+    { label: "2m", period: "5d", interval: "2m" },
     { label: "5m", period: "5d", interval: "5m" },
     { label: "15m", period: "5d", interval: "15m" },
     { label: "1H", period: "3mo", interval: "1h" },
@@ -163,6 +164,11 @@ function renderStockDetail(info, history, news) {
             </div>
             <div class="sd-timeframes" id="sd-timeframes"></div>
             <button class="sd-tf sd-spy-toggle" id="spy-toggle-btn" onclick="toggleSpyOverlay('${info.symbol}')" style="margin-left:auto">vs SPY</button>
+            <div class="sd-zoom-controls">
+                <button class="sd-zoom-btn" onclick="chartZoom(-1)" title="Zoom in">+</button>
+                <button class="sd-zoom-btn" onclick="chartZoom(1)" title="Zoom out">&minus;</button>
+                <button class="sd-zoom-btn sd-zoom-reset" onclick="chartZoom(0)" title="Reset zoom">⟳</button>
+            </div>
         </div>
         <div class="sd-chart-wrapper">
             <canvas id="sd-price-chart"></canvas>
@@ -278,6 +284,65 @@ function setChartType(type, symbol) {
     const tfs = _candleMode ? CANDLE_TF : LINE_TF;
     const def = tfs[_candleMode ? 4 : 2];
     changeTimeframe(symbol, def.period, def.interval, document.querySelector("#sd-timeframes .sd-tf.active"));
+}
+
+/* ── Chart Zoom ─────────────────────────────────────────────── */
+function chartZoom(dir) {
+    // dir: -1 = zoom in, 1 = zoom out, 0 = reset
+    if (dir === 0) { _zoomLevel = 1; }
+    else { _zoomLevel = Math.max(0.1, Math.min(5, _zoomLevel + dir * 0.3)); }
+    localStorage.setItem("sd-zoom", String(_zoomLevel));
+    _applyZoom();
+}
+
+function _applyZoom() {
+    if (!detailChart) return;
+    const xScale = detailChart.options.scales.x;
+    if (!xScale) return;
+
+    if (_zoomLevel === 1) {
+        // Reset: remove zoom constraints
+        delete xScale.min;
+        delete xScale.max;
+        // For linear (intraday candle) axes, restore full range
+        if (xScale.type === "linear" && detailChart._sdFullMax != null) {
+            xScale.min = -0.5;
+            xScale.max = detailChart._sdFullMax;
+        }
+    } else {
+        // Zoom works by showing a subset of data from the right (most recent)
+        if (xScale.type === "linear") {
+            const fullLen = (detailChart._sdFullMax || 0) + 0.5;
+            const visible = Math.max(5, Math.round(fullLen / _zoomLevel));
+            xScale.max = detailChart._sdFullMax;
+            xScale.min = xScale.max - visible + 0.5;
+        } else if (xScale.type === "time" || xScale.type === "timeseries") {
+            const labels = detailChart.data.labels;
+            const dsets = detailChart.data.datasets;
+            let allX = [];
+            if (labels && labels.length) {
+                allX = labels.map(l => new Date(l).getTime());
+            } else {
+                dsets.forEach(ds => { (ds.data || []).forEach(d => { if (d && d.x != null) allX.push(typeof d.x === "number" ? d.x : new Date(d.x).getTime()); }); });
+                allX.sort((a, b) => a - b);
+            }
+            if (allX.length > 1) {
+                const fullRange = allX[allX.length - 1] - allX[0];
+                const visible = fullRange / _zoomLevel;
+                xScale.min = allX[allX.length - 1] - visible;
+                xScale.max = allX[allX.length - 1];
+            }
+        } else {
+            // Category axis (line chart with date labels)
+            const labels = detailChart.data.labels;
+            if (labels && labels.length > 1) {
+                const visible = Math.max(5, Math.round(labels.length / _zoomLevel));
+                xScale.min = labels.length - visible;
+                xScale.max = labels.length - 1;
+            }
+        }
+    }
+    detailChart.update("none");
 }
 
 function renderDetailChart(history, spyHistory) {
@@ -410,6 +475,7 @@ function renderDetailChart(history, spyHistory) {
             interaction: { mode: "index", intersect: false },
         },
     });
+    if (_zoomLevel !== 1) _applyZoom();
     renderSessionLegend(hasSessions);
 }
 
@@ -608,6 +674,8 @@ function renderCandlestickChart(history) {
             },
         },
     });
+    if (isIntraday) detailChart._sdFullMax = ts.length - 0.5;
+    if (_zoomLevel !== 1) _applyZoom();
     renderPatternLegend();
     renderSessionLegend(hasSessions);
 }

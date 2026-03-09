@@ -23,7 +23,7 @@ def get_price_history(symbol: str, period: str = "1y", interval: str = "1d") -> 
 
     period_map = {"1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825}
     days = period_map.get(period, 365)
-    resolution_map = {"1m": "1", "3m": "3", "5m": "5", "15m": "15", "1h": "60", "1d": "D", "1wk": "W", "1mo": "M"}
+    resolution_map = {"1m": "1", "2m": "2", "5m": "5", "15m": "15", "1h": "60", "1d": "D", "1wk": "W", "1mo": "M"}
     res = resolution_map.get(interval, "D")
 
     to_ts = int(time.time())
@@ -34,7 +34,7 @@ def get_price_history(symbol: str, period: str = "1y", interval: str = "1d") -> 
         if not candles or not candles.get("c"):
             return {"dates": [], "timestamps": [], "open": [], "high": [], "low": [], "close": [], "volume": []}
 
-        date_fmt = "%Y-%m-%dT%H:%M" if res in ("1", "5", "15", "60") else "%Y-%m-%d"
+        date_fmt = "%Y-%m-%dT%H:%M" if res in ("1", "2", "5", "15", "60") else "%Y-%m-%d"
         result = {
             "dates": [datetime.fromtimestamp(t).strftime(date_fmt) for t in candles["t"]],
             "timestamps": [int(t * 1000) for t in candles["t"]],
