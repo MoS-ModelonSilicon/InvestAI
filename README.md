@@ -26,6 +26,13 @@ A full-stack investment advisory web app with live market data, global stock scr
 - **Fee comparison** — sort by management fee (דמי ניהול), see cost per ₪100K, find the cheapest deals
 - **Quick presets:** cheapest Kaspit, best return, index tracking, kosher only
 
+### AI Assistant
+- **Two-Tier Chat Widget** — floating chat bubble (bottom-right) powered by Azure OpenAI
+- **Smart Model Routing** — gpt-5-nano handles simple queries (site navigation, FAQ, greetings); o3 handles complex financial reasoning (stock analysis, portfolio advice)
+- **Tool Calling** — o3 can fetch live stock quotes and search the screener mid-conversation
+- **SSE Streaming** — responses stream token-by-token with model badge indicators
+- **Suggestion Box** — users can submit feature requests; admin dashboard for managing them
+
 ### Advisory
 - **Risk Profile Wizard** — 6-step questionnaire → risk score → investor profile
 - **Personalized Recommendations** — allocation pie + scored instrument cards based on your profile
@@ -56,6 +63,7 @@ A full-stack investment advisory web app with live market data, global stock scr
 | Backend | Python 3.11+, FastAPI, SQLAlchemy 2.0 |
 | Database | SQLite (file-based) |
 | Market Data | yfinance (280+ global symbols) |
+| AI Models | Azure OpenAI — gpt-5-nano (fast) + o3 (reasoning) |
 | Israeli Funds | Live scraper for funder.co.il |
 | Frontend | Vanilla HTML/CSS/JS, Chart.js 4.x |
 | Auth | HMAC-signed session cookies |
@@ -89,17 +97,19 @@ src/
 ├── auth.py                 # Access key middleware + session management
 ├── database.py             # SQLAlchemy engine + session
 ├── models.py               # ORM models (Holding, Alert, Watchlist, etc.)
-├── routers/                # 15 API route modules
+├── routers/                # 16 API route modules
 │   ├── market.py           # Live ticker + featured stocks
 │   ├── screener.py         # Stock/ETF screener + watchlist
 │   ├── stock_detail.py     # Per-stock detail + history + news
 │   ├── portfolio.py        # Holdings CRUD + performance
 │   ├── israeli_funds.py    # IL fund explorer API
 │   ├── alerts.py           # Price alert CRUD + trigger check
+│   ├── assistant.py        # AI chat (SSE streaming) + suggestion CRUD
 │   └── ...                 # news, calendar, education, etc.
 ├── schemas/                # Pydantic request/response models
 └── services/               # Business logic
     ├── market_data.py      # yfinance integration, caching, batch fetch
+    ├── assistant.py        # Two-tier AI routing, tool calling, SSE streaming
     ├── funder_scraper.py   # Live scraper for funder.co.il
     ├── screener.py         # Multi-factor screening + signals
     ├── recommendations.py  # Profile-based scoring engine
@@ -111,6 +121,7 @@ static/
 ├── style.css               # Dark theme (2200+ lines)
 └── js/                     # 20 modular JS files
     ├── app.js, api.js      # Navigation + API client
+    ├── assistant.js         # AI chat widget (SSE streaming, model routing)
     ├── tour.js             # Interactive guided tour (10 steps, spotlight overlay)
     ├── help-drawer.js      # Help drawer (checklist, feature guide, pro tips)
     ├── market.js            # Live ticker + sparklines

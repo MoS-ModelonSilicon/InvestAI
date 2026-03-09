@@ -77,9 +77,11 @@ src/
     ├── finnhub_client.py       # Rate-limited Finnhub API wrapper
     ├── data_provider.py        # Unified data layer: Yahoo → Finnhub fallback
     ├── market_data.py          # Cache layer, sparklines, background warmer (15-min cycle)
-    ├── technical_analysis.py   # 1100+ lines: RSI, MACD, Bollinger, Stochastic, ATR, OBV, ADX, Ichimoku, Fibonacci, etc.
+    ├── technical_analysis.py   # 1400+ lines: RSI, MACD, Bollinger, Stochastic, ATR, OBV, ADX, Ichimoku, Fibonacci, etc.
+    ├── pattern_detection.py    # 1300+ lines: chart patterns (H&S, flags, triangles, wedges, gaps) + 21 candlestick patterns
+    ├── advanced_indicators.py  # 770+ lines: VWAP, Keltner, TTM Squeeze, SAR, Williams %R, CMF, Donchian, Aroon, CCI, Heikin-Ashi, etc.
     ├── smart_advisor.py        # Universe scanning, multi-factor scoring, portfolio construction, backtesting
-    ├── trading_advisor.py      # Strategy packages (Momentum/Swing/Oversold/Hidden Gems/Institutional)
+    ├── trading_advisor.py      # Strategy packages + visual decision breakdown (integrates all 3 analysis engines)
     ├── value_scanner.py        # Graham-Buffett screen, quality score, margin of safety
     ├── company_dna.py          # Berkshire Score, executive analysis, insider sentiment
     ├── portfolio.py            # Portfolio valuation, sector allocation, benchmark comparison
@@ -117,7 +119,7 @@ static/
     ├── screener.js             # Filter panel, result cards, presets, watchlist integration
     ├── watchlist.js            # Live watchlist with prices
     ├── smart-advisor.js        # Rankings, portfolio tabs, backtest chart, Company DNA modal
-    ├── advisor.js              # Trading advisor: mood donut, strategy tabs, indicator charts
+    ├── advisor.js              # Trading advisor: mood donut, strategy tabs, candlestick/line charts, decision waterfall, pattern annotations, overlay toggles
     ├── value-scanner.js        # Progress, stats, sector tabs, quality bars, action plan
     ├── autopilot.js            # Profile cards, simulation chart, allocation, methodology
     ├── dca.js                  # DCA plans, dip opportunities, monthly allocation
@@ -234,9 +236,23 @@ static/
 | Method | Path | Action |
 |--------|------|--------|
 | GET | `/api/trading` | Dashboard: 5 strategy packages, market mood, scan progress |
-| GET | `/api/trading/{symbol}` | Full technical analysis (RSI, MACD, Bollinger, Stochastic, ADX, Ichimoku, Fibonacci, OBV) |
+| GET | `/api/trading/{symbol}` | Full analysis: 30+ classic indicators, 14 advanced indicators, 21 candlestick patterns, 10 chart patterns, decision breakdown |
 
 Strategies: Momentum | Swing | Oversold Bargains | Hidden Gems | Institutional Favorites
+
+#### `/api/trading/{symbol}` Response Structure
+
+The detail endpoint returns a rich payload for the visual decision framework:
+
+| Key | Contents |
+|-----|----------|
+| `price` | `{close, high, low, open, volume}` — OHLCV arrays for candlestick rendering |
+| `indicators` | Classic (SMA, EMA, RSI, MACD, Bollinger, Stochastic, OBV, ATR, Ichimoku, ADX, Z-score) + Advanced (VWAP, Keltner, Parabolic SAR, Williams %R, CMF, Donchian, Aroon, CCI, Heikin-Ashi, Force Index, Linear Regression, Momentum, ROC) |
+| `patterns` | `chart_patterns[]` (Double Top/Bottom, H&S, Flags, Triangles, Wedges, Triple Top/Bottom — each with `viz_points` for chart annotation), `candlestick_patterns[]` (21 patterns with `idx`, `direction`, `reliability`, `viz`), `gaps[]` (Breakaway/Runaway/Exhaustion/Common) |
+| `decision_breakdown` | Array of `{name, category, raw_score, weight, weighted_score, direction, detail}` — one entry per signal, used to render the waterfall chart |
+| `ttm_squeeze` | `{squeeze_on, squeeze_fired, detail}` — TTM Squeeze detection state |
+| `fibonacci` | Support/resistance levels |
+| `cup_and_handle` | Cup & Handle pattern with rim level and key indices |
 
 ### Value Scanner (Graham-Buffett)
 
@@ -337,6 +353,28 @@ User → Frontend (Vanilla JS) → REST API (FastAPI routers)
 - **Cache warmer**: Refreshes market data every 15 minutes
 - **Trading advisor scanner**: Scans stock universe in background
 - **Value scanner**: Background Graham-Buffett screening with progress reporting
+
+### Visual Decision Framework (Trading Advisor Detail Modal)
+The detail modal provides a full educational breakdown of how the algorithm scores each stock:
+
+1. **Decision Waterfall Chart** — horizontal bar chart showing each indicator's weighted contribution (green = bullish push, red = bearish push). Built from `decision_breakdown` array.
+2. **Candlestick / Line Toggle** — switch between OHLC candlestick view (floating bars for body + thin bars for wicks) and classic line chart.
+3. **Overlay Toggle Buttons** — SMA, Bollinger, VWAP, Keltner Channels, Parabolic SAR, Ichimoku Cloud — each toggleable on/off the price chart.
+4. **Pattern Annotations** — chart patterns (Double Top, Head & Shoulders, Flags, etc.) rendered as connected marker points on the price chart using `viz_points` from backend. Candlestick patterns rendered as triangular markers at detection indices.
+5. **Pattern Badges** — colored tag badges for all detected patterns, candlestick signals, and gap types.
+6. **TTM Squeeze Badge** — animated pulse badge when a Bollinger-inside-Keltner squeeze fires.
+7. **Sub-Charts** — RSI (with 70/30 bands), MACD (line + signal + histogram), Stochastic %K/%D (with 80/20 bands), ADX (+DI/-DI with trending threshold).
+
+#### Analysis Engine Architecture
+```
+get_single_analysis(symbol)
+  ├── technical_analysis.py     → 30 classic indicators + composite_score()
+  ├── pattern_detection.py      → detect_all_patterns() → chart_patterns + candlestick_patterns + gaps
+  ├── advanced_indicators.py    → compute_all_advanced() → 14 indicators + advanced_score
+  └── Score merging:
+        adjusted_raw = composite_raw + (pattern_score × 0.08) + (advanced_score × 0.07)
+        decision_breakdown[] = classic signals (weighted) + advanced signals + pattern signals
+```
 
 ### Security
 - OWASP security headers (CSP, HSTS, X-Frame-Options, etc.)

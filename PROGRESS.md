@@ -76,10 +76,11 @@
 
 ## Stats
 
-- **79 files**, **12,500+ lines** of code
+- **79 files**, **15,000+ lines** of code
 - **280+ global stock symbols** across 12 regions
 - **481 Israeli mutual funds** from live data
-- **15 API routers**, **10 service modules**, **18 JS modules**
+- **15 API routers**, **12 service modules**, **18 JS modules**
+- **35+ technical indicators**, **21 candlestick patterns**, **10 chart patterns**
 - **Built entirely in one session** with Cursor + Claude
 
 - [x] **Security: Admin Credential Hardening** (2026-03-06)
@@ -92,6 +93,20 @@
   - Triggered Render redeploy to apply changes
   - Documented new admin email in `DEPLOY-KEYS.md` (password intentionally omitted from docs)
 
+- [x] **AI Assistant Chatbot** (2026-03-09)
+  - Two-tier model routing: gpt-5-nano for simple queries (FAQ, navigation, greetings), o3 for complex financial reasoning (stock analysis, portfolio advice)
+  - Both models are Azure OpenAI reasoning models — no temperature, uses `max_completion_tokens`
+  - SSE streaming with token-by-token output and model badge indicators (⚡ nano / 🧠 o3)
+  - Tool calling: o3 can invoke `get_stock_quote`, `search_screener`, `submit_suggestion` mid-conversation
+  - Classification prompt routes each message to SIMPLE / COMPLEX / SUGGESTION
+  - Floating chat widget (bottom-right FAB → 380px panel) with 20-message context window
+  - Suggestion box: users submit feature requests, optional AI summary categorization
+  - Admin endpoints: list, update status, view stats for suggestions
+  - Backend: `src/services/assistant.py` (~470 lines), `src/routers/assistant.py` (7 endpoints)
+  - Frontend: `static/js/assistant.js` (SSE client, markdown-lite rendering), `static/style.css` (+279 lines)
+  - Env vars: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY` (set in Render dashboard)
+  - API pattern: `{endpoint}/openai/deployments/{model}/chat/completions?api-version=2024-12-01-preview`
+
 - [x] **Bulk Manage: Multi-Select Delete for Portfolio & Watchlist** (2026-03-09)
   - "Manage" toggle button in Portfolio and Watchlist headers — enters edit mode
   - Checkboxes appear on every holding row / watchlist card for multi-select
@@ -101,6 +116,19 @@
   - Backend: `POST /api/portfolio/holdings/bulk-delete` and `POST /api/screener/watchlist/bulk-delete` — single DB call for bulk operations
   - New shared module `static/js/bulk-manage.js` for modal and toolbar helpers
   - CSS: custom checkboxes, selected-row/card highlights, slide-in toolbar animation
+
+- [x] **Visual Decision Framework + 35 New Patterns/Indicators** (2026-03-09)
+  - **`pattern_detection.py`** (1,300+ lines): 10 chart patterns (Double Top/Bottom, Head & Shoulders, Inverse H&S, Bull/Bear Flags, Ascending/Descending/Symmetric Triangles, Rising/Falling Wedges, Triple Top/Bottom) + 21 candlestick patterns (Doji, Dragonfly/Gravestone Doji, Hammer, Inverted Hammer, Shooting Star, Hanging Man, Marubozu, Bullish/Bearish Engulfing, Piercing Line, Dark Cloud Cover, Bullish/Bearish Harami, Tweezer Top/Bottom, Morning/Evening Star, Three White Soldiers, Three Black Crows) + gap classification (Breakaway, Runaway, Exhaustion, Common)
+  - **`advanced_indicators.py`** (770+ lines): VWAP, Keltner Channels, TTM Squeeze, Parabolic SAR, Williams %R, Chaikin Money Flow, Donchian Channels, Aroon, CCI, Heikin-Ashi, Force Index, Linear Regression Channel, Momentum, Rate of Change — each with aggregate scoring
+  - **Backend integration**: `get_single_analysis()` rewritten to call both engines, merge signals into `decision_breakdown`, adjust composite score with pattern + advanced boosts
+  - **"Why This Score?" waterfall chart**: Each indicator's weighted contribution shown as green (bullish) or red (bearish) bars
+  - **Candlestick chart mode**: Toggle between OHLC candles and line view
+  - **Overlay toggles**: SMA, Bollinger, VWAP, Keltner, Parabolic SAR, Ichimoku — click to add/remove from price chart
+  - **Pattern annotations**: Chart patterns drawn as connected point markers; candlestick patterns as triangular markers at detection indices
+  - **Pattern badges section**: All detected patterns displayed as colored tags with confidence %
+  - **TTM Squeeze badge**: Animated pulse when Bollinger-inside-Keltner squeeze fires
+  - **New sub-charts**: Stochastic %K/%D and ADX (+DI/-DI) alongside RSI + MACD
+  - **Loading spinner** with debounce to prevent double-opens
 
 - [x] **DevOps: Render API Management** (2026-03-06)
   - Established Render API access for automated deployments and env-var management

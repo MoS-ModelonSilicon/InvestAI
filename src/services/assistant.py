@@ -249,11 +249,12 @@ def _tool_search_screener(args: dict) -> str:
 
 
 def _tool_submit_suggestion(args: dict, user_id: int | None) -> str:
-    """Save a suggestion to the database."""
+    """Save a suggestion to the database and create a GitHub Issue."""
     from sqlalchemy.orm import Session as _Session
 
     from src.database import SessionLocal
-    from src.models import Suggestion
+    from src.models import Suggestion, User
+    from src.services import github_issues
 
     summary = args.get("summary", "").strip()
     category = args.get("category", "feature")
@@ -271,8 +272,34 @@ def _tool_submit_suggestion(args: dict, user_id: int | None) -> str:
         )
         db.add(suggestion)
         db.commit()
+        db.refresh(suggestion)
+
+        # Create GitHub Issue (best-effort)
+        user_email = ""
+        if user_id:
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                user_email = user.email
+        try:
+            gh_result = github_issues.create_issue(
+                title=summary[:120],
+                body=summary,
+                category=category,
+                user_email=user_email,
+            )
+            if gh_result:
+                suggestion.github_issue_url = gh_result["url"]
+                suggestion.github_issue_number = gh_result["number"]
+                db.commit()
+        except Exception:
+            pass
+
+        gh_url = suggestion.github_issue_url or ""
         db.close()
-        return json.dumps({"success": True, "message": "Suggestion logged successfully"})
+        msg = "Suggestion logged successfully"
+        if gh_url:
+            msg += f" and tracked as GitHub Issue"
+        return json.dumps({"success": True, "message": msg, "github_issue_url": gh_url})
     except Exception as e:
         logger.exception("Failed to save suggestion")
         return json.dumps({"error": str(e)})

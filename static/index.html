@@ -718,6 +718,37 @@
                 </div>
             </div>
 
+            <!-- Suggestions Management -->
+            <div class="card" style="padding:24px;margin-top:24px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+                    <h2 style="margin:0;color:var(--text-primary)">💡 Feature Requests &amp; Bugs</h2>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <div id="admin-suggestion-stats" style="display:flex;gap:8px"></div>
+                        <select id="admin-suggestion-filter" onchange="loadAdminSuggestions(1)" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:var(--card-bg);color:var(--text-primary);font-size:.85rem">
+                            <option value="">All Statuses</option>
+                            <option value="new" selected>New</option>
+                            <option value="reviewed">Reviewed</option>
+                            <option value="planned">Planned</option>
+                            <option value="done">Done</option>
+                            <option value="declined">Declined</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="admin-suggestions-list" style="display:flex;flex-direction:column;gap:12px"></div>
+                <div id="admin-suggestion-pagination" style="display:flex;justify-content:center;gap:8px;margin-top:16px"></div>
+            </div>
+
+            <!-- Suggestion Detail Modal -->
+            <div id="admin-suggestion-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+                <div class="modal" onclick="event.stopPropagation()" style="max-width:520px">
+                    <div class="modal-header">
+                        <h2 id="admin-suggestion-modal-title">Suggestion Details</h2>
+                        <button class="modal-close" onclick="document.getElementById('admin-suggestion-modal').style.display='none'">&times;</button>
+                    </div>
+                    <div id="admin-suggestion-modal-body" style="padding:16px"></div>
+                </div>
+            </div>
+
             <!-- Reset Password Modal -->
             <div id="admin-reset-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
                 <div class="modal" onclick="event.stopPropagation()" style="max-width:400px">

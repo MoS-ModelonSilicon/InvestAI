@@ -33,10 +33,30 @@ Services contain business logic ONLY. No `Request` objects, no `Response` object
 
 ## Technical Analysis (`technical_analysis.py`)
 
-- 1100+ lines — intentionally large, pure math, self-contained
-- Implements: RSI, MACD, Bollinger Bands, Stochastic, ATR, OBV, ADX, Ichimoku, Fibonacci
+- 1400+ lines — intentionally large, pure math, self-contained
+- Implements: RSI, MACD, Bollinger Bands, Stochastic, ATR, OBV, ADX, Ichimoku, Fibonacci, Z-score, Relative Strength, Volume Anomaly, Divergence Detection, Cup & Handle
 - All functions take price arrays, return indicator values — no side effects
+- `composite_score()` weights: MACD 0.22, RSI 0.18, SMA 0.18, Bollinger 0.14, Stochastic 0.10, OBV 0.08, Advanced 0.10
 - Don't split this unless adding a fundamentally new category of analysis
+
+## Pattern Detection (`pattern_detection.py`)
+
+- 1300+ lines — chart patterns + candlestick patterns, pure math
+- **Chart patterns**: Double Top/Bottom, Head & Shoulders (+ inverse), Bull/Bear Flags, Ascending/Descending/Symmetric Triangles, Rising/Falling Wedges, Triple Top/Bottom
+- **Candlestick patterns**: 21 patterns (Doji, Hammer, Engulfing, Morning/Evening Star, Three White Soldiers, etc.)
+- **Gaps**: Breakaway, Runaway, Exhaustion, Common — classified by context
+- Every pattern returns `viz_points: [{idx, value, label}]` — used by frontend to annotate charts
+- Candlestick patterns return `viz: {type, shape/start/end, color}` for rendering
+- Master function: `detect_all_patterns(opens, highs, lows, closes, volumes)` → `{chart_patterns, candlestick_patterns, gaps, pattern_score, pattern_summary}`
+- `pattern_score` is a float (typically -1.0 to +1.0) aggregating all detected pattern signals
+
+## Advanced Indicators (`advanced_indicators.py`)
+
+- 770+ lines — 14 indicators beyond the classic set
+- VWAP, Keltner Channels, TTM Squeeze, Parabolic SAR, Williams %R, Chaikin Money Flow, Donchian Channels, Aroon, CCI, Heikin-Ashi, Force Index, Linear Regression Channel, Momentum, Rate of Change
+- Uses lazy imports (`from src.services.technical_analysis import ema, atr`) to avoid circular dependencies
+- Master function: `compute_all_advanced(opens, highs, lows, closes, volumes)` → all indicator arrays + `advanced_score` + `advanced_signals[]`
+- Aggregate scoring: TTM Squeeze (weight 0.3), SAR (0.2), Williams %R, CMF, Aroon, CCI, Regression (0.1-0.15 each)
 
 ## Scan Services (`smart_advisor.py`, `trading_advisor.py`, `value_scanner.py`)
 
@@ -44,6 +64,12 @@ Services contain business logic ONLY. No `Request` objects, no `Response` object
 - Results stored in `persistence.py` → `ScanResult` table
 - Progress is tracked and reported to frontend (progress bars)
 - **Memory sensitive**: each scan loads data for 280+ symbols — watch RSS on Render
+
+### Trading Advisor — Two Code Paths
+- **`_analyze_stock()`** (line ~65) — lightweight background scan, uses classic indicators ONLY. This runs for all 280+ symbols.
+- **`get_single_analysis()`** (line ~645) — deep analysis for a single stock, called when user clicks a pick card. This calls ALL three engines (technical_analysis + pattern_detection + advanced_indicators) and builds the `decision_breakdown` + `patterns` payload.
+- The background scan does NOT use the new pattern/indicator engines (too expensive for 280+ symbols). Only the on-demand detail view does.
+- Score merging: `adjusted_raw = composite_raw + (pattern_score × 0.08) + (advanced_score × 0.07)` — these boost factors are tuned to slightly influence but not dominate the score.
 
 ### Scan Result Persistence Pattern
 ```python

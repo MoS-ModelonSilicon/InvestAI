@@ -23,6 +23,7 @@ from src.models import (
     DcaPlan,
     RiskProfile,
     PasswordReset,
+    Suggestion,
 )
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -78,6 +79,8 @@ def admin_stats(db: Session = Depends(get_db), admin: User = Depends(require_adm
     total_alerts = db.query(func.count(Alert.id)).scalar() or 0
     total_dca_plans = db.query(func.count(DcaPlan.id)).scalar() or 0
     total_watchlist = db.query(func.count(Watchlist.id)).scalar() or 0
+    total_suggestions = db.query(func.count(Suggestion.id)).scalar() or 0
+    new_suggestions = db.query(func.count(Suggestion.id)).filter(Suggestion.status == "new").scalar() or 0
 
     # New users in last 7 days
     week_ago = datetime.utcnow() - timedelta(days=7)
@@ -99,6 +102,8 @@ def admin_stats(db: Session = Depends(get_db), admin: User = Depends(require_adm
         "total_alerts": total_alerts,
         "total_dca_plans": total_dca_plans,
         "total_watchlist": total_watchlist,
+        "total_suggestions": total_suggestions,
+        "new_suggestions": new_suggestions,
     }
 
 

@@ -23,6 +23,7 @@ from src.schemas.assistant import (
     SuggestionUpdateStatus,
 )
 from src.services.assistant import chat_stream, _is_configured
+from src.services import github_issues
 
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
 
@@ -80,7 +81,27 @@ def submit_suggestion(
     db.add(suggestion)
     db.commit()
     db.refresh(suggestion)
-    return {"id": suggestion.id, "message": "Suggestion submitted. Thank you!"}
+
+    # Create GitHub Issue (fire-and-forget — don't fail the request if GitHub is down)
+    try:
+        gh_result = github_issues.create_issue(
+            title=message[:120],
+            body=message,
+            category=body.category,
+            user_email=user.email if hasattr(user, "email") else "",
+        )
+        if gh_result:
+            suggestion.github_issue_url = gh_result["url"]
+            suggestion.github_issue_number = gh_result["number"]
+            db.commit()
+    except Exception:
+        pass  # GitHub integration is best-effort
+
+    return {
+        "id": suggestion.id,
+        "message": "Suggestion submitted. Thank you!",
+        "github_issue_url": suggestion.github_issue_url or "",
+    }
 
 
 @router.post("/suggest/{suggestion_id}/vote")
@@ -130,6 +151,8 @@ def list_suggestions(
                 status=s.status,
                 admin_notes=s.admin_notes or "",
                 votes=s.votes or 0,
+                github_issue_url=s.github_issue_url or "",
+                github_issue_number=s.github_issue_number,
                 created_at=s.created_at,
                 user_email=user.email if user else "",
             )
@@ -158,7 +181,23 @@ def update_suggestion(
     if body.admin_notes is not None:
         s.admin_notes = body.admin_notes
     db.commit()
-    return {"id": s.id, "status": s.status}
+
+    # Sync status to GitHub Issue
+    try:
+        if s.github_issue_number:
+            if body.status in ("done", "declined"):
+                github_issues.close_issue(s.github_issue_number)
+            elif body.status in ("new", "reviewed", "planned"):
+                github_issues.reopen_issue(s.github_issue_number)
+            if body.admin_notes:
+                github_issues.add_comment(
+                    s.github_issue_number,
+                    f"**Status → {body.status}**\n\n{body.admin_notes}",
+                )
+    except Exception:
+        pass  # best-effort
+
+    return {"id": s.id, "status": s.status, "github_issue_url": s.github_issue_url or ""}
 
 
 @router.get("/suggestions/stats")
