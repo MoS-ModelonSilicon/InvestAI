@@ -37,6 +37,7 @@ if _https_proxy:
 # Auto-detect Intel network when no explicit proxy env vars set
 if not _PROXIES and not (os.environ.get("RENDER") or os.environ.get("CI")):
     import socket
+
     try:
         socket.getaddrinfo("proxy-dmz.intel.com", 911, socket.AF_INET, socket.SOCK_STREAM)
         _PROXIES = {
@@ -131,9 +132,7 @@ TOOLS = [
             "description": "Get live price, P/E, market cap, and daily change for a stock symbol",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "symbol": {"type": "string", "description": "Stock ticker symbol (e.g. AAPL, NVDA)"}
-                },
+                "properties": {"symbol": {"type": "string", "description": "Stock ticker symbol (e.g. AAPL, NVDA)"}},
                 "required": ["symbol"],
             },
         },
@@ -328,7 +327,12 @@ def chat_stream(
     Yields SSE-formatted strings: 'data: {...}\n\n'
     """
     if not _is_configured():
-        yield _sse({"type": "error", "content": "AI assistant not configured. Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY environment variables."})
+        yield _sse(
+            {
+                "type": "error",
+                "content": "AI assistant not configured. Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY environment variables.",
+            }
+        )
         yield _sse({"type": "done"})
         return
 
