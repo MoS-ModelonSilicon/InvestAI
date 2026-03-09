@@ -4,15 +4,25 @@ AutoPilot Smart Portfolio Simulator.
 Defines three investment strategy profiles (Daredevil, Strategist, Fortress)
 and runs day-by-day historical backtests using real price data to demonstrate
 portfolio performance against the S&P 500 benchmark.
+
+Performance: uses batch_download_candles (single HTTP call via yf.download)
+instead of per-symbol get_candles to fetch all symbols at once.  Results are
+pre-computed by the background scheduler and persisted to the database so
+they survive server restarts.
 """
 
 import logging
 import math
+import threading
 from datetime import datetime, timedelta
 from typing import Any, Optional, cast
 
 from src.services import data_provider as dp
 from src.services.market_data import _get_cached, _set_cache
+
+# ── Module-level cache for pre-computed simulations ──────────
+_sim_cache: dict[str, dict] = {}
+_sim_lock = threading.Lock()
 
 logger = logging.getLogger(__name__)
 

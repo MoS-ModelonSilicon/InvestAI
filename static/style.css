@@ -5017,6 +5017,53 @@ body {
     color: var(--text);
     background: rgba(99,102,241,.06);
 }
+.pk-page-info {
+    font-size: .82em;
+    color: var(--text-muted);
+    align-self: center;
+}
+
+/* ── Picks Pagination ───────────────────────────── */
+.pk-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin: 18px 0 8px;
+    flex-wrap: wrap;
+}
+.pk-page-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: .82em;
+    cursor: pointer;
+    transition: all .15s;
+    min-width: 36px;
+    text-align: center;
+}
+.pk-page-btn:hover:not(:disabled):not(.pk-page-active) {
+    border-color: var(--primary);
+    color: var(--text);
+    background: rgba(99,102,241,.06);
+}
+.pk-page-btn:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+.pk-page-active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    font-weight: 600;
+}
+.pk-page-ellipsis {
+    padding: 4px 6px;
+    color: var(--text-muted);
+    font-size: .85em;
+}
 
 /* ── Picks Ticker Cell ──────────────────────────── */
 .pk-ticker-cell {
