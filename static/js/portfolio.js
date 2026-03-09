@@ -1,6 +1,8 @@
 let portfolioChart = null;
 let perfChart = null;
 let _portfolioData = null;
+let _pfEditMode = false;
+let _pfSelected = new Set();
 
 async function loadPortfolio() {
     const container = document.getElementById("portfolio-container");
@@ -9,6 +11,9 @@ async function loadPortfolio() {
     try {
         const data = await api.get("/api/portfolio/summary");
         _portfolioData = data;
+        _pfEditMode = false;
+        _pfSelected.clear();
+        _updateManageBtn("pf");
         renderPortfolio(data);
     } catch (e) {
         container.innerHTML = '<p style="color:var(--red);padding:20px;">Failed to load portfolio.</p>';
@@ -20,8 +25,14 @@ function renderPortfolio(data) {
 
     if (data.holdings.length === 0) {
         container.innerHTML = `<div class="empty-state"><p>No holdings yet. Add stocks from the <a href="#" onclick="navigateTo('screener');return false;" style="color:var(--primary)">Screener</a> or any stock detail page.</p></div>`;
+        const manageBtn = document.getElementById("pf-manage-btn");
+        if (manageBtn) manageBtn.style.display = "none";
         return;
     }
+
+    // Show the manage button when there are holdings
+    const manageBtn = document.getElementById("pf-manage-btn");
+    if (manageBtn) manageBtn.style.display = "";
 
     const glCls = data.total_gain_loss >= 0 ? "stock-up" : "stock-down";
     const glSign = data.total_gain_loss >= 0 ? "+" : "";
@@ -62,6 +73,7 @@ function renderPortfolio(data) {
         <h3>Holdings</h3>
         <div class="pf-holdings-table">
             <div class="pf-h-header">
+                <span class="em-cb-col" style="display:none;"></span>
                 <span>Symbol</span><span>Qty</span><span>Buy Price</span><span>Current</span><span>Cost Basis</span><span>Value</span><span>Gain/Loss</span><span></span>
             </div>`;
 
@@ -69,7 +81,8 @@ function renderPortfolio(data) {
         const hcls = h.gain_loss >= 0 ? "stock-up" : "stock-down";
         const hsign = h.gain_loss >= 0 ? "+" : "";
         html += `
-            <div class="pf-h-row" data-symbol="${h.symbol}" data-stock-name="${(h.name||"").replace(/"/g,'&quot;')}" data-stock-price="${h.current_price}" onclick="navigateToStock('${h.symbol}')">
+            <div class="pf-h-row" data-id="${h.id}" data-symbol="${h.symbol}" data-stock-name="${(h.name||"").replace(/"/g,'&quot;')}" data-stock-price="${h.current_price}" onclick="pfRowClick(event, ${h.id}, '${h.symbol}')">
+                <span class="em-cb-col" style="display:none;"><label class="em-checkbox" onclick="event.stopPropagation()"><input type="checkbox" data-id="${h.id}" data-symbol="${h.symbol}" onchange="pfToggleSelect(${h.id})"><span class="em-checkmark"></span></label></span>
                 <span class="pf-h-symbol">${h.symbol}<br><small class="text-muted">${h.name}</small></span>
                 <span>${h.quantity}</span>
                 <span>${fmt(h.buy_price)}</span>
@@ -77,15 +90,102 @@ function renderPortfolio(data) {
                 <span>${fmt(h.cost_basis)}</span>
                 <span>${fmt(h.current_value)}</span>
                 <span class="${hcls}">${hsign}${fmt(h.gain_loss)}<br><small>${hsign}${h.gain_loss_pct.toFixed(1)}%</small></span>
-                <span><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removeHolding(${h.id})">×</button></span>
+                <span class="em-delete-col"><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removeHolding(${h.id})">×</button></span>
             </div>`;
     });
 
     html += `</div></div>`;
     container.innerHTML = html;
 
+    if (_pfEditMode) _applyPfEditMode(true);
+
     renderAllocPie(data.sector_allocation);
     loadPerformanceChart();
+}
+
+/* ── Portfolio Edit Mode ─────────────────────── */
+
+function pfRowClick(event, id, symbol) {
+    if (_pfEditMode) {
+        pfToggleSelect(id);
+        const cb = document.querySelector(`.pf-h-row[data-id="${id}"] input[type="checkbox"]`);
+        if (cb) cb.checked = _pfSelected.has(id);
+        return;
+    }
+    navigateToStock(symbol);
+}
+
+function togglePfEditMode() {
+    _pfEditMode = !_pfEditMode;
+    _pfSelected.clear();
+    _applyPfEditMode(_pfEditMode);
+    _updateManageBtn("pf");
+    _updateBulkToolbar("pf");
+}
+
+function _applyPfEditMode(on) {
+    // Show/hide checkbox column
+    document.querySelectorAll(".pf-holdings-table .em-cb-col").forEach(el => el.style.display = on ? "" : "none");
+    // Show/hide single-delete buttons
+    document.querySelectorAll(".pf-holdings-table .em-delete-col").forEach(el => el.style.display = on ? "none" : "");
+    // Update grid template
+    const header = document.querySelector(".pf-h-header");
+    const rows = document.querySelectorAll(".pf-h-row");
+    const grid = on ? "40px 2fr 0.7fr 1fr 1fr 1fr 1fr 1.2fr" : "2fr 0.7fr 1fr 1fr 1fr 1fr 1.2fr 0.5fr";
+    if (header) header.style.gridTemplateColumns = grid;
+    rows.forEach(r => {
+        r.style.gridTemplateColumns = grid;
+        r.classList.remove("em-selected");
+    });
+    // Uncheck all
+    document.querySelectorAll(".pf-holdings-table input[type='checkbox']").forEach(cb => cb.checked = false);
+    // Toggle toolbar
+    const toolbar = document.getElementById("bulk-toolbar-pf");
+    if (toolbar) toolbar.classList.toggle("open", on);
+}
+
+function pfToggleSelect(id) {
+    if (_pfSelected.has(id)) _pfSelected.delete(id); else _pfSelected.add(id);
+    const row = document.querySelector(`.pf-h-row[data-id="${id}"]`);
+    if (row) row.classList.toggle("em-selected", _pfSelected.has(id));
+    _updateBulkToolbar("pf");
+}
+
+function pfSelectAll() {
+    const rows = document.querySelectorAll(".pf-h-row");
+    const allSelected = _pfSelected.size === rows.length;
+    _pfSelected.clear();
+    rows.forEach(r => {
+        const id = parseInt(r.dataset.id);
+        if (!allSelected) _pfSelected.add(id);
+        r.classList.toggle("em-selected", !allSelected);
+        const cb = r.querySelector("input[type='checkbox']");
+        if (cb) cb.checked = !allSelected;
+    });
+    _updateBulkToolbar("pf");
+}
+
+async function pfBulkDelete() {
+    if (_pfSelected.size === 0) return;
+    const symbols = [];
+    _pfSelected.forEach(id => {
+        const row = document.querySelector(`.pf-h-row[data-id="${id}"]`);
+        if (row) symbols.push(row.dataset.symbol);
+    });
+    openBulkDeleteModal("portfolio", symbols, async () => {
+        try {
+            const result = await api.delBulk("/api/portfolio/holdings/bulk-delete", { ids: Array.from(_pfSelected) });
+            _pfEditMode = false;
+            _pfSelected.clear();
+            _updateManageBtn("pf");
+            const toolbar = document.getElementById("bulk-toolbar-pf");
+            if (toolbar) toolbar.classList.remove("open");
+            if (typeof showToast === "function") showToast(`${result.deleted} holding${result.deleted !== 1 ? "s" : ""} removed`);
+            loadPortfolio();
+        } catch (e) {
+            alert("Failed to remove holdings");
+        }
+    });
 }
 
 function renderAllocPie(allocation) {

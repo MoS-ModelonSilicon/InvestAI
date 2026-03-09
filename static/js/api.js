@@ -38,6 +38,16 @@ const api = (() => {
             if (!res.ok) throw new Error(await res.text());
             return res.json();
         },
+        async delBulk(url, data) {
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+            _checkAuth(res);
+            if (!res.ok) throw new Error(await res.text());
+            return res.json();
+        },
     };
 })();
 

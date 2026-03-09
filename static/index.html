@@ -143,7 +143,16 @@
         <section id="page-portfolio" class="page">
             <div class="page-header">
                 <h1>Portfolio</h1>
-                <button class="btn btn-primary" onclick="openAddHoldingModal()">+ Add Holding</button>
+                <span style="display:flex;gap:8px;">
+                    <button id="pf-manage-btn" class="btn btn-ghost" onclick="togglePfEditMode()" style="display:none;">Manage</button>
+                    <button class="btn btn-primary" onclick="openAddHoldingModal()">+ Add Holding</button>
+                </span>
+            </div>
+            <!-- Bulk-action toolbar (portfolio) -->
+            <div id="bulk-toolbar-pf" class="bulk-toolbar">
+                <button id="bulk-selall-pf" class="btn btn-sm" onclick="pfSelectAll()">Select All</button>
+                <span id="bulk-counter-pf" class="bulk-counter">0 of 0 selected</span>
+                <button id="bulk-delete-btn-pf" class="btn btn-sm btn-danger" disabled onclick="pfBulkDelete()">Remove Selected</button>
             </div>
             <div class="page-search-bar">
                 <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -166,7 +175,19 @@
 
         <!-- ─── Watchlist ──────────────────────────────── -->
         <section id="page-watchlist" class="page">
-            <div class="page-header"><h1>Watchlist</h1><span class="scr-result-count" id="watchlist-count"></span></div>
+            <div class="page-header">
+                <h1>Watchlist</h1>
+                <span style="display:flex;gap:8px;align-items:center;">
+                    <span class="scr-result-count" id="watchlist-count"></span>
+                    <button id="wl-manage-btn" class="btn btn-ghost" onclick="toggleWlEditMode()" style="display:none;">Manage</button>
+                </span>
+            </div>
+            <!-- Bulk-action toolbar (watchlist) -->
+            <div id="bulk-toolbar-wl" class="bulk-toolbar">
+                <button id="bulk-selall-wl" class="btn btn-sm" onclick="wlSelectAll()">Select All</button>
+                <span id="bulk-counter-wl" class="bulk-counter">0 of 0 selected</span>
+                <button id="bulk-delete-btn-wl" class="btn btn-sm btn-danger" disabled onclick="wlBulkDelete()">Remove Selected</button>
+            </div>
             <div class="page-search-bar">
                 <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input type="text" id="watchlist-search" placeholder="Search by symbol, name, or sector..." oninput="filterWatchlist(this.value)">
@@ -839,7 +860,21 @@
         </button>
     </nav>
 
+    <!-- Bulk-delete confirmation modal -->
+    <div id="bulk-delete-modal-overlay" class="modal-overlay" onclick="closeBulkDeleteModal(event)">
+        <div class="modal" style="max-width:440px;">
+            <h2 id="bulk-delete-title">Remove items?</h2>
+            <p style="color:var(--text-muted);margin-bottom:12px;">This cannot be undone.</p>
+            <div id="bulk-delete-list" class="bulk-chip-list"></div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                <button class="btn btn-ghost" onclick="closeBulkDeleteModal(event)">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmBulkDelete()">Remove</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/static/js/api.js"></script>
+    <script src="/static/js/bulk-manage.js"></script>
     <script src="/static/js/context-menu.js"></script>
     <script src="/static/js/tooltips.js"></script>
     <script src="/static/js/pagination.js"></script>
