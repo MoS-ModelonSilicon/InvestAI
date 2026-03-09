@@ -194,3 +194,19 @@ def get_price_target(symbol: str) -> dict[str, Any] | None:
     if data and data.get("targetMean"):
         return data
     return None
+
+
+def search_symbols(query: str, exchange: str = "") -> list[dict[str, Any]]:
+    """Symbol lookup: search by name or ticker across exchanges.
+
+    Returns list of {description, displaySymbol, symbol, type} dicts.
+    Optional exchange filter, e.g. 'TA' for Tel Aviv.
+    """
+    params: dict[str, Any] = {"q": query}
+    if exchange:
+        params["exchange"] = exchange
+    data = _get("/search", params)
+    if data and "result" in data:
+        val = data["result"]
+        return cast(list[dict[str, Any]], val) if isinstance(val, list) else []
+    return []
