@@ -3,6 +3,34 @@ let _watchlistItems = [];
 let _wlEditMode = false;
 let _wlSelected = new Set();
 
+// ── Global watchlist symbol cache (shared across all pages) ──
+const _wlSymbolSet = new Set();
+
+async function initWatchlistCache() {
+    try {
+        const items = await api.get("/api/screener/watchlist");
+        _wlSymbolSet.clear();
+        items.forEach(i => _wlSymbolSet.add(i.symbol.toUpperCase()));
+    } catch { /* ignore — user might not be logged in yet */ }
+}
+
+function isInWatchlist(symbol) {
+    return _wlSymbolSet.has((symbol || "").toUpperCase());
+}
+
+/** Render the correct watchlist button text/class for a symbol */
+function wlBtnHtml(symbol, name, opts = {}) {
+    const sym = (symbol || "").toUpperCase();
+    const safeName = (name || "").replace(/'/g, "\\'");
+    const watched = isInWatchlist(sym);
+    const cls = watched ? "btn btn-sm wl-watched" : "btn btn-sm";
+    const label = watched ? "✓ Watching" : "+ Watch";
+    const title = watched ? `${sym} is in your watchlist` : `Add ${sym} to watchlist`;
+    const fn = opts.useScreenerFn ? "addToWLFromScreener" : "addToWatchlistFromDetail";
+    const stop = opts.stopPropagation !== false ? "event.stopPropagation();" : "";
+    return `<button class="${cls}" onclick="${stop}${fn}('${sym}','${safeName}')" title="${title}">${label}</button>`;
+}
+
 async function loadWatchlist() {
     const container = document.getElementById("watchlist-container");
     if (!container) return;
@@ -138,6 +166,7 @@ async function wlBulkDelete() {
             if (toolbar) toolbar.classList.remove("open");
             if (typeof showToast === "function") showToast(`${result.deleted} item${result.deleted !== 1 ? "s" : ""} removed from watchlist`);
             loadWatchlist();
+            initWatchlistCache();
         } catch (e) {
             alert("Failed to remove items");
         }
@@ -146,8 +175,12 @@ async function wlBulkDelete() {
 
 async function removeWatchlistItem(id, btn) {
     try {
+        const card = btn.closest(".watchlist-card");
+        const sym = card ? card.dataset.symbol : null;
         await api.del(`/api/screener/watchlist/${id}`);
-        btn.closest(".watchlist-card").remove();
+        if (sym) _wlSymbolSet.delete(sym.toUpperCase());
+        card.remove();
+        _refreshWlButtons();
         const grid = document.querySelector(".watchlist-grid");
         if (grid && grid.children.length === 0) {
             loadWatchlist();
@@ -155,6 +188,17 @@ async function removeWatchlistItem(id, btn) {
     } catch (e) {
         alert("Failed to remove item");
     }
+}
+
+/** Refresh all visible watchlist toggle buttons across the SPA */
+function _refreshWlButtons() {
+    document.querySelectorAll("[data-wl-symbol]").forEach(btn => {
+        const sym = btn.dataset.wlSymbol;
+        const watched = isInWatchlist(sym);
+        btn.classList.toggle("wl-watched", watched);
+        btn.textContent = watched ? "✓ Watching" : "+ Watch";
+        btn.title = watched ? `${sym} is in your watchlist` : `Add ${sym} to watchlist`;
+    });
 }
 
 function filterWatchlist(query) {

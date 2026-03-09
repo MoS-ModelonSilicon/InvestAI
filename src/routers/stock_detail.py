@@ -60,6 +60,29 @@ def stock_history(symbol: str, period: str = "1y", interval: str = "1d"):
     return history
 
 
+@router.get("/{symbol}/patterns")
+def stock_patterns(symbol: str, period: str = "1y", interval: str = "1d"):
+    """Detect chart and candlestick patterns for the given timeframe."""
+    from src.services.pattern_detection import detect_all_patterns
+
+    history = get_price_history(symbol.upper(), period, interval)
+    if not history or not history.get("close") or len(history["close"]) < 10:
+        return {
+            "chart_patterns": [],
+            "candlestick_patterns": [],
+            "gaps": [],
+            "pattern_score": 0,
+            "pattern_summary": "Insufficient data",
+        }
+    return detect_all_patterns(
+        history["open"],
+        history["high"],
+        history["low"],
+        history["close"],
+        history["volume"],
+    )
+
+
 @router.get("/{symbol}/news")
 def stock_news(symbol: str):
     return get_ticker_news(symbol.upper())

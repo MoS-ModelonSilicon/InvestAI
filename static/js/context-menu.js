@@ -138,7 +138,8 @@
             html += `<button class="btn btn-sm sq-btn sq-detail" onclick="event.stopPropagation();navigateToStock('${symbol}')" title="View details">📈</button>`;
         }
         if (showWatch) {
-            html += `<button class="btn btn-sm sq-btn sq-watch" onclick="event.stopPropagation();addToWatchlistFromDetail('${symbol}','${safeName}')" title="Add to watchlist">👁</button>`;
+            const _w = typeof isInWatchlist === "function" && isInWatchlist(symbol);
+            html += `<button class="btn btn-sm sq-btn sq-watch${_w ? ' wl-watched' : ''}" data-wl-symbol="${symbol}" onclick="event.stopPropagation();addToWatchlistFromDetail('${symbol}','${safeName}')" title="${_w ? symbol + ' is in your watchlist' : 'Add to watchlist'}">${_w ? '✓' : '👁'}</button>`;
         }
         if (showBuy) {
             html += `<button class="btn btn-sm sq-btn sq-buy" onclick="event.stopPropagation();openAddHoldingModal('${symbol}','${safeName}',${priceVal})" title="Add to portfolio">💰</button>`;

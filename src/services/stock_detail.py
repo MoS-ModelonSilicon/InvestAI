@@ -32,10 +32,12 @@ def get_price_history(symbol: str, period: str = "1y", interval: str = "1d") -> 
     try:
         candles = dp.get_candles(symbol, res, from_ts, to_ts)
         if not candles or not candles.get("c"):
-            return {"dates": [], "open": [], "high": [], "low": [], "close": [], "volume": []}
+            return {"dates": [], "timestamps": [], "open": [], "high": [], "low": [], "close": [], "volume": []}
 
+        date_fmt = "%Y-%m-%dT%H:%M" if res in ("1", "5", "15", "60") else "%Y-%m-%d"
         result = {
-            "dates": [datetime.fromtimestamp(t).strftime("%Y-%m-%d") for t in candles["t"]],
+            "dates": [datetime.fromtimestamp(t).strftime(date_fmt) for t in candles["t"]],
+            "timestamps": [int(t * 1000) for t in candles["t"]],
             "open": [round(v, 2) for v in candles["o"]],
             "high": [round(v, 2) for v in candles["h"]],
             "low": [round(v, 2) for v in candles["l"]],
@@ -45,4 +47,4 @@ def get_price_history(symbol: str, period: str = "1y", interval: str = "1d") -> 
         _set_cache(cache_key, result)
         return result
     except Exception:
-        return {"dates": [], "open": [], "high": [], "low": [], "close": [], "volume": []}
+        return {"dates": [], "timestamps": [], "open": [], "high": [], "low": [], "close": [], "volume": []}

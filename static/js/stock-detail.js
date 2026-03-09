@@ -3,6 +3,24 @@ let _currentDetailSymbol = null;
 let _spyOverlayActive = false;
 let _lastHistory = null;
 let _lastSpyHistory = null;
+let _candleMode = false;
+let _currentPatterns = null;
+
+const LINE_TF = [
+    { label: "1M", period: "1mo", interval: "1d" },
+    { label: "3M", period: "3mo", interval: "1d" },
+    { label: "6M", period: "6mo", interval: "1d" },
+    { label: "1Y", period: "1y", interval: "1d" },
+    { label: "5Y", period: "5y", interval: "1wk" },
+];
+const CANDLE_TF = [
+    { label: "1m", period: "1d", interval: "1m" },
+    { label: "5m", period: "5d", interval: "5m" },
+    { label: "15m", period: "5d", interval: "15m" },
+    { label: "1H", period: "3mo", interval: "1h" },
+    { label: "1D", period: "1y", interval: "1d" },
+    { label: "1W", period: "5y", interval: "1wk" },
+];
 
 function navigateToStock(symbol) {
     _currentDetailSymbol = symbol;
@@ -57,24 +75,27 @@ function renderStockDetail(info, history, news) {
     </div>
 
     <div class="sd-actions">
-        <button class="btn btn-primary btn-sm" onclick="addToWatchlistFromDetail('${info.symbol}','${(info.name || "").replace(/'/g, "\\'")}')">+ Watchlist</button>
+        <button class="btn btn-primary btn-sm${isInWatchlist(info.symbol) ? ' wl-watched' : ''}" data-wl-symbol="${info.symbol}" onclick="addToWatchlistFromDetail('${info.symbol}','${(info.name || "").replace(/'/g, "\\'")}')">${isInWatchlist(info.symbol) ? '✓ Watching' : '+ Watchlist'}</button>
         <button class="btn btn-sm" onclick="openAddHoldingModal('${info.symbol}','${(info.name || "").replace(/'/g, "\\'")}', ${info.price})">+ Portfolio</button>
-
     </div>
 
     <div class="sd-chart-section">
-        <div class="sd-timeframes">
-            <button class="sd-tf active" onclick="changeTimeframe('${info.symbol}','1mo','1d',this)">1M</button>
-            <button class="sd-tf" onclick="changeTimeframe('${info.symbol}','3mo','1d',this)">3M</button>
-            <button class="sd-tf" onclick="changeTimeframe('${info.symbol}','6mo','1d',this)">6M</button>
-            <button class="sd-tf" onclick="changeTimeframe('${info.symbol}','1y','1d',this)">1Y</button>
-            <button class="sd-tf" onclick="changeTimeframe('${info.symbol}','5y','1wk',this)">5Y</button>
-            <span class="sd-tf-divider"></span>
-            <button class="sd-tf sd-spy-toggle" id="spy-toggle-btn" onclick="toggleSpyOverlay('${info.symbol}')">vs SPY</button>
+        <div class="sd-chart-controls">
+            <div class="sd-chart-type">
+                <button class="sd-ct active" id="ct-line" onclick="setChartType('line','${info.symbol}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 8 13 13 9 9 2 16"/></svg>
+                </button>
+                <button class="sd-ct" id="ct-candle" onclick="setChartType('candle','${info.symbol}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="2" x2="9" y2="6"/><rect x="6" y="6" width="6" height="10" rx="1"/><line x1="9" y1="16" x2="9" y2="22"/><line x1="17" y1="4" x2="17" y2="8"/><rect x="14" y="8" width="6" height="8" rx="1"/><line x1="17" y1="16" x2="17" y2="20"/></svg>
+                </button>
+            </div>
+            <div class="sd-timeframes" id="sd-timeframes"></div>
+            <button class="sd-tf sd-spy-toggle" id="spy-toggle-btn" onclick="toggleSpyOverlay('${info.symbol}')" style="margin-left:auto">vs SPY</button>
         </div>
         <div class="sd-chart-wrapper">
             <canvas id="sd-price-chart"></canvas>
         </div>
+        <div id="sd-patterns-legend" class="sd-patterns-legend"></div>
     </div>`;
 
     // Key Stats
@@ -154,13 +175,41 @@ function renderStockDetail(info, history, news) {
     container.innerHTML = html;
     _spyOverlayActive = false;
     _lastSpyHistory = null;
+    _candleMode = false;
+    _currentPatterns = null;
+    buildTimeframeButtons(info.symbol);
     if (history && history.close && history.close.length > 0) {
         _lastHistory = history;
         renderDetailChart(history);
     }
 }
 
+function buildTimeframeButtons(symbol) {
+    const el = document.getElementById("sd-timeframes");
+    if (!el) return;
+    const tfs = _candleMode ? CANDLE_TF : LINE_TF;
+    const defIdx = _candleMode ? 4 : 0;
+    el.innerHTML = tfs.map((tf, i) =>
+        `<button class="sd-tf${i === defIdx ? ' active' : ''}" onclick="changeTimeframe('${symbol}','${tf.period}','${tf.interval}',this)">${tf.label}</button>`
+    ).join("");
+}
+
+function setChartType(type, symbol) {
+    _candleMode = type === "candle";
+    document.getElementById("ct-line").classList.toggle("active", !_candleMode);
+    document.getElementById("ct-candle").classList.toggle("active", _candleMode);
+    const spyBtn = document.getElementById("spy-toggle-btn");
+    if (spyBtn) spyBtn.style.display = _candleMode ? "none" : "";
+    _spyOverlayActive = false;
+    _currentPatterns = null;
+    buildTimeframeButtons(symbol);
+    const tfs = _candleMode ? CANDLE_TF : LINE_TF;
+    const def = tfs[_candleMode ? 4 : 0];
+    changeTimeframe(symbol, def.period, def.interval, document.querySelector("#sd-timeframes .sd-tf.active"));
+}
+
 function renderDetailChart(history, spyHistory) {
+    if (_candleMode) { renderCandlestickChart(history); return; }
     const canvas = document.getElementById("sd-price-chart");
     if (!canvas) return;
     if (detailChart) detailChart.destroy();
@@ -267,29 +316,92 @@ function renderDetailChart(history, spyHistory) {
 }
 
 async function changeTimeframe(symbol, period, interval, btn) {
-    document.querySelectorAll(".sd-tf").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    _lastSpyHistory = null; // reset SPY cache on timeframe change
+    document.querySelectorAll("#sd-timeframes .sd-tf").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    _lastSpyHistory = null;
     try {
-        if (_spyOverlayActive) {
-            // Fetch stock + SPY history in parallel
-            const [history, spy] = await Promise.all([
-                api.get(`/api/stock/${symbol}/history?period=${period}&interval=${interval}`),
-                api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`),
-            ]);
-            if (history && history.close && history.close.length > 0) {
-                _lastHistory = history;
+        const history = await api.get(`/api/stock/${symbol}/history?period=${period}&interval=${interval}`);
+        if (history && history.close && history.close.length > 0) {
+            _lastHistory = history;
+            if (_candleMode) {
+                try { _currentPatterns = await api.get(`/api/stock/${symbol}/patterns?period=${period}&interval=${interval}`); } catch { _currentPatterns = null; }
+                renderCandlestickChart(history);
+            } else if (_spyOverlayActive) {
+                const spy = await api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`);
                 _lastSpyHistory = spy;
                 renderDetailChart(history, spy);
-            }
-        } else {
-            const history = await api.get(`/api/stock/${symbol}/history?period=${period}&interval=${interval}`);
-            if (history && history.close && history.close.length > 0) {
-                _lastHistory = history;
+            } else {
                 renderDetailChart(history);
             }
         }
     } catch (e) { /* ignore */ }
+}
+
+function renderCandlestickChart(history) {
+    const canvas = document.getElementById("sd-price-chart");
+    if (!canvas) return;
+    if (detailChart) detailChart.destroy();
+    const ts = history.timestamps || history.dates.map(d => new Date(d).getTime());
+    const ohlc = ts.map((t, i) => ({ x: t, o: history.open[i], h: history.high[i], l: history.low[i], c: history.close[i] }));
+    const maxVol = Math.max(...history.volume);
+    const volCol = history.close.map((c, i) => c >= history.open[i] ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.35)");
+    const ds = [
+        { label: "OHLC", data: ohlc, borderColor: { up: "#22c55e", down: "#ef4444", unchanged: "#999" }, yAxisID: "y" },
+        { type: "bar", label: "Volume", data: ts.map((t, i) => ({ x: t, y: history.volume[i] })), backgroundColor: volCol, yAxisID: "yVol", barPercentage: 0.8, order: 1 },
+    ];
+    if (_currentPatterns) {
+        const mk = { bullish: [], bearish: [], neutral: [] };
+        (_currentPatterns.candlestick_patterns || []).forEach(p => {
+            if (p.idx < ts.length) mk[p.direction || "neutral"].push({ x: ts[p.idx], y: p.direction === "bearish" ? history.high[p.idx] * 1.01 : history.low[p.idx] * 0.99, _pat: p });
+        });
+        if (mk.bullish.length) ds.push({ type: "scatter", label: "\u25B2 Bullish", data: mk.bullish, pointStyle: "triangle", pointRadius: 8, backgroundColor: "#22c55e", borderColor: "#22c55e", yAxisID: "y", order: 0 });
+        if (mk.bearish.length) ds.push({ type: "scatter", label: "\u25BC Bearish", data: mk.bearish, pointStyle: "triangle", rotation: 180, pointRadius: 8, backgroundColor: "#ef4444", borderColor: "#ef4444", yAxisID: "y", order: 0 });
+        if (mk.neutral.length) ds.push({ type: "scatter", label: "\u25C6 Neutral", data: mk.neutral, pointStyle: "rectRot", pointRadius: 7, backgroundColor: "#eab308", borderColor: "#eab308", yAxisID: "y", order: 0 });
+    }
+    detailChart = new Chart(canvas, {
+        type: "candlestick",
+        data: { datasets: ds },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { mode: "nearest", intersect: true, backgroundColor: "rgba(20,22,34,0.95)", titleColor: "#8b8fa3", bodyColor: "#e4e4e7",
+                    callbacks: { label(ctx) {
+                        const d = ctx.raw;
+                        if (d && d.o != null) return [`O: $${d.o.toFixed(2)}  H: $${d.h.toFixed(2)}`, `L: $${d.l.toFixed(2)}  C: $${d.c.toFixed(2)}`];
+                        if (d && d._pat) return [d._pat.pattern, d._pat.detail];
+                        if (ctx.dataset.label === "Volume") return `Vol: ${(d.y || 0).toLocaleString()}`;
+                        return ctx.formattedValue;
+                    }},
+                },
+            },
+            scales: {
+                x: { type: "time", ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
+                y: { position: "right", ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => "$" + v }, grid: { color: "rgba(42,45,62,0.3)" } },
+                yVol: { position: "left", max: maxVol * 4, display: false, grid: { display: false } },
+            },
+        },
+    });
+    renderPatternLegend();
+}
+
+function renderPatternLegend() {
+    const el = document.getElementById("sd-patterns-legend");
+    if (!el) return;
+    const p = _currentPatterns;
+    if (!p || (!(p.candlestick_patterns || []).length && !(p.chart_patterns || []).length)) { el.style.display = "none"; return; }
+    el.style.display = "";
+    const sc = p.pattern_score >= 0 ? "pat-bull" : "pat-bear";
+    let h = `<div class="pl-header"><span>Detected Patterns</span><span class="${sc}">Score: ${p.pattern_score > 0 ? "+" : ""}${p.pattern_score}</span></div><div class="pl-items">`;
+    (p.candlestick_patterns || []).forEach(c => {
+        const cls = c.direction === "bullish" ? "pat-bull" : c.direction === "bearish" ? "pat-bear" : "pat-neutral";
+        h += `<div class="pl-item ${cls}"><strong>${c.pattern}</strong> <span class="pl-rel">${c.reliability}%</span><br><small>${c.detail}</small></div>`;
+    });
+    (p.chart_patterns || []).forEach(c => {
+        const cls = c.direction === "bullish" ? "pat-bull" : "pat-bear";
+        h += `<div class="pl-item ${cls}"><strong>${c.name}</strong><br><small>${c.detail || ""}</small></div>`;
+    });
+    el.innerHTML = h + "</div>";
 }
 
 async function toggleSpyOverlay(symbol) {
@@ -322,11 +434,18 @@ async function toggleSpyOverlay(symbol) {
 }
 
 async function addToWatchlistFromDetail(symbol, name) {
+    const sym = symbol.toUpperCase();
+    if (isInWatchlist(sym)) {
+        showToast(`${sym} is already in your watchlist`, "info");
+        return;
+    }
     try {
-        await api.post(`/api/screener/watchlist?symbol=${symbol}&name=${encodeURIComponent(name)}`, {});
-        showToast(`${symbol} added to watchlist`);
+        await api.post(`/api/screener/watchlist?symbol=${sym}&name=${encodeURIComponent(name)}`, {});
+        _wlSymbolSet.add(sym);
+        showToast(`${sym} added to watchlist`);
+        _refreshWlButtons();
     } catch (e) {
-        showToast(`${symbol} is already in your watchlist`, "info");
+        showToast(`${sym} is already in your watchlist`, "info");
     }
 }
 
