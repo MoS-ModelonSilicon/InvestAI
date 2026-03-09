@@ -307,6 +307,11 @@ let _taCurrentData = null;
 function _renderTADetailModal(data) {
     _taCurrentData = data;
     let overlay = document.getElementById("ta-detail-overlay");
+
+    // Save scroll position before re-render (the modal itself is the scrollable container)
+    const existingModal = overlay ? overlay.querySelector('.ta-detail-modal') : null;
+    const savedScroll = existingModal ? existingModal.scrollTop : 0;
+
     if (!overlay) {
         overlay = document.createElement("div");
         overlay.id = "ta-detail-overlay";
@@ -439,7 +444,18 @@ function _renderTADetailModal(data) {
         </div>`;
 
     overlay.style.display = "flex";
-    setTimeout(() => _drawAllTACharts(data), 50);
+
+    // Restore scroll position after DOM update and after charts draw
+    const newModal = overlay.querySelector('.ta-detail-modal');
+    if (newModal && savedScroll > 0) {
+        newModal.scrollTop = savedScroll;
+    }
+    setTimeout(() => {
+        _drawAllTACharts(data);
+        // Re-apply scroll after charts resize content
+        const m = document.querySelector('.ta-detail-modal');
+        if (m && savedScroll > 0) m.scrollTop = savedScroll;
+    }, 50);
 }
 
 /* ── Decision Breakdown HTML builder ───────────── */
