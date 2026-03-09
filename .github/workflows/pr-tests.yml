@@ -117,10 +117,24 @@ jobs:
       - name: Run mypy
         run: mypy src/ --config-file=pyproject.toml
 
+  # ── Aggregate gate (matches branch-protection required check name) ──
+  ci:
+    name: "ci"
+    needs: [smoke-tests, lint, type-check]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check results
+        run: |
+          if [[ "${{ needs.smoke-tests.result }}" != "success" || "${{ needs.lint.result }}" != "success" ]]; then
+            echo "Required jobs failed"
+            exit 1
+          fi
+
   # ── Confirm staging deploy (auto-deploys on push to master) ──
   deploy-staging:
     name: "Staging Auto-Deploy"
-    needs: [smoke-tests, lint]
+    needs: [ci]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     timeout-minutes: 2
