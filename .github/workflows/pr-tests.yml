@@ -86,7 +86,9 @@ jobs:
         run: ruff check src/ tests/ --output-format=github
 
       - name: Ruff format check
-        run: ruff format --check src/ tests/
+        run: |
+          ruff format --diff src/ tests/ || true
+          ruff format --check src/ tests/
 
       - name: Verify app imports
         run: python -c "from src.main import app; print('App imports OK')"
