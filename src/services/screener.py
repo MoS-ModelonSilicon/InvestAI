@@ -537,11 +537,7 @@ def screen_instruments(
     if not snapshot:
         logger.info("Screener snapshot empty — falling back to live fetch")
         if query_lower:
-            matched_syms = [
-                sym
-                for sym in ALL_UNIVERSE
-                if _matches_query(query_lower, sym, KNOWN_NAMES.get(sym, sym))
-            ]
+            matched_syms = [sym for sym in ALL_UNIVERSE if _matches_query(query_lower, sym, KNOWN_NAMES.get(sym, sym))]
             all_data = fetch_batch(matched_syms, cached_only=False) if matched_syms else []
         elif asset_type == "ETF":
             all_data = fetch_batch(ETF_UNIVERSE, cached_only=True)
