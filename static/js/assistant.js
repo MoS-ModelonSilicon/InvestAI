@@ -184,6 +184,13 @@
                             case "tool":
                                 showToolIndicator(contentEl, event.name, event.args);
                                 break;
+                            case "navigate":
+                                // Navigate to the requested page
+                                if (event.page) {
+                                    const navLink = document.querySelector(`.nav-link[data-page="${event.page}"]`);
+                                    if (navLink) navLink.click();
+                                }
+                                break;
                             case "error":
                                 contentEl.textContent = event.content;
                                 break;
@@ -265,6 +272,19 @@
             get_stock_quote: `Looking up ${args.symbol || "stock"}...`,
             search_screener: `Searching stocks${args.query ? ": " + args.query : ""}...`,
             submit_suggestion: "Logging your suggestion...",
+            add_to_portfolio: `Adding ${args.symbol || "stock"} to portfolio...`,
+            add_to_watchlist: `Adding ${args.symbol || "stock"} to watchlist...`,
+            remove_from_watchlist: `Removing ${args.symbol || "stock"} from watchlist...`,
+            create_alert: `Setting alert for ${args.symbol || "stock"}...`,
+            add_transaction: `Recording ${args.type || "transaction"}...`,
+            get_my_portfolio: "Fetching your portfolio...",
+            get_my_watchlist: "Fetching your watchlist...",
+            get_my_alerts: "Fetching your alerts...",
+            get_dashboard_summary: "Loading financial summary...",
+            get_my_budgets: "Loading budget status...",
+            navigate_to: `Opening ${args.page || "page"}...`,
+            get_ai_picks: "Fetching AI strategy picks...",
+            get_trading_signals: `Analyzing ${args.symbol || "stock"}...`,
         };
         toolDiv.textContent = "🔧 " + (labels[toolName] || `Using ${toolName}...`);
         contentEl.appendChild(toolDiv);
