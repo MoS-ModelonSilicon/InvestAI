@@ -24,7 +24,7 @@ from src.services import advanced_indicators as adv
 from src.services.market_data import (
     fetch_batch,
     fetch_stock_info,
-    ALL_UNIVERSE,
+    ADVISOR_UNIVERSE,
     format_market_cap,
     _LOW_MEMORY,
 )
@@ -370,14 +370,16 @@ def _run_background_scan():
         _fetch_benchmark()
 
         # Use whatever is already cached, don't block on fetching fundamentals
-        fundamentals = fetch_batch(ALL_UNIVERSE, cached_only=True)
+        # Use ADVISOR_UNIVERSE (no .TA stocks) to avoid TASE data-availability
+        # bias that causes Israeli stocks to dominate results on Render.
+        fundamentals = fetch_batch(ADVISOR_UNIVERSE, cached_only=True)
         fund_map = {d["symbol"]: d for d in fundamentals if d.get("price", 0) > 0}
 
         # For symbols not yet cached, create minimal fund_info stubs so we can
         # still scan them — candles are what matter for technical analysis
         from src.services.market_data import WARM_PRIORITY
 
-        for sym in ALL_UNIVERSE:
+        for sym in ADVISOR_UNIVERSE:
             if sym not in fund_map:
                 fund_map[sym] = {"symbol": sym, "name": sym, "sector": "N/A", "price": 1, "market_cap": 0}
 

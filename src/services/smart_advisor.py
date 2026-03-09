@@ -18,7 +18,7 @@ from src.services import technical_analysis as ta
 from src.services.market_data import (
     fetch_batch,
     fetch_stock_info,
-    ALL_UNIVERSE,
+    ADVISOR_UNIVERSE,
     _get_cached,
     _set_cache,
     format_market_cap,
@@ -340,8 +340,10 @@ def scan_and_score(period: str = "1y") -> list[dict]:
     if isinstance(cached, list):
         return cast(list[dict[str, Any]], cached)
 
-    # Try cached data first; if cache isn't warm enough, fetch a smaller set
-    fundamentals = fetch_batch(ALL_UNIVERSE, cached_only=True)
+    # Try cached data first; if cache isn't warm enough, fetch a smaller set.
+    # Use ADVISOR_UNIVERSE (no .TA stocks) to avoid TASE data-availability
+    # bias that causes Israeli stocks to dominate results on Render.
+    fundamentals = fetch_batch(ADVISOR_UNIVERSE, cached_only=True)
     if len(fundamentals) < 20:
         logger.info("Advisor: only %d cached stocks, fetching priority symbols on-demand", len(fundamentals))
         from src.services.market_data import WARM_PRIORITY
