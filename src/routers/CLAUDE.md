@@ -54,3 +54,20 @@ app.include_router(domain.router)
 - Route prefix must start with `/api/` for auth middleware to require authentication
 - Routes NOT under `/api/` are treated as public by AuthMiddleware
 - `calendar_router.py` is named with suffix to avoid conflict with Python's `calendar` stdlib module
+
+## Bulk Delete Pattern
+
+Portfolio and Watchlist support bulk deletion via POST (not DELETE, to allow a JSON body):
+
+```python
+class BulkDeleteRequest(BaseModel):
+    ids: List[int]
+
+@router.post("/holdings/bulk-delete")
+def bulk_remove(payload: BulkDeleteRequest, db=Depends(get_db), user=Depends(get_current_user)):
+    count = db.query(Model).filter(Model.id.in_(payload.ids), Model.user_id == user.id).delete(synchronize_session="fetch")
+    db.commit()
+    return {"ok": True, "deleted": count}
+```
+
+Endpoints: `POST /api/portfolio/holdings/bulk-delete`, `POST /api/screener/watchlist/bulk-delete`

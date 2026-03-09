@@ -16,3 +16,5 @@ finance.db
 Thumbs.db
 DEPLOY-KEYS.md
 android/app/play-service-account.json
+_test_api.py
+.env.example

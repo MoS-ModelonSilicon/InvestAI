@@ -92,6 +92,16 @@
   - Triggered Render redeploy to apply changes
   - Documented new admin email in `DEPLOY-KEYS.md` (password intentionally omitted from docs)
 
+- [x] **Bulk Manage: Multi-Select Delete for Portfolio & Watchlist** (2026-03-09)
+  - "Manage" toggle button in Portfolio and Watchlist headers — enters edit mode
+  - Checkboxes appear on every holding row / watchlist card for multi-select
+  - Sticky action toolbar with Select All / Deselect All, live counter ("4 of 12 selected"), Remove Selected
+  - Confirmation modal lists every symbol being removed before deletion
+  - Toast notification on completion ("3 holdings removed")
+  - Backend: `POST /api/portfolio/holdings/bulk-delete` and `POST /api/screener/watchlist/bulk-delete` — single DB call for bulk operations
+  - New shared module `static/js/bulk-manage.js` for modal and toolbar helpers
+  - CSS: custom checkboxes, selected-row/card highlights, slide-in toolbar animation
+
 - [x] **DevOps: Render API Management** (2026-03-06)
   - Established Render API access for automated deployments and env-var management
   - API key and Service ID documented in `DEPLOY-KEYS.md`

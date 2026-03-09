@@ -16,6 +16,7 @@ A full-stack investment advisory web app with live market data, global stock scr
 
 ### Portfolio & Tracking
 - **Portfolio Tracker** — virtual holdings with real-time gain/loss, sector allocation pie chart, performance vs S&P 500 benchmark
+- **Bulk Manage** — edit-mode with multi-select checkboxes to remove multiple holdings or watchlist items at once (select all, pick individual, confirmation modal)
 - **Watchlist** — bookmark stocks with live price cards
 - **Price Alerts** — set above/below triggers, bell notifications, auto-check polling
 
@@ -35,6 +36,13 @@ A full-stack investment advisory web app with live market data, global stock scr
 - **Transactions** — income/expense CRUD with filtering
 - **Budgets** — monthly limits per category with progress bars
 - **Dashboard** — financial overview with trend charts and category breakdown
+
+### Onboarding & Help
+- **Interactive Guided Tour** — 10-step spotlight walkthrough auto-triggers on first login, covering Dashboard → Portfolio → Screener → AI Picks → Advisor → Alerts → DCA → right-click menu → Help Center
+- **Help Drawer** — slide-out panel with Quick Start checklist (gamified progress bar), feature guide cards grouped by section, Hidden Gems & Pro Tips, and keyboard shortcuts
+- **Feature Hint Dots** — pulsing purple dots on sidebar items the user hasn't visited yet; auto-removed on navigation
+- **"? Help & Tour" button** in sidebar for re-triggering tour or browsing the help center anytime
+- All state persisted in localStorage (`investai_tour_completed`, `investai_visited_pages`, `investai_checklist`)
 
 ### Infrastructure
 - **Access Key Auth** — protect the site with a shared passphrase for network sharing
@@ -101,8 +109,10 @@ static/
 ├── index.html              # Single-page app shell
 ├── login.html              # Access key login page
 ├── style.css               # Dark theme (2200+ lines)
-└── js/                     # 18 modular JS files
+└── js/                     # 20 modular JS files
     ├── app.js, api.js      # Navigation + API client
+    ├── tour.js             # Interactive guided tour (10 steps, spotlight overlay)
+    ├── help-drawer.js      # Help drawer (checklist, feature guide, pro tips)
     ├── market.js            # Live ticker + sparklines
     ├── screener.js          # Screener UI + detail panels
     ├── il-funds.js          # Israeli funds explorer
