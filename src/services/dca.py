@@ -431,9 +431,9 @@ def get_wizard_preview(symbol: str, user_id: int, db: Session) -> dict:
     profile = (
         db.query(RiskProfile).filter(RiskProfile.user_id == user_id).order_by(RiskProfile.created_at.desc()).first()
     )
-    monthly_investment = 500
+    monthly_investment: float = 500.0
     if profile and profile.monthly_investment:
-        monthly_investment = profile.monthly_investment
+        monthly_investment = float(profile.monthly_investment)
 
     # Suggest 10-25% of monthly budget for this stock
     suggested = round(monthly_investment * 0.15, 0)
