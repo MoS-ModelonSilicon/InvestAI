@@ -43,7 +43,8 @@ Floating chat widget in bottom-right corner. Self-contained — no dependencies 
 - **FAB button** with chat icon → toggles 380px chat panel
 - **SSE streaming** — connects to `POST /api/assistant/chat` with `text/event-stream`
 - **Model badges** — shows ⚡ gpt-5-nano or 🧠 o3 based on routing decision
-- **Tool indicators** — shows "Fetching AAPL quote..." when o3 calls tools
+- **Tool indicators** — shows contextual labels for all 16 tools (e.g. "Adding AAPL to portfolio...", "Analyzing NVDA...", "Loading budget status...")
+- **Navigation handling** — SSE `navigate` events trigger `navLink.click()` to switch pages
 - **Suggestion form** — accessible via 💡 button in header
 - **20-message context** — last 20 messages sent as conversation history
 - **Markdown-lite rendering** — bold, inline code, code blocks, line breaks

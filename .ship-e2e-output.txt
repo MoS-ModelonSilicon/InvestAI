@@ -10,9 +10,77 @@ timeout method: thread
 timeout func_only: False
 collecting ... collected 102 items / 98 deselected / 4 selected
 
-tests/test_live_site.py::TestStockDetail::test_stock_detail_opens_from_market_card[chromium] PASSED [ 25%]
+tests/test_live_site.py::TestStockDetail::test_stock_detail_opens_from_market_card[chromium] FAILED [ 25%]
 tests/test_live_site.py::TestDCAPlanner::test_dca_page_loads[chromium] PASSED [ 50%]
 tests/test_live_site.py::TestPerformance::test_login_page_loads_fast[chromium] PASSED [ 75%]
 tests/test_live_site.py::TestPerformance::test_dashboard_loads_after_login[chromium] PASSED [100%]
 
-====================== 4 passed, 98 deselected in 56.57s ======================
+================================== FAILURES ===================================
+_____ TestStockDetail.test_stock_detail_opens_from_market_card[chromium] ______
+tests\test_live_site.py:93: in test_stock_detail_opens_from_market_card
+    cards.first.click()
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
+    self._sync(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_locator.py:162: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_frame.py:566: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\_impl\_connection.py:559: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E   Call log:
+E     - waiting for locator(".market-card").first
+E       - locator resolved to <div data-symbol="AAPL" data-stock-price="257.46" data-stock-name="Apple Inc" class="market-card stock-down" onclick="navigateToStock('AAPL')">à</div>
+E     - attempting click action
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E       - waiting 20ms
+E       2 ╫ waiting for element to be visible, enabled and stable
+E         - element is visible, enabled and stable
+E         - scrolling into view if needed
+E         - done scrolling
+E         - <div class="tour-overlay open"></div> intercepts pointer events
+E       - retrying click action
+E         - waiting 100ms
+E       55 ╫ waiting for element to be visible, enabled and stable
+E          - element is visible, enabled and stable
+E          - scrolling into view if needed
+E          - done scrolling
+E          - <div class="tour-overlay open"></div> intercepts pointer events
+E        - retrying click action
+E          - waiting 500ms
+=========================== short test summary info ===========================
+FAILED tests/test_live_site.py::TestStockDetail::test_stock_detail_opens_from_market_card[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".market-card").first
+    - locator resolved to <div data-symbol="AAPL" data-stock-price="257.46" data-stock-name="Apple Inc" class="market-card stock-down" onclick="navigateToStock('AAPL')">à</div>
+  - attempting click action
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 ╫ waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="tour-overlay open"></div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    55 ╫ waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="tour-overlay open"></div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+============ 1 failed, 3 passed, 98 deselected in 77.29s (0:01:17) ============

@@ -99,6 +99,26 @@ Custom amounts (e.g., 50000) compute fresh on first request, but the heavy `scan
 3. `run_full_analysis()` for each of 12 combos — these reuse the cached scan, so they're fast
 4. Total warm-up: ~2-3 min after Render starts
 
+## AI Assistant (`assistant.py`)
+
+- 1300+ lines — two-tier model routing + 16 tool functions + SSE streaming
+- **Classification**: gpt-5-nano classifies each message as SIMPLE / COMPLEX / ACTION / SUGGESTION
+- **Model routing**: SIMPLE → gpt-5-nano, COMPLEX/ACTION → o3
+- **Tool dispatch**: `_TOOL_DISPATCH` dict maps tool names to handler functions
+- **Tool pattern**: each `_tool_*()` function creates its own `SessionLocal()`, does DB work, returns `json.dumps()`
+- **Navigate tool**: returns `{"navigate": "page_name"}`, chat_stream emits SSE `{"type": "navigate", "page": "..."}` event
+- **`TOOLS` list**: 16 function definitions in OpenAI tool-call format
+- Don't add tools without also adding them to `_TOOL_DISPATCH` and the frontend `showToolIndicator()` labels
+
+## GitHub Issues (`github_issues.py`)
+
+- REST API wrapper for GitHub Issues (create, close, reopen, comment)
+- Token: `GITHUB_TOKEN` env var → fallback to `gh auth token` CLI
+- Repo: `GITHUB_REPO` env var → fallback to parsing `git remote get-url origin`
+- Proxy: auto-detects Intel proxy (`proxy-dmz.intel.com:912`)
+- Labels applied based on category: `user-feedback` (always), `feature-request` or `user-bug`
+- All methods are fire-and-forget in the main code path — exceptions are swallowed
+
 ## Israeli Funds (`funder_scraper.py`, `israeli_funds.py`)
 
 - Scrapes funder.co.il in real-time

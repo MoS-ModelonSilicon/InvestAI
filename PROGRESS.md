@@ -94,11 +94,11 @@
   - Documented new admin email in `DEPLOY-KEYS.md` (password intentionally omitted from docs)
 
 - [x] **AI Assistant Chatbot** (2026-03-09)
-  - Two-tier model routing: gpt-5-nano for simple queries (FAQ, navigation, greetings), o3 for complex financial reasoning (stock analysis, portfolio advice)
+  - Two-tier model routing: gpt-5-nano for simple queries (FAQ, greetings), o3 for complex financial reasoning + actions
   - Both models are Azure OpenAI reasoning models — no temperature, uses `max_completion_tokens`
   - SSE streaming with token-by-token output and model badge indicators (⚡ nano / 🧠 o3)
   - Tool calling: o3 can invoke `get_stock_quote`, `search_screener`, `submit_suggestion` mid-conversation
-  - Classification prompt routes each message to SIMPLE / COMPLEX / SUGGESTION
+  - Classification prompt routes each message to SIMPLE / COMPLEX / ACTION / SUGGESTION
   - Floating chat widget (bottom-right FAB → 380px panel) with 20-message context window
   - Suggestion box: users submit feature requests, optional AI summary categorization
   - Admin endpoints: list, update status, view stats for suggestions
@@ -106,6 +106,30 @@
   - Frontend: `static/js/assistant.js` (SSE client, markdown-lite rendering), `static/style.css` (+279 lines)
   - Env vars: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY` (set in Render dashboard)
   - API pattern: `{endpoint}/openai/deployments/{model}/chat/completions?api-version=2024-12-01-preview`
+
+- [x] **GitHub Issues Integration + Admin Dashboard** (2026-03-09)
+  - `src/services/github_issues.py` — GitHub REST API service (create/close/reopen issues, add comments)
+  - Auto-discovers GitHub token (`GITHUB_TOKEN` env var or `gh auth token` CLI fallback)
+  - Auto-discovers repo from git remote origin URL
+  - Intel proxy auto-detection for corporate networks
+  - Labels auto-applied: `user-feedback`, `feature-request`, `user-bug` (based on category)
+  - Two integration paths: manual suggestion form + AI tool both create GitHub Issues
+  - Admin status changes sync to GitHub (done/declined → close issue, reopen on status revert)
+  - Admin notes posted as GitHub comments on the linked issue
+  - `github_issue_url` + `github_issue_number` columns added to Suggestion model
+  - Auto-migration in `src/main.py` for existing databases
+  - Admin UI: "Feature Requests & Bugs" section with filter dropdown, detail modal, GitHub links
+  - Stats badges: total suggestions, new requests shown on admin dashboard
+
+- [x] **AI Assistant: 13 New Tool Capabilities** (2026-03-09)
+  - **Write tools (5):** `add_to_portfolio` (buy shares), `add_to_watchlist`, `remove_from_watchlist`, `create_alert` (above/below price triggers), `add_transaction` (income/expense with category lookup)
+  - **Read tools (5):** `get_my_portfolio` (holdings + P&L summary), `get_my_watchlist`, `get_my_alerts`, `get_dashboard_summary` (income/expenses/budgets), `get_my_budgets` (spending vs limits)
+  - **Analysis tools (2):** `get_ai_picks` (Autopilot strategy profiles), `get_trading_signals` (technical analysis with entry/target/stop/R:R)
+  - **Navigation (1):** `navigate_to` — emits SSE `navigate` event, frontend clicks the nav link to switch pages
+  - Classification expanded: SIMPLE / COMPLEX / ACTION / SUGGESTION — ACTION routes to o3 for reliable tool calling
+  - Total tool count: 16 (3 original + 13 new)
+  - All tools use `SessionLocal()` pattern for DB access (same as existing `_tool_submit_suggestion`)
+  - Frontend `showToolIndicator()` labels expanded for all 16 tools
 
 - [x] **Bulk Manage: Multi-Select Delete for Portfolio & Watchlist** (2026-03-09)
   - "Manage" toggle button in Portfolio and Watchlist headers — enters edit mode
