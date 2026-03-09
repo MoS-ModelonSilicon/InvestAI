@@ -73,6 +73,57 @@ const sessionZoneTimePlugin = {
     },
 };
 
+/* ── Session boundary lines plugin (day separators + session transitions) ── */
+const sessionBoundaryPlugin = {
+    id: "sessionBoundaries",
+    afterDatasetsDraw(chart) {
+        const timestamps = chart.options._timestamps;
+        const sessions = chart.options._sessions;
+        if (!timestamps || timestamps.length < 2) return;
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.x;
+        const { top, bottom } = chart.chartArea;
+        if (!xAxis || top == null) return;
+
+        ctx.save();
+        // Day boundaries — dashed lines where the calendar date changes
+        let prevDay = new Date(timestamps[0]).toDateString();
+        for (let i = 1; i < timestamps.length; i++) {
+            const curDay = new Date(timestamps[i]).toDateString();
+            if (curDay !== prevDay) {
+                ctx.strokeStyle = "rgba(128,140,160,0.4)";
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 4]);
+                const x = xAxis.getPixelForValue(i - 0.5);
+                ctx.beginPath();
+                ctx.moveTo(x, top);
+                ctx.lineTo(x, bottom);
+                ctx.stroke();
+                prevDay = curDay;
+            }
+        }
+        // Session transitions within the same day (pre↔regular↔post)
+        if (sessions && sessions.length === timestamps.length) {
+            for (let i = 1; i < sessions.length; i++) {
+                if (sessions[i] !== sessions[i - 1]) {
+                    const pDay = new Date(timestamps[i - 1]).toDateString();
+                    const cDay = new Date(timestamps[i]).toDateString();
+                    if (pDay !== cDay) continue; // day boundary already drawn
+                    ctx.strokeStyle = sessions[i] === "regular" ? "rgba(34,197,94,0.25)" : "rgba(168,85,247,0.25)";
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([3, 3]);
+                    const x = xAxis.getPixelForValue(i - 0.5);
+                    ctx.beginPath();
+                    ctx.moveTo(x, top);
+                    ctx.lineTo(x, bottom);
+                    ctx.stroke();
+                }
+            }
+        }
+        ctx.restore();
+    },
+};
+
 const LINE_TF = [
     { label: "1D", period: "1d", interval: "5m" },
     { label: "1W", period: "5d", interval: "15m" },
@@ -450,11 +501,12 @@ function renderDetailChart(history, spyHistory) {
     detailChart = new Chart(canvas, {
         type: "line",
         data: { labels: history.dates, datasets },
-        plugins: hasSessions ? [sessionZonePlugin] : [],
+        plugins: [...(hasSessions ? [sessionZonePlugin] : []), ...(hasSessions ? [sessionBoundaryPlugin] : [])],
         options: {
             responsive: true,
             maintainAspectRatio: false,
             _sessions: hasSessions ? sessions : null,
+            _timestamps: history.timestamps || null,
             plugins: {
                 legend: { display: true, position: "top", labels: { color: "#8b8fa3", font: { size: 11 } } },
                 tooltip: {
@@ -574,14 +626,17 @@ function renderCandlestickChart(history) {
     const sessions = history.sessions || [];
     const hasSessions = sessions.length === ts.length;
 
-    // Detect intraday: median gap between candles < 1 hour → use index-based x to eliminate overnight/weekend gaps
+    // Detect data characteristics for tick label formatting
     const _gaps = [];
-    for (let gi = 1; gi < Math.min(ts.length, 10); gi++) _gaps.push(ts[gi] - ts[gi - 1]);
+    for (let gi = 1; gi < Math.min(ts.length, 20); gi++) _gaps.push(ts[gi] - ts[gi - 1]);
     _gaps.sort((a, b) => a - b);
-    const isIntraday = _gaps.length > 0 && _gaps[Math.floor(_gaps.length / 2)] < 3600000;
-    const multiDay = ts.length >= 2 && (ts[ts.length - 1] - ts[0]) > 86400000;
+    const medianGapMs = _gaps.length > 0 ? _gaps[Math.floor(_gaps.length / 2)] : 86400000;
+    const isSubDaily = medianGapMs < 86400000;
+    const spanMs = ts.length >= 2 ? ts[ts.length - 1] - ts[0] : 0;
+    const multiDay = spanMs > 86400000;
 
-    const ohlc = ts.map((t, i) => ({ x: isIntraday ? i : t, o: history.open[i], h: history.high[i], l: history.low[i], c: history.close[i] }));
+    // Always use index-based x to eliminate ALL gaps (overnight, weekend, holiday)
+    const ohlc = ts.map((t, i) => ({ x: i, o: history.open[i], h: history.high[i], l: history.low[i], c: history.close[i] }));
     const maxVol = Math.max(...history.volume);
 
     // Color candles differently for extended hours
@@ -601,42 +656,49 @@ function renderCandlestickChart(history) {
     const ds = hasSessions ? [
         { label: "OHLC", data: ohlcRegular, borderColor: { up: "#22c55e", down: "#ef4444", unchanged: "#999" }, yAxisID: "y" },
         { label: "Extended", data: ohlcExtended, borderColor: { up: "rgba(34,197,94,0.4)", down: "rgba(239,68,68,0.4)", unchanged: "rgba(153,153,153,0.4)" }, color: { up: "rgba(34,197,94,0.15)", down: "rgba(239,68,68,0.15)", unchanged: "rgba(153,153,153,0.15)" }, yAxisID: "y" },
-        { type: "bar", label: "Volume", data: ts.map((t, i) => ({ x: isIntraday ? i : t, y: history.volume[i] })), backgroundColor: volCol, yAxisID: "yVol", barPercentage: 0.8, order: 1 },
+        { type: "bar", label: "Volume", data: ts.map((t, i) => ({ x: i, y: history.volume[i] })), backgroundColor: volCol, yAxisID: "yVol", barPercentage: 0.8, order: 1 },
     ] : [
         { label: "OHLC", data: ohlc, borderColor: { up: "#22c55e", down: "#ef4444", unchanged: "#999" }, yAxisID: "y" },
-        { type: "bar", label: "Volume", data: ts.map((t, i) => ({ x: isIntraday ? i : t, y: history.volume[i] })), backgroundColor: volCol, yAxisID: "yVol", barPercentage: 0.8, order: 1 },
+        { type: "bar", label: "Volume", data: ts.map((t, i) => ({ x: i, y: history.volume[i] })), backgroundColor: volCol, yAxisID: "yVol", barPercentage: 0.8, order: 1 },
     ];
 
     if (_currentPatterns) {
         const mk = { bullish: [], bearish: [], neutral: [] };
         (_currentPatterns.candlestick_patterns || []).forEach(p => {
-            if (p.idx < ts.length) mk[p.direction || "neutral"].push({ x: isIntraday ? p.idx : ts[p.idx], y: p.direction === "bearish" ? history.high[p.idx] * 1.01 : history.low[p.idx] * 0.99, _pat: p });
+            if (p.idx < ts.length) mk[p.direction || "neutral"].push({ x: p.idx, y: p.direction === "bearish" ? history.high[p.idx] * 1.01 : history.low[p.idx] * 0.99, _pat: p });
         });
         if (mk.bullish.length) ds.push({ type: "scatter", label: "\u25B2 Bullish", data: mk.bullish, pointStyle: "triangle", pointRadius: 8, backgroundColor: "#22c55e", borderColor: "#22c55e", yAxisID: "y", order: 0 });
         if (mk.bearish.length) ds.push({ type: "scatter", label: "\u25BC Bearish", data: mk.bearish, pointStyle: "triangle", rotation: 180, pointRadius: 8, backgroundColor: "#ef4444", borderColor: "#ef4444", yAxisID: "y", order: 0 });
         if (mk.neutral.length) ds.push({ type: "scatter", label: "\u25C6 Neutral", data: mk.neutral, pointStyle: "rectRot", pointRadius: 7, backgroundColor: "#eab308", borderColor: "#eab308", yAxisID: "y", order: 0 });
     }
+
+    // Build plugins: session shading + boundary lines
+    const chartPlugins = [];
+    if (hasSessions) chartPlugins.push(sessionZonePlugin);
+    if (isSubDaily) chartPlugins.push(sessionBoundaryPlugin);
+
     detailChart = new Chart(canvas, {
         type: "candlestick",
         data: { datasets: ds },
-        plugins: hasSessions ? [isIntraday ? sessionZonePlugin : sessionZoneTimePlugin] : [],
+        plugins: chartPlugins,
         options: {
             responsive: true, maintainAspectRatio: false,
             _sessions: hasSessions ? sessions : null,
-            _timestamps: hasSessions ? ts : null,
+            _timestamps: ts,
             plugins: {
                 legend: { display: false },
                 tooltip: { mode: "nearest", intersect: true, backgroundColor: "rgba(20,22,34,0.95)", titleColor: "#8b8fa3", bodyColor: "#e4e4e7",
                     callbacks: {
                         title(items) {
-                            if (!isIntraday) return undefined;
                             const d = items[0]?.raw;
                             if (!d || d.x == null) return '';
                             const idx = Math.round(d.x);
                             if (idx >= 0 && idx < ts.length) {
                                 const dt = new Date(ts[idx]);
-                                if (multiDay) return dt.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-                                return dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                                if (isSubDaily && multiDay) return dt.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                                if (isSubDaily) return dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                                if (spanMs > 365 * 86400000) return dt.toLocaleDateString([], {year:'numeric', month:'short', day:'numeric'});
+                                return dt.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
                             }
                             return '';
                         },
@@ -644,7 +706,7 @@ function renderCandlestickChart(history) {
                             if (!hasSessions) return "";
                             const d = items[0] && items[0].raw;
                             if (!d || d.x == null) return "";
-                            const idx = isIntraday ? Math.round(d.x) : ts.indexOf(d.x);
+                            const idx = Math.round(d.x);
                             if (idx >= 0 && sessions[idx] === "pre") return "PRE-MARKET";
                             if (idx >= 0 && sessions[idx] === "post") return "AFTER-HOURS";
                             return "";
@@ -661,23 +723,23 @@ function renderCandlestickChart(history) {
                 },
             },
             scales: {
-                x: isIntraday
-                    ? { type: "linear", min: -0.5, max: ts.length - 0.5,
-                        ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8,
-                            callback(val) {
-                                const i = Math.round(val); if (i < 0 || i >= ts.length) return '';
-                                const d = new Date(ts[i]);
-                                if (multiDay) return d.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-                                return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-                            }
-                        }, grid: { color: "rgba(42,45,62,0.3)" } }
-                    : { type: "time", ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
+                x: { type: "linear", min: -0.5, max: ts.length - 0.5,
+                    ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8,
+                        callback(val) {
+                            const i = Math.round(val); if (i < 0 || i >= ts.length) return '';
+                            const d = new Date(ts[i]);
+                            if (isSubDaily && multiDay) return d.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                            if (isSubDaily) return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                            if (spanMs > 365 * 86400000) return d.toLocaleDateString([], {year:'2-digit', month:'short'});
+                            return d.toLocaleDateString([], {month:'short', day:'numeric'});
+                        }
+                    }, grid: { color: "rgba(42,45,62,0.3)" } },
                 y: { position: "right", ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => currSym(_currentCurrency) + v }, grid: { color: "rgba(42,45,62,0.3)" } },
                 yVol: { position: "left", max: maxVol * 4, display: false, grid: { display: false } },
             },
         },
     });
-    if (isIntraday) detailChart._sdFullMax = ts.length - 0.5;
+    detailChart._sdFullMax = ts.length - 0.5;
     if (_zoomLevel !== 1) _applyZoom();
     renderPatternLegend();
     renderSessionLegend(hasSessions);
