@@ -202,6 +202,8 @@ class Suggestion(Base):
     status: Mapped[str] = mapped_column(default="new")  # new/reviewed/planned/done/declined
     admin_notes: Mapped[str] = mapped_column(Text, default="")
     votes: Mapped[int] = mapped_column(default=1)
+    github_issue_url: Mapped[Optional[str]] = mapped_column(default=None)
+    github_issue_number: Mapped[Optional[int]] = mapped_column(default=None)
     created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
 
     owner: Mapped[User] = relationship(back_populates="suggestions")

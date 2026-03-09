@@ -26,6 +26,8 @@ class SuggestionOut(BaseModel):
     status: str
     admin_notes: str
     votes: int
+    github_issue_url: str = ""
+    github_issue_number: int | None = None
     created_at: datetime | None
     user_email: str = ""
 

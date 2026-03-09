@@ -81,6 +81,15 @@ def _auto_migrate():
                 conn.execute(text("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0"))
             if "is_active" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1"))
+    # Add github columns to suggestions table
+    if "suggestions" in insp.get_table_names():
+        cols = {c["name"] for c in insp.get_columns("suggestions")}
+        with engine.begin() as conn:
+            if "github_issue_url" not in cols:
+                conn.execute(text("ALTER TABLE suggestions ADD COLUMN github_issue_url VARCHAR"))
+            if "github_issue_number" not in cols:
+                conn.execute(text("ALTER TABLE suggestions ADD COLUMN github_issue_number INTEGER"))
+
     # Add performance indexes
     with engine.begin() as conn:
         try:

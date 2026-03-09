@@ -33,7 +33,21 @@ Scripts in `index.html` must load in this order:
 3. Domain modules (`dashboard.js`, `portfolio.js`, etc.) — order doesn't matter between these
 4. `tour.js` — guided tour (must load before `app.js` so `window.startTour` is defined)
 5. `help-drawer.js` — help drawer (must load before `app.js` so sidebar button handler is bound)
-6. `app.js` — navigation and page lifecycle (calls `_trackPageVisit` from tour.js)
+6. `assistant.js` — AI chat widget (self-contained, loads after app.js is fine)
+7. `app.js` — navigation and page lifecycle (calls `_trackPageVisit` from tour.js)
+
+## AI Chat Widget (`assistant.js`)
+
+Floating chat widget in bottom-right corner. Self-contained — no dependencies on other modules.
+
+- **FAB button** with chat icon → toggles 380px chat panel
+- **SSE streaming** — connects to `POST /api/assistant/chat` with `text/event-stream`
+- **Model badges** — shows ⚡ gpt-5-nano or 🧠 o3 based on routing decision
+- **Tool indicators** — shows "Fetching AAPL quote..." when o3 calls tools
+- **Suggestion form** — accessible via 💡 button in header
+- **20-message context** — last 20 messages sent as conversation history
+- **Markdown-lite rendering** — bold, inline code, code blocks, line breaks
+- **Mobile responsive** — full-width bottom sheet on screens ≤480px
 
 ## Onboarding System
 
@@ -75,3 +89,35 @@ All API calls go through `fetchAPI()` in `api.js`:
 3. Add `<script>` tag in `index.html` (after `app.js`)
 4. Register in `app.js` navigation map
 5. Add sidebar nav item
+
+## Trading Advisor Detail Modal (`advisor.js`)
+
+The detail modal (opened by clicking a pick card) renders a full visual decision breakdown:
+
+### Chart Architecture
+- **6 Chart.js instances** managed via module-level variables: `_taPriceChart`, `_taRsiChart`, `_taMacdChart`, `_taStochChart`, `_taAdxChart`, `_taWaterfallChart`
+- Each is destroyed before recreation to avoid canvas reuse errors
+- `_drawAllTACharts(data)` calls all 6 draw functions
+
+### State Management
+- `_taCurrentData` — stores the last API response so overlay/mode toggling can re-render without refetching
+- `_taChartMode` — `'candle'` or `'line'` — controls main price chart type
+- `_taOverlayToggles` — `{sma, bollinger, vwap, keltner, sar, ichimoku}` boolean map
+- `_taDetailLoading` — debounce flag to prevent double-click double-fetches
+- Toggling an overlay or chart mode calls `_renderTADetailModal(_taCurrentData)` which rebuilds the full modal
+
+### Candlestick Rendering
+Uses Chart.js floating bars (not a candlestick plugin):
+- **Body**: `type:'bar'` with data `[open, close]` — green if close ≥ open, red otherwise
+- **Wicks**: Second `type:'bar'` dataset with data `[low, high]` and `barPercentage: 0.08`
+- `borderSkipped: false` is required for floating bars to render correctly
+
+### Pattern Annotations
+- Chart patterns (`viz_points`) rendered as connected point markers with dashed lines
+- Candlestick patterns rendered as triangle markers at detection indices (upward for bullish, inverted for bearish)
+- Hover tooltip uses `afterBody` callback to show candlestick pattern names at the hovered index
+
+### Decision Waterfall
+- One horizontal bar per signal from `data.decision_breakdown[]`
+- Green bars = positive weighted_score (bullish), Red = negative (bearish)
+- Bar width scaled: `Math.abs(weighted_score) / 0.5 * 100` (0.5 = full width)

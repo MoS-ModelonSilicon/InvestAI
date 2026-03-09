@@ -71,3 +71,26 @@ def bulk_remove(payload: BulkDeleteRequest, db=Depends(get_db), user=Depends(get
 ```
 
 Endpoints: `POST /api/portfolio/holdings/bulk-delete`, `POST /api/screener/watchlist/bulk-delete`
+
+## AI Assistant Router (`assistant.py`)
+
+Two-tier AI chat with model routing + suggestion management.
+
+### Endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/assistant/chat` | user | SSE streaming chat — routes to gpt-5-nano (simple) or o3 (complex) |
+| GET | `/api/assistant/status` | user | Check if AI assistant is configured |
+| POST | `/api/assistant/suggest` | user | Submit a feature suggestion |
+| POST | `/api/assistant/suggest/{id}/vote` | user | Upvote a suggestion |
+| GET | `/api/assistant/suggestions` | admin | List all suggestions (with pagination) |
+| PUT | `/api/assistant/suggestions/{id}` | admin | Update suggestion status/notes |
+| GET | `/api/assistant/suggestions/stats` | admin | Suggestion stats by status |
+
+### Key Patterns
+
+- **SSE streaming**: `POST /chat` returns `text/event-stream` via `StreamingResponse`. Each event is `data: {json}\n\n`. Event types: `model` (which model was chosen), `token` (text chunk), `tool` (tool invocation), `error`, `done`.
+- **Model routing**: The service classifies each message as SIMPLE/COMPLEX/SUGGESTION using gpt-5-nano, then routes accordingly.
+- **Tool calling**: o3 can call `get_stock_quote`, `search_screener`, `submit_suggestion` — results are fed back and the model streams a final answer.
+- **No `_is_configured()` → 501**: If Azure env vars aren't set, endpoints return 501 Service Unavailable.
