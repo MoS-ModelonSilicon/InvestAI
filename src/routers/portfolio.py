@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -70,14 +69,20 @@ def remove_holding(holding_id: int, db: Session = Depends(get_db), user: User = 
 
 
 class BulkDeleteRequest(BaseModel):
-    ids: List[int]
+    ids: list[int]
 
 
 @router.post("/holdings/bulk-delete")
-def bulk_remove_holdings(payload: BulkDeleteRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def bulk_remove_holdings(
+    payload: BulkDeleteRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     """Remove multiple holdings at once."""
     if not payload.ids:
         return {"ok": True, "deleted": 0}
-    count = db.query(Holding).filter(Holding.id.in_(payload.ids), Holding.user_id == user.id).delete(synchronize_session="fetch")
+    count = (
+        db.query(Holding)
+        .filter(Holding.id.in_(payload.ids), Holding.user_id == user.id)
+        .delete(synchronize_session="fetch")
+    )
     db.commit()
     return {"ok": True, "deleted": count}

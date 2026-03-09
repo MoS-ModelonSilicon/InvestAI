@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -137,14 +137,20 @@ def remove_from_watchlist(item_id: int, db: Session = Depends(get_db), user: Use
 
 
 class BulkDeleteWatchlistRequest(BaseModel):
-    ids: List[int]
+    ids: list[int]
 
 
 @router.post("/watchlist/bulk-delete")
-def bulk_remove_from_watchlist(payload: BulkDeleteWatchlistRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def bulk_remove_from_watchlist(
+    payload: BulkDeleteWatchlistRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     """Remove multiple watchlist items at once."""
     if not payload.ids:
         return {"ok": True, "deleted": 0}
-    count = db.query(Watchlist).filter(Watchlist.id.in_(payload.ids), Watchlist.user_id == user.id).delete(synchronize_session="fetch")
+    count = (
+        db.query(Watchlist)
+        .filter(Watchlist.id.in_(payload.ids), Watchlist.user_id == user.id)
+        .delete(synchronize_session="fetch")
+    )
     db.commit()
     return {"ok": True, "deleted": count}

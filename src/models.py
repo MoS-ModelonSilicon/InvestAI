@@ -38,6 +38,7 @@ class User(Base):
     holdings: Mapped[list[Holding]] = relationship(back_populates="owner")
     alerts: Mapped[list[Alert]] = relationship(back_populates="owner")
     dca_plans: Mapped[list[DcaPlan]] = relationship(back_populates="owner")
+    suggestions: Mapped[list[Suggestion]] = relationship(back_populates="owner")
 
 
 # ── Finance Tracker Models ───────────────────────────────────
@@ -186,6 +187,24 @@ class PasswordReset(Base):
     code: Mapped[str]
     created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
     used: Mapped[int] = mapped_column(default=0)
+
+
+class Suggestion(Base):
+    """User feature requests and suggestions captured by AI assistant or manual form."""
+
+    __tablename__ = "suggestions"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    message: Mapped[str] = mapped_column(Text)  # original user message
+    ai_summary: Mapped[str] = mapped_column(Text, default="")  # AI-generated summary
+    category: Mapped[str] = mapped_column(default="feature")  # feature/bug/improvement/content
+    status: Mapped[str] = mapped_column(default="new")  # new/reviewed/planned/done/declined
+    admin_notes: Mapped[str] = mapped_column(Text, default="")
+    votes: Mapped[int] = mapped_column(default=1)
+    created_at: Mapped[Optional[datetime]] = mapped_column(default=datetime.utcnow)
+
+    owner: Mapped[User] = relationship(back_populates="suggestions")
 
 
 class ScanResult(Base):
