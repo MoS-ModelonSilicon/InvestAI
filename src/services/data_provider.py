@@ -239,7 +239,7 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, f
     if not force and (not _yahoo_available() or not _yahoo_probe()):
         return None
     try:
-        interval_map = {"1": "1m", "5": "5m", "15": "15m", "60": "1h", "D": "1d", "W": "1wk", "M": "1mo"}
+        interval_map = {"1": "1m", "3": "3m", "5": "5m", "15": "15m", "60": "1h", "D": "1d", "W": "1wk", "M": "1mo"}
         yf_interval = interval_map.get(resolution, "1d")
         period_secs = to_ts - from_ts
         period_days = period_secs // 86400
@@ -248,25 +248,35 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, f
             period_days = 7
             from_ts = to_ts - 7 * 86400
 
+        is_intraday = yf_interval in ("1m", "3m", "5m", "15m", "1h")
         start = datetime.fromtimestamp(from_ts).strftime("%Y-%m-%d")
         end = (datetime.fromtimestamp(to_ts) + timedelta(days=1)).strftime("%Y-%m-%d")
         with _suppress_stderr():
             t = _yf_ticker(symbol)
-            df = t.history(start=start, end=end, interval=yf_interval)
+            df = t.history(start=start, end=end, interval=yf_interval, prepost=is_intraday)
 
         if df is None or df.empty:
             # Fallback: use period= syntax — more reliable on cloud/first-call
-            period_map_yf = {"1m": "5d", "5m": "5d", "15m": "5d", "1h": "5d", "1d": "1mo", "1wk": "3mo", "1mo": "1y"}
+            period_map_yf = {
+                "1m": "5d",
+                "3m": "5d",
+                "5m": "5d",
+                "15m": "5d",
+                "1h": "5d",
+                "1d": "1mo",
+                "1wk": "3mo",
+                "1mo": "1y",
+            }
             period_str = period_map_yf.get(yf_interval, "1mo")
             with _suppress_stderr():
-                df = t.history(period=period_str, interval=yf_interval)
+                df = t.history(period=period_str, interval=yf_interval, prepost=is_intraday)
             if df is None or df.empty:
                 logger.debug("Yahoo candles empty for %s (%s)", symbol, yf_interval)
                 return None
 
         if not force:
             _yahoo_success()
-        return {
+        result = {
             "s": "ok",
             "c": [round(v, 2) for v in df["Close"].tolist()],
             "o": [round(v, 2) for v in df["Open"].tolist()],
@@ -275,6 +285,31 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, f
             "v": [int(v) for v in df["Volume"].tolist()],
             "t": [int(ts.timestamp()) for ts in df.index],
         }
+        # Compute market session labels for intraday data
+        if is_intraday:
+            sessions = []
+            for ts_val in df.index:
+                # Convert to US/Eastern to classify session
+                try:
+                    if ts_val.tzinfo is not None:
+                        import zoneinfo
+
+                        et = ts_val.astimezone(zoneinfo.ZoneInfo("America/New_York"))
+                    else:
+                        et = ts_val
+                except Exception:
+                    et = ts_val
+                h, m = et.hour, et.minute
+                t_min = h * 60 + m
+                # Pre-market: 4:00-9:29 ET, Regular: 9:30-15:59 ET, Post: 16:00-19:59 ET
+                if t_min < 570:  # before 9:30
+                    sessions.append("pre")
+                elif t_min < 960:  # before 16:00
+                    sessions.append("regular")
+                else:
+                    sessions.append("post")
+            result["sessions"] = sessions
+        return result
     except Exception as e:
         err = str(e)[:120].lower()
         # When force=True (last-resort), never disable Yahoo globally
@@ -337,30 +372,47 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, f
         return None
 
 
-# ── Public API (Yahoo-first, Finnhub-fallback) ──────────────
+# ── Public API (Yahoo-first, Finnhub-fallback, TASE-direct for .TA) ──────────────
 
 from src.services import finnhub_client as fh
+from src.services import tase_client
 
 
 def get_quote(symbol: str) -> Optional[dict]:
     result = _try_yahoo_quote(symbol)
     if result:
         return result
-    return fh.get_quote(symbol)
+    result = fh.get_quote(symbol)
+    if result:
+        return result
+    # Direct Yahoo API fallback for TASE symbols (bypasses yfinance)
+    if tase_client.is_tase_symbol(symbol):
+        return tase_client.get_tase_quote(symbol)
+    return None
 
 
 def get_profile(symbol: str) -> Optional[dict]:
     result = _try_yahoo_profile(symbol)
     if result:
         return result
-    return fh.get_profile(symbol)
+    result = fh.get_profile(symbol)
+    if result:
+        return result
+    if tase_client.is_tase_symbol(symbol):
+        return tase_client.get_tase_profile(symbol)
+    return None
 
 
 def get_metrics(symbol: str) -> Optional[dict]:
     result = _try_yahoo_metrics(symbol)
     if result:
         return result
-    return fh.get_metrics(symbol)
+    result = fh.get_metrics(symbol)
+    if result:
+        return result
+    if tase_client.is_tase_symbol(symbol):
+        return tase_client.get_tase_metrics(symbol)
+    return None
 
 
 def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optional[dict]:
@@ -376,6 +428,10 @@ def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optio
     result = _try_yahoo_candles(symbol, resolution, from_ts, to_ts)
     if not result:
         result = fh.get_candles(symbol, resolution, from_ts, to_ts)
+
+    # Direct Yahoo API fallback for TASE symbols (bypasses yfinance)
+    if not result and tase_client.is_tase_symbol(symbol):
+        result = tase_client.get_tase_candles(symbol, resolution, from_ts, to_ts)
 
     # Last resort: Finnhub candle endpoint may be restricted on free tier (403).
     # Try Yahoo directly even when DISABLE_YAHOO is set — yfinance is installed

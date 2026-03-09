@@ -1958,6 +1958,14 @@ body {
 .pat-bull { color: #22c55e; }
 .pat-bear { color: #ef4444; }
 
+/* ── Session legend (pre/post-market) ────────────── */
+.sd-session-legend { display: flex; gap: 16px; align-items: center; margin-top: 8px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap; }
+.sl-item { display: inline-flex; align-items: center; gap: 5px; }
+.sl-swatch { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
+.sl-pre { background: rgba(59,130,246,0.25); border: 1px solid rgba(59,130,246,0.5); }
+.sl-regular { background: transparent; border: 1px solid var(--text-muted); }
+.sl-post { background: rgba(168,85,247,0.25); border: 1px solid rgba(168,85,247,0.5); }
+
 /* ── Watchlist watched-state buttons ────────────── */
 .wl-watched {
     background: rgba(34, 197, 94, 0.12) !important;

@@ -23,7 +23,7 @@ def get_price_history(symbol: str, period: str = "1y", interval: str = "1d") -> 
 
     period_map = {"1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825}
     days = period_map.get(period, 365)
-    resolution_map = {"1m": "1", "5m": "5", "15m": "15", "1h": "60", "1d": "D", "1wk": "W", "1mo": "M"}
+    resolution_map = {"1m": "1", "3m": "3", "5m": "5", "15m": "15", "1h": "60", "1d": "D", "1wk": "W", "1mo": "M"}
     res = resolution_map.get(interval, "D")
 
     to_ts = int(time.time())
@@ -44,6 +44,8 @@ def get_price_history(symbol: str, period: str = "1y", interval: str = "1d") -> 
             "close": [round(v, 2) for v in candles["c"]],
             "volume": [int(v) for v in candles["v"]],
         }
+        if "sessions" in candles:
+            result["sessions"] = candles["sessions"]
         _set_cache(cache_key, result)
         return result
     except Exception:
