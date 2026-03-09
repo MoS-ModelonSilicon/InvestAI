@@ -106,17 +106,20 @@ async function submitAlert(e) {
         target_price: parseFloat(document.getElementById("alert-price").value),
     };
 
-    try {
-        const info = await api.get(`/api/stock/${symbol}`);
-        if (info) payload.name = info.name || symbol;
-    } catch (e) { /* use empty name */ }
+    // Close modal immediately — fetch name + create alert in background
+    closeAlertModal();
+    if (typeof showToast === "function") showToast(`Creating alert for ${symbol}…`, "info");
+
+    // Resolve name in parallel with nothing — just start creating ASAP
+    const nameP = api.get(`/api/stock/${symbol}`).then(info => info?.name || symbol).catch(() => symbol);
 
     try {
+        payload.name = await nameP;
         await api.post("/api/alerts", payload);
-        closeAlertModal();
         loadAlerts();
+        if (typeof showToast === "function") showToast(`Alert created for ${symbol}`);
     } catch (e) {
-        alert("Failed to create alert");
+        if (typeof showToast === "function") showToast("Failed to create alert", "error");
     }
 }
 

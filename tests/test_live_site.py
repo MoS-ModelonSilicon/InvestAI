@@ -35,6 +35,14 @@ def _nav(page: Page, page_id: str):
     page.wait_for_timeout(500)
 
 
+def _dismiss_tour(page: Page):
+    """Close the tour overlay if it's open (it intercepts pointer events)."""
+    overlay = page.locator(".tour-overlay.open")
+    if overlay.count() > 0:
+        page.evaluate("document.querySelector('.tour-overlay')?.classList.remove('open')")
+        page.wait_for_timeout(300)
+
+
 def _wait_for_content(page: Page, container_sel: str, *, min_len: int = 100, timeout: int = 30_000, poll: int = 1_000):
     """Poll until the container has meaningful content (HTML length >= min_len).
 
@@ -75,6 +83,7 @@ class TestStockDetail:
         """Click on first market card or watchlist item to open stock detail."""
         _nav(page, "dashboard")
         page.wait_for_timeout(API_WAIT)
+        _dismiss_tour(page)
         # Click first market card which should navigate to stock detail
         card = page.locator(".market-card").first
         if card.count() > 0:
@@ -87,6 +96,7 @@ class TestStockDetail:
         """Clicking a market card on the dashboard should open the stock detail view."""
         _nav(authenticated_page, "dashboard")
         authenticated_page.wait_for_timeout(API_WAIT)
+        _dismiss_tour(authenticated_page)
         cards = authenticated_page.locator(".market-card")
         if cards.count() == 0:
             return  # no market data, skip
@@ -100,6 +110,7 @@ class TestStockDetail:
         """Stock detail should show price, company name, and key metrics."""
         _nav(authenticated_page, "dashboard")
         authenticated_page.wait_for_timeout(API_WAIT)
+        _dismiss_tour(authenticated_page)
         cards = authenticated_page.locator(".market-card")
         if cards.count() == 0:
             return
@@ -114,6 +125,7 @@ class TestStockDetail:
         """Stock detail should render an interactive price chart."""
         _nav(authenticated_page, "dashboard")
         authenticated_page.wait_for_timeout(API_WAIT)
+        _dismiss_tour(authenticated_page)
         cards = authenticated_page.locator(".market-card")
         if cards.count() == 0:
             return
@@ -130,6 +142,7 @@ class TestStockDetail:
         """Timeframe buttons (1D, 1W, 1M, etc.) should be present."""
         _nav(authenticated_page, "dashboard")
         authenticated_page.wait_for_timeout(API_WAIT)
+        _dismiss_tour(authenticated_page)
         cards = authenticated_page.locator(".market-card")
         if cards.count() == 0:
             return
