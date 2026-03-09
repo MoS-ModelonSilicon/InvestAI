@@ -509,9 +509,7 @@ def _matches_query(query_lower: str, symbol: str, name: str) -> bool:
                 return True
     # Check if query itself is an alias that maps to this symbol
     matched_sym = _ALIAS_TO_SYMBOL.get(query_lower)
-    if matched_sym and matched_sym == symbol:
-        return True
-    return False
+    return bool(matched_sym and matched_sym == symbol)
 
 
 def screen_instruments(
