@@ -6,6 +6,8 @@ let _lastSpyHistory = null;
 let _candleMode = false;
 let _currentPatterns = null;
 let _currentCurrency = "USD";
+let _tfFetchId = 0;              // debounce: only the latest fetch renders
+const _historyCache = new Map();  // client-side cache: "SYM:period:interval" → {history, patterns, ts}
 
 /* ── Market session shading plugin ─────────────────────────── */
 const sessionZonePlugin = {
@@ -247,6 +249,7 @@ function renderStockDetail(info, history, news) {
     _lastSpyHistory = null;
     _candleMode = false;
     _currentPatterns = null;
+    _historyCache.clear();
     buildTimeframeButtons(info.symbol);
     if (history && history.close && history.close.length > 0) {
         _lastHistory = history;
@@ -276,6 +279,127 @@ function setChartType(type, symbol) {
     const tfs = _candleMode ? CANDLE_TF : LINE_TF;
     const def = tfs[_candleMode ? 4 : 0];
     changeTimeframe(symbol, def.period, def.interval, document.querySelector("#sd-timeframes .sd-tf.active"));
+}
+
+function _showChartLoading() {
+    const wrap = document.querySelector(".sd-chart-wrapper");
+    if (!wrap) return;
+    let overlay = wrap.querySelector(".sd-chart-loading");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.className = "sd-chart-loading";
+        overlay.innerHTML = '<div class="spinner" style="width:24px;height:24px"></div>';
+        wrap.style.position = "relative";
+        wrap.appendChild(overlay);
+    }
+    overlay.style.display = "flex";
+}
+
+function _hideChartLoading() {
+    const overlay = document.querySelector(".sd-chart-loading");
+    if (overlay) overlay.style.display = "none";
+}
+
+function _showChartEmpty(msg) {
+    const wrap = document.querySelector(".sd-chart-wrapper");
+    if (!wrap) return;
+    let el = wrap.querySelector(".sd-chart-empty");
+    if (!el) {
+        el = document.createElement("div");
+        el.className = "sd-chart-empty";
+        wrap.appendChild(el);
+    }
+    el.textContent = msg || "No data available for this timeframe";
+    el.style.display = "flex";
+}
+
+function _hideChartEmpty() {
+    const el = document.querySelector(".sd-chart-empty");
+    if (el) el.style.display = "none";
+}
+
+function _getCacheKey(symbol, period, interval) {
+    return `${symbol}:${period}:${interval}`;
+}
+
+async function changeTimeframe(symbol, period, interval, btn) {
+    document.querySelectorAll("#sd-timeframes .sd-tf").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    _lastSpyHistory = null;
+
+    const fetchId = ++_tfFetchId;  // debounce: ignore stale fetches
+
+    // Check client-side cache first (instant switch for previously viewed timeframes)
+    const cacheKey = _getCacheKey(symbol, period, interval);
+    const cached = _historyCache.get(cacheKey);
+    const CACHE_TTL = _candleMode && ["1m", "3m", "5m", "15m", "1h"].includes(interval) ? 120000 : 600000;
+    if (cached && (Date.now() - cached.ts < CACHE_TTL)) {
+        if (fetchId !== _tfFetchId) return;
+        _lastHistory = cached.history;
+        _currentPatterns = cached.patterns || null;
+        _hideChartEmpty();
+        if (_candleMode) {
+            renderCandlestickChart(cached.history);
+        } else if (_spyOverlayActive) {
+            _showChartLoading();
+            try {
+                const spy = await api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`);
+                if (fetchId !== _tfFetchId) return;
+                _lastSpyHistory = spy;
+                _hideChartLoading();
+                renderDetailChart(cached.history, spy);
+            } catch { _hideChartLoading(); renderDetailChart(cached.history); }
+        } else {
+            renderDetailChart(cached.history);
+        }
+        return;
+    }
+
+    _showChartLoading();
+    _hideChartEmpty();
+
+    try {
+        const url = _candleMode
+            ? `/api/stock/${symbol}/history?period=${period}&interval=${interval}&include_patterns=true`
+            : `/api/stock/${symbol}/history?period=${period}&interval=${interval}`;
+        const history = await api.get(url);
+        if (fetchId !== _tfFetchId) return;  // stale fetch — discard
+
+        if (!history || !history.close || history.close.length === 0) {
+            _hideChartLoading();
+            _showChartEmpty("No data available for this timeframe");
+            return;
+        }
+
+        _lastHistory = history;
+        _currentPatterns = history.patterns || null;
+        // Cache this result
+        _historyCache.set(cacheKey, { history, patterns: _currentPatterns, ts: Date.now() });
+        // Limit cache size to 30 entries
+        if (_historyCache.size > 30) {
+            const oldest = _historyCache.keys().next().value;
+            _historyCache.delete(oldest);
+        }
+
+        _hideChartLoading();
+        _hideChartEmpty();
+        if (_candleMode) {
+            renderCandlestickChart(history);
+        } else if (_spyOverlayActive) {
+            try {
+                const spy = await api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`);
+                if (fetchId !== _tfFetchId) return;
+                _lastSpyHistory = spy;
+                renderDetailChart(history, spy);
+            } catch { renderDetailChart(history); }
+        } else {
+            renderDetailChart(history);
+        }
+    } catch (e) {
+        if (fetchId !== _tfFetchId) return;
+        _hideChartLoading();
+        _showChartEmpty("Failed to load chart data");
+    }
 }
 
 function renderDetailChart(history, spyHistory) {
@@ -411,28 +535,6 @@ function renderDetailChart(history, spyHistory) {
     renderSessionLegend(hasSessions);
 }
 
-async function changeTimeframe(symbol, period, interval, btn) {
-    document.querySelectorAll("#sd-timeframes .sd-tf").forEach(b => b.classList.remove("active"));
-    if (btn) btn.classList.add("active");
-    _lastSpyHistory = null;
-    try {
-        const history = await api.get(`/api/stock/${symbol}/history?period=${period}&interval=${interval}`);
-        if (history && history.close && history.close.length > 0) {
-            _lastHistory = history;
-            if (_candleMode) {
-                try { _currentPatterns = await api.get(`/api/stock/${symbol}/patterns?period=${period}&interval=${interval}`); } catch { _currentPatterns = null; }
-                renderCandlestickChart(history);
-            } else if (_spyOverlayActive) {
-                const spy = await api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`);
-                _lastSpyHistory = spy;
-                renderDetailChart(history, spy);
-            } else {
-                renderDetailChart(history);
-            }
-        }
-    } catch (e) { /* ignore */ }
-}
-
 function renderCandlestickChart(history) {
     const canvas = document.getElementById("sd-price-chart");
     if (!canvas) return;
@@ -440,7 +542,15 @@ function renderCandlestickChart(history) {
     const ts = history.timestamps || history.dates.map(d => new Date(d).getTime());
     const sessions = history.sessions || [];
     const hasSessions = sessions.length === ts.length;
-    const ohlc = ts.map((t, i) => ({ x: t, o: history.open[i], h: history.high[i], l: history.low[i], c: history.close[i] }));
+
+    // Detect intraday: median gap between candles < 1 hour → use index-based x to eliminate overnight/weekend gaps
+    const _gaps = [];
+    for (let gi = 1; gi < Math.min(ts.length, 10); gi++) _gaps.push(ts[gi] - ts[gi - 1]);
+    _gaps.sort((a, b) => a - b);
+    const isIntraday = _gaps.length > 0 && _gaps[Math.floor(_gaps.length / 2)] < 3600000;
+    const multiDay = ts.length >= 2 && (ts[ts.length - 1] - ts[0]) > 86400000;
+
+    const ohlc = ts.map((t, i) => ({ x: isIntraday ? i : t, o: history.open[i], h: history.high[i], l: history.low[i], c: history.close[i] }));
     const maxVol = Math.max(...history.volume);
 
     // Color candles differently for extended hours
@@ -460,16 +570,16 @@ function renderCandlestickChart(history) {
     const ds = hasSessions ? [
         { label: "OHLC", data: ohlcRegular, borderColor: { up: "#22c55e", down: "#ef4444", unchanged: "#999" }, yAxisID: "y" },
         { label: "Extended", data: ohlcExtended, borderColor: { up: "rgba(34,197,94,0.4)", down: "rgba(239,68,68,0.4)", unchanged: "rgba(153,153,153,0.4)" }, color: { up: "rgba(34,197,94,0.15)", down: "rgba(239,68,68,0.15)", unchanged: "rgba(153,153,153,0.15)" }, yAxisID: "y" },
-        { type: "bar", label: "Volume", data: ts.map((t, i) => ({ x: t, y: history.volume[i] })), backgroundColor: volCol, yAxisID: "yVol", barPercentage: 0.8, order: 1 },
+        { type: "bar", label: "Volume", data: ts.map((t, i) => ({ x: isIntraday ? i : t, y: history.volume[i] })), backgroundColor: volCol, yAxisID: "yVol", barPercentage: 0.8, order: 1 },
     ] : [
         { label: "OHLC", data: ohlc, borderColor: { up: "#22c55e", down: "#ef4444", unchanged: "#999" }, yAxisID: "y" },
-        { type: "bar", label: "Volume", data: ts.map((t, i) => ({ x: t, y: history.volume[i] })), backgroundColor: volCol, yAxisID: "yVol", barPercentage: 0.8, order: 1 },
+        { type: "bar", label: "Volume", data: ts.map((t, i) => ({ x: isIntraday ? i : t, y: history.volume[i] })), backgroundColor: volCol, yAxisID: "yVol", barPercentage: 0.8, order: 1 },
     ];
 
     if (_currentPatterns) {
         const mk = { bullish: [], bearish: [], neutral: [] };
         (_currentPatterns.candlestick_patterns || []).forEach(p => {
-            if (p.idx < ts.length) mk[p.direction || "neutral"].push({ x: ts[p.idx], y: p.direction === "bearish" ? history.high[p.idx] * 1.01 : history.low[p.idx] * 0.99, _pat: p });
+            if (p.idx < ts.length) mk[p.direction || "neutral"].push({ x: isIntraday ? p.idx : ts[p.idx], y: p.direction === "bearish" ? history.high[p.idx] * 1.01 : history.low[p.idx] * 0.99, _pat: p });
         });
         if (mk.bullish.length) ds.push({ type: "scatter", label: "\u25B2 Bullish", data: mk.bullish, pointStyle: "triangle", pointRadius: 8, backgroundColor: "#22c55e", borderColor: "#22c55e", yAxisID: "y", order: 0 });
         if (mk.bearish.length) ds.push({ type: "scatter", label: "\u25BC Bearish", data: mk.bearish, pointStyle: "triangle", rotation: 180, pointRadius: 8, backgroundColor: "#ef4444", borderColor: "#ef4444", yAxisID: "y", order: 0 });
@@ -478,7 +588,7 @@ function renderCandlestickChart(history) {
     detailChart = new Chart(canvas, {
         type: "candlestick",
         data: { datasets: ds },
-        plugins: hasSessions ? [sessionZoneTimePlugin] : [],
+        plugins: hasSessions ? [isIntraday ? sessionZonePlugin : sessionZoneTimePlugin] : [],
         options: {
             responsive: true, maintainAspectRatio: false,
             _sessions: hasSessions ? sessions : null,
@@ -487,11 +597,23 @@ function renderCandlestickChart(history) {
                 legend: { display: false },
                 tooltip: { mode: "nearest", intersect: true, backgroundColor: "rgba(20,22,34,0.95)", titleColor: "#8b8fa3", bodyColor: "#e4e4e7",
                     callbacks: {
+                        title(items) {
+                            if (!isIntraday) return undefined;
+                            const d = items[0]?.raw;
+                            if (!d || d.x == null) return '';
+                            const idx = Math.round(d.x);
+                            if (idx >= 0 && idx < ts.length) {
+                                const dt = new Date(ts[idx]);
+                                if (multiDay) return dt.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                                return dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                            }
+                            return '';
+                        },
                         afterTitle(items) {
                             if (!hasSessions) return "";
                             const d = items[0] && items[0].raw;
-                            if (!d || !d.x) return "";
-                            const idx = ts.indexOf(d.x);
+                            if (!d || d.x == null) return "";
+                            const idx = isIntraday ? Math.round(d.x) : ts.indexOf(d.x);
                             if (idx >= 0 && sessions[idx] === "pre") return "PRE-MARKET";
                             if (idx >= 0 && sessions[idx] === "post") return "AFTER-HOURS";
                             return "";
@@ -508,7 +630,17 @@ function renderCandlestickChart(history) {
                 },
             },
             scales: {
-                x: { type: "time", ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
+                x: isIntraday
+                    ? { type: "linear", min: -0.5, max: ts.length - 0.5,
+                        ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8,
+                            callback(val) {
+                                const i = Math.round(val); if (i < 0 || i >= ts.length) return '';
+                                const d = new Date(ts[i]);
+                                if (multiDay) return d.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                                return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                            }
+                        }, grid: { color: "rgba(42,45,62,0.3)" } }
+                    : { type: "time", ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
                 y: { position: "right", ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => currSym(_currentCurrency) + v }, grid: { color: "rgba(42,45,62,0.3)" } },
                 yVol: { position: "left", max: maxVol * 4, display: false, grid: { display: false } },
             },

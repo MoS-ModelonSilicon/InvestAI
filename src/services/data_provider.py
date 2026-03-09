@@ -15,10 +15,11 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Optional
 
-# ── Candle cache: daily candles barely change, avoid re-fetching every scan ──
+# ── Candle cache: avoid re-fetching on rapid timeframe switches ──
 _candle_cache: dict[str, tuple[float, dict]] = {}
 _candle_cache_lock = threading.Lock()
 CANDLE_CACHE_TTL = 1800  # 30 min for daily candles
+CANDLE_CACHE_TTL_INTRADAY = 300  # 5 min for intraday candles
 CANDLE_CACHE_MAX = 500
 
 logger = logging.getLogger(__name__)
@@ -416,14 +417,15 @@ def get_metrics(symbol: str) -> Optional[dict]:
 
 
 def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optional[dict]:
-    # Check candle cache first (daily candles are stable)
-    if resolution == "D":
-        cache_key = f"{symbol}:{from_ts}:{to_ts}"
-        with _candle_cache_lock:
-            if cache_key in _candle_cache:
-                ts, data = _candle_cache[cache_key]
-                if time.time() - ts < CANDLE_CACHE_TTL:
-                    return data
+    # Check candle cache first — all resolutions cached (different TTLs)
+    is_intraday = resolution in ("1", "3", "5", "15", "60")
+    ttl = CANDLE_CACHE_TTL_INTRADAY if is_intraday else CANDLE_CACHE_TTL
+    cache_key = f"{symbol}:{resolution}:{from_ts}:{to_ts}"
+    with _candle_cache_lock:
+        if cache_key in _candle_cache:
+            ts, data = _candle_cache[cache_key]
+            if time.time() - ts < ttl:
+                return data
 
     result = _try_yahoo_candles(symbol, resolution, from_ts, to_ts)
     if not result:
@@ -442,9 +444,8 @@ def get_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> Optio
         logger.info("Finnhub candles failed for %s, trying Yahoo as last resort", symbol)
         result = _try_yahoo_candles(symbol, resolution, from_ts, to_ts, force=True)
 
-    # Cache daily candles
-    if result and resolution == "D":
-        cache_key = f"{symbol}:{from_ts}:{to_ts}"
+    # Cache candles for all resolutions
+    if result:
         with _candle_cache_lock:
             _candle_cache[cache_key] = (time.time(), result)
             # Evict if too large

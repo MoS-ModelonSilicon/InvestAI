@@ -1955,6 +1955,8 @@ body {
 .sd-spy-toggle.active { background: rgba(251,191,36,0.15); border-color: #fbbf24; color: #fbbf24; }
 
 .sd-chart-wrapper { height: 380px; position: relative; }
+.sd-chart-loading { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(var(--bg-rgb, 20,22,34), 0.6); z-index: 5; border-radius: var(--radius-sm); }
+.sd-chart-empty { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.9rem; z-index: 4; }
 
 /* Pattern legend */
 .sd-patterns-legend { margin-top: 16px; }

@@ -52,11 +52,17 @@ def stock_full(symbol: str, period: str = "1y", interval: str = "1d"):
 
 
 @router.get("/{symbol}/history")
-def stock_history(symbol: str, period: str = "1y", interval: str = "1d"):
+def stock_history(symbol: str, period: str = "1y", interval: str = "1d", include_patterns: bool = False):
     history = get_price_history(symbol.upper(), period, interval)
     # Add SMA 50 server-side
     if history and history.get("close"):
         history["sma50"] = _compute_sma(history["close"], 50)
+    if include_patterns and history and history.get("close") and len(history["close"]) >= 10:
+        from src.services.pattern_detection import detect_all_patterns
+
+        history["patterns"] = detect_all_patterns(
+            history["open"], history["high"], history["low"], history["close"], history["volume"],
+        )
     return history
 
 
