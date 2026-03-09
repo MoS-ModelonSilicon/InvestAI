@@ -34,6 +34,10 @@ services:
         sync: false   # set in Render dashboard
       - key: RESEND_API_KEY
         sync: false   # set in Render dashboard (resend.com free tier)
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false   # set in Render dashboard (Azure AI Foundry project URL)
+      - key: AZURE_OPENAI_API_KEY
+        sync: false   # set in Render dashboard
 
   # ── Staging ─────────────────────────────────────────────────
   - type: web
@@ -62,4 +66,8 @@ services:
       - key: FINNHUB_API_KEY
         sync: false   # set in Render dashboard
       - key: RESEND_API_KEY
+        sync: false   # set in Render dashboard
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false   # set in Render dashboard (Azure AI Foundry project URL)
+      - key: AZURE_OPENAI_API_KEY
         sync: false   # set in Render dashboard

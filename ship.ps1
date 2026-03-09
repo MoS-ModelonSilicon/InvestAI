@@ -1,4 +1,4 @@
-# ──────────────────────────────────────────────────────────────
+﻿# ──────────────────────────────────────────────────────────────
 # InvestAI — ship.ps1
 #
 # Full feature-delivery pipeline: branch → commit → push → PR →
@@ -39,7 +39,7 @@ param(
     [string]$ProdUrl = "https://investai-utho.onrender.com"
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 Set-Location $PSScriptRoot
 
 # ── Resolve deploy hook from user-level env if not in current session ──
@@ -82,12 +82,17 @@ if (-not $staged -and -not $unstaged -and -not $untracked) {
     exit 1
 }
 
-# Ensure gh CLI is authenticated
-try { gh auth status 2>&1 | Out-Null } catch {
+# Ensure gh CLI is authenticated (use 'gh auth token' — doesn't need network)
+$ghToken = gh auth token 2>&1
+if ($LASTEXITCODE -ne 0 -or -not $ghToken) {
     Write-Fail "gh CLI not authenticated. Run: gh auth login"
     exit 1
 }
 Write-OK "gh CLI authenticated"
+
+# Set proxy env vars for gh (Intel network)
+$env:HTTP_PROXY  = "http://proxy-dmz.intel.com:911"
+$env:HTTPS_PROXY = "http://proxy-dmz.intel.com:912"
 
 # Ensure Intel proxy is set
 git config --global http.proxy http://proxy-dmz.intel.com:911 2>$null
