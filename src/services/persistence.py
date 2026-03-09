@@ -282,16 +282,34 @@ def restore_all_caches():
     except Exception:
         logger.exception("Failed to restore trading advisor cache")
 
-    # 3. Restore picks tracker cache
+    # 3. Restore picks tracker cache (new format: list of evaluated picks)
     try:
-        data = load_scan("picks_tracker")
-        if data and isinstance(data, dict):
-            from src.services.picks_tracker import _cache, _cache_lock
+        data = load_scan("picks_evaluated")
+        if data and isinstance(data, list):
+            from src.services.picks_tracker import _cache, _cache_lock, _EVAL_CACHE_KEY
 
             with _cache_lock:
-                for cache_key, val in data.items():
-                    _cache[cache_key] = (time.time(), val)
-            logger.info("Restored picks tracker: %d entries", len(data))
+                _cache[_EVAL_CACHE_KEY] = (time.time(), data)
+            logger.info("Restored picks evaluation: %d picks", len(data))
+        else:
+            # Fallback: try legacy format
+            legacy = load_scan("picks_tracker")
+            if legacy and isinstance(legacy, dict):
+                from src.services.picks_tracker import _cache, _cache_lock, _EVAL_CACHE_KEY
+
+                with _cache_lock:
+                    for _cache_key, val in legacy.items():
+                        if isinstance(val, dict) and "picks" in val:
+                            picks_list = val["picks"]
+                            if isinstance(picks_list, list) and picks_list:
+                                _cache[_EVAL_CACHE_KEY] = (time.time(), picks_list)
+                                logger.info("Restored picks from legacy format: %d picks", len(picks_list))
+                                break
+                    else:
+                        # Old format without "picks" key — restore as-is
+                        for cache_key, val in legacy.items():
+                            _cache[cache_key] = (time.time(), val)
+                        logger.info("Restored picks tracker (legacy): %d entries", len(legacy))
     except Exception:
         logger.exception("Failed to restore picks tracker cache")
 

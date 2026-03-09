@@ -11,7 +11,7 @@ async function loadPicksTracker() {
     const container = document.getElementById("picks-results");
     const statsRow = document.getElementById("picks-stats-row");
     if (!container) return;
-    container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Evaluating picks against real market data...</p></div>';
+    container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Loading picks...</p></div>';
     if (statsRow) statsRow.innerHTML = "";
 
     try {
@@ -21,6 +21,12 @@ async function loadPicksTracker() {
         if (picksSourceFilter) params.push(`source=${picksSourceFilter}`);
         if (params.length) url += "?" + params.join("&");
         picksData = await api.get(url);
+        if (picksData.pending) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);">' +
+                '<p style="font-size:1.1em;">Picks evaluation is running in the background.</p>' +
+                '<p style="margin-top:8px;">This happens once after deployment. Refresh in a minute or two.</p></div>';
+            return;
+        }
         renderPicksStats(picksData.stats);
         renderPicksTable(_getFilteredPicks());
         loadSourceInfo();
