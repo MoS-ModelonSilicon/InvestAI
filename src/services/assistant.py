@@ -10,8 +10,7 @@ Both models are prompted for SHORT, DIRECT answers — no fluff.
 import json
 import logging
 import os
-import time
-from typing import Generator
+from collections.abc import Generator
 
 import requests
 
@@ -349,7 +348,7 @@ def chat_stream(
     # Build system prompt
     system_msg = SITE_KNOWLEDGE + "\n" + CONCISE_INSTRUCTION
 
-    full_messages = [{"role": "system", "content": system_msg}] + messages
+    full_messages = [{"role": "system", "content": system_msg}, *messages]
 
     # First call — may include tool calls
     response_message = _call_model(model, full_messages, use_tools=True)
@@ -413,8 +412,9 @@ def _call_model(model: str, messages: list[dict], use_tools: bool = False) -> di
             timeout=30,
         )
         resp.raise_for_status()
-        data = resp.json()
-        return data["choices"][0]["message"]
+        data: dict = resp.json()
+        result: dict = data["choices"][0]["message"]
+        return result
     except Exception as e:
         logger.exception("Model call failed (%s): %s", model, e)
         return None

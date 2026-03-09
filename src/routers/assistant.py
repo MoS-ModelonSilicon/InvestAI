@@ -8,8 +8,6 @@ Endpoints:
   PUT  /api/assistant/suggestions/{id} — admin: update suggestion status
 """
 
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func

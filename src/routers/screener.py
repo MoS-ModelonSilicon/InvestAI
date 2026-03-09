@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -137,7 +137,7 @@ def remove_from_watchlist(item_id: int, db: Session = Depends(get_db), user: Use
 
 
 class BulkDeleteWatchlistRequest(BaseModel):
-    ids: List[int]
+    ids: list[int]
 
 
 @router.post("/watchlist/bulk-delete")
