@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.models import Watchlist, User
-from src.services.picks_tracker import evaluate_all_picks, get_unique_symbols
+from src.services.picks_tracker import evaluate_all_picks, get_unique_symbols, refresh_picks_evaluation
 from src.auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -29,16 +29,21 @@ def get_picks(
 @router.post("/refresh")
 def refresh_picks(background_tasks: BackgroundTasks):
     """
-    Trigger a refresh of picks from all external sources (Reddit, TradingView, Finviz).
+    Trigger a refresh of picks from all external sources (Reddit, TradingView, Finviz)
+    and then re-evaluate all picks against market data.
     Runs in the background so the response returns immediately.
     """
     from src.services.scrapers.pipeline import run_pipeline, get_last_refresh
 
-    background_tasks.add_task(run_pipeline)
+    def _refresh_and_evaluate():
+        run_pipeline()
+        refresh_picks_evaluation()
+
+    background_tasks.add_task(_refresh_and_evaluate)
     return {
         "status": "refresh_started",
         "last_refresh": get_last_refresh(),
-        "message": "Fetching new picks from all sources in the background. Refresh in ~60s to see results.",
+        "message": "Fetching new picks and re-evaluating in the background. Refresh in ~60s to see results.",
     }
 
 

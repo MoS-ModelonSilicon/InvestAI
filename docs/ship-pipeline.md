@@ -285,7 +285,37 @@ Even after `ship.ps1` completes, the nightly pipeline (`nightly-tests.yml`) runs
 - Full browser-based test suite against the live site
 - Auto-creates GitHub Issues on failure
 - Auto-closes issues when tests pass again
-- Triggers the cloud-based Claude Auto-Fix workflow (if API credits are funded)
+
+## Claude Auto-Fix (Disabled)
+
+The cloud-based Claude Auto-Fix workflow (`.github/workflows/claude-fix.yml`) is **currently disabled**.
+
+### Why
+
+The workflow requires a funded Anthropic API key (`ANTHROPIC_API_KEY` in GitHub Actions secrets).
+The key has never had sufficient credits, so every Auto-Fix run failed immediately with
+`Credit balance is too low` — it never successfully fixed anything (0 successes out of 18 attempts).
+
+The workflow was disabled on 2026-03-09 to stop wasting GitHub Actions minutes.
+
+### How to re-enable
+
+1. Add credits at [console.anthropic.com/settings/billing](https://console.anthropic.com/settings/billing)
+2. Verify the key: `curl -H "x-api-key: $KEY" https://api.anthropic.com/v1/messages ...`
+3. Re-enable the workflow:
+   ```bash
+   gh workflow enable "Claude Auto-Fix" --repo MoS-ModelonSilicon/InvestAI
+   ```
+
+### What it would do (when funded)
+
+- Triggers automatically when CI Gate or Nightly Tests fail
+- Uses Claude Code CLI to diagnose errors from job logs
+- Creates a fix PR (`claude-fix/...` branch) with the changes
+- Has graceful error handling for credit/billing failures (won't crash the workflow)
+
+> **Note:** The **local** auto-fix in `ship.ps1` Phase 5 uses your Claude Pro subscription
+> (not API credits) and continues to work independently.
 
 ## Prerequisites
 
@@ -316,7 +346,7 @@ finance-tracker/
 ├── .github/workflows/
 │   ├── pr-tests.yml                 # CI Gate (triggered by PR)
 │   ├── nightly-tests.yml            # Nightly regression (2 AM UTC)
-│   └── claude-fix.yml               # Cloud-based auto-fix (needs API credits)
+│   └── claude-fix.yml               # Cloud-based auto-fix (DISABLED — needs funded API key)
 └── tests/
     ├── test_api_smoke.py            # Fast smoke tests (CI Gate)
     ├── test_e2e.py                  # Full browser E2E (local)
