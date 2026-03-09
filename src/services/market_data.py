@@ -237,7 +237,7 @@ STOCK_UNIVERSE = [
     # Singapore
     "SE",
     "GRAB",
-    # Israel
+    # Israel (US-listed)
     "TEVA",
     "CHKP",
     "NICE",
@@ -246,6 +246,32 @@ STOCK_UNIVERSE = [
     "CYBR",
     "ICL",
     "ESLT",
+    "FVRR",
+    "GLBE",
+    "ZIM",
+    "SEDG",
+    "INMD",
+    "CEVA",
+    "ORA",
+    "RDWR",
+    "ALLT",
+    "PAYONR",
+    # Israel (TASE — via Yahoo Finance)
+    "LUMI.TA",
+    "POLI.TA",
+    "DSCT.TA",
+    "MZTF.TA",
+    "BEZQ.TA",
+    "CEL.TA",
+    "PTNR.TA",
+    "AZRG.TA",
+    "MGDL.TA",
+    "HAREL.TA",
+    "DLEKG.TA",
+    "ORL.TA",
+    "STRS.TA",
+    "ELCO.TA",
+    "AMOT.TA",
 ]
 
 ETF_UNIVERSE = [
@@ -532,7 +558,7 @@ KNOWN_NAMES: dict[str, str] = {
     # Singapore
     "SE": "Sea Limited",
     "GRAB": "Grab Holdings Limited",
-    # Israel
+    # Israel (US-listed)
     "TEVA": "Teva Pharmaceutical Industries",
     "CHKP": "Check Point Software Technologies",
     "NICE": "NICE Ltd",
@@ -541,6 +567,32 @@ KNOWN_NAMES: dict[str, str] = {
     "CYBR": "CyberArk Software Ltd",
     "ICL": "ICL Group Ltd",
     "ESLT": "Elbit Systems Ltd",
+    "FVRR": "Fiverr International Ltd",
+    "GLBE": "Global-e Online Ltd",
+    "ZIM": "ZIM Integrated Shipping Services",
+    "SEDG": "SolarEdge Technologies Inc",
+    "INMD": "InMode Ltd",
+    "CEVA": "CEVA Inc",
+    "ORA": "Ormat Technologies Inc",
+    "RDWR": "Radware Ltd",
+    "ALLT": "Allot Ltd",
+    "PAYONR": "Payoneer Global Inc",
+    # Israel (TASE)
+    "LUMI.TA": "Bank Leumi",
+    "POLI.TA": "Bank Hapoalim",
+    "DSCT.TA": "Israel Discount Bank",
+    "MZTF.TA": "Mizrahi Tefahot Bank",
+    "BEZQ.TA": "Bezeq The Israeli Telecommunication Corp",
+    "CEL.TA": "Cellcom Israel Ltd",
+    "PTNR.TA": "Partner Communications Company",
+    "AZRG.TA": "Azrieli Group Ltd",
+    "MGDL.TA": "Migdal Insurance and Financial Holdings",
+    "HAREL.TA": "Harel Insurance Investments and Financial Services",
+    "DLEKG.TA": "Delek Group Ltd",
+    "ORL.TA": "Bazan Group Oil Refineries",
+    "STRS.TA": "Strauss Group Ltd",
+    "ELCO.TA": "Elco Holdings Ltd",
+    "AMOT.TA": "Amot Investments Ltd",
     # ── ETFs ──
     "SPY": "SPDR S&P 500 ETF Trust",
     "QQQ": "Invesco QQQ Trust",
@@ -604,6 +656,61 @@ KNOWN_NAMES: dict[str, str] = {
     "DBC": "Invesco DB Commodity Index Tracking Fund",
 }
 
+# ── Search aliases: maps alternate names (Hebrew, abbreviations) to symbols ──
+# Each symbol can have multiple aliases. The screener search checks these
+# so users can find stocks by typing in Hebrew or common local names.
+SEARCH_ALIASES: dict[str, list[str]] = {
+    # Israel — US-listed
+    "TEVA": ["טבע", "teva pharmaceutical", "טבע תעשיות פרמצבטיות"],
+    "CHKP": ["צ'ק פוינט", "צק פוינט", "check point", "צ'קפוינט"],
+    "NICE": ["נייס", "נאיס"],
+    "WIX": ["וויקס", "ויקס"],
+    "MNDY": ["מאנדיי", "מנדיי", "monday"],
+    "CYBR": ["סייברארק", "סייבר ארק", "cyberark"],
+    "ICL": ["כיל", "כימיקלים לישראל", "israel chemicals"],
+    "ESLT": ["אלביט", "אלביט מערכות", "elbit systems"],
+    "FVRR": ["פייבר", "fiverr"],
+    "GLBE": ["גלובל אי", "global-e"],
+    "ZIM": ["צים", "צים שירותי ספנות", "zim shipping"],
+    "SEDG": ["סולאראדג", "סולאר אדג", "solaredge"],
+    "INMD": ["אינמוד", "inmode"],
+    "CEVA": ["סבא", "ceva inc"],
+    "ORA": ["אורמת", "ormat"],
+    "RDWR": ["רדוור", "radware"],
+    "ALLT": ["אלוט", "allot"],
+    "PAYONR": ["פיוניר", "payoneer"],
+    # Israel — TASE
+    "LUMI.TA": ["לאומי", "בנק לאומי", "bank leumi"],
+    "POLI.TA": ["הפועלים", "בנק הפועלים", "bank hapoalim"],
+    "DSCT.TA": ["דיסקונט", "בנק דיסקונט", "discount bank"],
+    "MZTF.TA": ["מזרחי טפחות", "מזרחי", "בנק מזרחי", "mizrahi tefahot"],
+    "BEZQ.TA": ["בזק", "bezeq"],
+    "CEL.TA": ["סלקום", "cellcom"],
+    "PTNR.TA": ["פרטנר", "partner"],
+    "AZRG.TA": ["עזריאלי", "קבוצת עזריאלי", "azrieli"],
+    "MGDL.TA": ["מגדל", "מגדל ביטוח", "migdal"],
+    "HAREL.TA": ["הראל", "הראל ביטוח", "harel"],
+    "DLEKG.TA": ["דלק", "קבוצת דלק", "delek"],
+    "ORL.TA": ["בזן", "בתי זיקוק", "bazan"],
+    "STRS.TA": ["שטראוס", "strauss"],
+    "ELCO.TA": ["אלקו", "elco"],
+    "AMOT.TA": ["אמות", "amot"],
+    # Major international — common alternate names
+    "BABA": ["עליבאבא", "alibaba"],
+    "TSM": ["טיאסאמסי", "tsmc", "taiwan semiconductor"],
+    "ASML": ["אסמל"],
+    "NVO": ["נובו נורדיסק", "novo nordisk"],
+    "SONY": ["סוני"],
+    "TM": ["טויוטה", "toyota"],
+    "SHOP": ["שופיפיי", "shopify"],
+}
+
+# Build a reverse lookup: lowercase alias → symbol for fast matching
+_ALIAS_TO_SYMBOL: dict[str, str] = {}
+for _sym, _aliases in SEARCH_ALIASES.items():
+    for _alias in _aliases:
+        _ALIAS_TO_SYMBOL[_alias.lower()] = _sym
+
 SECTORS = [
     "Technology",
     "Financial Services",
@@ -643,7 +750,41 @@ _INTL = {
     "Canada": {"SHOP", "RY", "TD"},
     "Brazil": {"VALE", "PBR", "ITUB", "NU"},
     "Singapore": {"SE", "GRAB"},
-    "Israel": {"TEVA", "CHKP", "NICE", "WIX", "MNDY", "CYBR", "ICL", "ESLT"},
+    "Israel": {
+        "TEVA",
+        "CHKP",
+        "NICE",
+        "WIX",
+        "MNDY",
+        "CYBR",
+        "ICL",
+        "ESLT",
+        "FVRR",
+        "GLBE",
+        "ZIM",
+        "SEDG",
+        "INMD",
+        "CEVA",
+        "ORA",
+        "RDWR",
+        "ALLT",
+        "PAYONR",
+        "LUMI.TA",
+        "POLI.TA",
+        "DSCT.TA",
+        "MZTF.TA",
+        "BEZQ.TA",
+        "CEL.TA",
+        "PTNR.TA",
+        "AZRG.TA",
+        "MGDL.TA",
+        "HAREL.TA",
+        "DLEKG.TA",
+        "ORL.TA",
+        "STRS.TA",
+        "ELCO.TA",
+        "AMOT.TA",
+    },
 }
 for region, syms in _INTL.items():
     for sym in syms:

@@ -8,6 +8,8 @@ from src.services.market_data import (
     ETF_UNIVERSE,
     ALL_UNIVERSE,
     KNOWN_NAMES,
+    SEARCH_ALIASES,
+    _ALIAS_TO_SYMBOL,
     format_market_cap,
 )
 
@@ -492,6 +494,24 @@ def get_screener_snapshot() -> list[dict]:
 # ── Main screener query (reads from snapshot) ────────────────
 
 
+def _matches_query(query_lower: str, symbol: str, name: str) -> bool:
+    """Check if query matches symbol, name, known name, or any search alias."""
+    sym_lower = symbol.lower()
+    name_lower = name.lower()
+    known = KNOWN_NAMES.get(symbol, "").lower()
+    if query_lower in sym_lower or query_lower in name_lower or query_lower in known:
+        return True
+    # Check aliases for this symbol
+    aliases = SEARCH_ALIASES.get(symbol)
+    if aliases:
+        for alias in aliases:
+            if query_lower in alias.lower():
+                return True
+    # Check if query itself is an alias that maps to this symbol
+    matched_sym = _ALIAS_TO_SYMBOL.get(query_lower)
+    return bool(matched_sym and matched_sym == symbol)
+
+
 def screen_instruments(
     asset_type: Optional[str] = None,
     sector: Optional[str] = None,
@@ -517,11 +537,7 @@ def screen_instruments(
     if not snapshot:
         logger.info("Screener snapshot empty — falling back to live fetch")
         if query_lower:
-            matched_syms = [
-                sym
-                for sym in ALL_UNIVERSE
-                if query_lower in sym.lower() or query_lower in KNOWN_NAMES.get(sym, sym).lower()
-            ]
+            matched_syms = [sym for sym in ALL_UNIVERSE if _matches_query(query_lower, sym, KNOWN_NAMES.get(sym, sym))]
             all_data = fetch_batch(matched_syms, cached_only=False) if matched_syms else []
         elif asset_type == "ETF":
             all_data = fetch_batch(ETF_UNIVERSE, cached_only=True)
@@ -541,15 +557,12 @@ def screen_instruments(
     filtered = []
     for row in snapshot:
         if query_lower:
-            sym = (row.get("symbol") or "").lower()
-            name = (row.get("name") or "").lower()
-            known = KNOWN_NAMES.get(row.get("symbol", ""), "").lower()
+            sym = row.get("symbol") or ""
+            name = row.get("name") or ""
             sector_val = (row.get("sector") or "").lower()
             industry_val = (row.get("industry") or "").lower()
             if (
-                query_lower not in sym
-                and query_lower not in name
-                and query_lower not in known
+                not _matches_query(query_lower, sym, name)
                 and query_lower not in sector_val
                 and query_lower not in industry_val
             ):
