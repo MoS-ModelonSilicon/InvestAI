@@ -284,6 +284,7 @@ def _evaluate_stock(d: dict) -> tuple[Optional[dict], Optional[dict]]:
         "criteria": checks,
         "passed_count": passed_count,
         "total_count": total_count,
+        "currency": d.get("currency", "USD"),
     }
 
     if signal in ("Strong Buy", "Buy", "Watch", "Consider"):
@@ -710,6 +711,7 @@ def build_action_plan(
                     "suggested_shares": m["suggested_shares"],
                     "strengths": strengths[:3],
                     "weaknesses": weaknesses[:3],
+                    "currency": m.get("currency", "USD"),
                 }
             )
 

@@ -174,9 +174,9 @@ function _renderPickCard(p) {
         </div>
         ${edgeBadges ? '<div class="ta-edge-badges">' + edgeBadges + '</div>' : ''}
         <div class="ta-pick-prices">
-            <div data-help="ta_entry"><span class="ta-lbl">Entry</span><span class="ta-val">$${p.entry.toFixed(2)}</span></div>
-            <div data-help="ta_target"><span class="ta-lbl">Target</span><span class="ta-val ta-green">$${p.target.toFixed(2)}</span></div>
-            <div data-help="ta_stop_loss"><span class="ta-lbl">Stop</span><span class="ta-val ta-red">$${p.stop_loss.toFixed(2)}</span></div>
+            <div data-help="ta_entry"><span class="ta-lbl">Entry</span><span class="ta-val">${currSym(p.currency)}${p.entry.toFixed(2)}</span></div>
+            <div data-help="ta_target"><span class="ta-lbl">Target</span><span class="ta-val ta-green">${currSym(p.currency)}${p.target.toFixed(2)}</span></div>
+            <div data-help="ta_stop_loss"><span class="ta-lbl">Stop</span><span class="ta-val ta-red">${currSym(p.currency)}${p.stop_loss.toFixed(2)}</span></div>
             <div data-help="ta_risk_reward"><span class="ta-lbl">R/R</span><span class="ta-val">${p.risk_reward.toFixed(1)}x</span></div>
         </div>
         <div class="ta-pick-spark"><canvas id="ta-spark-${p.symbol}" width="260" height="50"></canvas></div>
@@ -220,9 +220,9 @@ function _renderTAAllPicks(picks) {
             <td><span class="signal-badge ${sigCls}">${p.verdict}</span></td>
             <td class="${rsiCls}">${p.rsi != null ? p.rsi.toFixed(0) : "—"}</td>
             <td class="${macdCls}">${macdTxt}</td>
-            <td>$${p.entry.toFixed(2)}</td>
-            <td>$${p.target.toFixed(2)}</td>
-            <td>$${p.stop_loss.toFixed(2)}</td>
+            <td>${currSym(p.currency)}${p.entry.toFixed(2)}</td>
+            <td>${currSym(p.currency)}${p.target.toFixed(2)}</td>
+            <td>${currSym(p.currency)}${p.stop_loss.toFixed(2)}</td>
             <td>${p.risk_reward.toFixed(1)}x</td>
             <td onclick="event.stopPropagation()">${stockQuickActions(p.symbol, p.name, p.entry, {hideDetail: true})}</td>
         </tr>`;
@@ -370,10 +370,10 @@ function _renderTADetailModal(data) {
                     <span class="ta-detail-meta">Score ${a.score} · Confidence ${a.confidence}% · ${a.timeframe}</span>
                 </div>
                 <div class="ta-detail-prices-row">
-                    <div class="ta-dp"><span>Current</span><strong>$${data.price.close[data.price.close.length - 1].toFixed(2)}</strong></div>
-                    <div class="ta-dp"><span>Entry</span><strong>$${a.entry.toFixed(2)}</strong></div>
-                    <div class="ta-dp ta-dp-green"><span>Target</span><strong>$${a.target.toFixed(2)}</strong></div>
-                    <div class="ta-dp ta-dp-red"><span>Stop</span><strong>$${a.stop_loss.toFixed(2)}</strong></div>
+                    <div class="ta-dp"><span>Current</span><strong>${currSym(data.currency)}${data.price.close[data.price.close.length - 1].toFixed(2)}</strong></div>
+                    <div class="ta-dp"><span>Entry</span><strong>${currSym(data.currency)}${a.entry.toFixed(2)}</strong></div>
+                    <div class="ta-dp ta-dp-green"><span>Target</span><strong>${currSym(data.currency)}${a.target.toFixed(2)}</strong></div>
+                    <div class="ta-dp ta-dp-red"><span>Stop</span><strong>${currSym(data.currency)}${a.stop_loss.toFixed(2)}</strong></div>
                     <div class="ta-dp"><span>R/R</span><strong>${a.risk_reward.toFixed(1)}x</strong></div>
                 </div>
 
@@ -464,32 +464,57 @@ function _buildDecisionBreakdownHTML(breakdown, action) {
 
 /* ── Pattern Badges HTML builder ───────────────── */
 function _buildPatternBadgesHTML(chartPats, candlePats, gaps, data) {
-    const parts = [];
     const fib = data.fibonacci || {};
     const cup = data.cup_and_handle || {};
+    const cs = currSym(data.currency);
+    const hasAny = (fib.nearest_support || fib.nearest_resistance || (cup && cup.detected) || chartPats.length || candlePats.length || gaps.length);
+    if (!hasAny) return '';
 
-    if (fib.nearest_support) parts.push(`<span class="ta-pattern-tag ta-tag-support">▾ Support $${fib.nearest_support.toFixed(2)}</span>`);
-    if (fib.nearest_resistance) parts.push(`<span class="ta-pattern-tag ta-tag-resist">▴ Resistance $${fib.nearest_resistance.toFixed(2)}</span>`);
-    if (cup && cup.detected) parts.push(`<span class="ta-pattern-tag ta-tag-pattern">☕ Cup & Handle (${cup.confidence}%)</span>`);
+    let html = '<div class="ta-patterns-section"><h4>Identified Patterns</h4>';
 
+    /* ── Key levels (Fibonacci + Cup & Handle) ── */
+    const levels = [];
+    if (fib.nearest_support) levels.push(`<div class="ta-pat-card ta-pat-bullish"><span class="ta-pat-icon">▾</span><div class="ta-pat-info"><strong>Fibonacci Support</strong><span class="ta-pat-detail">${cs}${fib.nearest_support.toFixed(2)} — Price floor where buying pressure may emerge</span></div><span class="ta-pat-dir ta-dir-bull">Bullish</span></div>`);
+    if (fib.nearest_resistance) levels.push(`<div class="ta-pat-card ta-pat-bearish"><span class="ta-pat-icon">▴</span><div class="ta-pat-info"><strong>Fibonacci Resistance</strong><span class="ta-pat-detail">${cs}${fib.nearest_resistance.toFixed(2)} — Price ceiling where selling pressure may emerge</span></div><span class="ta-pat-dir ta-dir-bear">Bearish</span></div>`);
+    if (cup && cup.detected) levels.push(`<div class="ta-pat-card ta-pat-bullish"><span class="ta-pat-icon">☕</span><div class="ta-pat-info"><strong>Cup & Handle</strong><span class="ta-pat-detail">Confidence ${cup.confidence}% — Classic continuation pattern signaling breakout potential${cup.rim_level ? '. Rim at ' + cs + cup.rim_level.toFixed(2) : ''}</span></div><span class="ta-pat-dir ta-dir-bull">Bullish</span></div>`);
+
+    /* ── Chart patterns (Double Top, H&S, Flags, Triangles, etc.) ── */
     for (const p of chartPats) {
-        const cls = p.direction === 'bullish' ? 'ta-tag-support' : p.direction === 'bearish' ? 'ta-tag-resist' : 'ta-tag-pattern';
-        const icon = p.direction === 'bullish' ? '▴' : p.direction === 'bearish' ? '▾' : '◆';
-        parts.push(`<span class="ta-pattern-tag ${cls}" title="${p.detail}">${icon} ${p.name} (${p.confidence}%)</span>`);
+        const dir = p.direction === 'bullish' ? 'bullish' : p.direction === 'bearish' ? 'bearish' : 'neutral';
+        const dirLabel = p.direction === 'bullish' ? 'Bullish' : p.direction === 'bearish' ? 'Bearish' : 'Neutral';
+        const dirCls = p.direction === 'bullish' ? 'ta-dir-bull' : p.direction === 'bearish' ? 'ta-dir-bear' : 'ta-dir-neut';
+        const icon = p.direction === 'bullish' ? '📈' : p.direction === 'bearish' ? '📉' : '◆';
+        levels.push(`<div class="ta-pat-card ta-pat-${dir}"><span class="ta-pat-icon">${icon}</span><div class="ta-pat-info"><strong>${p.name}</strong><span class="ta-pat-detail">Confidence ${p.confidence}%${p.detail ? ' — ' + p.detail : ''}</span></div><span class="ta-pat-dir ${dirCls}">${dirLabel}</span></div>`);
     }
 
-    for (const c of candlePats.slice(-6)) {
-        const cls = c.direction === 'bullish' ? 'ta-tag-candle-bull' : c.direction === 'bearish' ? 'ta-tag-candle-bear' : 'ta-tag-pattern';
-        parts.push(`<span class="ta-pattern-tag ${cls}" title="${c.detail}">${c.pattern}</span>`);
+    /* ── Candlestick patterns ── */
+    for (const c of candlePats) {
+        const dir = c.direction === 'bullish' ? 'bullish' : c.direction === 'bearish' ? 'bearish' : 'neutral';
+        const dirLabel = c.direction === 'bullish' ? 'Bullish' : c.direction === 'bearish' ? 'Bearish' : 'Neutral';
+        const dirCls = c.direction === 'bullish' ? 'ta-dir-bull' : c.direction === 'bearish' ? 'ta-dir-bear' : 'ta-dir-neut';
+        const icon = c.direction === 'bullish' ? '🕯️↑' : c.direction === 'bearish' ? '🕯️↓' : '🕯️';
+        const relBadge = c.reliability ? ` <span class="ta-pat-rel">${c.reliability}%</span>` : '';
+        levels.push(`<div class="ta-pat-card ta-pat-${dir}"><span class="ta-pat-icon">${icon}</span><div class="ta-pat-info"><strong>${c.pattern}</strong>${relBadge}<span class="ta-pat-detail">${c.detail || ''}</span></div><span class="ta-pat-dir ${dirCls}">${dirLabel}</span></div>`);
     }
 
+    /* ── Gaps ── */
     for (const g of gaps) {
-        const cls = g.direction === 'up' ? 'ta-tag-gap-up' : 'ta-tag-gap-down';
-        parts.push(`<span class="ta-pattern-tag ${cls}" title="${g.label}">Gap ${g.direction === 'up' ? '↑' : '↓'} ${g.gap_pct}%</span>`);
+        const dir = g.direction === 'up' ? 'bullish' : 'bearish';
+        const dirLabel = g.direction === 'up' ? 'Bullish' : 'Bearish';
+        const dirCls = g.direction === 'up' ? 'ta-dir-bull' : 'ta-dir-bear';
+        const icon = g.direction === 'up' ? '⬆️' : '⬇️';
+        levels.push(`<div class="ta-pat-card ta-pat-${dir}"><span class="ta-pat-icon">${icon}</span><div class="ta-pat-info"><strong>Gap ${g.direction === 'up' ? 'Up' : 'Down'} (${g.gap_pct}%)</strong><span class="ta-pat-detail">${g.label || ''}</span></div><span class="ta-pat-dir ${dirCls}">${dirLabel}</span></div>`);
     }
 
-    if (!parts.length) return '';
-    return `<div class="ta-pattern-badges-section"><h4>Detected Patterns</h4><div class="ta-pattern-badges-wrap">${parts.join(' ')}</div></div>`;
+    if (!levels.length) return '';
+
+    /* Pattern score summary */
+    const ps = (data.patterns || {}).pattern_score || 0;
+    const psCls = ps > 0 ? 'ta-dir-bull' : ps < 0 ? 'ta-dir-bear' : 'ta-dir-neut';
+    const psLabel = ps > 0 ? 'Net Bullish' : ps < 0 ? 'Net Bearish' : 'Neutral';
+    html += `<div class="ta-pat-summary"><span class="${psCls}">Pattern Score: ${ps > 0 ? '+' : ''}${ps.toFixed(2)}</span><span class="ta-pat-summary-label">${psLabel} · ${levels.length} pattern${levels.length > 1 ? 's' : ''} detected</span></div>`;
+    html += `<div class="ta-pat-list">${levels.join('')}</div></div>`;
+    return html;
 }
 
 /* ── Overlay toggle ─────────────────────────────── */
@@ -651,11 +676,12 @@ function _drawPriceChart(data) {
     }
 
     /* ── Support / Resistance lines ─────── */
+    const cs = currSym(data.currency);
     if (fib.nearest_support) {
-        datasets.push({ label: `Support $${fib.nearest_support.toFixed(2)}`, data: dates.map(() => fib.nearest_support), borderColor: "rgba(34,197,94,0.6)", borderWidth: 1.5, borderDash: [8,4], pointRadius: 0, fill: false, tension: 0, order: 3 });
+        datasets.push({ label: `Support ${cs}${fib.nearest_support.toFixed(2)}`, data: dates.map(() => fib.nearest_support), borderColor: "rgba(34,197,94,0.6)", borderWidth: 1.5, borderDash: [8,4], pointRadius: 0, fill: false, tension: 0, order: 3 });
     }
     if (fib.nearest_resistance) {
-        datasets.push({ label: `Resist $${fib.nearest_resistance.toFixed(2)}`, data: dates.map(() => fib.nearest_resistance), borderColor: "rgba(239,68,68,0.6)", borderWidth: 1.5, borderDash: [8,4], pointRadius: 0, fill: false, tension: 0, order: 3 });
+        datasets.push({ label: `Resist ${cs}${fib.nearest_resistance.toFixed(2)}`, data: dates.map(() => fib.nearest_resistance), borderColor: "rgba(239,68,68,0.6)", borderWidth: 1.5, borderDash: [8,4], pointRadius: 0, fill: false, tension: 0, order: 3 });
     }
 
     /* ── Cup & Handle markers ──────────── */
@@ -674,7 +700,7 @@ function _drawPriceChart(data) {
             fill: false, showLine: false, tension: 0, order: 1,
         });
         if (cup.rim_level) {
-            datasets.push({ label: `Rim $${cup.rim_level.toFixed(2)}`, data: dates.map(() => cup.rim_level), borderColor: "rgba(251,191,36,0.5)", borderWidth: 1, borderDash: [4,4], pointRadius: 0, fill: false, tension: 0, order: 3 });
+            datasets.push({ label: `Rim ${currSym(data.currency)}${cup.rim_level.toFixed(2)}`, data: dates.map(() => cup.rim_level), borderColor: "rgba(251,191,36,0.5)", borderWidth: 1, borderDash: [4,4], pointRadius: 0, fill: false, tension: 0, order: 3 });
         }
     }
 
@@ -748,7 +774,7 @@ function _drawPriceChart(data) {
             },
             scales: {
                 x: { display: true, ticks: { color: "#8b8fa3", font: { size: 9 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
-                y: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => '$' + v }, grid: { color: "rgba(42,45,62,0.3)" } },
+                y: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => currSym(data.currency) + v }, grid: { color: "rgba(42,45,62,0.3)" } },
             },
             interaction: { mode: "index", intersect: false },
         },

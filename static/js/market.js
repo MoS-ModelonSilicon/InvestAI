@@ -52,7 +52,7 @@ function renderTicker(quotes) {
 
         return `<div class="ticker-item ${cls} ${flash}" data-symbol="${q.symbol}" data-stock-name="${q.symbol}" data-stock-price="${q.price}">
             <span class="ticker-symbol">${q.symbol}</span>
-            <span class="ticker-price">$${q.price.toFixed(2)}</span>
+            <span class="ticker-price">${currSym(q.currency)}${q.price.toFixed(2)}</span>
             <span class="ticker-change">${arrow} ${Math.abs(q.change_pct).toFixed(2)}%</span>
         </div>`;
     }).join("");
@@ -104,7 +104,7 @@ function renderFeaturedStocks(stocks) {
                     <div class="market-card-name">${s.name}</div>
                 </div>
                 <div class="market-card-price-group">
-                    <div class="market-card-price">$${s.price.toFixed(2)}</div>
+                    <div class="market-card-price">${currSym(s.currency)}${s.price.toFixed(2)}</div>
                     <div class="market-card-change ${cls}">${arrow} ${sign}${s.change.toFixed(2)} (${sign}${s.change_pct.toFixed(2)}%)</div>
                 </div>
             </div>
@@ -112,8 +112,8 @@ function renderFeaturedStocks(stocks) {
                 <canvas id="spark-${s.symbol}" height="60"></canvas>
             </div>
             <div class="market-card-footer">
-                <span data-help="day_range">H: $${(s.day_high || s.price).toFixed(2)}</span>
-                <span data-help="day_range">L: $${(s.day_low || s.price).toFixed(2)}</span>
+                <span data-help="day_range">H: ${currSym(s.currency)}${(s.day_high || s.price).toFixed(2)}</span>
+                <span data-help="day_range">L: ${currSym(s.currency)}${(s.day_low || s.price).toFixed(2)}</span>
                 <span data-help="volume">Vol: ${volFmt}</span>
             </div>
         </div>`;

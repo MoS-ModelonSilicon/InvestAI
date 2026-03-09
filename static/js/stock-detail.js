@@ -5,6 +5,7 @@ let _lastHistory = null;
 let _lastSpyHistory = null;
 let _candleMode = false;
 let _currentPatterns = null;
+let _currentCurrency = "USD";
 
 /* ── Market session shading plugin ─────────────────────────── */
 const sessionZonePlugin = {
@@ -114,6 +115,7 @@ async function loadStockDetail() {
 }
 
 function renderStockDetail(info, history, news) {
+    _currentCurrency = info.currency || "USD";
     const container = document.getElementById("stock-detail-content");
     const ycSign = (info.year_change || 0) >= 0 ? "+" : "";
     const ycCls = (info.year_change || 0) >= 0 ? "stock-up" : "stock-down";
@@ -136,7 +138,7 @@ function renderStockDetail(info, history, news) {
             </div>
         </div>
         <div class="sd-price-area">
-            <div class="sd-price">${fmt(info.price)}</div>
+            <div class="sd-price">${fmt(info.price, info.currency)}</div>
             ${info.year_change != null ? `<div class="sd-change ${ycCls}">${ycSign}${info.year_change.toFixed(1)}% 1Y</div>` : ""}
         </div>
     </div>
@@ -144,6 +146,7 @@ function renderStockDetail(info, history, news) {
     <div class="sd-actions">
         <button class="btn btn-primary btn-sm${isInWatchlist(info.symbol) ? ' wl-watched' : ''}" data-wl-symbol="${info.symbol}" onclick="addToWatchlistFromDetail('${info.symbol}','${(info.name || "").replace(/'/g, "\\'")}')">${isInWatchlist(info.symbol) ? '✓ Watching' : '+ Watchlist'}</button>
         <button class="btn btn-sm" onclick="openAddHoldingModal('${info.symbol}','${(info.name || "").replace(/'/g, "\\'")}', ${info.price})">+ Portfolio</button>
+        <button class="btn btn-sm btn-ta" onclick="showTADetail('${info.symbol}')">🔬 Technical Analysis</button>
     </div>
 
     <div class="sd-chart-section">
@@ -167,13 +170,13 @@ function renderStockDetail(info, history, news) {
 
     // Key Stats
     const stats = [
-        ["Market Cap", info.market_cap ? formatMarketCapLocal(info.market_cap) : "N/A"],
+        ["Market Cap", info.market_cap ? formatMarketCapLocal(info.market_cap, info.currency) : "N/A"],
         ["P/E (TTM)", info.pe_ratio != null ? info.pe_ratio.toFixed(1) : "—"],
         ["Forward P/E", info.forward_pe != null ? info.forward_pe.toFixed(1) : "—"],
         ["Div Yield", info.dividend_yield != null ? info.dividend_yield.toFixed(2) + "%" : "—"],
         ["Beta", info.beta != null ? info.beta.toFixed(2) : "—"],
-        ["52W High", info.week52_high != null ? fmt(info.week52_high) : "—"],
-        ["52W Low", info.week52_low != null ? fmt(info.week52_low) : "—"],
+        ["52W High", info.week52_high != null ? fmt(info.week52_high, info.currency) : "—"],
+        ["52W Low", info.week52_low != null ? fmt(info.week52_low, info.currency) : "—"],
         ["Revenue Growth", info.revenue_growth != null ? `${info.revenue_growth > 0 ? "+" : ""}${info.revenue_growth.toFixed(1)}%` : "—"],
         ["Profit Margin", info.profit_margin != null ? info.profit_margin.toFixed(1) + "%" : "—"],
         ["Debt/Equity", info.debt_to_equity != null ? info.debt_to_equity.toFixed(0) + "%" : "—"],
@@ -215,8 +218,8 @@ function renderStockDetail(info, history, news) {
         const upsideColor = at.upside_pct >= 0 ? "var(--green)" : "var(--red)";
         html += `<div class="sd-section"><h3>Analyst Price Targets</h3>
             <div class="analyst-grid">
-                <div class="analyst-item"><span class="analyst-label">Current</span><span class="analyst-value">${fmt(info.price)}</span></div>
-                <div class="analyst-item"><span class="analyst-label">Avg Target</span><span class="analyst-value" style="color:${upsideColor}">${fmt(at.target_mean)}</span></div>
+                <div class="analyst-item"><span class="analyst-label">Current</span><span class="analyst-value">${fmt(info.price, info.currency)}</span></div>
+                <div class="analyst-item"><span class="analyst-label">Avg Target</span><span class="analyst-value" style="color:${upsideColor}">${fmt(at.target_mean, info.currency)}</span></div>
                 <div class="analyst-item"><span class="analyst-label">Upside</span><span class="analyst-value" style="color:${upsideColor}">${at.upside_pct > 0 ? "+" : ""}${at.upside_pct}%</span></div>
                 <div class="analyst-item"><span class="analyst-label">Analysts</span><span class="analyst-value">${at.num_analysts}</span></div>
             </div></div>`;
@@ -335,7 +338,7 @@ function renderDetailChart(history, spyHistory) {
 
     const scales = {
         x: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
-        y: { display: true, position: "left", ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => "$" + v }, grid: { color: "rgba(42,45,62,0.3)" } },
+        y: { display: true, position: "left", ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => currSym(_currentCurrency) + v }, grid: { color: "rgba(42,45,62,0.3)" } },
     };
 
     // SPY overlay — normalized % change on secondary axis
@@ -495,7 +498,8 @@ function renderCandlestickChart(history) {
                         },
                         label(ctx) {
                             const d = ctx.raw;
-                            if (d && d.o != null) return [`O: $${d.o.toFixed(2)}  H: $${d.h.toFixed(2)}`, `L: $${d.l.toFixed(2)}  C: $${d.c.toFixed(2)}`];
+                            const sym = currSym(_currentCurrency);
+                            if (d && d.o != null) return [`O: ${sym}${d.o.toFixed(2)}  H: ${sym}${d.h.toFixed(2)}`, `L: ${sym}${d.l.toFixed(2)}  C: ${sym}${d.c.toFixed(2)}`];
                             if (d && d._pat) return [d._pat.pattern, d._pat.detail];
                             if (ctx.dataset.label === "Volume") return `Vol: ${(d.y || 0).toLocaleString()}`;
                             return ctx.formattedValue;
@@ -505,7 +509,7 @@ function renderCandlestickChart(history) {
             },
             scales: {
                 x: { type: "time", ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
-                y: { position: "right", ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => "$" + v }, grid: { color: "rgba(42,45,62,0.3)" } },
+                y: { position: "right", ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => currSym(_currentCurrency) + v }, grid: { color: "rgba(42,45,62,0.3)" } },
                 yVol: { position: "left", max: maxVol * 4, display: false, grid: { display: false } },
             },
         },
@@ -595,12 +599,13 @@ async function addToWatchlistFromDetail(symbol, name) {
     }
 }
 
-function formatMarketCapLocal(cap) {
+function formatMarketCapLocal(cap, currency) {
     if (!cap) return "N/A";
-    if (cap >= 1e12) return `$${(cap / 1e12).toFixed(1)}T`;
-    if (cap >= 1e9) return `$${(cap / 1e9).toFixed(1)}B`;
-    if (cap >= 1e6) return `$${(cap / 1e6).toFixed(0)}M`;
-    return `$${cap.toLocaleString()}`;
+    const s = currSym(currency);
+    if (cap >= 1e12) return `${s}${(cap / 1e12).toFixed(1)}T`;
+    if (cap >= 1e9) return `${s}${(cap / 1e9).toFixed(1)}B`;
+    if (cap >= 1e6) return `${s}${(cap / 1e6).toFixed(0)}M`;
+    return `${s}${cap.toLocaleString()}`;
 }
 
 function showToast(msg, type = "success") {

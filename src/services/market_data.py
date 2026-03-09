@@ -885,6 +885,13 @@ def get_region(symbol: str) -> str:
     return _REGION_MAP.get(symbol, "US")
 
 
+def get_currency(symbol: str) -> str:
+    """Return the native currency for a symbol based on exchange suffix."""
+    if symbol.upper().endswith(".TA"):
+        return "ILS"
+    return "USD"
+
+
 MAX_WORKERS = 2 if _LOW_MEMORY else 5
 
 WARM_PRIORITY = [
@@ -1148,6 +1155,8 @@ def fetch_live_quotes(symbols: list[str]) -> list[dict]:
         cached = _get_cached(f"quote:{sym}")
         if cached:
             cached["name"] = _names.get(sym, sym)
+            if "currency" not in cached:
+                cached["currency"] = get_currency(sym)
             results.append(cached)
             continue
         info = _get_cached(f"info:{sym}")
@@ -1162,6 +1171,7 @@ def fetch_live_quotes(symbols: list[str]) -> list[dict]:
                 "volume": 0,
                 "day_high": info["price"],
                 "day_low": info["price"],
+                "currency": info.get("currency", get_currency(sym)),
             }
             results.append(entry)
             continue
@@ -1186,6 +1196,7 @@ def fetch_live_quotes(symbols: list[str]) -> list[dict]:
                 "volume": 0,
                 "day_high": round(quote.get("h", price), 2),
                 "day_low": round(quote.get("l", price), 2),
+                "currency": get_currency(sym),
             }
             _set_cache(f"quote:{sym}", entry)
             return entry

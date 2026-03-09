@@ -146,11 +146,11 @@ function renderPicksTable(picks) {
         const pnlCls = (p.pnl_pct || 0) >= 0 ? "stock-up" : "stock-down";
         const pnlStr = p.pnl_pct != null ? `${p.pnl_pct > 0 ? "+" : ""}${p.pnl_pct}%` : "\u2014";
         const targetsArr = p.targets || [];
-        const targetsStr = targetsArr.map(t => fmtPrice(t)).join(", ") || "\u2014";
-        const entryStr = p.entry != null ? fmtPrice(p.entry) : "\u2014";
-        const stopStr = p.stop != null ? fmtPrice(p.stop) : "\u2014";
-        const curStr = p.current_price != null ? fmtPrice(p.current_price) : "\u2014";
-        const highStr = p.high_after != null ? fmtPrice(p.high_after) : "\u2014";
+        const targetsStr = targetsArr.map(t => fmtPrice(t, p.currency)).join(", ") || "\u2014";
+        const entryStr = p.entry != null ? fmtPrice(p.entry, p.currency) : "\u2014";
+        const stopStr = p.stop != null ? fmtPrice(p.stop, p.currency) : "\u2014";
+        const curStr = p.current_price != null ? fmtPrice(p.current_price, p.currency) : "\u2014";
+        const highStr = p.high_after != null ? fmtPrice(p.high_after, p.currency) : "\u2014";
         const rrStr = p.risk_reward != null ? `${p.risk_reward}:1` : "\u2014";
         const daysStr = p.days_held != null ? `${p.days_held}d` : "\u2014";
 
@@ -254,11 +254,12 @@ function _pkEsc(str) {
     return div.innerHTML;
 }
 
-function fmtPrice(n) {
+function fmtPrice(n, currency) {
     if (n == null) return "—";
-    if (n >= 100) return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if (n >= 1) return "$" + n.toFixed(2);
-    return "$" + n.toFixed(4);
+    const cs = currSym(currency);
+    if (n >= 100) return cs + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (n >= 1) return cs + n.toFixed(2);
+    return cs + n.toFixed(4);
 }
 
 function sortPicks(col) {

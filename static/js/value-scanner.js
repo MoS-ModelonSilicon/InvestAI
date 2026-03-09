@@ -462,7 +462,7 @@ function renderActionPlanModal(data, amount) {
                             <span class="vap-stock-sector">${s.sector}</span>
                         </div>
                         <div class="vap-stock-metrics">
-                            <div class="vap-metric"><span class="vap-metric-label">Price</span><span class="vap-metric-val">$${s.price.toFixed(2)}</span></div>
+                            <div class="vap-metric"><span class="vap-metric-label">Price</span><span class="vap-metric-val">${currSym(s.currency)}${s.price.toFixed(2)}</span></div>
                             <div class="vap-metric"><span class="vap-metric-label">Quality</span><span class="vap-metric-val">${s.quality}</span></div>
                             <div class="vap-metric"><span class="vap-metric-label">MOS</span><span class="vap-metric-val">${mosFmt}</span></div>
                             <div class="vap-metric"><span class="vap-metric-label">P/E</span><span class="vap-metric-val">${s.pe_ratio != null ? s.pe_ratio.toFixed(1) : '—'}</span></div>

@@ -51,8 +51,18 @@ const api = (() => {
     };
 })();
 
-const fmt = (n) =>
-    "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const _CURRENCY_SYMBOLS = {
+    USD: "$", ILS: "₪", EUR: "€", GBP: "£", JPY: "¥", CNY: "¥",
+    HKD: "HK$", CAD: "C$", AUD: "A$", BRL: "R$", INR: "₹",
+    KRW: "₩", TWD: "NT$", CHF: "CHF ",
+};
+
+const currSym = (c) => _CURRENCY_SYMBOLS[c] || (c ? c + " " : "$");
+
+const fmt = (n, currency) => {
+    const sym = currSym(currency);
+    return sym + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
 
 const fmtPct = (n) => (n != null ? n.toFixed(1) + "%" : "—");
 

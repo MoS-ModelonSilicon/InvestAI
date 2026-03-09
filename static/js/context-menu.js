@@ -35,6 +35,11 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 Set Price Alert
             </button>
+            <div class="ctx-menu-divider"></div>
+            <button class="ctx-menu-item" onclick="ctxAction('technical')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 8 13 13 9 9 2 16"/><line x1="2" y1="20" x2="22" y2="20"/><line x1="22" y1="4" x2="22" y2="20"/></svg>
+                Technical Analysis
+            </button>
         `;
         document.body.appendChild(_menu);
         return _menu;
@@ -121,6 +126,11 @@
                     }, 50);
                 }
                 break;
+            case "technical":
+                if (typeof showTADetail === "function") {
+                    showTADetail(sym);
+                }
+                break;
         }
     };
 
@@ -164,7 +174,7 @@
         }
 
         const rows = stocks.map((s, i) => {
-            const priceFmt = s.price ? "$" + s.price.toFixed(2) : "N/A";
+            const priceFmt = s.price ? currSym(s.currency) + s.price.toFixed(2) : "N/A";
             const allocPct = s.allocation_pct ? s.allocation_pct.toFixed(1) + "%" : "—";
             return `<tr>
                 <td><input type="checkbox" class="bundle-check" data-idx="${i}" checked></td>

@@ -74,7 +74,7 @@ function renderWatchlist(items) {
                     <div class="wl-name">${item.name}</div>
                 </div>
                 <div class="wl-price-col">
-                    <div class="wl-price">${fmt(item.price)}</div>
+                    <div class="wl-price">${fmt(item.price, item.currency)}</div>
                     ${item.year_change != null ? `<div class="wl-change ${ycCls}">${ycSign}${item.year_change.toFixed(1)}% 1Y</div>` : ""}
                 </div>
             </div>

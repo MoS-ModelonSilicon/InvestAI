@@ -85,11 +85,11 @@ function renderPortfolio(data) {
                 <span class="em-cb-col" style="display:none;"><label class="em-checkbox" onclick="event.stopPropagation()"><input type="checkbox" data-id="${h.id}" data-symbol="${h.symbol}" onchange="pfToggleSelect(${h.id})"><span class="em-checkmark"></span></label></span>
                 <span class="pf-h-symbol">${h.symbol}<br><small class="text-muted">${h.name}</small></span>
                 <span>${h.quantity}</span>
-                <span>${fmt(h.buy_price)}</span>
-                <span>${fmt(h.current_price)}</span>
-                <span>${fmt(h.cost_basis)}</span>
-                <span>${fmt(h.current_value)}</span>
-                <span class="${hcls}">${hsign}${fmt(h.gain_loss)}<br><small>${hsign}${h.gain_loss_pct.toFixed(1)}%</small></span>
+                <span>${fmt(h.buy_price, h.currency)}</span>
+                <span>${fmt(h.current_price, h.currency)}</span>
+                <span>${fmt(h.cost_basis, h.currency)}</span>
+                <span>${fmt(h.current_value, h.currency)}</span>
+                <span class="${hcls}">${hsign}${fmt(h.gain_loss, h.currency)}<br><small>${hsign}${h.gain_loss_pct.toFixed(1)}%</small></span>
                 <span class="em-delete-col"><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removeHolding(${h.id})">×</button></span>
             </div>`;
     });

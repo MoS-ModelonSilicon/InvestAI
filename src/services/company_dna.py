@@ -435,6 +435,7 @@ def get_company_dna(symbol: str) -> Optional[dict]:
         "peers": peers[:8] if peers else [],
         "berkshire_score": berkshire,
         # Pass through key fundamental data for display
+        "currency": info.get("currency", "USD"),
         "fundamentals": {
             "pe_ratio": info.get("pe_ratio"),
             "price_to_book": info.get("price_to_book"),

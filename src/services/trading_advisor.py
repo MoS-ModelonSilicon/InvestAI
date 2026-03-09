@@ -174,11 +174,13 @@ def _analyze_stock(symbol: str, candles: dict, fund_info: dict) -> Optional[dict
 
     name = fund_info.get("name", symbol)
     sector = fund_info.get("sector", "N/A")
+    currency = fund_info.get("currency", "USD")
 
     return {
         "symbol": symbol,
         "name": name,
         "sector": sector,
+        "currency": currency,
         "price": current,
         "market_cap_fmt": format_market_cap(fund_info.get("market_cap", 0)),
         "score": comp["score"],

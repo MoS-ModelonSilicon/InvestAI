@@ -166,7 +166,7 @@ function renderCard(r, idx) {
                     <div class="scr-card-name">${r.name}</div>
                 </div>
                 <div class="scr-card-price-col">
-                    <div class="scr-card-price">${fmt(r.price)}</div>
+                    <div class="scr-card-price">${fmt(r.price, r.currency)}</div>
                     ${r.year_change != null ? `<div class="scr-card-yc ${ycCls}">${ycSign}${r.year_change.toFixed(1)}% 1Y</div>` : ""}
                 </div>
             </div>
@@ -263,11 +263,11 @@ function buildDetailPanel(r) {
             <div class="analyst-grid">
                 <div class="analyst-item">
                     <span class="analyst-label">Current Price</span>
-                    <span class="analyst-value">${fmt(r.price)}</span>
+                    <span class="analyst-value">${fmt(r.price, r.currency)}</span>
                 </div>
                 <div class="analyst-item">
                     <span class="analyst-label">Avg Target</span>
-                    <span class="analyst-value" style="color:${upsideColor}">${fmt(at.target_mean)}</span>
+                    <span class="analyst-value" style="color:${upsideColor}">${fmt(at.target_mean, r.currency)}</span>
                 </div>
                 <div class="analyst-item">
                     <span class="analyst-label">Upside</span>
@@ -282,7 +282,7 @@ function buildDetailPanel(r) {
             const range = at.target_high - at.target_low;
             const pricePct = range > 0 ? Math.min(100, Math.max(0, ((r.price - at.target_low) / range) * 100)) : 50;
             html += `<div class="analyst-range">
-                <div class="analyst-range-labels"><span>${fmt(at.target_low)}</span><span>${fmt(at.target_high)}</span></div>
+                <div class="analyst-range-labels"><span>${fmt(at.target_low, r.currency)}</span><span>${fmt(at.target_high, r.currency)}</span></div>
                 <div class="analyst-range-track">
                     <div class="analyst-range-marker" style="left:${pricePct}%"></div>
                 </div>
@@ -294,8 +294,8 @@ function buildDetailPanel(r) {
 
     // Key Financials
     const financials = [
-        ["52W High", r.week52_high != null ? fmt(r.week52_high) : null, r.pct_from_high != null ? `(${r.pct_from_high > 0 ? "+" : ""}${r.pct_from_high}%)` : null],
-        ["52W Low", r.week52_low != null ? fmt(r.week52_low) : null, r.pct_from_low != null ? `(+${r.pct_from_low}%)` : null],
+        ["52W High", r.week52_high != null ? fmt(r.week52_high, r.currency) : null, r.pct_from_high != null ? `(${r.pct_from_high > 0 ? "+" : ""}${r.pct_from_high}%)` : null],
+        ["52W Low", r.week52_low != null ? fmt(r.week52_low, r.currency) : null, r.pct_from_low != null ? `(+${r.pct_from_low}%)` : null],
         ["Forward P/E", r.forward_pe != null ? r.forward_pe.toFixed(1) : null],
         ["Revenue Growth", r.revenue_growth != null ? `${r.revenue_growth > 0 ? "+" : ""}${r.revenue_growth.toFixed(1)}%` : null],
         ["Earnings Growth", r.earnings_growth != null ? `${r.earnings_growth > 0 ? "+" : ""}${r.earnings_growth.toFixed(1)}%` : null],

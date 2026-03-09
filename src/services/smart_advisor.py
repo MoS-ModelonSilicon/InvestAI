@@ -421,6 +421,7 @@ def scan_and_score(period: str = "1y") -> list[dict]:
                 "market_cap_fmt": format_market_cap(info.get("market_cap", 0)),
                 "signals": analysis["signals"],
                 "reasoning": _build_reasoning(analysis, info),
+                "currency": info.get("currency", "USD"),
             }
         )
 
@@ -534,6 +535,7 @@ def build_portfolios(rankings: list[dict], amount: float = 10000) -> dict:
                     "risk_reward": s["risk_reward"],
                     "score": s["score"],
                     "signal": s["signal"],
+                    "currency": s.get("currency", "USD"),
                 }
             )
 

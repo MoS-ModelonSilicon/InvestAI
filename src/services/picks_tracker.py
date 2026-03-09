@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Any, Optional, cast
 
 from src.services import data_provider as dp
+from src.services.market_data import get_currency
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,7 @@ def _evaluate_pick(pick: dict) -> dict:
         "days_held": None,
         "risk_reward": None,
         "speed_score": None,
+        "currency": get_currency(symbol),
     }
 
     if not entry or not call_date:

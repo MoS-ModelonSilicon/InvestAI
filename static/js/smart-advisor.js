@@ -197,9 +197,9 @@ function renderAdvisorRankings(rankings) {
             <td>${r.confidence}%</td>
             <td class="${rsiCls}">${r.rsi != null ? r.rsi.toFixed(0) : "—"}</td>
             <td>${r.macd_signal}</td>
-            <td>$${r.entry_price.toFixed(2)}</td>
-            <td>$${r.target_price.toFixed(2)}</td>
-            <td>$${r.stop_loss.toFixed(2)}</td>
+            <td>${currSym(r.currency)}${r.entry_price.toFixed(2)}</td>
+            <td>${currSym(r.currency)}${r.target_price.toFixed(2)}</td>
+            <td>${currSym(r.currency)}${r.stop_loss.toFixed(2)}</td>
             <td>${r.risk_reward.toFixed(1)}x</td>
             <td>
                 <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();showCompanyDNA('${r.symbol}')" title="Company DNA">🧬</button>
@@ -288,10 +288,10 @@ function _renderHoldingsTable(holdings) {
             <td>${h.name}</td>
             <td>${h.sector}</td>
             <td>${h.allocation_pct.toFixed(1)}%</td>
-            <td>$${h.buy_price.toFixed(2)}</td>
-            <td>$${h.entry_price.toFixed(2)}</td>
-            <td>$${h.target_price.toFixed(2)}</td>
-            <td>$${h.stop_loss.toFixed(2)}</td>
+            <td>${currSym(h.currency)}${h.buy_price.toFixed(2)}</td>
+            <td>${currSym(h.currency)}${h.entry_price.toFixed(2)}</td>
+            <td>${currSym(h.currency)}${h.target_price.toFixed(2)}</td>
+            <td>${currSym(h.currency)}${h.stop_loss.toFixed(2)}</td>
             <td>${h.risk_reward.toFixed(1)}x</td>
             <td><span class="signal-badge ${sigCls}">${h.signal}</span></td>
             <td>${stockQuickActions(h.symbol, h.name, h.entry_price, {hideDetail: false})}</td>
@@ -363,7 +363,7 @@ function _renderBtChart(bt) {
             },
             scales: {
                 x: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
-                y: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => "$" + v.toLocaleString() }, grid: { color: "rgba(42,45,62,0.3)" } },
+                y: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => currSym() + v.toLocaleString() }, grid: { color: "rgba(42,45,62,0.3)" } },
             },
             interaction: { mode: "index", intersect: false },
         },
@@ -491,10 +491,10 @@ function _renderDNA(dna) {
         const upside = price ? (((pt.mean - price) / price) * 100).toFixed(1) : "—";
         ptHtml = `<div class="dna-section"><h4>🎯 Price Targets</h4>
             <div class="dna-pt-grid">
-                <div class="dna-pt-item"><span>Low</span><strong style="color:var(--red)">$${pt.low?.toFixed(2) ?? "—"}</strong></div>
-                <div class="dna-pt-item"><span>Mean</span><strong>$${pt.mean?.toFixed(2) ?? "—"}</strong></div>
-                <div class="dna-pt-item"><span>Median</span><strong>$${pt.median?.toFixed(2) ?? "—"}</strong></div>
-                <div class="dna-pt-item"><span>High</span><strong style="color:var(--green)">$${pt.high?.toFixed(2) ?? "—"}</strong></div>
+                <div class="dna-pt-item"><span>Low</span><strong style="color:var(--red)">${currSym(dna.currency)}${pt.low?.toFixed(2) ?? "—"}</strong></div>
+                <div class="dna-pt-item"><span>Mean</span><strong>${currSym(dna.currency)}${pt.mean?.toFixed(2) ?? "—"}</strong></div>
+                <div class="dna-pt-item"><span>Median</span><strong>${currSym(dna.currency)}${pt.median?.toFixed(2) ?? "—"}</strong></div>
+                <div class="dna-pt-item"><span>High</span><strong style="color:var(--green)">${currSym(dna.currency)}${pt.high?.toFixed(2) ?? "—"}</strong></div>
                 <div class="dna-pt-item"><span>Upside</span><strong style="color:${parseFloat(upside) >= 0 ? 'var(--green)' : 'var(--red)'}">${upside}%</strong></div>
             </div>
         </div>`;
@@ -587,10 +587,10 @@ function _renderDetailModal(data) {
                         <span class="adv-detail-conf">Confidence: ${data.confidence}%</span>
                     </div>
                     <div class="adv-detail-prices">
-                        <div><span class="adv-stat-label">Current</span><span>$${data.current_price.toFixed(2)}</span></div>
-                        <div><span class="adv-stat-label">Entry</span><span>$${data.entry_price.toFixed(2)}</span></div>
-                        <div><span class="adv-stat-label">Target</span><span style="color:var(--green)">$${data.target_price.toFixed(2)}</span></div>
-                        <div><span class="adv-stat-label">Stop-Loss</span><span style="color:var(--red)">$${data.stop_loss.toFixed(2)}</span></div>
+                        <div><span class="adv-stat-label">Current</span><span>${currSym(data.currency)}${data.current_price.toFixed(2)}</span></div>
+                        <div><span class="adv-stat-label">Entry</span><span>${currSym(data.currency)}${data.entry_price.toFixed(2)}</span></div>
+                        <div><span class="adv-stat-label">Target</span><span style="color:var(--green)">${currSym(data.currency)}${data.target_price.toFixed(2)}</span></div>
+                        <div><span class="adv-stat-label">Stop-Loss</span><span style="color:var(--red)">${currSym(data.currency)}${data.stop_loss.toFixed(2)}</span></div>
                         <div><span class="adv-stat-label">R/R</span><span>${data.risk_reward.toFixed(1)}x</span></div>
                     </div>
                 </div>
@@ -647,7 +647,7 @@ function _renderDetailCharts(data) {
             },
             scales: {
                 x: { display: true, ticks: { color: "#8b8fa3", font: { size: 9 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
-                y: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => "$" + v }, grid: { color: "rgba(42,45,62,0.3)" } },
+                y: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => currSym(data.currency) + v }, grid: { color: "rgba(42,45,62,0.3)" } },
             },
             interaction: { mode: "index", intersect: false },
         },
