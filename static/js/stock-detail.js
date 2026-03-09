@@ -6,8 +6,6 @@ let _lastSpyHistory = null;
 let _candleMode = false;
 let _currentPatterns = null;
 let _currentCurrency = "USD";
-let _tfFetchId = 0;              // debounce: only the latest fetch renders
-const _historyCache = new Map();  // client-side cache: "SYM:period:interval" → {history, patterns, ts}
 
 /* ── Market session shading plugin ─────────────────────────── */
 const sessionZonePlugin = {
@@ -75,6 +73,8 @@ const sessionZoneTimePlugin = {
 };
 
 const LINE_TF = [
+    { label: "1D", period: "1d", interval: "5m" },
+    { label: "1W", period: "5d", interval: "15m" },
     { label: "1M", period: "1mo", interval: "1d" },
     { label: "3M", period: "3mo", interval: "1d" },
     { label: "6M", period: "6mo", interval: "1d" },
@@ -249,7 +249,6 @@ function renderStockDetail(info, history, news) {
     _lastSpyHistory = null;
     _candleMode = false;
     _currentPatterns = null;
-    _historyCache.clear();
     buildTimeframeButtons(info.symbol);
     if (history && history.close && history.close.length > 0) {
         _lastHistory = history;
@@ -261,7 +260,7 @@ function buildTimeframeButtons(symbol) {
     const el = document.getElementById("sd-timeframes");
     if (!el) return;
     const tfs = _candleMode ? CANDLE_TF : LINE_TF;
-    const defIdx = _candleMode ? 4 : 0;
+    const defIdx = _candleMode ? 4 : 2;
     el.innerHTML = tfs.map((tf, i) =>
         `<button class="sd-tf${i === defIdx ? ' active' : ''}" onclick="changeTimeframe('${symbol}','${tf.period}','${tf.interval}',this)">${tf.label}</button>`
     ).join("");
@@ -277,129 +276,8 @@ function setChartType(type, symbol) {
     _currentPatterns = null;
     buildTimeframeButtons(symbol);
     const tfs = _candleMode ? CANDLE_TF : LINE_TF;
-    const def = tfs[_candleMode ? 4 : 0];
+    const def = tfs[_candleMode ? 4 : 2];
     changeTimeframe(symbol, def.period, def.interval, document.querySelector("#sd-timeframes .sd-tf.active"));
-}
-
-function _showChartLoading() {
-    const wrap = document.querySelector(".sd-chart-wrapper");
-    if (!wrap) return;
-    let overlay = wrap.querySelector(".sd-chart-loading");
-    if (!overlay) {
-        overlay = document.createElement("div");
-        overlay.className = "sd-chart-loading";
-        overlay.innerHTML = '<div class="spinner" style="width:24px;height:24px"></div>';
-        wrap.style.position = "relative";
-        wrap.appendChild(overlay);
-    }
-    overlay.style.display = "flex";
-}
-
-function _hideChartLoading() {
-    const overlay = document.querySelector(".sd-chart-loading");
-    if (overlay) overlay.style.display = "none";
-}
-
-function _showChartEmpty(msg) {
-    const wrap = document.querySelector(".sd-chart-wrapper");
-    if (!wrap) return;
-    let el = wrap.querySelector(".sd-chart-empty");
-    if (!el) {
-        el = document.createElement("div");
-        el.className = "sd-chart-empty";
-        wrap.appendChild(el);
-    }
-    el.textContent = msg || "No data available for this timeframe";
-    el.style.display = "flex";
-}
-
-function _hideChartEmpty() {
-    const el = document.querySelector(".sd-chart-empty");
-    if (el) el.style.display = "none";
-}
-
-function _getCacheKey(symbol, period, interval) {
-    return `${symbol}:${period}:${interval}`;
-}
-
-async function changeTimeframe(symbol, period, interval, btn) {
-    document.querySelectorAll("#sd-timeframes .sd-tf").forEach(b => b.classList.remove("active"));
-    if (btn) btn.classList.add("active");
-    _lastSpyHistory = null;
-
-    const fetchId = ++_tfFetchId;  // debounce: ignore stale fetches
-
-    // Check client-side cache first (instant switch for previously viewed timeframes)
-    const cacheKey = _getCacheKey(symbol, period, interval);
-    const cached = _historyCache.get(cacheKey);
-    const CACHE_TTL = _candleMode && ["1m", "3m", "5m", "15m", "1h"].includes(interval) ? 120000 : 600000;
-    if (cached && (Date.now() - cached.ts < CACHE_TTL)) {
-        if (fetchId !== _tfFetchId) return;
-        _lastHistory = cached.history;
-        _currentPatterns = cached.patterns || null;
-        _hideChartEmpty();
-        if (_candleMode) {
-            renderCandlestickChart(cached.history);
-        } else if (_spyOverlayActive) {
-            _showChartLoading();
-            try {
-                const spy = await api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`);
-                if (fetchId !== _tfFetchId) return;
-                _lastSpyHistory = spy;
-                _hideChartLoading();
-                renderDetailChart(cached.history, spy);
-            } catch { _hideChartLoading(); renderDetailChart(cached.history); }
-        } else {
-            renderDetailChart(cached.history);
-        }
-        return;
-    }
-
-    _showChartLoading();
-    _hideChartEmpty();
-
-    try {
-        const url = _candleMode
-            ? `/api/stock/${symbol}/history?period=${period}&interval=${interval}&include_patterns=true`
-            : `/api/stock/${symbol}/history?period=${period}&interval=${interval}`;
-        const history = await api.get(url);
-        if (fetchId !== _tfFetchId) return;  // stale fetch — discard
-
-        if (!history || !history.close || history.close.length === 0) {
-            _hideChartLoading();
-            _showChartEmpty("No data available for this timeframe");
-            return;
-        }
-
-        _lastHistory = history;
-        _currentPatterns = history.patterns || null;
-        // Cache this result
-        _historyCache.set(cacheKey, { history, patterns: _currentPatterns, ts: Date.now() });
-        // Limit cache size to 30 entries
-        if (_historyCache.size > 30) {
-            const oldest = _historyCache.keys().next().value;
-            _historyCache.delete(oldest);
-        }
-
-        _hideChartLoading();
-        _hideChartEmpty();
-        if (_candleMode) {
-            renderCandlestickChart(history);
-        } else if (_spyOverlayActive) {
-            try {
-                const spy = await api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`);
-                if (fetchId !== _tfFetchId) return;
-                _lastSpyHistory = spy;
-                renderDetailChart(history, spy);
-            } catch { renderDetailChart(history); }
-        } else {
-            renderDetailChart(history);
-        }
-    } catch (e) {
-        if (fetchId !== _tfFetchId) return;
-        _hideChartLoading();
-        _showChartEmpty("Failed to load chart data");
-    }
 }
 
 function renderDetailChart(history, spyHistory) {
@@ -533,6 +411,90 @@ function renderDetailChart(history, spyHistory) {
         },
     });
     renderSessionLegend(hasSessions);
+}
+
+let _tfFetchId = 0;
+
+function _showChartLoading() {
+    let el = document.getElementById("sd-chart-loading");
+    if (!el) {
+        const wrap = document.querySelector(".sd-chart-wrapper");
+        if (!wrap) return;
+        el = document.createElement("div");
+        el.id = "sd-chart-loading";
+        el.className = "sd-chart-loading";
+        el.innerHTML = '<div class="spinner"></div>';
+        wrap.appendChild(el);
+    }
+    el.style.display = "flex";
+}
+function _hideChartLoading() {
+    const el = document.getElementById("sd-chart-loading");
+    if (el) el.style.display = "none";
+}
+function _showChartEmpty(msg) {
+    let el = document.getElementById("sd-chart-empty");
+    if (!el) {
+        const wrap = document.querySelector(".sd-chart-wrapper");
+        if (!wrap) return;
+        el = document.createElement("div");
+        el.id = "sd-chart-empty";
+        el.className = "sd-chart-empty";
+        wrap.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.display = "flex";
+}
+function _hideChartEmpty() {
+    const el = document.getElementById("sd-chart-empty");
+    if (el) el.style.display = "none";
+}
+
+async function changeTimeframe(symbol, period, interval, btn) {
+    document.querySelectorAll("#sd-timeframes .sd-tf").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    _lastSpyHistory = null;
+
+    const fetchId = ++_tfFetchId;
+    _hideChartEmpty();
+    _showChartLoading();
+
+    try {
+        const url = _candleMode
+            ? `/api/stock/${symbol}/history?period=${period}&interval=${interval}&include_patterns=true`
+            : `/api/stock/${symbol}/history?period=${period}&interval=${interval}`;
+        const history = await api.get(url);
+
+        if (fetchId !== _tfFetchId) return; // stale request — discard
+
+        if (!history || !history.close || history.close.length === 0) {
+            _hideChartLoading();
+            _showChartEmpty("No data available for this timeframe");
+            return;
+        }
+
+        _lastHistory = history;
+        if (_candleMode) {
+            _currentPatterns = history.patterns || null;
+            renderCandlestickChart(history);
+        } else if (_spyOverlayActive) {
+            try {
+                const spy = await api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`);
+                if (fetchId !== _tfFetchId) return;
+                _lastSpyHistory = spy;
+                renderDetailChart(history, spy);
+            } catch {
+                renderDetailChart(history);
+            }
+        } else {
+            renderDetailChart(history);
+        }
+        _hideChartLoading();
+    } catch (e) {
+        if (fetchId !== _tfFetchId) return;
+        _hideChartLoading();
+        _showChartEmpty("Failed to load chart data");
+    }
 }
 
 function renderCandlestickChart(history) {
@@ -696,8 +658,8 @@ async function toggleSpyOverlay(symbol) {
     if (_spyOverlayActive) {
         // Determine current timeframe from active button
         const activeBtn = document.querySelector(".sd-tf.active:not(.sd-spy-toggle)");
-        const periodMap = { "1M": "1mo", "3M": "3mo", "6M": "6mo", "1Y": "1y", "5Y": "5y" };
-        const intervalMap = { "1M": "1d", "3M": "1d", "6M": "1d", "1Y": "1d", "5Y": "1wk" };
+        const periodMap = { "1D": "1d", "1W": "5d", "1M": "1mo", "3M": "3mo", "6M": "6mo", "1Y": "1y", "5Y": "5y" };
+        const intervalMap = { "1D": "5m", "1W": "15m", "1M": "1d", "3M": "1d", "6M": "1d", "1Y": "1d", "5Y": "1wk" };
         const label = activeBtn ? activeBtn.textContent.trim() : "1Y";
         const period = periodMap[label] || "1y";
         const interval = intervalMap[label] || "1d";
