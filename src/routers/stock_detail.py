@@ -61,7 +61,11 @@ def stock_history(symbol: str, period: str = "1y", interval: str = "1d", include
         from src.services.pattern_detection import detect_all_patterns
 
         history["patterns"] = detect_all_patterns(
-            history["open"], history["high"], history["low"], history["close"], history["volume"],
+            history["open"],
+            history["high"],
+            history["low"],
+            history["close"],
+            history["volume"],
         )
     return history
 
