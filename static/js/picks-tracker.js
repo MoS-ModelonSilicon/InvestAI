@@ -3,6 +3,9 @@ let picksFilter = null;
 let picksSourceFilter = null;
 let picksSortCol = "date";
 let picksSortAsc = false;
+let picksPage = 1;
+let picksSearchQuery = "";
+const PICKS_PER_PAGE = 100;
 
 async function loadPicksTracker() {
     const container = document.getElementById("picks-results");
@@ -19,7 +22,7 @@ async function loadPicksTracker() {
         if (params.length) url += "?" + params.join("&");
         picksData = await api.get(url);
         renderPicksStats(picksData.stats);
-        renderPicksTable(picksData.picks);
+        renderPicksTable(_getFilteredPicks());
         loadSourceInfo();
     } catch (e) {
         container.innerHTML = '<p style="color:var(--red);padding:20px;">Failed to load picks data.</p>';
@@ -107,6 +110,19 @@ function renderPicksStats(stats) {
     `;
 }
 
+function _getFilteredPicks() {
+    if (!picksData || !picksData.picks) return [];
+    const q = picksSearchQuery.toLowerCase().trim();
+    if (!q) return picksData.picks;
+    return picksData.picks.filter(p => {
+        const sym = (p.symbol || "").toLowerCase();
+        const type = (p.type || "").toLowerCase();
+        const src = (p.source || "").toLowerCase();
+        const notes = (p.notes || "").toLowerCase();
+        return sym.includes(q) || type.includes(q) || src.includes(q) || notes.includes(q);
+    });
+}
+
 function renderPicksTable(picks) {
     const container = document.getElementById("picks-results");
     if (!container) return;
@@ -120,6 +136,14 @@ function renderPicksTable(picks) {
         }
         return picksSortAsc ? va - vb : vb - va;
     });
+
+    // Pagination
+    const totalItems = sorted.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / PICKS_PER_PAGE));
+    if (picksPage > totalPages) picksPage = totalPages;
+    if (picksPage < 1) picksPage = 1;
+    const startIdx = (picksPage - 1) * PICKS_PER_PAGE;
+    const pageItems = sorted.slice(startIdx, startIdx + PICKS_PER_PAGE);
 
     const headers = [
         { key: "date", label: "Date" },
@@ -138,8 +162,11 @@ function renderPicksTable(picks) {
         { key: "status", label: "Status" },
     ];
 
-    // Export button
-    let html = '<div class="pk-toolbar"><button class="pk-export-btn" onclick="exportPicksCSV()" title="Export to CSV">&#128196; Export CSV</button></div>';
+    // Toolbar with export + page info
+    let html = `<div class="pk-toolbar">
+        <span class="pk-page-info">Showing ${startIdx + 1}–${Math.min(startIdx + PICKS_PER_PAGE, totalItems)} of ${totalItems} picks</span>
+        <button class="pk-export-btn" onclick="exportPicksCSV()" title="Export to CSV">&#128196; Export CSV</button>
+    </div>`;
     html += '<div class="pk-table-wrap"><table class="pk-table"><thead><tr>';
     headers.forEach(h => {
         const arrow = picksSortCol === h.key ? (picksSortAsc ? " \u25b2" : " \u25bc") : "";
@@ -147,7 +174,8 @@ function renderPicksTable(picks) {
     });
     html += "</tr></thead><tbody>";
 
-    sorted.forEach((p, idx) => {
+    pageItems.forEach((p, rawIdx) => {
+        const idx = startIdx + rawIdx;
         const statusCls = {
             winner: "pk-status-win",
             stopped: "pk-status-stop",
@@ -266,6 +294,28 @@ function renderPicksTable(picks) {
     });
 
     html += "</tbody></table></div>";
+
+    // Pagination controls
+    if (totalPages > 1) {
+        html += '<div class="pk-pagination">';
+        html += `<button class="pk-page-btn" onclick="goPicksPage(1)" ${picksPage === 1 ? 'disabled' : ''}>&laquo;</button>`;
+        html += `<button class="pk-page-btn" onclick="goPicksPage(${picksPage - 1})" ${picksPage === 1 ? 'disabled' : ''}>&lsaquo; Prev</button>`;
+
+        // Show page numbers with ellipsis
+        const pages = _pkPageRange(picksPage, totalPages);
+        pages.forEach(pg => {
+            if (pg === '...') {
+                html += '<span class="pk-page-ellipsis">&hellip;</span>';
+            } else {
+                html += `<button class="pk-page-btn ${pg === picksPage ? 'pk-page-active' : ''}" onclick="goPicksPage(${pg})">${pg}</button>`;
+            }
+        });
+
+        html += `<button class="pk-page-btn" onclick="goPicksPage(${picksPage + 1})" ${picksPage === totalPages ? 'disabled' : ''}>Next &rsaquo;</button>`;
+        html += `<button class="pk-page-btn" onclick="goPicksPage(${totalPages})" ${picksPage === totalPages ? 'disabled' : ''}>&raquo;</button>`;
+        html += '</div>';
+    }
+
     container.innerHTML = html;
 
     // Toggle detail rows on click
@@ -296,6 +346,27 @@ function fmtPrice(n, currency) {
     return cs + n.toFixed(4);
 }
 
+function goPicksPage(page) {
+    picksPage = page;
+    if (picksData) renderPicksTable(_getFilteredPicks());
+    // Scroll to top of table
+    const el = document.getElementById("picks-results");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function _pkPageRange(current, total) {
+    const delta = 2;
+    const pages = [];
+    const rangeStart = Math.max(2, current - delta);
+    const rangeEnd = Math.min(total - 1, current + delta);
+    pages.push(1);
+    if (rangeStart > 2) pages.push('...');
+    for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
+    if (rangeEnd < total - 1) pages.push('...');
+    if (total > 1) pages.push(total);
+    return pages;
+}
+
 function sortPicks(col) {
     if (picksSortCol === col) {
         picksSortAsc = !picksSortAsc;
@@ -303,11 +374,13 @@ function sortPicks(col) {
         picksSortCol = col;
         picksSortAsc = col === "date" || col === "symbol";
     }
-    if (picksData) renderPicksTable(picksData.picks);
+    picksPage = 1;
+    if (picksData) renderPicksTable(_getFilteredPicks());
 }
 
 function setPicksFilter(type) {
     picksFilter = type || null;
+    picksPage = 1;
     document.querySelectorAll(".pk-filter-btn").forEach(b => b.classList.remove("active"));
     const active = document.querySelector(`.pk-filter-btn[data-type="${type || "all"}"]`);
     if (active) active.classList.add("active");
@@ -316,6 +389,7 @@ function setPicksFilter(type) {
 
 function setPicksSource(source) {
     picksSourceFilter = source || null;
+    picksPage = 1;
     document.querySelectorAll(".pk-source-btn").forEach(b => b.classList.remove("active"));
     const active = document.querySelector(`.pk-source-btn[data-source="${source || "all"}"]`);
     if (active) active.classList.add("active");
@@ -347,35 +421,15 @@ async function seedWatchlistFromPicks() {
 }
 
 function filterPicks(query) {
-    const q = (query || "").toLowerCase().trim();
-    const rows = document.querySelectorAll(".pk-row");
-    let visible = 0;
-    rows.forEach(row => {
-        const symbol = (row.dataset.symbol || "").toLowerCase();
-        const type = (row.querySelector(".pk-type")?.textContent || "").toLowerCase();
-        const source = (row.querySelector(".pk-src")?.textContent || "").toLowerCase();
-        const match = !q || symbol.includes(q) || type.includes(q) || source.includes(q);
-        row.style.display = match ? "" : "none";
-        // Also hide/show the corresponding detail row
-        const detailId = row.dataset.detail;
-        if (detailId) {
-            const detail = document.getElementById(detailId);
-            if (detail && !match) detail.style.display = "none";
-        }
-        if (match) visible++;
-    });
-    let noRes = document.getElementById("picks-no-results");
-    if (!q || visible > 0) {
-        if (noRes) noRes.remove();
-    } else {
-        if (!noRes) {
-            noRes = document.createElement("div");
-            noRes.id = "picks-no-results";
-            noRes.className = "search-no-results";
+    picksSearchQuery = query || "";
+    picksPage = 1;
+    if (picksData) {
+        const filtered = _getFilteredPicks();
+        renderPicksTable(filtered);
+        if (filtered.length === 0 && picksSearchQuery) {
             const container = document.getElementById("picks-results");
-            if (container) container.appendChild(noRes);
+            if (container) container.innerHTML += `<div class="search-no-results">No picks matching "${_pkEsc(picksSearchQuery)}"</div>`;
         }
-        noRes.textContent = `No picks matching "${query}"`;
     }
 }
 
