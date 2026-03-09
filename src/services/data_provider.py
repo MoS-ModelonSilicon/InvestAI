@@ -257,7 +257,16 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, f
 
         if df is None or df.empty:
             # Fallback: use period= syntax — more reliable on cloud/first-call
-            period_map_yf = {"1m": "5d", "3m": "5d", "5m": "5d", "15m": "5d", "1h": "5d", "1d": "1mo", "1wk": "3mo", "1mo": "1y"}
+            period_map_yf = {
+                "1m": "5d",
+                "3m": "5d",
+                "5m": "5d",
+                "15m": "5d",
+                "1h": "5d",
+                "1d": "1mo",
+                "1wk": "3mo",
+                "1mo": "1y",
+            }
             period_str = period_map_yf.get(yf_interval, "1mo")
             with _suppress_stderr():
                 df = t.history(period=period_str, interval=yf_interval, prepost=is_intraday)

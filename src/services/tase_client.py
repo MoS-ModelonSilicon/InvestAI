@@ -30,44 +30,134 @@ _TIMEOUT = 12
 TASE_STOCK_INFO: dict[str, dict[str, str]] = {
     "LUMI.TA": {"name": "Bank Leumi", "name_he": "בנק לאומי", "sector": "Financial Services", "industry": "Banks"},
     "POLI.TA": {"name": "Bank Hapoalim", "name_he": "בנק הפועלים", "sector": "Financial Services", "industry": "Banks"},
-    "DSCT.TA": {"name": "Israel Discount Bank", "name_he": "בנק דיסקונט", "sector": "Financial Services", "industry": "Banks"},
-    "MZTF.TA": {"name": "Mizrahi Tefahot Bank", "name_he": "בנק מזרחי טפחות", "sector": "Financial Services", "industry": "Banks"},
-    "FIBI.TA": {"name": "First International Bank", "name_he": "הבנק הבינלאומי", "sector": "Financial Services", "industry": "Banks"},
+    "DSCT.TA": {
+        "name": "Israel Discount Bank",
+        "name_he": "בנק דיסקונט",
+        "sector": "Financial Services",
+        "industry": "Banks",
+    },
+    "MZTF.TA": {
+        "name": "Mizrahi Tefahot Bank",
+        "name_he": "בנק מזרחי טפחות",
+        "sector": "Financial Services",
+        "industry": "Banks",
+    },
+    "FIBI.TA": {
+        "name": "First International Bank",
+        "name_he": "הבנק הבינלאומי",
+        "sector": "Financial Services",
+        "industry": "Banks",
+    },
     "BEZQ.TA": {"name": "Bezeq", "name_he": "בזק", "sector": "Communication Services", "industry": "Telecom"},
     "CEL.TA": {"name": "Cellcom Israel", "name_he": "סלקום", "sector": "Communication Services", "industry": "Telecom"},
-    "PTNR.TA": {"name": "Partner Communications", "name_he": "פרטנר", "sector": "Communication Services", "industry": "Telecom"},
-    "AZRG.TA": {"name": "Azrieli Group", "name_he": "קבוצת עזריאלי", "sector": "Real Estate", "industry": "Real Estate"},
-    "MGDL.TA": {"name": "Migdal Insurance", "name_he": "מגדל ביטוח", "sector": "Financial Services", "industry": "Insurance"},
-    "HAREL.TA": {"name": "Harel Insurance", "name_he": "הראל ביטוח", "sector": "Financial Services", "industry": "Insurance"},
+    "PTNR.TA": {
+        "name": "Partner Communications",
+        "name_he": "פרטנר",
+        "sector": "Communication Services",
+        "industry": "Telecom",
+    },
+    "AZRG.TA": {
+        "name": "Azrieli Group",
+        "name_he": "קבוצת עזריאלי",
+        "sector": "Real Estate",
+        "industry": "Real Estate",
+    },
+    "MGDL.TA": {
+        "name": "Migdal Insurance",
+        "name_he": "מגדל ביטוח",
+        "sector": "Financial Services",
+        "industry": "Insurance",
+    },
+    "HAREL.TA": {
+        "name": "Harel Insurance",
+        "name_he": "הראל ביטוח",
+        "sector": "Financial Services",
+        "industry": "Insurance",
+    },
     "DLEKG.TA": {"name": "Delek Group", "name_he": "קבוצת דלק", "sector": "Energy", "industry": "Oil & Gas"},
     "ORL.TA": {"name": "Bazan Group", "name_he": "בזן", "sector": "Energy", "industry": "Oil Refining"},
-    "STRS.TA": {"name": "Strauss Group", "name_he": "שטראוס", "sector": "Consumer Defensive", "industry": "Food Products"},
+    "STRS.TA": {
+        "name": "Strauss Group",
+        "name_he": "שטראוס",
+        "sector": "Consumer Defensive",
+        "industry": "Food Products",
+    },
     "ELCO.TA": {"name": "Elco Holdings", "name_he": "אלקו", "sector": "Industrials", "industry": "Conglomerates"},
     "AMOT.TA": {"name": "Amot Investments", "name_he": "אמות", "sector": "Real Estate", "industry": "Real Estate"},
-    "TEVA.TA": {"name": "Teva Pharmaceutical (TASE)", "name_he": "טבע", "sector": "Healthcare", "industry": "Pharmaceuticals"},
+    "TEVA.TA": {
+        "name": "Teva Pharmaceutical (TASE)",
+        "name_he": "טבע",
+        "sector": "Healthcare",
+        "industry": "Pharmaceuticals",
+    },
     "ICL.TA": {"name": "ICL Group (TASE)", "name_he": "כיל", "sector": "Basic Materials", "industry": "Chemicals"},
     "NICE.TA": {"name": "Nice Ltd (TASE)", "name_he": "נייס", "sector": "Technology", "industry": "Software"},
-    "ESLT.TA": {"name": "Elbit Systems (TASE)", "name_he": "אלביט מערכות", "sector": "Industrials", "industry": "Defense"},
-    "PHOE.TA": {"name": "The Phoenix Holdings", "name_he": "הפניקס", "sector": "Financial Services", "industry": "Insurance"},
-    "MNRT.TA": {"name": "Menora Mivtachim", "name_he": "מנורה מבטחים", "sector": "Financial Services", "industry": "Insurance"},
-    "CLAL.TA": {"name": "Clal Insurance", "name_he": "כלל ביטוח", "sector": "Financial Services", "industry": "Insurance"},
+    "ESLT.TA": {
+        "name": "Elbit Systems (TASE)",
+        "name_he": "אלביט מערכות",
+        "sector": "Industrials",
+        "industry": "Defense",
+    },
+    "PHOE.TA": {
+        "name": "The Phoenix Holdings",
+        "name_he": "הפניקס",
+        "sector": "Financial Services",
+        "industry": "Insurance",
+    },
+    "MNRT.TA": {
+        "name": "Menora Mivtachim",
+        "name_he": "מנורה מבטחים",
+        "sector": "Financial Services",
+        "industry": "Insurance",
+    },
+    "CLAL.TA": {
+        "name": "Clal Insurance",
+        "name_he": "כלל ביטוח",
+        "sector": "Financial Services",
+        "industry": "Insurance",
+    },
     "MELISRON.TA": {"name": "Melisron", "name_he": "מליסרון", "sector": "Real Estate", "industry": "Real Estate"},
     "GAZP.TA": {"name": "Gazit Globe", "name_he": "גזית גלוב", "sector": "Real Estate", "industry": "Real Estate"},
-    "ALHE.TA": {"name": "Alon Hetz Properties", "name_he": "אלון חץ", "sector": "Real Estate", "industry": "Real Estate"},
+    "ALHE.TA": {
+        "name": "Alon Hetz Properties",
+        "name_he": "אלון חץ",
+        "sector": "Real Estate",
+        "industry": "Real Estate",
+    },
     "ISRA.TA": {"name": "Isramco", "name_he": "ישראמקו", "sector": "Energy", "industry": "Oil & Gas"},
     "OPC.TA": {"name": "OPC Energy", "name_he": "או.פי.סי אנרגיה", "sector": "Utilities", "industry": "Energy"},
-    "ENLT.TA": {"name": "Enlight Renewable Energy", "name_he": "אנלייט", "sector": "Utilities", "industry": "Renewable Energy"},
+    "ENLT.TA": {
+        "name": "Enlight Renewable Energy",
+        "name_he": "אנלייט",
+        "sector": "Utilities",
+        "industry": "Renewable Energy",
+    },
     "SHPG.TA": {"name": "Shufersal", "name_he": "שופרסל", "sector": "Consumer Defensive", "industry": "Grocery Stores"},
-    "RMLI.TA": {"name": "Rami Levy Chain Stores", "name_he": "רמי לוי", "sector": "Consumer Defensive", "industry": "Grocery Stores"},
+    "RMLI.TA": {
+        "name": "Rami Levy Chain Stores",
+        "name_he": "רמי לוי",
+        "sector": "Consumer Defensive",
+        "industry": "Grocery Stores",
+    },
     "FOX.TA": {"name": "Fox-Wizel", "name_he": "פוקס", "sector": "Consumer Cyclical", "industry": "Apparel Retail"},
     "FATA.TA": {"name": "Fattal Hotels", "name_he": "מלונות פתאל", "sector": "Consumer Cyclical", "industry": "Hotels"},
-    "SPEN.TA": {"name": "Shikun & Binui", "name_he": "שיכון ובינוי", "sector": "Industrials", "industry": "Construction"},
+    "SPEN.TA": {
+        "name": "Shikun & Binui",
+        "name_he": "שיכון ובינוי",
+        "sector": "Industrials",
+        "industry": "Construction",
+    },
     "ITMR.TA": {"name": "Ituran", "name_he": "איתוראן", "sector": "Technology", "industry": "Electronics"},
     "SPNS.TA": {"name": "Sapiens International", "name_he": "ספיינס", "sector": "Technology", "industry": "Software"},
     "NVPT.TA": {"name": "Navitas Petroleum", "name_he": "נביטס", "sector": "Energy", "industry": "Oil & Gas"},
     "KMDA.TA": {"name": "Kamada", "name_he": "קמהדע", "sector": "Healthcare", "industry": "Pharmaceuticals"},
     "ARPT.TA": {"name": "Airport City", "name_he": "אירפורט סיטי", "sector": "Real Estate", "industry": "Real Estate"},
-    "ILDC.TA": {"name": "Israel Land Development", "name_he": "הכשרת הישוב", "sector": "Real Estate", "industry": "Real Estate"},
+    "ILDC.TA": {
+        "name": "Israel Land Development",
+        "name_he": "הכשרת הישוב",
+        "sector": "Real Estate",
+        "industry": "Real Estate",
+    },
     "DANE.TA": {"name": "Dan Hotels", "name_he": "דן מלונות", "sector": "Consumer Cyclical", "industry": "Hotels"},
 }
 
@@ -222,7 +312,7 @@ def get_tase_profile(symbol: str) -> Optional[dict[str, Any]]:
     try:
         resp = requests.get(
             "https://query2.finance.yahoo.com/v1/finance/search",
-            params={"q": symbol, "quotesCount": 1, "newsCount": 0},
+            params={"q": symbol, "quotesCount": "1", "newsCount": "0"},
             headers=_HEADERS,
             proxies=_PROXIES,
             timeout=_TIMEOUT,
@@ -301,8 +391,8 @@ def get_tase_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> 
             f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
             params={
                 "interval": yf_interval,
-                "period1": from_ts,
-                "period2": to_ts,
+                "period1": str(from_ts),
+                "period2": str(to_ts),
             },
             headers=_HEADERS,
             proxies=_PROXIES,
@@ -325,14 +415,18 @@ def get_tase_candles(symbol: str, resolution: str, from_ts: int, to_ts: int) -> 
             return None
 
         # Filter out None values
-        valid = [(t, o, h, l, c, v) for t, o, h, l, c, v in zip(
-            timestamps,
-            ohlcv.get("open", []),
-            ohlcv.get("high", []),
-            ohlcv.get("low", []),
-            ohlcv.get("close", []),
-            ohlcv.get("volume", []),
-        ) if c is not None]
+        valid = [
+            (t, o, h, l, c, v)
+            for t, o, h, l, c, v in zip(
+                timestamps,
+                ohlcv.get("open", []),
+                ohlcv.get("high", []),
+                ohlcv.get("low", []),
+                ohlcv.get("close", []),
+                ohlcv.get("volume", []),
+            )
+            if c is not None
+        ]
 
         if not valid:
             return None
@@ -373,18 +467,15 @@ def search_tase(query: str) -> list[dict[str, str]]:
         sector = info.get("sector", "").lower()
         sym_lower = symbol.lower()
 
-        if (
-            q in sym_lower
-            or q in name_lower
-            or q in name_he
-            or q in sector
-        ):
-            results.append({
-                "symbol": symbol,
-                "name": info["name"],
-                "name_he": name_he,
-                "sector": info.get("sector", ""),
-                "exchange": "TLV",
-            })
+        if q in sym_lower or q in name_lower or q in name_he or q in sector:
+            results.append(
+                {
+                    "symbol": symbol,
+                    "name": info["name"],
+                    "name_he": name_he,
+                    "sector": info.get("sector", ""),
+                    "exchange": "TLV",
+                }
+            )
 
     return results
