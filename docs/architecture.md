@@ -146,6 +146,7 @@ Pipeline: push → staging auto-deploy → nightly E2E → promote to prod
 └── External services:
       ├── Supabase PostgreSQL (data persistence)
       ├── Finnhub API (market data)
-      ├── Azure OpenAI (AI assistant — gpt-5-nano + o3)
+      ├── Azure OpenAI (AI assistant — gpt-5-nano + o3, 16 tools)
+      ├── GitHub REST API (issues integration — create, close, comment)
       └── GitHub Actions (nightly E2E + weekly regression)
 ```

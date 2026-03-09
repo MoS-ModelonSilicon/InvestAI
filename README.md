@@ -28,10 +28,16 @@ A full-stack investment advisory web app with live market data, global stock scr
 
 ### AI Assistant
 - **Two-Tier Chat Widget** — floating chat bubble (bottom-right) powered by Azure OpenAI
-- **Smart Model Routing** — gpt-5-nano handles simple queries (site navigation, FAQ, greetings); o3 handles complex financial reasoning (stock analysis, portfolio advice)
-- **Tool Calling** — o3 can fetch live stock quotes and search the screener mid-conversation
+- **Smart Model Routing** — gpt-5-nano handles simple queries (FAQ, greetings); o3 handles complex reasoning + actions
+- **16 Tool Functions** — the AI can take real actions on your behalf:
+  - **Write**: add to portfolio, add/remove from watchlist, create price alerts, record transactions
+  - **Read**: fetch your portfolio summary, watchlist, alerts, dashboard, budgets
+  - **Analyze**: live stock quotes, screener search, AI strategy picks, trading signals
+  - **Navigate**: open any page in the app ("show me my portfolio")
+  - **Suggest**: log feature requests → creates GitHub Issues automatically
 - **SSE Streaming** — responses stream token-by-token with model badge indicators
-- **Suggestion Box** — users can submit feature requests; admin dashboard for managing them
+- **GitHub Issues Integration** — suggestions auto-create issues in the repo with labels; admin status changes sync back (close/reopen/comment)
+- **Admin Suggestions Dashboard** — view, filter, update suggestions with GitHub issue links
 
 ### Advisory
 - **Risk Profile Wizard** — 6-step questionnaire → risk score → investor profile
@@ -109,7 +115,8 @@ src/
 ├── schemas/                # Pydantic request/response models
 └── services/               # Business logic
     ├── market_data.py      # yfinance integration, caching, batch fetch
-    ├── assistant.py        # Two-tier AI routing, tool calling, SSE streaming
+    ├── assistant.py        # Two-tier AI routing, 16 tool functions, SSE streaming
+    ├── github_issues.py   # GitHub REST API (create/close/reopen issues, comments)
     ├── funder_scraper.py   # Live scraper for funder.co.il
     ├── screener.py         # Multi-factor screening + signals
     ├── recommendations.py  # Profile-based scoring engine

@@ -92,5 +92,11 @@ Two-tier AI chat with model routing + suggestion management.
 
 - **SSE streaming**: `POST /chat` returns `text/event-stream` via `StreamingResponse`. Each event is `data: {json}\n\n`. Event types: `model` (which model was chosen), `token` (text chunk), `tool` (tool invocation), `error`, `done`.
 - **Model routing**: The service classifies each message as SIMPLE/COMPLEX/SUGGESTION using gpt-5-nano, then routes accordingly.
-- **Tool calling**: o3 can call `get_stock_quote`, `search_screener`, `submit_suggestion` — results are fed back and the model streams a final answer.
+- **Tool calling**: o3 can call 16 tools — results are fed back and the model streams a final answer.
+  - Write: `add_to_portfolio`, `add_to_watchlist`, `remove_from_watchlist`, `create_alert`, `add_transaction`
+  - Read: `get_my_portfolio`, `get_my_watchlist`, `get_my_alerts`, `get_dashboard_summary`, `get_my_budgets`
+  - Analyze: `get_stock_quote`, `search_screener`, `get_ai_picks`, `get_trading_signals`
+  - Navigate: `navigate_to` — emits SSE `navigate` event so frontend switches pages
+  - Meta: `submit_suggestion` — creates DB entry + GitHub Issue
+- **GitHub Issues sync**: suggestions auto-create GitHub issues; admin status changes sync back (close/reopen/comment)
 - **No `_is_configured()` → 501**: If Azure env vars aren't set, endpoints return 501 Service Unavailable.
