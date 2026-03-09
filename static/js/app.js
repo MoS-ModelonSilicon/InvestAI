@@ -100,6 +100,11 @@ function navigateTo(page, pushState = true) {
     // Close mobile sidebar when navigating
     closeMobileSidebar();
 
+    // Track page visit for feature hint dots
+    if (typeof window._trackPageVisit === "function") {
+        window._trackPageVisit(page);
+    }
+
     document.querySelectorAll(".nav-link").forEach((l) => l.classList.remove("active"));
     const navPage = PAGE_TO_NAV[page] || page;
     const active = document.querySelector(`.nav-link[data-page="${navPage}"]`);
