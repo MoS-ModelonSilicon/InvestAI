@@ -44,6 +44,7 @@ def load_picks(source_filter: Optional[str] = None) -> list[dict]:
     """Load picks from the database. Falls back to JSON if DB is empty."""
     try:
         from src.services.scrapers.pipeline import _load_picks_from_db
+
         picks = _load_picks_from_db(source_filter=source_filter)
         if picks:
             return picks
@@ -58,10 +59,7 @@ def load_picks(source_filter: Optional[str] = None) -> list[dict]:
         data = json.load(f)
         result = cast(list[dict[str, Any]], data) if isinstance(data, list) else []
     if source_filter:
-        result = [
-            p for p in result
-            if (p.get("source") or "").lower().startswith(source_filter.lower())
-        ]
+        result = [p for p in result if (p.get("source") or "").lower().startswith(source_filter.lower())]
     return result
 
 
