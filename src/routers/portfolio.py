@@ -73,9 +73,7 @@ class BulkAddRequest(BaseModel):
 
 
 @router.post("/holdings/bulk")
-def bulk_add_holdings(
-    payload: BulkAddRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
-):
+def bulk_add_holdings(payload: BulkAddRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Add multiple holdings in a single transaction."""
     if not payload.holdings:
         return {"ok": True, "added": 0, "failed": 0}
