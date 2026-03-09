@@ -19,6 +19,8 @@ from typing import Optional
 
 from src.services import data_provider as dp
 from src.services import technical_analysis as ta
+from src.services import pattern_detection as pd
+from src.services import advanced_indicators as adv
 from src.services.market_data import (
     fetch_batch,
     fetch_stock_info,
@@ -641,7 +643,7 @@ def get_dashboard() -> dict:
 
 
 def get_single_analysis(symbol: str) -> Optional[dict]:
-    """Deep analysis for a single stock with full indicator arrays."""
+    """Deep analysis for a single stock with full indicator arrays + patterns."""
     to_ts = int(time.time())
     from_ts = to_ts - CANDLE_LOOKBACK_DAYS * 86400
 
@@ -652,13 +654,14 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
     closes = candles["c"]
     highs = candles.get("h", closes)
     lows = candles.get("l", closes)
+    opens = candles.get("o", closes)
     volumes = candles.get("v", [0] * len(closes))
     timestamps = candles.get("t", [])
     dates = [datetime.fromtimestamp(t).strftime("%Y-%m-%d") for t in timestamps]
 
     info = fetch_stock_info(symbol) or {}
 
-    # Classic indicators
+    # ── Classic indicators ────────────────────────────
     sma50 = ta.sma(closes, 50)
     sma200 = ta.sma(closes, 200)
     ema12 = ta.ema(closes, 12)
@@ -670,7 +673,7 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
     atr_vals = ta.atr(highs, lows, closes)
     obv_vals = ta.obv(closes, volumes)
 
-    # Advanced indicators
+    # ── Existing advanced indicators ──────────────────
     adx_data = ta.adx(highs, lows, closes)
     rsi_div = ta.detect_divergence(closes, rsi_vals)
     macd_div = ta.detect_divergence(closes, macd_data["histogram"])
@@ -689,6 +692,13 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
             if n >= 22:
                 rs_data = ta.relative_strength(closes[-n:], bench[-n:])
 
+    # ── NEW: Pattern Detection ────────────────────────
+    all_patterns = pd.detect_all_patterns(opens, highs, lows, closes, volumes)
+
+    # ── NEW: Advanced Indicators ──────────────────────
+    adv_data = adv.compute_all_advanced(opens, highs, lows, closes, volumes)
+
+    # ── Composite score (original + new pattern/indicator boosts) ──
     comp = ta.composite_score(
         rsi_vals,
         macd_data,
@@ -706,6 +716,49 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
         zscore_vals=zscore_vals,
         rs_data=rs_data,
     )
+
+    # Merge pattern and advanced signals into edge signals
+    merged_edge = list(comp.get("edge_signals", []))
+
+    # Add pattern score as edge signal
+    ps = all_patterns["pattern_score"]
+    if abs(ps) > 0.2:
+        merged_edge.append(
+            {
+                "name": "Chart Patterns",
+                "score": ps,
+                "detail": all_patterns["pattern_summary"],
+                "direction": "bullish" if ps > 0 else "bearish",
+            }
+        )
+
+    # Add advanced indicator signals
+    for sig in adv_data.get("advanced_signals", []):
+        merged_edge.append(sig)
+
+    # Adjust raw score with new signals
+    pattern_boost = ps * 0.08 + adv_data.get("advanced_score", 0) * 0.07
+    adjusted_raw = comp["raw_score"] + pattern_boost
+    adjusted_norm = round((adjusted_raw + 2) / 4 * 100)
+    adjusted_norm = max(0, min(100, adjusted_norm))
+
+    if adjusted_raw >= 1.2:
+        verdict = "Strong Buy"
+    elif adjusted_raw >= 0.5:
+        verdict = "Buy"
+    elif adjusted_raw > -0.5:
+        verdict = "Neutral"
+    elif adjusted_raw > -1.2:
+        verdict = "Sell"
+    else:
+        verdict = "Strong Sell"
+
+    # Recalculate confidence with all signals
+    all_scores = [float(s["score"]) for s in comp["signals"]]
+    all_scores += [float(e["score"]) for e in merged_edge]
+    bullish_ct = sum(1 for s in all_scores if s > 0)
+    total_ct = len(all_scores) or 1
+    confidence = round(bullish_ct / total_ct * 100)
 
     current = closes[-1]
     last_atr = ta._last_valid(atr_vals)
@@ -730,18 +783,47 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
         stop = round(entry * 0.95, 2)
     rr = round((target - entry) / (entry - stop), 2) if entry > stop else 0
 
-    # Build reasoning from both classic and edge signals
+    # Build reasoning from all signals
     classic_parts = [s["detail"] for s in comp["signals"] if s["score"] != 0]
-    edge_parts = [s["detail"] for s in comp.get("edge_signals", []) if s["score"] != 0]
+    edge_parts = [s["detail"] for s in merged_edge if s["score"] != 0]
     all_parts = edge_parts + classic_parts
-    reasoning = ". ".join(all_parts[:6]) + "." if all_parts else "Insufficient data."
+    reasoning = ". ".join(all_parts[:8]) + "." if all_parts else "Insufficient data."
+
+    # ── Build decision breakdown for visualization ────
+    decision_breakdown: list[dict] = []
+    weights = {"MACD": 0.22, "RSI": 0.18, "SMA": 0.18, "Bollinger": 0.14, "Stochastic": 0.10, "Volume": 0.08}
+    for sig in comp["signals"]:
+        w = weights.get(sig["name"], 0.1)
+        decision_breakdown.append(
+            {
+                "name": sig["name"],
+                "category": "classic",
+                "raw_score": sig["score"],
+                "weight": w,
+                "weighted_score": round(float(sig["score"]) * w, 4),
+                "direction": sig["direction"],
+                "detail": sig["detail"],
+            }
+        )
+    for sig in merged_edge:
+        decision_breakdown.append(
+            {
+                "name": sig["name"],
+                "category": "advanced",
+                "raw_score": sig["score"],
+                "weight": 0.10,
+                "weighted_score": round(float(sig["score"]) * 0.10, 4),
+                "direction": sig["direction"],
+                "detail": sig["detail"],
+            }
+        )
 
     return {
         "symbol": symbol,
         "name": info.get("name", symbol),
         "sector": info.get("sector", "N/A"),
         "dates": dates,
-        "price": {"close": closes, "high": highs, "low": lows, "volume": volumes},
+        "price": {"close": closes, "high": highs, "low": lows, "open": opens, "volume": volumes},
         "indicators": {
             "sma_50": sma50,
             "sma_200": sma200,
@@ -756,19 +838,46 @@ def get_single_analysis(symbol: str) -> Optional[dict]:
             "ichimoku": ichi,
             "adx": adx_data,
             "zscore": zscore_vals,
+            # New indicators
+            "vwap": adv_data.get("vwap"),
+            "keltner": adv_data.get("keltner"),
+            "parabolic_sar": adv_data.get("parabolic_sar"),
+            "williams_r": adv_data.get("williams_r"),
+            "cmf": adv_data.get("cmf"),
+            "donchian": adv_data.get("donchian"),
+            "aroon": adv_data.get("aroon"),
+            "cci": adv_data.get("cci"),
+            "heikin_ashi": adv_data.get("heikin_ashi"),
+            "force_index": adv_data.get("force_index"),
+            "linear_regression": adv_data.get("linear_regression"),
+            "momentum": adv_data.get("momentum"),
+            "roc": adv_data.get("roc"),
         },
         "action": {
-            "verdict": comp["verdict"],
-            "score": comp["score"],
-            "confidence": comp["confidence"],
+            "verdict": verdict,
+            "score": adjusted_norm,
+            "confidence": confidence,
             "entry": round(entry, 2),
             "target": round(target, 2),
             "stop_loss": round(stop, 2),
             "risk_reward": rr,
-            "timeframe": "Short-term" if comp["raw_score"] > 1 else "Medium-term",
+            "timeframe": "Short-term" if adjusted_raw > 1 else "Medium-term",
             "reasoning": reasoning,
             "signals": comp["signals"],
-            "edge_signals": comp.get("edge_signals", []),
+            "edge_signals": merged_edge,
+        },
+        "decision_breakdown": decision_breakdown,
+        "patterns": {
+            "chart_patterns": all_patterns["chart_patterns"],
+            "candlestick_patterns": all_patterns["candlestick_patterns"],
+            "gaps": all_patterns["gaps"],
+            "pattern_score": all_patterns["pattern_score"],
+            "pattern_summary": all_patterns["pattern_summary"],
+        },
+        "ttm_squeeze": {
+            "squeeze_on": adv_data["ttm_squeeze"]["current_squeeze"],
+            "squeeze_fired": adv_data["ttm_squeeze"]["squeeze_fired"],
+            "detail": adv_data["ttm_squeeze"]["detail"],
         },
         "fibonacci": fib,
         "cup_and_handle": cup_handle,
