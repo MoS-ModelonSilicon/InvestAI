@@ -6,6 +6,71 @@ let _lastSpyHistory = null;
 let _candleMode = false;
 let _currentPatterns = null;
 
+/* ── Market session shading plugin ─────────────────────────── */
+const sessionZonePlugin = {
+    id: "sessionZones",
+    beforeDraw(chart) {
+        const sessions = chart.options._sessions;
+        if (!sessions || !sessions.length) return;
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.x;
+        const { top, bottom } = chart.chartArea;
+        if (!xAxis || top == null) return;
+
+        // Pre-market: blue tint, Post-market: purple tint
+        const colors = { pre: "rgba(59,130,246,0.06)", post: "rgba(168,85,247,0.06)" };
+
+        let i = 0;
+        while (i < sessions.length) {
+            const s = sessions[i];
+            if (s === "regular") { i++; continue; }
+            // Find contiguous run of same session type
+            let j = i;
+            while (j < sessions.length && sessions[j] === s) j++;
+            const x0 = xAxis.getPixelForValue(i);
+            const x1 = xAxis.getPixelForValue(j - 1);
+            if (colors[s]) {
+                ctx.save();
+                ctx.fillStyle = colors[s];
+                ctx.fillRect(Math.min(x0, x1), top, Math.abs(x1 - x0) + 1, bottom - top);
+                ctx.restore();
+            }
+            i = j;
+        }
+    },
+};
+const sessionZoneTimePlugin = {
+    id: "sessionZonesTime",
+    beforeDraw(chart) {
+        const sessions = chart.options._sessions;
+        const timestamps = chart.options._timestamps;
+        if (!sessions || !sessions.length || !timestamps) return;
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.x;
+        const { top, bottom } = chart.chartArea;
+        if (!xAxis || top == null) return;
+
+        const colors = { pre: "rgba(59,130,246,0.06)", post: "rgba(168,85,247,0.06)" };
+
+        let i = 0;
+        while (i < sessions.length) {
+            const s = sessions[i];
+            if (s === "regular") { i++; continue; }
+            let j = i;
+            while (j < sessions.length && sessions[j] === s) j++;
+            const x0 = xAxis.getPixelForValue(timestamps[i]);
+            const x1 = xAxis.getPixelForValue(timestamps[j - 1]);
+            if (colors[s]) {
+                ctx.save();
+                ctx.fillStyle = colors[s];
+                ctx.fillRect(Math.min(x0, x1), top, Math.abs(x1 - x0) + 1, bottom - top);
+                ctx.restore();
+            }
+            i = j;
+        }
+    },
+};
+
 const LINE_TF = [
     { label: "1M", period: "1mo", interval: "1d" },
     { label: "3M", period: "3mo", interval: "1d" },
@@ -15,11 +80,13 @@ const LINE_TF = [
 ];
 const CANDLE_TF = [
     { label: "1m", period: "1d", interval: "1m" },
+    { label: "3m", period: "5d", interval: "3m" },
     { label: "5m", period: "5d", interval: "5m" },
     { label: "15m", period: "5d", interval: "15m" },
     { label: "1H", period: "3mo", interval: "1h" },
     { label: "1D", period: "1y", interval: "1d" },
     { label: "1W", period: "5y", interval: "1wk" },
+    { label: "1M", period: "5y", interval: "1mo" },
 ];
 
 function navigateToStock(symbol) {
@@ -215,9 +282,22 @@ function renderDetailChart(history, spyHistory) {
     if (detailChart) detailChart.destroy();
 
     const closes = history.close;
+    const sessions = history.sessions || [];
+    const hasSessions = sessions.length === closes.length;
     const isUp = closes[closes.length - 1] >= closes[0];
     const color = isUp ? "rgba(34, 197, 94, 1)" : "rgba(239, 68, 68, 1)";
     const bgColor = isUp ? "rgba(34, 197, 94, 0.08)" : "rgba(239, 68, 68, 0.08)";
+    const extColor = isUp ? "rgba(34, 197, 94, 0.4)" : "rgba(239, 68, 68, 0.4)";
+
+    // Segment styling: pre/post-market lines are dashed and more transparent
+    const segmentBorder = hasSessions ? (ctx) => {
+        const idx = ctx.p0DataIndex;
+        return (sessions[idx] !== "regular" || sessions[idx + 1] !== "regular") ? extColor : color;
+    } : undefined;
+    const segmentDash = hasSessions ? (ctx) => {
+        const idx = ctx.p0DataIndex;
+        return (sessions[idx] !== "regular" || sessions[idx + 1] !== "regular") ? [4, 3] : undefined;
+    } : undefined;
 
     // SMA 50 — pre-computed server-side, fallback to client if missing
     const sma50 = history.sma50 || closes.map((_, i) => {
@@ -238,6 +318,7 @@ function renderDetailChart(history, spyHistory) {
             pointHoverRadius: 4,
             tension: 0.1,
             yAxisID: "y",
+            segment: segmentBorder ? { borderColor: segmentBorder, borderDash: segmentDash } : undefined,
         },
         {
             label: "SMA 50",
@@ -296,9 +377,11 @@ function renderDetailChart(history, spyHistory) {
     detailChart = new Chart(canvas, {
         type: "line",
         data: { labels: history.dates, datasets },
+        plugins: hasSessions ? [sessionZonePlugin] : [],
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            _sessions: hasSessions ? sessions : null,
             plugins: {
                 legend: { display: true, position: "top", labels: { color: "#8b8fa3", font: { size: 11 } } },
                 tooltip: {
@@ -307,12 +390,22 @@ function renderDetailChart(history, spyHistory) {
                     backgroundColor: "rgba(20,22,34,0.95)",
                     titleColor: "#8b8fa3",
                     bodyColor: "#e4e4e7",
+                    callbacks: hasSessions ? {
+                        afterTitle(items) {
+                            const idx = items[0] && items[0].dataIndex;
+                            const s = sessions[idx];
+                            if (s === "pre") return "PRE-MARKET";
+                            if (s === "post") return "AFTER-HOURS";
+                            return "";
+                        },
+                    } : {},
                 },
             },
             scales,
             interaction: { mode: "index", intersect: false },
         },
     });
+    renderSessionLegend(hasSessions);
 }
 
 async function changeTimeframe(symbol, period, interval, btn) {
@@ -342,13 +435,34 @@ function renderCandlestickChart(history) {
     if (!canvas) return;
     if (detailChart) detailChart.destroy();
     const ts = history.timestamps || history.dates.map(d => new Date(d).getTime());
+    const sessions = history.sessions || [];
+    const hasSessions = sessions.length === ts.length;
     const ohlc = ts.map((t, i) => ({ x: t, o: history.open[i], h: history.high[i], l: history.low[i], c: history.close[i] }));
     const maxVol = Math.max(...history.volume);
-    const volCol = history.close.map((c, i) => c >= history.open[i] ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.35)");
-    const ds = [
+
+    // Color candles differently for extended hours
+    const volCol = history.close.map((c, i) => {
+        const ext = hasSessions && sessions[i] !== "regular";
+        if (c >= history.open[i]) return ext ? "rgba(34,197,94,0.15)" : "rgba(34,197,94,0.35)";
+        return ext ? "rgba(239,68,68,0.15)" : "rgba(239,68,68,0.35)";
+    });
+
+    // Split candles into regular and extended datasets for different opacity
+    let ohlcRegular, ohlcExtended;
+    if (hasSessions) {
+        ohlcRegular = ohlc.map((d, i) => sessions[i] === "regular" ? d : null);
+        ohlcExtended = ohlc.map((d, i) => sessions[i] !== "regular" ? d : null);
+    }
+
+    const ds = hasSessions ? [
+        { label: "OHLC", data: ohlcRegular, borderColor: { up: "#22c55e", down: "#ef4444", unchanged: "#999" }, yAxisID: "y" },
+        { label: "Extended", data: ohlcExtended, borderColor: { up: "rgba(34,197,94,0.4)", down: "rgba(239,68,68,0.4)", unchanged: "rgba(153,153,153,0.4)" }, color: { up: "rgba(34,197,94,0.15)", down: "rgba(239,68,68,0.15)", unchanged: "rgba(153,153,153,0.15)" }, yAxisID: "y" },
+        { type: "bar", label: "Volume", data: ts.map((t, i) => ({ x: t, y: history.volume[i] })), backgroundColor: volCol, yAxisID: "yVol", barPercentage: 0.8, order: 1 },
+    ] : [
         { label: "OHLC", data: ohlc, borderColor: { up: "#22c55e", down: "#ef4444", unchanged: "#999" }, yAxisID: "y" },
         { type: "bar", label: "Volume", data: ts.map((t, i) => ({ x: t, y: history.volume[i] })), backgroundColor: volCol, yAxisID: "yVol", barPercentage: 0.8, order: 1 },
     ];
+
     if (_currentPatterns) {
         const mk = { bullish: [], bearish: [], neutral: [] };
         (_currentPatterns.candlestick_patterns || []).forEach(p => {
@@ -361,18 +475,32 @@ function renderCandlestickChart(history) {
     detailChart = new Chart(canvas, {
         type: "candlestick",
         data: { datasets: ds },
+        plugins: hasSessions ? [sessionZoneTimePlugin] : [],
         options: {
             responsive: true, maintainAspectRatio: false,
+            _sessions: hasSessions ? sessions : null,
+            _timestamps: hasSessions ? ts : null,
             plugins: {
                 legend: { display: false },
                 tooltip: { mode: "nearest", intersect: true, backgroundColor: "rgba(20,22,34,0.95)", titleColor: "#8b8fa3", bodyColor: "#e4e4e7",
-                    callbacks: { label(ctx) {
-                        const d = ctx.raw;
-                        if (d && d.o != null) return [`O: $${d.o.toFixed(2)}  H: $${d.h.toFixed(2)}`, `L: $${d.l.toFixed(2)}  C: $${d.c.toFixed(2)}`];
-                        if (d && d._pat) return [d._pat.pattern, d._pat.detail];
-                        if (ctx.dataset.label === "Volume") return `Vol: ${(d.y || 0).toLocaleString()}`;
-                        return ctx.formattedValue;
-                    }},
+                    callbacks: {
+                        afterTitle(items) {
+                            if (!hasSessions) return "";
+                            const d = items[0] && items[0].raw;
+                            if (!d || !d.x) return "";
+                            const idx = ts.indexOf(d.x);
+                            if (idx >= 0 && sessions[idx] === "pre") return "PRE-MARKET";
+                            if (idx >= 0 && sessions[idx] === "post") return "AFTER-HOURS";
+                            return "";
+                        },
+                        label(ctx) {
+                            const d = ctx.raw;
+                            if (d && d.o != null) return [`O: $${d.o.toFixed(2)}  H: $${d.h.toFixed(2)}`, `L: $${d.l.toFixed(2)}  C: $${d.c.toFixed(2)}`];
+                            if (d && d._pat) return [d._pat.pattern, d._pat.detail];
+                            if (ctx.dataset.label === "Volume") return `Vol: ${(d.y || 0).toLocaleString()}`;
+                            return ctx.formattedValue;
+                        },
+                    },
                 },
             },
             scales: {
@@ -383,6 +511,7 @@ function renderCandlestickChart(history) {
         },
     });
     renderPatternLegend();
+    renderSessionLegend(hasSessions);
 }
 
 function renderPatternLegend() {
@@ -402,6 +531,23 @@ function renderPatternLegend() {
         h += `<div class="pl-item ${cls}"><strong>${c.name}</strong><br><small>${c.detail || ""}</small></div>`;
     });
     el.innerHTML = h + "</div>";
+}
+
+function renderSessionLegend(hasSessions) {
+    let el = document.getElementById("sd-session-legend");
+    if (!el) {
+        const wrap = document.querySelector(".sd-chart-section");
+        if (!wrap) return;
+        el = document.createElement("div");
+        el.id = "sd-session-legend";
+        el.className = "sd-session-legend";
+        wrap.appendChild(el);
+    }
+    if (!hasSessions) { el.style.display = "none"; return; }
+    el.style.display = "";
+    el.innerHTML = `<span class="sl-item"><span class="sl-swatch sl-pre"></span>Pre-Market (4:00–9:30 ET)</span>`
+        + `<span class="sl-item"><span class="sl-swatch sl-regular"></span>Regular Hours (9:30–16:00 ET)</span>`
+        + `<span class="sl-item"><span class="sl-swatch sl-post"></span>After-Hours (16:00–20:00 ET)</span>`;
 }
 
 async function toggleSpyOverlay(symbol) {
