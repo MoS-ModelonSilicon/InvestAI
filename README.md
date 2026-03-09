@@ -51,7 +51,7 @@ A full-stack investment advisory web app with live market data, global stock scr
 - **Dashboard** — financial overview with trend charts and category breakdown
 
 ### Onboarding & Help
-- **Interactive Guided Tour** — 10-step spotlight walkthrough auto-triggers on first login, covering Dashboard → Portfolio → Screener → AI Picks → Advisor → Alerts → DCA → right-click menu → Help Center
+- **Interactive Guided Tour** — 11-step spotlight walkthrough auto-triggers on first login, covering Risk Profile → Dashboard → Portfolio → Screener → AI Picks → Advisor → Alerts → DCA → right-click menu → Help Center
 - **Help Drawer** — slide-out panel with Quick Start checklist (gamified progress bar), feature guide cards grouped by section, Hidden Gems & Pro Tips, and keyboard shortcuts
 - **Feature Hint Dots** — pulsing purple dots on sidebar items the user hasn't visited yet; auto-removed on navigation
 - **"? Help & Tour" button** in sidebar for re-triggering tour or browsing the help center anytime
