@@ -1,5 +1,6 @@
 let picksData = null;
 let picksFilter = null;
+let picksSourceFilter = null;
 let picksSortCol = "date";
 let picksSortAsc = false;
 
@@ -11,13 +12,38 @@ async function loadPicksTracker() {
     if (statsRow) statsRow.innerHTML = "";
 
     try {
-        const url = picksFilter ? `/api/picks?type=${picksFilter}` : "/api/picks";
+        let url = "/api/picks";
+        const params = [];
+        if (picksFilter) params.push(`type=${picksFilter}`);
+        if (picksSourceFilter) params.push(`source=${picksSourceFilter}`);
+        if (params.length) url += "?" + params.join("&");
         picksData = await api.get(url);
         renderPicksStats(picksData.stats);
         renderPicksTable(picksData.picks);
+        loadSourceInfo();
     } catch (e) {
         container.innerHTML = '<p style="color:var(--red);padding:20px;">Failed to load picks data.</p>';
     }
+}
+
+async function loadSourceInfo() {
+    try {
+        const info = await api.get("/api/picks/sources");
+        const el = document.getElementById("pk-source-info");
+        if (!el) return;
+        const parts = [];
+        if (info.total) parts.push(`<span class="pk-src-total">${info.total} total picks</span>`);
+        for (const [src, count] of Object.entries(info)) {
+            if (src === "total" || src === "last_refresh") continue;
+            const icon = {discord: "💬", reddit: "🤖", tradingview: "📈", finviz: "🔍", Nick: "👤"}[src] || "📊";
+            parts.push(`<span class="pk-src-badge">${icon} ${src}: ${count}</span>`);
+        }
+        if (info.last_refresh) {
+            const dt = new Date(info.last_refresh + "Z");
+            parts.push(`<span class="pk-src-refresh">Last refresh: ${dt.toLocaleString()}</span>`);
+        }
+        el.innerHTML = parts.join(" ");
+    } catch (e) { /* ignore */ }
 }
 
 function renderPicksStats(stats) {
@@ -98,6 +124,7 @@ function renderPicksTable(picks) {
     const headers = [
         { key: "date", label: "Date" },
         { key: "symbol", label: "Ticker" },
+        { key: "source", label: "Source" },
         { key: "type", label: "Type" },
         { key: "entry", label: "Entry" },
         { key: "targets", label: "Targets" },
@@ -169,6 +196,12 @@ function renderPicksTable(picks) {
         // Notes subtitle
         const noteSub = p.notes ? `<div class="pk-note-sub">${_pkEsc(p.notes)}</div>` : "";
 
+        // Source badge
+        const rawSource = p.source || "unknown";
+        const baseSource = rawSource.includes("/") ? rawSource.split("/")[0] : rawSource;
+        const srcIcon = {discord: "💬", reddit: "🤖", tradingview: "📈", finviz: "🔍", Nick: "👤"}[baseSource] || "📊";
+        const srcBadge = `<span class="pk-src pk-src-${baseSource.toLowerCase()}">${srcIcon} ${baseSource}</span>`;
+
         const rowId = `pk-detail-${idx}`;
 
         html += `<tr class="pk-row" data-symbol="${p.symbol}" data-stock-name="${p.symbol}" data-detail="${rowId}">
@@ -179,6 +212,7 @@ function renderPicksTable(picks) {
                     ${noteSub}
                 </div>
             </td>
+            <td>${srcBadge}</td>
             <td><span class="pk-type pk-type-${p.type}">${p.type}</span></td>
             <td>${entryStr}</td>
             <td class="pk-targets-cell">${targetsStr}</td>
@@ -279,6 +313,26 @@ function setPicksFilter(type) {
     loadPicksTracker();
 }
 
+function setPicksSource(source) {
+    picksSourceFilter = source || null;
+    document.querySelectorAll(".pk-source-btn").forEach(b => b.classList.remove("active"));
+    const active = document.querySelector(`.pk-source-btn[data-source="${source || "all"}"]`);
+    if (active) active.classList.add("active");
+    loadPicksTracker();
+}
+
+async function refreshPicksSources() {
+    const btn = document.getElementById("pk-refresh-btn");
+    if (btn) { btn.disabled = true; btn.textContent = "⏳ Refreshing..."; }
+    try {
+        await api.post("/api/picks/refresh", {});
+        if (btn) btn.textContent = "✅ Refresh started — reload in ~60s";
+        setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = "🔄 Refresh Sources"; } }, 5000);
+    } catch (e) {
+        if (btn) { btn.disabled = false; btn.textContent = "❌ Failed — Retry"; }
+    }
+}
+
 async function seedWatchlistFromPicks() {
     const btn = document.getElementById("pk-seed-btn");
     if (btn) { btn.disabled = true; btn.textContent = "Adding..."; }
@@ -298,7 +352,8 @@ function filterPicks(query) {
     rows.forEach(row => {
         const symbol = (row.dataset.symbol || "").toLowerCase();
         const type = (row.querySelector(".pk-type")?.textContent || "").toLowerCase();
-        const match = !q || symbol.includes(q) || type.includes(q);
+        const source = (row.querySelector(".pk-src")?.textContent || "").toLowerCase();
+        const match = !q || symbol.includes(q) || type.includes(q) || source.includes(q);
         row.style.display = match ? "" : "none";
         // Also hide/show the corresponding detail row
         const detailId = row.dataset.detail;

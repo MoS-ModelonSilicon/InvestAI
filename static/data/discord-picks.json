@@ -1,70 +1,5537 @@
 [
-  {"date": "2025-12-19", "symbol": "AZI", "type": "breakout", "entry": 2.4, "targets": [2.5, 2.75, 3.0, 3.3], "stop": 2.17, "source": "Nick", "notes": "Halted up"},
-  {"date": "2025-12-22", "symbol": "AZI", "type": "breakout", "entry": 4.4, "targets": [4.7, 5.0], "stop": 4.05, "source": "Nick", "notes": "Hit 4.80"},
-  {"date": "2025-12-22", "symbol": "CMCT", "type": "breakout", "entry": 4.7, "targets": [5.0, 5.5], "stop": 4.29, "source": "Nick", "notes": ""},
-  {"date": "2025-12-23", "symbol": "TRIB", "type": "breakout", "entry": 1.75, "targets": [1.95, 2.1], "stop": 1.6, "source": "Nick", "notes": ""},
-  {"date": "2025-12-30", "symbol": "AEHL", "type": "breakout", "entry": 1.75, "targets": [1.87, 2.0], "stop": 1.61, "source": "Nick", "notes": ""},
-  {"date": "2025-12-30", "symbol": "CETX", "type": "breakout", "entry": 3.1, "targets": [3.4, 3.7], "stop": 2.85, "source": "Nick", "notes": ""},
-  {"date": "2025-12-31", "symbol": "ULY", "type": "breakout", "entry": 4.0, "targets": [4.3, 4.6], "stop": null, "source": "Nick", "notes": ""},
-  {"date": "2025-12-31", "symbol": "NCL", "type": "breakout", "entry": 0.32, "targets": [0.35, 0.38], "stop": 0.29, "source": "Nick", "notes": ""},
-  {"date": "2025-12-31", "symbol": "ORIS", "type": "breakout", "entry": 1.87, "targets": [2.0, 2.15], "stop": 1.6, "source": "Nick", "notes": ""},
-  {"date": "2026-01-02", "symbol": "IRWD", "type": "breakout", "entry": 4.75, "targets": [5.0, 5.25], "stop": 4.58, "source": "Nick", "notes": ""},
-  {"date": "2026-01-02", "symbol": "UAVS", "type": "breakout", "entry": 1.2, "targets": [1.34, 1.5], "stop": 1.08, "source": "Nick", "notes": ""},
-  {"date": "2026-01-06", "symbol": "AZI", "type": "breakout", "entry": 3.5, "targets": [3.65, 4.0], "stop": 3.15, "source": "Nick", "notes": "Went up 14%"},
-  {"date": "2026-01-06", "symbol": "EVTV", "type": "breakout", "entry": 0.62, "targets": [0.65, 0.7, 0.75], "stop": 0.58, "source": "Nick", "notes": "Target hit in 2 minutes, up 29%"},
-  {"date": "2026-01-07", "symbol": "LUCY", "type": "breakout", "entry": 1.8, "targets": [2.0, 2.2], "stop": 1.62, "source": "Nick", "notes": ""},
-  {"date": "2026-01-07", "symbol": "MBLY", "type": "breakout", "entry": 15.0, "targets": [16.0, 17.0], "stop": 14.0, "source": "Nick", "notes": "Slower mover"},
-  {"date": "2026-01-07", "symbol": "ASBP", "type": "breakout", "entry": 0.19, "targets": [0.21, 0.23], "stop": 0.17, "source": "Nick", "notes": ""},
-  {"date": "2026-01-09", "symbol": "GP", "type": "breakout", "entry": 1.4, "targets": [1.5, 1.67], "stop": 1.2, "source": "Nick", "notes": ""},
-  {"date": "2026-01-09", "symbol": "CETX", "type": "breakout", "entry": 4.0, "targets": [4.2, 4.6], "stop": 3.5, "source": "Nick", "notes": ""},
-  {"date": "2026-01-12", "symbol": "EVTV", "type": "breakout", "entry": 1.7, "targets": [1.8, 1.9, 2.0, 2.2], "stop": 1.55, "source": "Nick", "notes": "Hit 3.7 next day, 100% move"},
-  {"date": "2026-01-14", "symbol": "ROLR", "type": "breakout", "entry": 18.0, "targets": [19.7, 20.8, 23.5], "stop": 16.7, "source": "Nick", "notes": "Hit $33 up 80%"},
-  {"date": "2026-01-14", "symbol": "BEEM", "type": "breakout", "entry": 2.4, "targets": [2.52, 2.65], "stop": 2.27, "source": "Nick", "notes": ""},
-  {"date": "2026-01-16", "symbol": "VERO", "type": "breakout", "entry": 6.35, "targets": [6.8, 7.5], "stop": 5.85, "source": "Nick", "notes": ""},
-  {"date": "2026-01-16", "symbol": "JFBR", "type": "breakout", "entry": 1.5, "targets": [1.62, 1.75], "stop": 1.35, "source": "Nick", "notes": ""},
-  {"date": "2026-01-20", "symbol": "IVF", "type": "breakout", "entry": 3.75, "targets": [4.0, 4.4, 4.7], "stop": 3.38, "source": "Nick", "notes": "Hit 4.6"},
-  {"date": "2026-01-20", "symbol": "SHPH", "type": "breakout", "entry": 4.4, "targets": [4.75, 5.0, 5.5], "stop": 4.0, "source": "Nick", "notes": ""},
-  {"date": "2026-01-21", "symbol": "IMTE", "type": "breakout", "entry": 1.75, "targets": [1.9, 2.1], "stop": null, "source": "Nick", "notes": ""},
-  {"date": "2026-01-21", "symbol": "PAPL", "type": "breakout", "entry": 1.9, "targets": [2.1, 2.4], "stop": null, "source": "Nick", "notes": "Hit 3.30"},
-  {"date": "2026-01-26", "symbol": "BNAI", "type": "breakout", "entry": 65.0, "targets": [70.0, 75.0], "stop": null, "source": "Nick", "notes": ""},
-  {"date": "2026-01-26", "symbol": "GXAI", "type": "breakout", "entry": 1.55, "targets": [1.65, 1.75], "stop": null, "source": "Nick", "notes": ""},
-  {"date": "2026-01-26", "symbol": "VSA", "type": "breakout", "entry": 3.2, "targets": [3.45, 3.67], "stop": null, "source": "Nick", "notes": ""},
-  {"date": "2026-01-30", "symbol": "VIVS", "type": "breakout", "entry": 3.5, "targets": [3.78, 4.0], "stop": 3.2, "source": "Nick", "notes": ""},
-  {"date": "2026-02-11", "symbol": "CCHH", "type": "breakout", "entry": 2.0, "targets": [2.2, 2.4], "stop": null, "source": "Nick", "notes": "Premarket"},
-  {"date": "2026-02-11", "symbol": "ELAB", "type": "breakout", "entry": 2.4, "targets": [2.65, 2.9], "stop": null, "source": "Nick", "notes": ""},
-  {"date": "2026-02-25", "symbol": "XWEL", "type": "breakout", "entry": 1.0, "targets": [1.1, 1.2], "stop": null, "source": "Nick", "notes": "Hit 1.50"},
-  {"date": "2026-02-25", "symbol": "KIDZ", "type": "breakout", "entry": 0.1625, "targets": [0.17, 0.18], "stop": 0.155, "source": "Nick", "notes": ""},
-  {"date": "2026-02-25", "symbol": "XWEL", "type": "breakout", "entry": 0.9, "targets": [1.0, 1.1], "stop": 0.82, "source": "Nick", "notes": "Updated entry"},
-  {"date": "2026-03-02", "symbol": "EXFY", "type": "swing", "entry": 0.8, "targets": [1.1, 1.2, 2.0], "stop": 0.5, "source": "Nick", "notes": "Revenue $35M/quarter, $61M cash. Risk 30c for 30-120c upside"},
-  {"date": "2026-03-03", "symbol": "SMWB", "type": "swing", "entry": 2.4, "targets": [3.0, 4.0], "stop": 1.8, "source": "Nick", "notes": "$72M cash, no debt, 80% gross margins, LLM data training contracts delayed"},
-
-  {"date": "2025-11-25", "symbol": "SNAP", "type": "swing", "entry": 7.6, "targets": [10.0], "stop": null, "source": "Nick", "notes": "Perplexity deal $400M, rarely below $10-15B valuation"},
-  {"date": "2025-11-25", "symbol": "DUOL", "type": "swing", "entry": 148.0, "targets": [225.0, 270.0, 292.0, 379.0], "stop": 112.0, "source": "Nick", "notes": "11M paid users, 128M MAU, potential AI upside"},
-  {"date": "2025-11-25", "symbol": "BULL", "type": "swing", "entry": 7.0, "targets": [9.0, 10.0], "stop": null, "source": "Nick", "notes": "Webull $4B vs Robinhood $120B, Kalshi partnership"},
-  {"date": "2025-11-25", "symbol": "AEO", "type": "swing", "entry": null, "targets": [], "stop": null, "source": "Nick", "notes": "Previous banger, Sydney Sweeney campaign, momentum"},
-  {"date": "2025-11-25", "symbol": "JACK", "type": "swing", "entry": null, "targets": [30.0, 40.0], "stop": null, "source": "Nick", "notes": "Cheap franchisor, buyout candidate"},
-  {"date": "2025-11-25", "symbol": "CMG", "type": "swing", "entry": 29.0, "targets": [40.0], "stop": null, "source": "Nick", "notes": "High 20s = buy area, strong AUVs"},
-  {"date": "2025-11-25", "symbol": "TSLA", "type": "swing", "entry": 360.0, "targets": [450.0], "stop": null, "source": "Nick", "notes": "$1T pay package, $2T valuation path"},
-  {"date": "2025-11-25", "symbol": "MRVL", "type": "swing", "entry": null, "targets": [100.0], "stop": null, "source": "Nick", "notes": "Custom ASICs for Amazon+MSFT, Buffett catalyst. Hit $100"},
-  {"date": "2025-12-02", "symbol": "DASH", "type": "swing", "entry": null, "targets": [], "stop": null, "source": "Nick", "notes": "$100M insider buy, $300-400B company one day"},
-  {"date": "2026-01-08", "symbol": "UNH", "type": "swing", "entry": null, "targets": [], "stop": null, "source": "Nick", "notes": "Healthcare sector play"},
-  {"date": "2026-01-08", "symbol": "NVO", "type": "swing", "entry": null, "targets": [], "stop": null, "source": "Nick", "notes": "Healthcare sector play"},
-  {"date": "2026-01-13", "symbol": "ALAB", "type": "swing", "entry": null, "targets": [], "stop": null, "source": "Nick", "notes": "Always bounces back. Amazon warrant at $142, ideal buy near $104"},
-  {"date": "2026-02-05", "symbol": "NOW", "type": "swing", "entry": 80.0, "targets": [], "stop": null, "source": "Nick", "notes": "98% renewal rate, everything under $80 very cheap"},
-  {"date": "2026-02-11", "symbol": "SNAP", "type": "swing", "entry": 5.0, "targets": [8.0, 10.0], "stop": null, "source": "Nick", "notes": "At $4-5 great price, largest social media platforms"},
-  {"date": "2026-02-11", "symbol": "NFLX", "type": "swing", "entry": 60.0, "targets": [80.0, 110.0], "stop": 40.0, "source": "Nick", "notes": "$40=too cheap, $60=undervalued, $80=fair, $110=target"},
-  {"date": "2026-02-24", "symbol": "CRCL", "type": "swing", "entry": 60.0, "targets": [90.0], "stop": null, "source": "Nick", "notes": "USDC stablecoin, $14B market cap. Hit 90 in 3 days"},
-  {"date": "2026-02-25", "symbol": "HOOD", "type": "swing", "entry": 85.0, "targets": [], "stop": null, "source": "Nick", "notes": "DKNG $20B comparison, $40-50s downside risk"},
-  {"date": "2026-02-27", "symbol": "HOOD", "type": "swing", "entry": 75.5, "targets": [84.8, 95.0], "stop": 68.0, "source": "Nick", "notes": "Refined entry"},
-  {"date": "2026-02-27", "symbol": "NU", "type": "swing", "entry": 14.8, "targets": [16.5], "stop": 14.5, "source": "Nick", "notes": "Cathie Woods buying, gap up near 16.5"},
-  {"date": "2026-02-28", "symbol": "FVRR", "type": "swing", "entry": 8.0, "targets": [], "stop": null, "source": "Nick", "notes": "$300M company producing $100M pre-SBC, buyout candidate"},
-  {"date": "2026-02-28", "symbol": "AAOI", "type": "swing", "entry": 78.0, "targets": [105.0, 150.0, 200.0], "stop": null, "source": "Nick", "notes": "$3.89M options bet, CEO: demand till mid-2027"},
-  {"date": "2026-02-25", "symbol": "FIG", "type": "swing", "entry": 20.0, "targets": [], "stop": null, "source": "Nick", "notes": "Director buying, AI ready. Up 12% next day"},
-  {"date": "2026-02-25", "symbol": "UBER", "type": "swing", "entry": 60.0, "targets": [], "stop": null, "source": "Nick", "notes": "CFO buying shares"},
-  {"date": "2026-02-25", "symbol": "NOW", "type": "swing", "entry": 80.0, "targets": [], "stop": null, "source": "Nick", "notes": "CEO+CFO cancelled selling plans, CEO buying"},
-
-  {"date": "2026-02-20", "symbol": "GLD", "type": "options", "entry": 6.4, "targets": [12.8], "stop": null, "source": "Nick", "notes": "485C 3/6, hit 12.80"},
-  {"date": "2026-02-20", "symbol": "SLV", "type": "options", "entry": 5.4, "targets": [8.5], "stop": null, "source": "Nick", "notes": "80C 3/20, hit 8.50"},
-  {"date": "2026-02-27", "symbol": "SNAP", "type": "options", "entry": 0.19, "targets": [], "stop": null, "source": "Nick", "notes": "$5.50 call 3/20"},
-  {"date": "2026-02-27", "symbol": "AMZN", "type": "options", "entry": 4.3, "targets": [], "stop": null, "source": "Nick", "notes": "212.50 call 3/13"}
+  {
+    "date": "2021-02-07",
+    "symbol": "OGI",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      4.2
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-02-07",
+    "symbol": "GNUS",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      3.75
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-02-18",
+    "symbol": "SENS",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      7.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-03-09",
+    "symbol": "BA",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      280.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-08-24",
+    "symbol": "VERB",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      4.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-11-04",
+    "symbol": "AMD",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      133.0,
+      134.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-11-08",
+    "symbol": "CAT",
+    "type": "swing",
+    "entry": 215.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-11-08",
+    "symbol": "BA",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      229.0,
+      230.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-11-09",
+    "symbol": "AMD",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      155.5,
+      156.0,
+      157.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-11-10",
+    "symbol": "NVDA",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      301.0,
+      302.0,
+      303.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-11-15",
+    "symbol": "NVDA",
+    "type": "swing",
+    "entry": 310.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-12-16",
+    "symbol": "RIOT",
+    "type": "swing",
+    "entry": 30.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-12-20",
+    "symbol": "DIS",
+    "type": "swing",
+    "entry": 155.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2021-12-21",
+    "symbol": "AMC",
+    "type": "swing",
+    "entry": 30.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-01-09",
+    "symbol": "MARA",
+    "type": "swing",
+    "entry": 30.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-01-18",
+    "symbol": "BA",
+    "type": "swing",
+    "entry": 230.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-01-24",
+    "symbol": "FB",
+    "type": "swing",
+    "entry": 310.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-02-07",
+    "symbol": "QQQ",
+    "type": "swing",
+    "entry": 364.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-02-14",
+    "symbol": "MSFT",
+    "type": "swing",
+    "entry": 305.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-02-22",
+    "symbol": "AAPL",
+    "type": "swing",
+    "entry": 172.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-02-27",
+    "symbol": "FB",
+    "type": "swing",
+    "entry": 220.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-03-20",
+    "symbol": "APRIL",
+    "type": "swing",
+    "entry": 14.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-07-18",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 388.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-08-04",
+    "symbol": "AAPL",
+    "type": "swing",
+    "entry": 155.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-08-11",
+    "symbol": "HOUR",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      4.0,
+      5.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-08-11",
+    "symbol": "VEEE",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      5.1,
+      6.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-09-12",
+    "symbol": "NVDA",
+    "type": "options",
+    "entry": null,
+    "targets": [
+      140.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-12-05",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 405.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-12-12",
+    "symbol": "NVDA",
+    "type": "swing",
+    "entry": 12.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-12-15",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 370.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-12-16",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 385.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-12-16",
+    "symbol": "META",
+    "type": "swing",
+    "entry": 120.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-12-16",
+    "symbol": "JAN",
+    "type": "swing",
+    "entry": 20.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2022-12-22",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 380.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-01-03",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 384.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-01-04",
+    "symbol": "FANG",
+    "type": "options",
+    "entry": null,
+    "targets": [
+      122.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-01-09",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 386.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-01-13",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 394.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-01-23",
+    "symbol": "JNJ",
+    "type": "swing",
+    "entry": 173.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-01-26",
+    "symbol": "QQQ",
+    "type": "swing",
+    "entry": 270.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-01-26",
+    "symbol": "QQQ",
+    "type": "options",
+    "entry": 1.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$280.0P 3/3"
+  },
+  {
+    "date": "2023-02-10",
+    "symbol": "WBD",
+    "type": "swing",
+    "entry": 10.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-02-22",
+    "symbol": "DIS",
+    "type": "swing",
+    "entry": 105.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "2-4 week hold"
+  },
+  {
+    "date": "2023-02-23",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 402.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-02-24",
+    "symbol": "AMZN",
+    "type": "swing",
+    "entry": 93.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-02-24",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 394.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-02-24",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 397.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-02-27",
+    "symbol": "TSLA",
+    "type": "options",
+    "entry": 3.6,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$217.5C 3/03"
+  },
+  {
+    "date": "2023-02-27",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 396.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-03-02",
+    "symbol": "RPHM",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      5.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-03-08",
+    "symbol": "NVDA",
+    "type": "swing",
+    "entry": 200.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-03-09",
+    "symbol": "MMM",
+    "type": "swing",
+    "entry": 104.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-03-16",
+    "symbol": "NVDA",
+    "type": "swing",
+    "entry": 210.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-03-17",
+    "symbol": "NVDA",
+    "type": "swing",
+    "entry": 180.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-03-21",
+    "symbol": "TENX",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      0.8,
+      1.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-03-27",
+    "symbol": "SINT",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      4.0,
+      5.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-05-11",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 411.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-05-11",
+    "symbol": "CCL",
+    "type": "swing",
+    "entry": 10.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-05-22",
+    "symbol": "MCD",
+    "type": "swing",
+    "entry": 295.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-06-02",
+    "symbol": "VRRM",
+    "type": "swing",
+    "entry": 17.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-06-20",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 443.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-07-03",
+    "symbol": "CHPT",
+    "type": "options",
+    "entry": 9.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-07-03",
+    "symbol": "META",
+    "type": "swing",
+    "entry": 290.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-07-27",
+    "symbol": "NAK",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      0.38
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-07-28",
+    "symbol": "META",
+    "type": "swing",
+    "entry": 314.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-08-24",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 442.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-09-08",
+    "symbol": "META",
+    "type": "swing",
+    "entry": 305.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-09-08",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 447.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-09-08",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 446.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-09-14",
+    "symbol": "QQQ",
+    "type": "swing",
+    "entry": 373.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-09-14",
+    "symbol": "QQQ",
+    "type": "swing",
+    "entry": 374.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-09-27",
+    "symbol": "PYPL",
+    "type": "swing",
+    "entry": 15.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-10-27",
+    "symbol": "NOV",
+    "type": "swing",
+    "entry": 24.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-11-06",
+    "symbol": "ENPH",
+    "type": "swing",
+    "entry": 85.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2023-11-16",
+    "symbol": "CALM",
+    "type": "swing",
+    "entry": 52.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-01-23",
+    "symbol": "GOOG",
+    "type": "swing",
+    "entry": 150.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-01-24",
+    "symbol": "NVDA",
+    "type": "swing",
+    "entry": 560.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-01-24",
+    "symbol": "MS",
+    "type": "swing",
+    "entry": 2.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-01-29",
+    "symbol": "DE",
+    "type": "swing",
+    "entry": 405.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-01-30",
+    "symbol": "MCD",
+    "type": "swing",
+    "entry": 295.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-01-30",
+    "symbol": "DKNG",
+    "type": "swing",
+    "entry": 2.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-01-30",
+    "symbol": "SAVE",
+    "type": "swing",
+    "entry": 15.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-01-30",
+    "symbol": "CAT",
+    "type": "swing",
+    "entry": 330.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-02-01",
+    "symbol": "SOXS",
+    "type": "swing",
+    "entry": 2.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-02-02",
+    "symbol": "SAVE",
+    "type": "swing",
+    "entry": 10.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-02-05",
+    "symbol": "TGT",
+    "type": "swing",
+    "entry": 149.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-02-06",
+    "symbol": "JNJ",
+    "type": "swing",
+    "entry": 150.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-02-07",
+    "symbol": "DWAC",
+    "type": "swing",
+    "entry": 65.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-02-07",
+    "symbol": "MRNA",
+    "type": "swing",
+    "entry": 103.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-02-09",
+    "symbol": "AMZN",
+    "type": "swing",
+    "entry": 210.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-02-12",
+    "symbol": "META",
+    "type": "swing",
+    "entry": 440.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-02-12",
+    "symbol": "APPL",
+    "type": "swing",
+    "entry": 190.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-02-12",
+    "symbol": "JNJ",
+    "type": "swing",
+    "entry": 150.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-02-27",
+    "symbol": "NNOX",
+    "type": "swing",
+    "entry": 10.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-03-05",
+    "symbol": "AQB",
+    "type": "swing",
+    "entry": 2.55,
+    "targets": [
+      4.5,
+      6.0
+    ],
+    "stop": 1.8,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-03-14",
+    "symbol": "TSLA",
+    "type": "swing",
+    "entry": 165.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-03-18",
+    "symbol": "NVDA",
+    "type": "options",
+    "entry": 7.15,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$1000.0C 03/22"
+  },
+  {
+    "date": "2024-04-09",
+    "symbol": "META",
+    "type": "swing",
+    "entry": 500.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-04-09",
+    "symbol": "NVDA",
+    "type": "swing",
+    "entry": 785.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-05-21",
+    "symbol": "APPL",
+    "type": "swing",
+    "entry": 182.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-05-22",
+    "symbol": "QQQ",
+    "type": "swing",
+    "entry": 458.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-05-22",
+    "symbol": "MARA",
+    "type": "swing",
+    "entry": 23.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-05-22",
+    "symbol": "DIA",
+    "type": "swing",
+    "entry": 400.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-06-11",
+    "symbol": "BAC",
+    "type": "swing",
+    "entry": 39.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-06-17",
+    "symbol": "IBM",
+    "type": "swing",
+    "entry": 172.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-08-08",
+    "symbol": "ITS",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      29.9
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-08-09",
+    "symbol": "MRIN",
+    "type": "breakout",
+    "entry": 2.35,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-09-17",
+    "symbol": "SMAR",
+    "type": "swing",
+    "entry": 55.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-09-28",
+    "symbol": "IN",
+    "type": "options",
+    "entry": 8.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$420.0C 10/1"
+  },
+  {
+    "date": "2024-10-10",
+    "symbol": "QQQ",
+    "type": "options",
+    "entry": 0.45,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$494.0C 10/10"
+  },
+  {
+    "date": "2024-10-10",
+    "symbol": "TSLA",
+    "type": "swing",
+    "entry": 245.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-10-14",
+    "symbol": "SPY",
+    "type": "swing",
+    "entry": 575.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-10-25",
+    "symbol": "ON",
+    "type": "options",
+    "entry": 0.23,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$73.0C 10/25"
+  },
+  {
+    "date": "2024-11-04",
+    "symbol": "DAL",
+    "type": "swing",
+    "entry": 60.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-11-05",
+    "symbol": "WDC",
+    "type": "swing",
+    "entry": 69.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-11-06",
+    "symbol": "MGM",
+    "type": "swing",
+    "entry": 38.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-11-22",
+    "symbol": "ROKU",
+    "type": "options",
+    "entry": 2.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$70.0C 11/2"
+  },
+  {
+    "date": "2024-11-26",
+    "symbol": "SQ",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      94.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-12-13",
+    "symbol": "GLD",
+    "type": "swing",
+    "entry": 255.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-12-13",
+    "symbol": "GLD",
+    "type": "swing",
+    "entry": 250.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-12-17",
+    "symbol": "PINS",
+    "type": "swing",
+    "entry": 31.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-12-26",
+    "symbol": "MS",
+    "type": "swing",
+    "entry": 129.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-12-27",
+    "symbol": "KHC",
+    "type": "swing",
+    "entry": 30.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2024-12-31",
+    "symbol": "PENN",
+    "type": "swing",
+    "entry": 19.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-06",
+    "symbol": "SPRC",
+    "type": "breakout",
+    "entry": 1.2,
+    "targets": [
+      1.26,
+      1.37
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-06",
+    "symbol": "MEGL",
+    "type": "breakout",
+    "entry": 1.72,
+    "targets": [
+      1.9,
+      2.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-06",
+    "symbol": "FUBO",
+    "type": "breakout",
+    "entry": 5.0,
+    "targets": [
+      5.3,
+      5.7
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-06",
+    "symbol": "RBLX",
+    "type": "swing",
+    "entry": 62.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-06",
+    "symbol": "EBAY",
+    "type": "swing",
+    "entry": 64.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-07",
+    "symbol": "XTAI",
+    "type": "breakout",
+    "entry": 0.25,
+    "targets": [
+      0.27,
+      0.3
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-07",
+    "symbol": "HOTH",
+    "type": "breakout",
+    "entry": 2.0,
+    "targets": [
+      2.1,
+      2.3
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-07",
+    "symbol": "CDT",
+    "type": "breakout",
+    "entry": 0.15,
+    "targets": [
+      0.16,
+      0.17
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-07",
+    "symbol": "AAPL",
+    "type": "swing",
+    "entry": 245.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-08",
+    "symbol": "SANA",
+    "type": "breakout",
+    "entry": 6.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-08",
+    "symbol": "CURR",
+    "type": "breakout",
+    "entry": 3.7,
+    "targets": [
+      4.0,
+      4.6
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-08",
+    "symbol": "SILO",
+    "type": "breakout",
+    "entry": 2.4,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-08",
+    "symbol": "MARA",
+    "type": "swing",
+    "entry": 19.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-10",
+    "symbol": "ZVSA",
+    "type": "breakout",
+    "entry": 1.8,
+    "targets": [
+      1.95,
+      2.2,
+      2.4
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-10",
+    "symbol": "VMAR",
+    "type": "breakout",
+    "entry": 2.38,
+    "targets": [
+      2.46,
+      2.6,
+      2.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-10",
+    "symbol": "XHG",
+    "type": "breakout",
+    "entry": 1.7,
+    "targets": [
+      1.8,
+      2.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-10",
+    "symbol": "DTIL",
+    "type": "breakout",
+    "entry": 7.1,
+    "targets": [
+      7.5,
+      8.0,
+      8.4,
+      9.0,
+      9.8
+    ],
+    "stop": 6.5,
+    "source": "Nick",
+    "notes": "DTIL break - - - - + below"
+  },
+  {
+    "date": "2025-01-10",
+    "symbol": "GRYP",
+    "type": "breakout",
+    "entry": 0.57,
+    "targets": [
+      0.6,
+      0.63,
+      0.67,
+      0.7,
+      0.75
+    ],
+    "stop": 0.53,
+    "source": "Nick",
+    "notes": "GRYP break - - - - + below"
+  },
+  {
+    "date": "2025-01-10",
+    "symbol": "APA",
+    "type": "options",
+    "entry": 0.13,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$24.0C 01/10"
+  },
+  {
+    "date": "2025-01-10",
+    "symbol": "BBY",
+    "type": "options",
+    "entry": 0.32,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$85.0C 01/10"
+  },
+  {
+    "date": "2025-01-10",
+    "symbol": "DKNG",
+    "type": "swing",
+    "entry": 39.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-13",
+    "symbol": "QQQ",
+    "type": "swing",
+    "entry": 550.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-14",
+    "symbol": "NMHI",
+    "type": "breakout",
+    "entry": 3.4,
+    "targets": [
+      3.6,
+      3.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-14",
+    "symbol": "ERNA",
+    "type": "breakout",
+    "entry": 0.58,
+    "targets": [
+      0.62,
+      0.66
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-14",
+    "symbol": "SNGX",
+    "type": "breakout",
+    "entry": 3.8,
+    "targets": [
+      4.0,
+      4.2,
+      4.4
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-15",
+    "symbol": "SGBX",
+    "type": "breakout",
+    "entry": 1.5,
+    "targets": [
+      1.63,
+      1.75
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-15",
+    "symbol": "OSTX",
+    "type": "breakout",
+    "entry": 7.0,
+    "targets": [
+      7.5,
+      8.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-15",
+    "symbol": "VMAR",
+    "type": "breakout",
+    "entry": 2.4,
+    "targets": [
+      2.5,
+      2.64,
+      2.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-16",
+    "symbol": "BMRA",
+    "type": "breakout",
+    "entry": 1.1,
+    "targets": [
+      1.2,
+      1.3,
+      1.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-16",
+    "symbol": "WHLR",
+    "type": "breakout",
+    "entry": 4.7,
+    "targets": [
+      5.0,
+      5.3
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-16",
+    "symbol": "PMEC",
+    "type": "breakout",
+    "entry": 1.2,
+    "targets": [
+      1.4,
+      1.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-17",
+    "symbol": "NUKK",
+    "type": "breakout",
+    "entry": 36.66,
+    "targets": [
+      39.0,
+      44.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-17",
+    "symbol": "PRZO",
+    "type": "breakout",
+    "entry": 2.6,
+    "targets": [
+      2.8,
+      3.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-17",
+    "symbol": "ZEO",
+    "type": "breakout",
+    "entry": 3.8,
+    "targets": [
+      4.0,
+      4.35
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-17",
+    "symbol": "BTCT",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      6.8,
+      7.2,
+      7.6,
+      8.0,
+      8.5
+    ],
+    "stop": 5.9,
+    "source": "Nick",
+    "notes": "BTCT clean break - - - - + below"
+  },
+  {
+    "date": "2025-01-17",
+    "symbol": "DATS",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      6.5,
+      6.7,
+      7.0,
+      7.5,
+      8.0
+    ],
+    "stop": 6.0,
+    "source": "Nick",
+    "notes": "DATS clean break - - - - + below"
+  },
+  {
+    "date": "2025-01-17",
+    "symbol": "TGL",
+    "type": "breakout",
+    "entry": 0.377,
+    "targets": [
+      0.4,
+      0.44,
+      0.46,
+      0.5
+    ],
+    "stop": 0.35,
+    "source": "Nick",
+    "notes": "TGL - - - + below"
+  },
+  {
+    "date": "2025-01-17",
+    "symbol": "QQQ",
+    "type": "options",
+    "entry": 7.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$550.0C 4/1"
+  },
+  {
+    "date": "2025-01-21",
+    "symbol": "HSDT",
+    "type": "breakout",
+    "entry": 1.4,
+    "targets": [
+      1.54,
+      1.7,
+      1.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-21",
+    "symbol": "TPET",
+    "type": "breakout",
+    "entry": 3.14,
+    "targets": [
+      2.8,
+      3.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-21",
+    "symbol": "ASST",
+    "type": "breakout",
+    "entry": 1.25,
+    "targets": [
+      1.32,
+      1.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-21",
+    "symbol": "QQQ",
+    "type": "swing",
+    "entry": 530.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-22",
+    "symbol": "BLBX",
+    "type": "breakout",
+    "entry": 3.5,
+    "targets": [
+      3.7,
+      3.9
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-22",
+    "symbol": "ASST",
+    "type": "breakout",
+    "entry": 1.5,
+    "targets": [
+      1.64,
+      1.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-24",
+    "symbol": "ELAB",
+    "type": "breakout",
+    "entry": 4.8,
+    "targets": [
+      5.2,
+      5.65
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-24",
+    "symbol": "NVNI",
+    "type": "breakout",
+    "entry": 2.2,
+    "targets": [
+      2.4,
+      2.6
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-27",
+    "symbol": "HOLO",
+    "type": "breakout",
+    "entry": 2.02,
+    "targets": [
+      2.4,
+      2.8,
+      3.2,
+      3.9,
+      4.9
+    ],
+    "stop": 1.85,
+    "source": "Nick",
+    "notes": "HOLO - dips - - - - + below looks like an alright spot for a"
+  },
+  {
+    "date": "2025-01-29",
+    "symbol": "OCEA",
+    "type": "breakout",
+    "entry": 0.69,
+    "targets": [
+      0.74,
+      0.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-29",
+    "symbol": "SLXN",
+    "type": "breakout",
+    "entry": 2.4,
+    "targets": [
+      2.6,
+      2.7
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-29",
+    "symbol": "PACK",
+    "type": "breakout",
+    "entry": 7.0,
+    "targets": [
+      7.5,
+      7.95
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-31",
+    "symbol": "SGN",
+    "type": "breakout",
+    "entry": 4.6,
+    "targets": [
+      4.9,
+      5.25
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-31",
+    "symbol": "NLSP",
+    "type": "breakout",
+    "entry": 3.05,
+    "targets": [
+      3.3,
+      3.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-31",
+    "symbol": "KITT",
+    "type": "breakout",
+    "entry": 2.4,
+    "targets": [
+      2.54,
+      2.65
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-01-31",
+    "symbol": "TCTM",
+    "type": "breakout",
+    "entry": 0.47,
+    "targets": [
+      0.5,
+      0.53
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-03",
+    "symbol": "HCWB",
+    "type": "breakout",
+    "entry": 1.03,
+    "targets": [
+      1.15,
+      1.25
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-03",
+    "symbol": "SOPA",
+    "type": "breakout",
+    "entry": 2.4,
+    "targets": [
+      2.6,
+      2.9
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-04",
+    "symbol": "AZTR",
+    "type": "breakout",
+    "entry": 0.58,
+    "targets": [
+      0.62,
+      0.65
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-04",
+    "symbol": "AMOD",
+    "type": "breakout",
+    "entry": 3.5,
+    "targets": [
+      3.7,
+      4.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-05",
+    "symbol": "KTTA",
+    "type": "breakout",
+    "entry": 3.9,
+    "targets": [
+      4.1,
+      4.4
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-05",
+    "symbol": "ACB",
+    "type": "breakout",
+    "entry": 4.9,
+    "targets": [
+      5.23,
+      5.4,
+      5.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-05",
+    "symbol": "EDBL",
+    "type": "breakout",
+    "entry": 0.31,
+    "targets": [
+      0.325,
+      0.35
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-05",
+    "symbol": "OGEN",
+    "type": "breakout",
+    "entry": 0.6,
+    "targets": [
+      0.648,
+      0.689,
+      0.73,
+      0.77,
+      0.8
+    ],
+    "stop": 0.54,
+    "source": "Nick",
+    "notes": "OGEN break - - - - + below"
+  },
+  {
+    "date": "2025-02-06",
+    "symbol": "LIPO",
+    "type": "breakout",
+    "entry": 7.15,
+    "targets": [
+      7.5,
+      9.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-06",
+    "symbol": "SBET",
+    "type": "breakout",
+    "entry": 0.7,
+    "targets": [
+      0.74,
+      0.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-07",
+    "symbol": "MGOL",
+    "type": "breakout",
+    "entry": 0.445,
+    "targets": [
+      0.469,
+      0.5,
+      0.52
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-07",
+    "symbol": "CYTH",
+    "type": "breakout",
+    "entry": 1.45,
+    "targets": [
+      1.52,
+      1.68,
+      1.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-07",
+    "symbol": "CDT",
+    "type": "breakout",
+    "entry": 3.0,
+    "targets": [
+      3.25,
+      3.6,
+      3.9
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-10",
+    "symbol": "MGOL",
+    "type": "breakout",
+    "entry": 0.75,
+    "targets": [
+      0.81,
+      0.86
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-10",
+    "symbol": "OCEA",
+    "type": "breakout",
+    "entry": 0.245,
+    "targets": [
+      0.26,
+      0.28
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-10",
+    "symbol": "PNBK",
+    "type": "breakout",
+    "entry": 2.53,
+    "targets": [
+      2.65,
+      2.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-10",
+    "symbol": "CVS",
+    "type": "options",
+    "entry": 1.68,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$56.0C 2/28"
+  },
+  {
+    "date": "2025-02-10",
+    "symbol": "CCL",
+    "type": "options",
+    "entry": 8.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$25.0P 2/2"
+  },
+  {
+    "date": "2025-02-11",
+    "symbol": "DOMH",
+    "type": "breakout",
+    "entry": 10.0,
+    "targets": [
+      11.0,
+      12.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-11",
+    "symbol": "TGL",
+    "type": "breakout",
+    "entry": 0.25,
+    "targets": [
+      0.26,
+      0.275
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-11",
+    "symbol": "INAB",
+    "type": "breakout",
+    "entry": 0.51,
+    "targets": [
+      0.57,
+      0.634,
+      0.73
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-12",
+    "symbol": "XLO",
+    "type": "breakout",
+    "entry": 1.59,
+    "targets": [
+      1.72,
+      1.86,
+      2.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-12",
+    "symbol": "NXU",
+    "type": "breakout",
+    "entry": 0.52,
+    "targets": [
+      0.55,
+      0.59
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-12",
+    "symbol": "MYNA",
+    "type": "breakout",
+    "entry": 0.38,
+    "targets": [
+      0.42,
+      0.45,
+      0.48
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-13",
+    "symbol": "EDSA",
+    "type": "breakout",
+    "entry": 3.35,
+    "targets": [
+      3.5,
+      3.69
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-13",
+    "symbol": "PEV",
+    "type": "breakout",
+    "entry": 0.65,
+    "targets": [
+      0.67,
+      0.7
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-13",
+    "symbol": "SHOP",
+    "type": "options",
+    "entry": 1.45,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$135.0C 2/28"
+  },
+  {
+    "date": "2025-02-13",
+    "symbol": "SMH",
+    "type": "options",
+    "entry": 1.1,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$270.0C 2/28"
+  },
+  {
+    "date": "2025-02-13",
+    "symbol": "GOOGL",
+    "type": "options",
+    "entry": 1.51,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$192.5C 2/28"
+  },
+  {
+    "date": "2025-02-14",
+    "symbol": "JTAI",
+    "type": "breakout",
+    "entry": 5.4,
+    "targets": [
+      5.6,
+      5.9
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-14",
+    "symbol": "SRM",
+    "type": "breakout",
+    "entry": 0.83,
+    "targets": [
+      0.87,
+      0.93
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-14",
+    "symbol": "MGOL",
+    "type": "breakout",
+    "entry": 1.23,
+    "targets": [
+      1.3,
+      1.4
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-18",
+    "symbol": "PRFX",
+    "type": "breakout",
+    "entry": 5.47,
+    "targets": [
+      5.8,
+      6.2
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-18",
+    "symbol": "SLDB",
+    "type": "breakout",
+    "entry": 7.8,
+    "targets": [
+      8.4,
+      8.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-18",
+    "symbol": "MA",
+    "type": "options",
+    "entry": 1.45,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$580.0C 2/28"
+  },
+  {
+    "date": "2025-02-18",
+    "symbol": "PYPL",
+    "type": "options",
+    "entry": 1.35,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$81.0C 3/7"
+  },
+  {
+    "date": "2025-02-18",
+    "symbol": "TWLO",
+    "type": "options",
+    "entry": 1.57,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$130.0C 2/28"
+  },
+  {
+    "date": "2025-02-19",
+    "symbol": "LYT",
+    "type": "breakout",
+    "entry": 0.475,
+    "targets": [
+      0.5,
+      0.53
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-19",
+    "symbol": "SINT",
+    "type": "breakout",
+    "entry": 5.5,
+    "targets": [
+      5.75,
+      6.0,
+      6.7
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-19",
+    "symbol": "TRUG",
+    "type": "breakout",
+    "entry": 0.65,
+    "targets": [
+      0.68,
+      0.72
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-19",
+    "symbol": "PEP",
+    "type": "options",
+    "entry": 1.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$147.0C 3/7"
+  },
+  {
+    "date": "2025-02-20",
+    "symbol": "WOK",
+    "type": "breakout",
+    "entry": 5.3,
+    "targets": [
+      5.5,
+      5.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-20",
+    "symbol": "PRPH",
+    "type": "breakout",
+    "entry": 0.82,
+    "targets": [
+      0.85,
+      0.9
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-21",
+    "symbol": "MLGO",
+    "type": "breakout",
+    "entry": 3.5,
+    "targets": [
+      3.8,
+      4.2
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-21",
+    "symbol": "UPC",
+    "type": "breakout",
+    "entry": 0.29,
+    "targets": [
+      0.32,
+      0.355
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-21",
+    "symbol": "NKGN",
+    "type": "breakout",
+    "entry": 0.63,
+    "targets": [
+      0.68,
+      0.73
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-27",
+    "symbol": "ULY",
+    "type": "breakout",
+    "entry": 1.0,
+    "targets": [
+      1.14,
+      1.3
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-27",
+    "symbol": "TRNR",
+    "type": "breakout",
+    "entry": 1.85,
+    "targets": [
+      1.99,
+      2.15
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-27",
+    "symbol": "PFE",
+    "type": "options",
+    "entry": 1.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$25.5P 3/2"
+  },
+  {
+    "date": "2025-02-28",
+    "symbol": "NVVE",
+    "type": "breakout",
+    "entry": 4.3,
+    "targets": [
+      4.5,
+      4.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-02-28",
+    "symbol": "TRNR",
+    "type": "breakout",
+    "entry": 2.3,
+    "targets": [
+      2.4,
+      2.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-03",
+    "symbol": "BTOG",
+    "type": "breakout",
+    "entry": 1.15,
+    "targets": [
+      1.26,
+      1.35
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-03",
+    "symbol": "FTFT",
+    "type": "breakout",
+    "entry": 0.48,
+    "targets": [
+      0.52,
+      0.56
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-03",
+    "symbol": "TRNR",
+    "type": "breakout",
+    "entry": 3.3,
+    "targets": [
+      3.45,
+      3.65
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-04",
+    "symbol": "CYCU",
+    "type": "breakout",
+    "entry": 0.89,
+    "targets": [
+      0.94,
+      0.99
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-04",
+    "symbol": "UOKA",
+    "type": "breakout",
+    "entry": 0.26,
+    "targets": [
+      0.28,
+      0.295
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-04",
+    "symbol": "PLTR",
+    "type": "options",
+    "entry": 2.27,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$75.0P 3/21"
+  },
+  {
+    "date": "2025-03-05",
+    "symbol": "SLXN",
+    "type": "breakout",
+    "entry": 1.7,
+    "targets": [
+      1.85,
+      2.0,
+      2.2
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-05",
+    "symbol": "GV",
+    "type": "breakout",
+    "entry": 2.15,
+    "targets": [
+      2.3,
+      2.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-06",
+    "symbol": "PSTV",
+    "type": "breakout",
+    "entry": 0.67,
+    "targets": [
+      0.75,
+      0.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-06",
+    "symbol": "GV",
+    "type": "breakout",
+    "entry": 6.8,
+    "targets": [
+      7.2,
+      7.9
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-06",
+    "symbol": "AGMH",
+    "type": "breakout",
+    "entry": 0.23,
+    "targets": [
+      0.25,
+      0.27
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-06",
+    "symbol": "EBAY",
+    "type": "options",
+    "entry": 1.16,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$67.0P 3/14"
+  },
+  {
+    "date": "2025-03-06",
+    "symbol": "MRK",
+    "type": "options",
+    "entry": 1.38,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$95.0C 3/21"
+  },
+  {
+    "date": "2025-03-06",
+    "symbol": "BIDU",
+    "type": "options",
+    "entry": 3.15,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$95.0C 3/21"
+  },
+  {
+    "date": "2025-03-06",
+    "symbol": "KO",
+    "type": "options",
+    "entry": 8.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$72.0C 3/2"
+  },
+  {
+    "date": "2025-03-07",
+    "symbol": "PSTV",
+    "type": "breakout",
+    "entry": 2.2,
+    "targets": [
+      2.35,
+      2.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-07",
+    "symbol": "SUNE",
+    "type": "breakout",
+    "entry": 0.54,
+    "targets": [
+      0.57,
+      0.6
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-07",
+    "symbol": "BTOG",
+    "type": "breakout",
+    "entry": 0.55,
+    "targets": [
+      0.6,
+      0.63
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-11",
+    "symbol": "ONDS",
+    "type": "breakout",
+    "entry": 1.27,
+    "targets": [
+      1.33,
+      1.4
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-11",
+    "symbol": "SNOA",
+    "type": "breakout",
+    "entry": 4.5,
+    "targets": [
+      4.65,
+      4.75
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-12",
+    "symbol": "VSTE",
+    "type": "breakout",
+    "entry": 1.0,
+    "targets": [
+      1.09,
+      1.19,
+      1.27,
+      1.37,
+      1.42
+    ],
+    "stop": 0.92,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-17",
+    "symbol": "AFRM",
+    "type": "options",
+    "entry": 3.3,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$50.0C 4/17"
+  },
+  {
+    "date": "2025-03-17",
+    "symbol": "MA",
+    "type": "options",
+    "entry": 2.58,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$565.0C 4/17"
+  },
+  {
+    "date": "2025-03-18",
+    "symbol": "SCNX",
+    "type": "breakout",
+    "entry": 3.2,
+    "targets": [
+      3.35,
+      3.56
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-18",
+    "symbol": "WMT",
+    "type": "options",
+    "entry": 1.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$86.0P 3/2"
+  },
+  {
+    "date": "2025-03-20",
+    "symbol": "WINT",
+    "type": "breakout",
+    "entry": 2.75,
+    "targets": [
+      2.9,
+      3.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-21",
+    "symbol": "ALUR",
+    "type": "breakout",
+    "entry": 4.2,
+    "targets": [
+      4.5,
+      4.7
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-21",
+    "symbol": "PNBK",
+    "type": "breakout",
+    "entry": 1.6,
+    "targets": [
+      1.75,
+      1.85
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-25",
+    "symbol": "TNON",
+    "type": "breakout",
+    "entry": 5.0,
+    "targets": [
+      5.4,
+      5.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-25",
+    "symbol": "POAI",
+    "type": "breakout",
+    "entry": 2.72,
+    "targets": [
+      2.89,
+      3.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-25",
+    "symbol": "DM",
+    "type": "breakout",
+    "entry": 5.0,
+    "targets": [
+      5.3,
+      5.6
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-26",
+    "symbol": "OSRH",
+    "type": "breakout",
+    "entry": 4.5,
+    "targets": [
+      4.7,
+      5.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-26",
+    "symbol": "SURG",
+    "type": "breakout",
+    "entry": 2.65,
+    "targets": [
+      2.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-26",
+    "symbol": "WMT",
+    "type": "options",
+    "entry": 1.05,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$86.0C 4/4"
+  },
+  {
+    "date": "2025-03-27",
+    "symbol": "DRMA",
+    "type": "breakout",
+    "entry": 2.3,
+    "targets": [
+      2.5,
+      2.7
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-27",
+    "symbol": "GTEC",
+    "type": "breakout",
+    "entry": 2.5,
+    "targets": [
+      2.7,
+      2.9
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-27",
+    "symbol": "LYT",
+    "type": "breakout",
+    "entry": 0.14,
+    "targets": [
+      0.15
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-27",
+    "symbol": "WMT",
+    "type": "options",
+    "entry": 1.23,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$86.0C 4/4"
+  },
+  {
+    "date": "2025-03-31",
+    "symbol": "DOMH",
+    "type": "breakout",
+    "entry": 5.55,
+    "targets": [
+      5.75,
+      6.1
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-03-31",
+    "symbol": "ICCT",
+    "type": "breakout",
+    "entry": 0.76,
+    "targets": [
+      0.8,
+      0.83
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-01",
+    "symbol": "RSLS",
+    "type": "breakout",
+    "entry": 0.965,
+    "targets": [
+      1.1,
+      1.2
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-01",
+    "symbol": "ICCT",
+    "type": "breakout",
+    "entry": 3.5,
+    "targets": [
+      3.7,
+      4.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-01",
+    "symbol": "MLGO",
+    "type": "breakout",
+    "entry": 35.0,
+    "targets": [
+      37.0,
+      38.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-01",
+    "symbol": "PFE",
+    "type": "options",
+    "entry": 7.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$24.5P 4/1"
+  },
+  {
+    "date": "2025-04-01",
+    "symbol": "CMG",
+    "type": "options",
+    "entry": 1.57,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$55.0C 5/16"
+  },
+  {
+    "date": "2025-04-02",
+    "symbol": "IBG",
+    "type": "breakout",
+    "entry": 1.75,
+    "targets": [
+      1.9,
+      2.1
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-02",
+    "symbol": "SBFM",
+    "type": "breakout",
+    "entry": 3.45,
+    "targets": [
+      3.6,
+      3.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-03",
+    "symbol": "NIVF",
+    "type": "breakout",
+    "entry": 1.24,
+    "targets": [
+      1.33,
+      1.45
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-03",
+    "symbol": "ATPC",
+    "type": "breakout",
+    "entry": 1.93,
+    "targets": [
+      2.0,
+      2.2
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-03",
+    "symbol": "TIVC",
+    "type": "breakout",
+    "entry": 5.8,
+    "targets": [
+      6.3
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-03",
+    "symbol": "WMT",
+    "type": "options",
+    "entry": 1.63,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$90.0C 4/17"
+  },
+  {
+    "date": "2025-04-03",
+    "symbol": "MSFT",
+    "type": "options",
+    "entry": 3.85,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$360.0P 4/17"
+  },
+  {
+    "date": "2025-04-08",
+    "symbol": "GLXG",
+    "type": "breakout",
+    "entry": 2.0,
+    "targets": [
+      2.15,
+      2.3,
+      2.45,
+      2.6,
+      2.8
+    ],
+    "stop": 1.76,
+    "source": "Nick",
+    "notes": "GLXG break - - - -"
+  },
+  {
+    "date": "2025-04-08",
+    "symbol": "CYCU",
+    "type": "breakout",
+    "entry": 0.72,
+    "targets": [
+      0.75,
+      0.79,
+      0.85,
+      0.9,
+      1.0
+    ],
+    "stop": 0.65,
+    "source": "Nick",
+    "notes": "CYCU - - - - below"
+  },
+  {
+    "date": "2025-04-08",
+    "symbol": "AVGO",
+    "type": "options",
+    "entry": 3.2,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$180.0C 4/17"
+  },
+  {
+    "date": "2025-04-10",
+    "symbol": "RSLS",
+    "type": "breakout",
+    "entry": 0.73,
+    "targets": [
+      0.8,
+      0.85
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-10",
+    "symbol": "KTTA",
+    "type": "breakout",
+    "entry": 2.05,
+    "targets": [
+      2.2,
+      2.4
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-10",
+    "symbol": "PRFX",
+    "type": "breakout",
+    "entry": 3.25,
+    "targets": [
+      3.5,
+      3.7
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-11",
+    "symbol": "HIMS",
+    "type": "options",
+    "entry": 7.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$25.0P 4/1"
+  },
+  {
+    "date": "2025-04-11",
+    "symbol": "MSFT",
+    "type": "options",
+    "entry": 7.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$400.0C 4/1"
+  },
+  {
+    "date": "2025-04-11",
+    "symbol": "WMT",
+    "type": "options",
+    "entry": 3.35,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$95.0C 5/16"
+  },
+  {
+    "date": "2025-04-14",
+    "symbol": "XAGE",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      0.324,
+      0.36
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-14",
+    "symbol": "AREB",
+    "type": "breakout",
+    "entry": 8.8,
+    "targets": [
+      9.4,
+      9.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-04-17",
+    "symbol": "ORCL",
+    "type": "options",
+    "entry": 2.88,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$120.0P 5/16"
+  },
+  {
+    "date": "2025-04-24",
+    "symbol": "IWM",
+    "type": "options",
+    "entry": 3.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$200.0C 5/16"
+  },
+  {
+    "date": "2025-04-24",
+    "symbol": "MRK",
+    "type": "options",
+    "entry": 2.5,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$80.0C 5/16"
+  },
+  {
+    "date": "2025-04-30",
+    "symbol": "DLTR",
+    "type": "options",
+    "entry": 3.1,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$82.0C 5/16"
+  },
+  {
+    "date": "2025-05-05",
+    "symbol": "NITO",
+    "type": "breakout",
+    "entry": 0.72,
+    "targets": [
+      0.8,
+      0.9
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-05-05",
+    "symbol": "SPRC",
+    "type": "breakout",
+    "entry": 0.5,
+    "targets": [
+      0.54,
+      0.58
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-05-06",
+    "symbol": "META",
+    "type": "options",
+    "entry": 5.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$560.0P 5/16"
+  },
+  {
+    "date": "2025-05-06",
+    "symbol": "HOOD",
+    "type": "options",
+    "entry": 4.25,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$50.0C 6/20"
+  },
+  {
+    "date": "2025-05-07",
+    "symbol": "MRK",
+    "type": "options",
+    "entry": 2.05,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$80.0C 5/16"
+  },
+  {
+    "date": "2025-05-13",
+    "symbol": "ABT",
+    "type": "options",
+    "entry": 1.91,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$125.0P 6/20"
+  },
+  {
+    "date": "2025-05-16",
+    "symbol": "KR",
+    "type": "options",
+    "entry": 1.85,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$70.0C 6/20"
+  },
+  {
+    "date": "2025-05-19",
+    "symbol": "FAAS",
+    "type": "breakout",
+    "entry": 0.45,
+    "targets": [
+      0.47,
+      0.493
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-05-19",
+    "symbol": "BCLI",
+    "type": "breakout",
+    "entry": 2.1,
+    "targets": [
+      2.25,
+      2.47
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-05-20",
+    "symbol": "GLD",
+    "type": "swing",
+    "entry": 310.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-05-27",
+    "symbol": "VST",
+    "type": "options",
+    "entry": 3.6,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$180.0C 6/20"
+  },
+  {
+    "date": "2025-06-27",
+    "symbol": "SOXS",
+    "type": "options",
+    "entry": 5.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$8.0C 8/1"
+  },
+  {
+    "date": "2025-07-16",
+    "symbol": "BILI",
+    "type": "options",
+    "entry": 5.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$25.0C 8/1"
+  },
+  {
+    "date": "2025-07-16",
+    "symbol": "OKLO",
+    "type": "options",
+    "entry": 4.4,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$70.0C 8/8"
+  },
+  {
+    "date": "2025-08-12",
+    "symbol": "VIX",
+    "type": "swing",
+    "entry": 20.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-08-15",
+    "symbol": "UPST",
+    "type": "swing",
+    "entry": 70.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-08-18",
+    "symbol": "MU",
+    "type": "swing",
+    "entry": 125.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-08-27",
+    "symbol": "BROS",
+    "type": "short",
+    "entry": null,
+    "targets": [
+      72.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-09-05",
+    "symbol": "VEEE",
+    "type": "breakout",
+    "entry": 3.3,
+    "targets": [
+      3.5,
+      3.75
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-09-05",
+    "symbol": "PRSO",
+    "type": "breakout",
+    "entry": 1.65,
+    "targets": [
+      1.85,
+      2.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-09-05",
+    "symbol": "HOUR",
+    "type": "breakout",
+    "entry": 3.05,
+    "targets": [
+      3.3,
+      3.7
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-09-05",
+    "symbol": "GOOGL",
+    "type": "options",
+    "entry": 1.85,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$210.0P 10/17"
+  },
+  {
+    "date": "2025-09-19",
+    "symbol": "OKLO",
+    "type": "swing",
+    "entry": 119.0,
+    "targets": [
+      125.0,
+      130.0
+    ],
+    "stop": 115.0,
+    "source": "Nick",
+    "notes": "$OKLO - - Another swing here 👀, higher risk at ATHs."
+  },
+  {
+    "date": "2025-09-22",
+    "symbol": "BULL",
+    "type": "swing",
+    "entry": 13.5,
+    "targets": [
+      15.0,
+      17.0,
+      18.3,
+      22.0
+    ],
+    "stop": 12.45,
+    "source": "Nick",
+    "notes": "$BULL - - - - Longer-term swing, willing to hold for months on this one 🚀, will add dips down to"
+  },
+  {
+    "date": "2025-09-25",
+    "symbol": "SNAP",
+    "type": "options",
+    "entry": 7.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$9.0C 10/1"
+  },
+  {
+    "date": "2025-10-02",
+    "symbol": "ASBP",
+    "type": "breakout",
+    "entry": 0.45,
+    "targets": [
+      0.47,
+      0.5,
+      0.55
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-02",
+    "symbol": "CIGL",
+    "type": "breakout",
+    "entry": 4.5,
+    "targets": [
+      4.8,
+      5.0,
+      5.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-02",
+    "symbol": "PLTR",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      190.0,
+      200.0
+    ],
+    "stop": 174.0,
+    "source": "Nick",
+    "notes": "$PLTR – - Looking for ATHs on this play"
+  },
+  {
+    "date": "2025-10-03",
+    "symbol": "AMD",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      180.0,
+      187.0,
+      200.0
+    ],
+    "stop": 155.0,
+    "source": "Nick",
+    "notes": "$AMD - - Notes: Nice little break out chance here, otherwise looking to add more at dips, ideally around"
+  },
+  {
+    "date": "2025-10-06",
+    "symbol": "AS",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      12.94
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-07",
+    "symbol": "COCH",
+    "type": "breakout",
+    "entry": 2.4,
+    "targets": [
+      2.7,
+      3.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-07",
+    "symbol": "UBER",
+    "type": "swing",
+    "entry": 99.0,
+    "targets": [
+      105.0,
+      110.0
+    ],
+    "stop": 94.0,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-08",
+    "symbol": "STRON",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      64.2
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-09",
+    "symbol": "ALAB",
+    "type": "short",
+    "entry": 226.5,
+    "targets": [
+      265.0
+    ],
+    "stop": 206.0,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-13",
+    "symbol": "HIMS",
+    "type": "swing",
+    "entry": 53.0,
+    "targets": [
+      60.0,
+      66.0
+    ],
+    "stop": 49.5,
+    "source": "Nick",
+    "notes": "$HIMS - - <@> do you have other strong levels in this range?"
+  },
+  {
+    "date": "2025-10-14",
+    "symbol": "COOT",
+    "type": "breakout",
+    "entry": 2.05,
+    "targets": [
+      2.2,
+      2.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-14",
+    "symbol": "SDOT",
+    "type": "breakout",
+    "entry": 10.0,
+    "targets": [
+      10.5,
+      11.6
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-14",
+    "symbol": "GNPX",
+    "type": "breakout",
+    "entry": 0.45,
+    "targets": [
+      0.5,
+      0.55
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "GNPX - watch for am false pops!"
+  },
+  {
+    "date": "2025-10-17",
+    "symbol": "RANI",
+    "type": "breakout",
+    "entry": 1.05,
+    "targets": [
+      1.2,
+      1.3,
+      1.5,
+      1.7,
+      2.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "RANI - - - - - candle close below"
+  },
+  {
+    "date": "2025-10-20",
+    "symbol": "GSIT",
+    "type": "swing",
+    "entry": 11.0,
+    "targets": [
+      19.0,
+      24.0
+    ],
+    "stop": 10.0,
+    "source": "Nick",
+    "notes": "GSIT - - Below $ Higher risk short term swing trade, ER in days and news catalyst. Looking to add small here and potenti"
+  },
+  {
+    "date": "2025-10-24",
+    "symbol": "NEUP",
+    "type": "breakout",
+    "entry": 6.2,
+    "targets": [
+      6.7,
+      7.0,
+      7.5
+    ],
+    "stop": 5.7,
+    "source": "Nick",
+    "notes": "NEUP break - - +"
+  },
+  {
+    "date": "2025-10-24",
+    "symbol": "WGRX",
+    "type": "breakout",
+    "entry": 1.38,
+    "targets": [
+      1.54,
+      1.65,
+      1.8,
+      1.9,
+      2.0
+    ],
+    "stop": 1.22,
+    "source": "Nick",
+    "notes": "WGRX break - - - - +"
+  },
+  {
+    "date": "2025-10-24",
+    "symbol": "NEGG",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      85.0
+    ],
+    "stop": 42.0,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-26",
+    "symbol": "ASST",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      1.4,
+      1.6,
+      1.8,
+      2.0,
+      2.5
+    ],
+    "stop": 1.07,
+    "source": "Nick",
+    "notes": "$ASST @here - range / PM open - - - - Too much hype, should run at open / PM open. Will look to add a starter and contin"
+  },
+  {
+    "date": "2025-10-27",
+    "symbol": "BAC",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      53.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-27",
+    "symbol": "RIOT",
+    "type": "swing",
+    "entry": 24.0,
+    "targets": [
+      27.0,
+      33.0
+    ],
+    "stop": 20.0,
+    "source": "Nick",
+    "notes": "$RIOT breakout / - dips - below Higher risk swing, ER soon."
+  },
+  {
+    "date": "2025-10-29",
+    "symbol": "ERNA",
+    "type": "breakout",
+    "entry": 2.3,
+    "targets": [
+      2.5,
+      2.75
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-29",
+    "symbol": "CMBM",
+    "type": "breakout",
+    "entry": 2.6,
+    "targets": [
+      2.8,
+      3.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-10-29",
+    "symbol": "PLTR",
+    "type": "swing",
+    "entry": 190.0,
+    "targets": [
+      210.0,
+      220.0
+    ],
+    "stop": 175.0,
+    "source": "Nick",
+    "notes": "$PLTR - - ER play, seems good w tech sector performing as strong as it is."
+  },
+  {
+    "date": "2025-10-30",
+    "symbol": "CMBM",
+    "type": "breakout",
+    "entry": 7.0,
+    "targets": [
+      7.7,
+      8.6,
+      10.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "CMBM - - Wait for a clean entry. Honestly believe this can go to + today."
+  },
+  {
+    "date": "2025-11-03",
+    "symbol": "HIMS",
+    "type": "options",
+    "entry": 44.0,
+    "targets": [
+      50.0,
+      57.0
+    ],
+    "stop": 40.0,
+    "source": "Nick",
+    "notes": "$HIMS - - ER play, HIMS feels cheap here."
+  },
+  {
+    "date": "2025-11-05",
+    "symbol": "BULL",
+    "type": "swing",
+    "entry": 9.4,
+    "targets": [],
+    "stop": 8.5,
+    "source": "Nick",
+    "notes": "$BULL - - - - - + below"
+  },
+  {
+    "date": "2025-11-05",
+    "symbol": "VSEE",
+    "type": "breakout",
+    "entry": 1.43,
+    "targets": [
+      1.57,
+      1.67
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-11-05",
+    "symbol": "MTC",
+    "type": "breakout",
+    "entry": 2.2,
+    "targets": [
+      2.4,
+      2.65,
+      3.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "MTC - - Despite the lack of movement in small caps, i got you guys some potential bangers."
+  },
+  {
+    "date": "2025-11-10",
+    "symbol": "GLTO",
+    "type": "breakout",
+    "entry": 24.0,
+    "targets": [
+      25.6,
+      27.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-11-11",
+    "symbol": "CYCN",
+    "type": "breakout",
+    "entry": 2.5,
+    "targets": [
+      2.65,
+      2.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-11-11",
+    "symbol": "BODI",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      8.0,
+      8.5,
+      9.0,
+      10.0,
+      11.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "BODI Bounce off VWAP () / breakout - - - - -%"
+  },
+  {
+    "date": "2025-11-12",
+    "symbol": "CMCT",
+    "type": "breakout",
+    "entry": 10.3,
+    "targets": [
+      11.0,
+      12.0
+    ],
+    "stop": 9.4,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-11-12",
+    "symbol": "CMCT",
+    "type": "breakout",
+    "entry": 10.9,
+    "targets": [
+      12.0,
+      13.4
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-11-12",
+    "symbol": "AMZE",
+    "type": "breakout",
+    "entry": 1.0,
+    "targets": [
+      1.1,
+      1.25
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-11-13",
+    "symbol": "NVVE",
+    "type": "breakout",
+    "entry": 0.51,
+    "targets": [
+      0.545,
+      0.6
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-11-18",
+    "symbol": "GLMD",
+    "type": "breakout",
+    "entry": 1.35,
+    "targets": [
+      1.5,
+      1.6
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-11-19",
+    "symbol": "ALZN",
+    "type": "breakout",
+    "entry": 0.15,
+    "targets": [
+      0.17,
+      0.19
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-11-19",
+    "symbol": "FRGT",
+    "type": "breakout",
+    "entry": 1.06,
+    "targets": [
+      1.15,
+      1.25
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-11-20",
+    "symbol": "MNDR",
+    "type": "breakout",
+    "entry": 4.2,
+    "targets": [
+      4.4,
+      4.8,
+      5.0,
+      5.5,
+      6.0
+    ],
+    "stop": 3.8,
+    "source": "Nick",
+    "notes": "MNDR break - - - -"
+  },
+  {
+    "date": "2025-11-25",
+    "symbol": "SNAP",
+    "type": "swing",
+    "entry": 7.6,
+    "targets": [
+      10.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Perplexity deal $400M, rarely below $10-15B valuation"
+  },
+  {
+    "date": "2025-11-25",
+    "symbol": "DUOL",
+    "type": "swing",
+    "entry": 148.0,
+    "targets": [
+      225.0,
+      270.0,
+      292.0,
+      379.0
+    ],
+    "stop": 112.0,
+    "source": "Nick",
+    "notes": "11M paid users, 128M MAU, potential AI upside"
+  },
+  {
+    "date": "2025-11-25",
+    "symbol": "BULL",
+    "type": "swing",
+    "entry": 7.0,
+    "targets": [
+      9.0,
+      10.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Webull $4B vs Robinhood $120B, Kalshi partnership"
+  },
+  {
+    "date": "2025-11-25",
+    "symbol": "AEO",
+    "type": "swing",
+    "entry": null,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Previous banger, Sydney Sweeney campaign, momentum"
+  },
+  {
+    "date": "2025-11-25",
+    "symbol": "JACK",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      30.0,
+      40.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Cheap franchisor, buyout candidate"
+  },
+  {
+    "date": "2025-11-25",
+    "symbol": "CMG",
+    "type": "swing",
+    "entry": 29.0,
+    "targets": [
+      40.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "High 20s = buy area, strong AUVs"
+  },
+  {
+    "date": "2025-11-25",
+    "symbol": "TSLA",
+    "type": "swing",
+    "entry": 360.0,
+    "targets": [
+      450.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$1T pay package, $2T valuation path"
+  },
+  {
+    "date": "2025-11-25",
+    "symbol": "MRVL",
+    "type": "swing",
+    "entry": null,
+    "targets": [
+      100.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Custom ASICs for Amazon+MSFT, Buffett catalyst. Hit $100"
+  },
+  {
+    "date": "2025-12-02",
+    "symbol": "DASH",
+    "type": "swing",
+    "entry": null,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$100M insider buy, $300-400B company one day"
+  },
+  {
+    "date": "2025-12-02",
+    "symbol": "SMX",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      70.0,
+      76.0,
+      80.0,
+      85.0,
+      90.0
+    ],
+    "stop": 57.0,
+    "source": "Nick",
+    "notes": "SMX ... this one ran big last week clean - - - -"
+  },
+  {
+    "date": "2025-12-03",
+    "symbol": "VRAX",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      1.0,
+      1.1,
+      1.24,
+      1.4,
+      1.6
+    ],
+    "stop": 0.8,
+    "source": "Nick",
+    "notes": "VRAX clean break - - - - chart looks crazy on this one, watching for another consolidation before the next break out"
+  },
+  {
+    "date": "2025-12-03",
+    "symbol": "IXHL",
+    "type": "breakout",
+    "entry": 0.53,
+    "targets": [
+      0.55,
+      0.6
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-03",
+    "symbol": "QCLS",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      4.7,
+      5.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-03",
+    "symbol": "IRBT",
+    "type": "breakout",
+    "entry": 2.85,
+    "targets": [
+      3.0,
+      3.2,
+      3.4,
+      3.7,
+      4.0
+    ],
+    "stop": 2.66,
+    "source": "Nick",
+    "notes": "IRBT break - - - -"
+  },
+  {
+    "date": "2025-12-03",
+    "symbol": "CAPR",
+    "type": "swing",
+    "entry": 41.0,
+    "targets": [
+      43.0,
+      45.0,
+      48.0,
+      50.0,
+      55.0
+    ],
+    "stop": 37.0,
+    "source": "Nick",
+    "notes": "CAPR - - - - very halty be quick"
+  },
+  {
+    "date": "2025-12-04",
+    "symbol": "PLRZ",
+    "type": "breakout",
+    "entry": 19.5,
+    "targets": [
+      21.0,
+      24.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-04",
+    "symbol": "UPC",
+    "type": "breakout",
+    "entry": 4.5,
+    "targets": [
+      4.9,
+      5.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-05",
+    "symbol": "WHLR",
+    "type": "breakout",
+    "entry": 8.0,
+    "targets": [
+      8.8,
+      9.7
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-05",
+    "symbol": "SMX",
+    "type": "breakout",
+    "entry": 300.0,
+    "targets": [
+      326.0,
+      365.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "SMX - SMX has been wild…. getting fomo lol ... was when mentioned a few days ago ^^^ to in a week is crazy @here"
+  },
+  {
+    "date": "2025-12-08",
+    "symbol": "GOOGL",
+    "type": "swing",
+    "entry": 310.0,
+    "targets": [
+      330.0,
+      350.0,
+      375.0
+    ],
+    "stop": 299.0,
+    "source": "Nick",
+    "notes": "GOOGL - - - below"
+  },
+  {
+    "date": "2025-12-10",
+    "symbol": "ASPC",
+    "type": "breakout",
+    "entry": 34.0,
+    "targets": [
+      37.0,
+      40.0,
+      43.0,
+      47.0,
+      50.0
+    ],
+    "stop": 31.0,
+    "source": "Nick",
+    "notes": "ASPC break - - - -"
+  },
+  {
+    "date": "2025-12-11",
+    "symbol": "BTTC",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      10.9,
+      11.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-11",
+    "symbol": "MIGI",
+    "type": "breakout",
+    "entry": 9.2,
+    "targets": [
+      9.8,
+      10.4,
+      11.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-12",
+    "symbol": "YCBD",
+    "type": "breakout",
+    "entry": 1.37,
+    "targets": [
+      1.5,
+      1.6,
+      1.7,
+      1.82,
+      1.95
+    ],
+    "stop": 1.2,
+    "source": "Nick",
+    "notes": "YCBD break - - - -"
+  },
+  {
+    "date": "2025-12-16",
+    "symbol": "AMCI",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      16.0,
+      17.0,
+      19.0,
+      20.0,
+      21.0
+    ],
+    "stop": 13.5,
+    "source": "Nick",
+    "notes": "AMCI clean - - - - clean break guys, in a halt up, was trying to alert thee $ break but didnt get it typed out in time.."
+  },
+  {
+    "date": "2025-12-19",
+    "symbol": "AZI",
+    "type": "breakout",
+    "entry": 2.4,
+    "targets": [
+      2.5,
+      2.75,
+      3.0,
+      3.3
+    ],
+    "stop": 2.17,
+    "source": "Nick",
+    "notes": "Halted up"
+  },
+  {
+    "date": "2025-12-19",
+    "symbol": "AZI",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      2.4,
+      2.5,
+      2.75,
+      3.0,
+      3.3
+    ],
+    "stop": 2.17,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-22",
+    "symbol": "AZI",
+    "type": "breakout",
+    "entry": 4.4,
+    "targets": [
+      4.7,
+      5.0
+    ],
+    "stop": 4.05,
+    "source": "Nick",
+    "notes": "Hit 4.80"
+  },
+  {
+    "date": "2025-12-22",
+    "symbol": "CMCT",
+    "type": "breakout",
+    "entry": 4.7,
+    "targets": [
+      5.0,
+      5.5
+    ],
+    "stop": 4.29,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-23",
+    "symbol": "TRIB",
+    "type": "breakout",
+    "entry": 1.75,
+    "targets": [
+      1.95,
+      2.1
+    ],
+    "stop": 1.6,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-29",
+    "symbol": "ASPC",
+    "type": "breakout",
+    "entry": 34.0,
+    "targets": [
+      36.9,
+      40.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-30",
+    "symbol": "AEHL",
+    "type": "breakout",
+    "entry": 1.75,
+    "targets": [
+      1.87,
+      2.0
+    ],
+    "stop": 1.61,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-30",
+    "symbol": "CETX",
+    "type": "breakout",
+    "entry": 3.1,
+    "targets": [
+      3.4,
+      3.7
+    ],
+    "stop": 2.85,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-31",
+    "symbol": "ULY",
+    "type": "breakout",
+    "entry": 4.0,
+    "targets": [
+      4.3,
+      4.6
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-31",
+    "symbol": "NCL",
+    "type": "breakout",
+    "entry": 0.32,
+    "targets": [
+      0.35,
+      0.38
+    ],
+    "stop": 0.29,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2025-12-31",
+    "symbol": "ORIS",
+    "type": "breakout",
+    "entry": 1.87,
+    "targets": [
+      2.0,
+      2.15
+    ],
+    "stop": 1.6,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-02",
+    "symbol": "IRWD",
+    "type": "breakout",
+    "entry": 4.75,
+    "targets": [
+      5.0,
+      5.25
+    ],
+    "stop": 4.58,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-02",
+    "symbol": "UAVS",
+    "type": "breakout",
+    "entry": 1.2,
+    "targets": [
+      1.34,
+      1.5
+    ],
+    "stop": 1.08,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-06",
+    "symbol": "AZI",
+    "type": "breakout",
+    "entry": 3.5,
+    "targets": [
+      3.65,
+      4.0
+    ],
+    "stop": 3.15,
+    "source": "Nick",
+    "notes": "Went up 14%"
+  },
+  {
+    "date": "2026-01-06",
+    "symbol": "EVTV",
+    "type": "breakout",
+    "entry": 0.62,
+    "targets": [
+      0.65,
+      0.7,
+      0.75
+    ],
+    "stop": 0.58,
+    "source": "Nick",
+    "notes": "Target hit in 2 minutes, up 29%"
+  },
+  {
+    "date": "2026-01-07",
+    "symbol": "LUCY",
+    "type": "breakout",
+    "entry": 1.8,
+    "targets": [
+      2.0,
+      2.2
+    ],
+    "stop": 1.62,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-07",
+    "symbol": "MBLY",
+    "type": "breakout",
+    "entry": 15.0,
+    "targets": [
+      16.0,
+      17.0
+    ],
+    "stop": 14.0,
+    "source": "Nick",
+    "notes": "Slower mover"
+  },
+  {
+    "date": "2026-01-07",
+    "symbol": "ASBP",
+    "type": "breakout",
+    "entry": 0.19,
+    "targets": [
+      0.21,
+      0.23
+    ],
+    "stop": 0.17,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-08",
+    "symbol": "UNH",
+    "type": "swing",
+    "entry": null,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Healthcare sector play"
+  },
+  {
+    "date": "2026-01-08",
+    "symbol": "NVO",
+    "type": "swing",
+    "entry": null,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Healthcare sector play"
+  },
+  {
+    "date": "2026-01-08",
+    "symbol": "AMZN",
+    "type": "options",
+    "entry": 3.2,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$255.0C 1/30"
+  },
+  {
+    "date": "2026-01-08",
+    "symbol": "SLV",
+    "type": "options",
+    "entry": 3.55,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$72.0C 1/30"
+  },
+  {
+    "date": "2026-01-08",
+    "symbol": "GLD",
+    "type": "options",
+    "entry": 3.2,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$421.0C 1/21"
+  },
+  {
+    "date": "2026-01-09",
+    "symbol": "GP",
+    "type": "breakout",
+    "entry": 1.4,
+    "targets": [
+      1.5,
+      1.67
+    ],
+    "stop": 1.2,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-09",
+    "symbol": "CETX",
+    "type": "breakout",
+    "entry": 4.0,
+    "targets": [
+      4.2,
+      4.6
+    ],
+    "stop": 3.5,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-12",
+    "symbol": "EVTV",
+    "type": "breakout",
+    "entry": 1.7,
+    "targets": [
+      1.8,
+      1.9,
+      2.0,
+      2.2
+    ],
+    "stop": 1.55,
+    "source": "Nick",
+    "notes": "Hit 3.7 next day, 100% move"
+  },
+  {
+    "date": "2026-01-12",
+    "symbol": "MU",
+    "type": "swing",
+    "entry": 335.0,
+    "targets": [
+      370.0,
+      400.0
+    ],
+    "stop": 315.0,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-13",
+    "symbol": "ALAB",
+    "type": "swing",
+    "entry": null,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Always bounces back. Amazon warrant at $142, ideal buy near $104"
+  },
+  {
+    "date": "2026-01-14",
+    "symbol": "ROLR",
+    "type": "breakout",
+    "entry": 18.0,
+    "targets": [
+      19.7,
+      20.8,
+      23.5
+    ],
+    "stop": 16.7,
+    "source": "Nick",
+    "notes": "Hit $33 up 80%"
+  },
+  {
+    "date": "2026-01-14",
+    "symbol": "BEEM",
+    "type": "breakout",
+    "entry": 2.4,
+    "targets": [
+      2.52,
+      2.65
+    ],
+    "stop": 2.27,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-14",
+    "symbol": "ROLR",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      19.7,
+      20.8,
+      23.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-16",
+    "symbol": "VERO",
+    "type": "breakout",
+    "entry": 6.35,
+    "targets": [
+      6.8,
+      7.5
+    ],
+    "stop": 5.85,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-16",
+    "symbol": "JFBR",
+    "type": "breakout",
+    "entry": 1.5,
+    "targets": [
+      1.62,
+      1.75
+    ],
+    "stop": 1.35,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-20",
+    "symbol": "IVF",
+    "type": "breakout",
+    "entry": 3.75,
+    "targets": [
+      4.0,
+      4.4,
+      4.7
+    ],
+    "stop": 3.38,
+    "source": "Nick",
+    "notes": "Hit 4.6"
+  },
+  {
+    "date": "2026-01-20",
+    "symbol": "SHPH",
+    "type": "breakout",
+    "entry": 4.4,
+    "targets": [
+      4.75,
+      5.0,
+      5.5
+    ],
+    "stop": 4.0,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-21",
+    "symbol": "IMTE",
+    "type": "breakout",
+    "entry": 1.75,
+    "targets": [
+      1.9,
+      2.1
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-21",
+    "symbol": "PAPL",
+    "type": "breakout",
+    "entry": 1.9,
+    "targets": [
+      2.1,
+      2.4
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Hit 3.30"
+  },
+  {
+    "date": "2026-01-26",
+    "symbol": "BNAI",
+    "type": "breakout",
+    "entry": 65.0,
+    "targets": [
+      70.0,
+      75.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-26",
+    "symbol": "GXAI",
+    "type": "breakout",
+    "entry": 1.55,
+    "targets": [
+      1.65,
+      1.75
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-26",
+    "symbol": "VSA",
+    "type": "breakout",
+    "entry": 3.2,
+    "targets": [
+      3.45,
+      3.67
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-01-27",
+    "symbol": "SLV",
+    "type": "swing",
+    "entry": 120.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "4 week hold"
+  },
+  {
+    "date": "2026-01-30",
+    "symbol": "VIVS",
+    "type": "breakout",
+    "entry": 3.5,
+    "targets": [
+      3.78,
+      4.0
+    ],
+    "stop": 3.2,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-02-02",
+    "symbol": "BABA",
+    "type": "swing",
+    "entry": 165.0,
+    "targets": [
+      180.0,
+      190.0
+    ],
+    "stop": 159.0,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-02-02",
+    "symbol": "RMBS",
+    "type": "swing",
+    "entry": 120.0,
+    "targets": [
+      133.0,
+      140.0,
+      150.0
+    ],
+    "stop": 114.5,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-02-05",
+    "symbol": "NOW",
+    "type": "swing",
+    "entry": 80.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "98% renewal rate, everything under $80 very cheap"
+  },
+  {
+    "date": "2026-02-11",
+    "symbol": "CCHH",
+    "type": "breakout",
+    "entry": 2.0,
+    "targets": [
+      2.2,
+      2.4
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Premarket"
+  },
+  {
+    "date": "2026-02-11",
+    "symbol": "ELAB",
+    "type": "breakout",
+    "entry": 2.4,
+    "targets": [
+      2.65,
+      2.9
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-02-11",
+    "symbol": "SNAP",
+    "type": "swing",
+    "entry": 5.0,
+    "targets": [
+      8.0,
+      10.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "At $4-5 great price, largest social media platforms"
+  },
+  {
+    "date": "2026-02-11",
+    "symbol": "NFLX",
+    "type": "swing",
+    "entry": 60.0,
+    "targets": [
+      80.0,
+      110.0
+    ],
+    "stop": 40.0,
+    "source": "Nick",
+    "notes": "$40=too cheap, $60=undervalued, $80=fair, $110=target"
+  },
+  {
+    "date": "2026-02-20",
+    "symbol": "GLD",
+    "type": "options",
+    "entry": 6.4,
+    "targets": [
+      12.8
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "485C 3/6, hit 12.80"
+  },
+  {
+    "date": "2026-02-20",
+    "symbol": "SLV",
+    "type": "options",
+    "entry": 5.4,
+    "targets": [
+      8.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "80C 3/20, hit 8.50"
+  },
+  {
+    "date": "2026-02-23",
+    "symbol": "VIX",
+    "type": "options",
+    "entry": 2.1,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$22.0C 3/18"
+  },
+  {
+    "date": "2026-02-24",
+    "symbol": "CRCL",
+    "type": "swing",
+    "entry": 60.0,
+    "targets": [
+      90.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "USDC stablecoin, $14B market cap. Hit 90 in 3 days"
+  },
+  {
+    "date": "2026-02-25",
+    "symbol": "XWEL",
+    "type": "breakout",
+    "entry": 1.0,
+    "targets": [
+      1.1,
+      1.2
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Hit 1.50"
+  },
+  {
+    "date": "2026-02-25",
+    "symbol": "KIDZ",
+    "type": "breakout",
+    "entry": 0.1625,
+    "targets": [
+      0.17,
+      0.18
+    ],
+    "stop": 0.155,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-02-25",
+    "symbol": "XWEL",
+    "type": "breakout",
+    "entry": 0.9,
+    "targets": [
+      1.0,
+      1.1
+    ],
+    "stop": 0.82,
+    "source": "Nick",
+    "notes": "Updated entry"
+  },
+  {
+    "date": "2026-02-25",
+    "symbol": "HOOD",
+    "type": "swing",
+    "entry": 85.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "DKNG $20B comparison, $40-50s downside risk"
+  },
+  {
+    "date": "2026-02-25",
+    "symbol": "FIG",
+    "type": "swing",
+    "entry": 20.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "Director buying, AI ready. Up 12% next day"
+  },
+  {
+    "date": "2026-02-25",
+    "symbol": "UBER",
+    "type": "swing",
+    "entry": 60.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "CFO buying shares"
+  },
+  {
+    "date": "2026-02-25",
+    "symbol": "NOW",
+    "type": "swing",
+    "entry": 80.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "CEO+CFO cancelled selling plans, CEO buying"
+  },
+  {
+    "date": "2026-02-27",
+    "symbol": "HOOD",
+    "type": "swing",
+    "entry": 75.5,
+    "targets": [
+      84.8,
+      95.0
+    ],
+    "stop": 68.0,
+    "source": "Nick",
+    "notes": "Refined entry"
+  },
+  {
+    "date": "2026-02-27",
+    "symbol": "NU",
+    "type": "swing",
+    "entry": 14.8,
+    "targets": [
+      16.5
+    ],
+    "stop": 14.5,
+    "source": "Nick",
+    "notes": "Cathie Woods buying, gap up near 16.5"
+  },
+  {
+    "date": "2026-02-27",
+    "symbol": "SNAP",
+    "type": "options",
+    "entry": 0.19,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$5.50 call 3/20"
+  },
+  {
+    "date": "2026-02-27",
+    "symbol": "AMZN",
+    "type": "options",
+    "entry": 4.3,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "212.50 call 3/13"
+  },
+  {
+    "date": "2026-02-28",
+    "symbol": "FVRR",
+    "type": "swing",
+    "entry": 8.0,
+    "targets": [],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$300M company producing $100M pre-SBC, buyout candidate"
+  },
+  {
+    "date": "2026-02-28",
+    "symbol": "AAOI",
+    "type": "swing",
+    "entry": 78.0,
+    "targets": [
+      105.0,
+      150.0,
+      200.0
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "$3.89M options bet, CEO: demand till mid-2027"
+  },
+  {
+    "date": "2026-03-02",
+    "symbol": "EXFY",
+    "type": "swing",
+    "entry": 0.8,
+    "targets": [
+      1.1,
+      1.2,
+      2.0
+    ],
+    "stop": 0.5,
+    "source": "Nick",
+    "notes": "Revenue $35M/quarter, $61M cash. Risk 30c for 30-120c upside"
+  },
+  {
+    "date": "2026-03-03",
+    "symbol": "SMWB",
+    "type": "swing",
+    "entry": 2.4,
+    "targets": [
+      3.0,
+      4.0
+    ],
+    "stop": 1.8,
+    "source": "Nick",
+    "notes": "$72M cash, no debt, 80% gross margins, LLM data training contracts delayed"
+  },
+  {
+    "date": "2026-03-04",
+    "symbol": "DLXY",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      2.56,
+      2.67
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-03-04",
+    "symbol": "ASNS",
+    "type": "breakout",
+    "entry": 0.35,
+    "targets": [
+      0.38,
+      0.4
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": "ASNS - DLXY looks best here."
+  },
+  {
+    "date": "2026-03-05",
+    "symbol": "TURB",
+    "type": "breakout",
+    "entry": null,
+    "targets": [
+      2.87,
+      3.0,
+      3.25,
+      3.5,
+      3.8
+    ],
+    "stop": 2.35,
+    "source": "Nick",
+    "notes": "TURB clean - - - -"
+  },
+  {
+    "date": "2026-03-06",
+    "symbol": "PRSO",
+    "type": "breakout",
+    "entry": 1.9,
+    "targets": [
+      2.0,
+      2.1,
+      2.3,
+      2.5,
+      2.75
+    ],
+    "stop": 1.7,
+    "source": "Nick",
+    "notes": "PRSO break - - - -"
+  },
+  {
+    "date": "2026-03-09",
+    "symbol": "AZI",
+    "type": "breakout",
+    "entry": 0.67,
+    "targets": [
+      0.75,
+      0.85
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-03-09",
+    "symbol": "HIMS",
+    "type": "breakout",
+    "entry": 24.6,
+    "targets": [
+      25.5,
+      27.6
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  },
+  {
+    "date": "2026-03-09",
+    "symbol": "RLMD",
+    "type": "breakout",
+    "entry": 7.0,
+    "targets": [
+      7.5,
+      8.0,
+      8.5
+    ],
+    "stop": null,
+    "source": "Nick",
+    "notes": ""
+  }
 ]
