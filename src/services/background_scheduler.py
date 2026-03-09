@@ -104,7 +104,7 @@ def _run_smart_advisor_scan() -> bool:
     DEFAULT_AMOUNT = 10000
 
     try:
-        from src.services.smart_advisor import scan_and_score, run_full_analysis
+        from src.services.smart_advisor import scan_and_score, run_full_analysis, _filter_tase_rankings
         from src.services.market_data import _set_cache, _get_cached
         from src.services.persistence import save_scan, load_scan
 
@@ -121,7 +121,7 @@ def _run_smart_advisor_scan() -> bool:
             # Fresh scan failed — try in-memory cache
             cached = _get_cached("advisor:scan:1y")
             if isinstance(cached, list) and len(cached) >= 5:
-                rankings = cached
+                rankings = _filter_tase_rankings(cached)
                 source = "memory_cache"
                 logger.info("Scheduler: fresh scan returned %d stocks, using memory cache (%d)", 0, len(rankings))
 
@@ -130,7 +130,7 @@ def _run_smart_advisor_scan() -> bool:
             for period in PERIODS:
                 db_data = load_scan(f"smart_advisor_scan:{period}")
                 if db_data and isinstance(db_data, list) and len(db_data) >= 5:
-                    rankings = db_data
+                    rankings = _filter_tase_rankings(db_data)
                     source = f"db:{period}"
                     logger.info("Scheduler: using DB-persisted scan results from %s (%d stocks)", period, len(rankings))
                     break

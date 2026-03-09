@@ -35,6 +35,39 @@ PERIOD_DAYS = {"1m": 30, "3m": 90, "6m": 180, "1y": 365}
 CANDLE_LOOKBACK_DAYS = 420
 
 
+def _filter_tase_rankings(rankings: list[dict]) -> list[dict]:
+    """Remove .TA (TASE) stocks from advisor rankings.
+
+    TASE stocks have a dedicated data pipeline that always succeeds while
+    US sources rate-limit, causing Israeli stocks to dominate advisor results
+    on Render free tier.  This filter ensures cached/persisted results that
+    were computed before the ADVISOR_UNIVERSE change are also cleaned.
+    """
+    filtered = [r for r in rankings if not r.get("symbol", "").endswith(".TA")]
+    # Re-rank after filtering
+    for i, r in enumerate(filtered):
+        r["rank"] = i + 1
+    return filtered
+
+
+def _filter_tase_full_result(result: dict) -> dict:
+    """Strip .TA stocks from a full advisor analysis result (rankings + portfolios)."""
+    if not result:
+        return result
+    if result.get("rankings"):
+        result["rankings"] = _filter_tase_rankings(result["rankings"])
+    # Also filter portfolio holdings
+    for key in ("conservative", "balanced", "aggressive"):
+        port = (result.get("portfolios") or {}).get(key)
+        if port and port.get("holdings"):
+            port["holdings"] = [h for h in port["holdings"] if not h.get("symbol", "").endswith(".TA")]
+    # Filter recommended actions in advisor_report
+    report = result.get("advisor_report")
+    if report and report.get("actions"):
+        report["actions"] = [a for a in report["actions"] if not a.get("symbol", "").endswith(".TA")]
+    return result
+
+
 # ---------------------------------------------------------------------------
 # Step 1: Fetch + compute technical indicators for a single stock
 # ---------------------------------------------------------------------------
@@ -338,7 +371,12 @@ def scan_and_score(period: str = "1y") -> list[dict]:
     cache_key = f"advisor:scan:{period}"
     cached = _get_cached(cache_key)
     if isinstance(cached, list):
-        return cast(list[dict[str, Any]], cached)
+        # Filter .TA stocks from cached results (may be stale from before fix)
+        filtered = _filter_tase_rankings(cached)
+        if len(filtered) != len(cached):
+            logger.info("scan_and_score: filtered %d TASE stocks from cached results", len(cached) - len(filtered))
+            _set_cache(cache_key, filtered)
+        return cast(list[dict[str, Any]], filtered)
 
     # Try cached data first; if cache isn't warm enough, fetch a smaller set.
     # Use ADVISOR_UNIVERSE (no .TA stocks) to avoid TASE data-availability
@@ -833,7 +871,8 @@ def run_full_analysis(
     cache_key = f"advisor:full:{amount}:{risk}:{period}"
     cached = _get_cached(cache_key)
     if isinstance(cached, dict):
-        return cast(dict[str, Any], cached)
+        # Filter .TA stocks from cached full results (may be stale from before fix)
+        return cast(dict[str, Any], _filter_tase_full_result(cached))
 
     # If the user requested a non-default amount, try to scale from
     # the pre-computed default-amount result (instant, no API calls)
@@ -855,6 +894,7 @@ def run_full_analysis(
             db_key = f"smart_advisor_full:{int(amount)}:{risk}:{period}"
             db_data = load_scan(db_key)
             if db_data and isinstance(db_data, dict) and db_data.get("rankings"):
+                db_data = _filter_tase_full_result(db_data)
                 _set_cache(cache_key, db_data)
                 logger.info("run_full_analysis: restored %s from DB (on-demand fallback)", cache_key)
                 return db_data
@@ -863,6 +903,7 @@ def run_full_analysis(
                 db_base_key = f"smart_advisor_full:{DEFAULT_AMOUNT}:{risk}:{period}"
                 db_base = load_scan(db_base_key)
                 if db_base and isinstance(db_base, dict) and db_base.get("rankings"):
+                    db_base = _filter_tase_full_result(db_base)
                     scaled = _scale_result_for_amount(db_base, DEFAULT_AMOUNT, amount)
                     _set_cache(cache_key, scaled)
                     logger.info("run_full_analysis: restored+scaled %s from DB", cache_key)
