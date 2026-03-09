@@ -3,24 +3,24 @@ let adminCurrentPage = 1;
 let adminSearchTimeout = null;
 
 async function loadAdminPanel() {
-    try {
-        await loadAdminStats();
-    } catch (e) {
-        console.error("Admin stats error:", e);
+    // Fire all three independent loads in parallel
+    const [statsRes, usersRes, suggestionsRes] = await Promise.allSettled([
+        loadAdminStats(),
+        loadAdminUsers(),
+        loadAdminSuggestions(),
+    ]);
+    if (statsRes.status === "rejected") {
+        console.error("Admin stats error:", statsRes.reason);
         const c = document.getElementById("admin-stats");
-        if (c) c.innerHTML = `<div class="card" style="padding:20px;color:#ef4444">Failed to load stats: ${e.message}</div>`;
+        if (c) c.innerHTML = `<div class="card" style="padding:20px;color:#ef4444">Failed to load stats: ${statsRes.reason?.message || statsRes.reason}</div>`;
     }
-    try {
-        await loadAdminUsers();
-    } catch (e) {
-        console.error("Admin users error:", e);
+    if (usersRes.status === "rejected") {
+        console.error("Admin users error:", usersRes.reason);
         const tbody = document.getElementById("admin-users-body");
-        if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;text-align:center;padding:20px">Failed to load users: ${e.message}</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;text-align:center;padding:20px">Failed to load users: ${usersRes.reason?.message || usersRes.reason}</td></tr>`;
     }
-    try {
-        await loadAdminSuggestions();
-    } catch (e) {
-        console.error("Admin suggestions error:", e);
+    if (suggestionsRes.status === "rejected") {
+        console.error("Admin suggestions error:", suggestionsRes.reason);
     }
 }
 

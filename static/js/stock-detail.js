@@ -271,14 +271,21 @@ async function changeTimeframe(symbol, period, interval, btn) {
     btn.classList.add("active");
     _lastSpyHistory = null; // reset SPY cache on timeframe change
     try {
-        const history = await api.get(`/api/stock/${symbol}/history?period=${period}&interval=${interval}`);
-        if (history && history.close && history.close.length > 0) {
-            _lastHistory = history;
-            if (_spyOverlayActive) {
-                const spy = await api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`);
+        if (_spyOverlayActive) {
+            // Fetch stock + SPY history in parallel
+            const [history, spy] = await Promise.all([
+                api.get(`/api/stock/${symbol}/history?period=${period}&interval=${interval}`),
+                api.get(`/api/stock/SPY/history?period=${period}&interval=${interval}`),
+            ]);
+            if (history && history.close && history.close.length > 0) {
+                _lastHistory = history;
                 _lastSpyHistory = spy;
                 renderDetailChart(history, spy);
-            } else {
+            }
+        } else {
+            const history = await api.get(`/api/stock/${symbol}/history?period=${period}&interval=${interval}`);
+            if (history && history.close && history.close.length > 0) {
+                _lastHistory = history;
                 renderDetailChart(history);
             }
         }

@@ -214,47 +214,54 @@
         if (master) master.checked = checked;
     };
 
-    window.executeBundleBuy = async function () {
+    window.executeBundleBuy = function () {
         const overlay = document.getElementById("bundle-modal-overlay");
         if (!overlay || !overlay._stocks) return;
 
         const stocks = overlay._stocks;
         const checks = document.querySelectorAll(".bundle-check");
         const qtys = document.querySelectorAll(".bundle-qty");
-        let added = 0;
-        let failed = 0;
 
+        // Collect selected holdings
+        const holdings = [];
         for (let i = 0; i < checks.length; i++) {
             if (!checks[i].checked) continue;
             const s = stocks[i];
             const qty = parseFloat(qtys[i].value) || 1;
-
-            try {
-                await api.post("/api/portfolio/holdings", {
-                    symbol: s.symbol,
-                    name: s.name || s.symbol,
-                    quantity: qty,
-                    buy_price: s.price || 0,
-                    buy_date: new Date().toISOString().split("T")[0],
-                    notes: "Added via bundle buy",
-                });
-                added++;
-            } catch (e) {
-                failed++;
-                console.warn(`Failed to add ${s.symbol}:`, e);
-            }
+            holdings.push({
+                symbol: s.symbol,
+                name: s.name || s.symbol,
+                quantity: qty,
+                buy_price: s.price || 0,
+                buy_date: new Date().toISOString().split("T")[0],
+                notes: "Added via bundle buy",
+            });
         }
 
+        if (holdings.length === 0) {
+            if (typeof showToast === "function") showToast("No stocks selected", "error");
+            return;
+        }
+
+        // Close modal immediately — work happens in background
         overlay.classList.remove("open");
+        if (typeof showToast === "function") showToast(`Adding ${holdings.length} stocks…`, "info");
 
-        if (typeof showToast === "function") {
-            if (added > 0 && failed === 0) {
-                showToast(`${added} stocks added to portfolio!`);
-            } else if (added > 0) {
-                showToast(`${added} added, ${failed} failed`, "info");
-            } else {
-                showToast("No stocks were added", "error");
-            }
-        }
+        // Fire bulk request in background (no await — user is free)
+        api.post("/api/portfolio/holdings/bulk", { holdings })
+            .then((res) => {
+                if (typeof showToast === "function") {
+                    if (res.added > 0 && res.failed === 0) {
+                        showToast(`✓ ${res.added} stocks added to portfolio!`);
+                    } else if (res.added > 0) {
+                        showToast(`${res.added} added, ${res.failed} failed`, "info");
+                    } else {
+                        showToast("No stocks were added", "error");
+                    }
+                }
+            })
+            .catch(() => {
+                if (typeof showToast === "function") showToast("Bundle buy failed", "error");
+            });
     };
 })();

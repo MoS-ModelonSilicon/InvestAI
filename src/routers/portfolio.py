@@ -68,6 +68,30 @@ def remove_holding(holding_id: int, db: Session = Depends(get_db), user: User = 
     return {"ok": True}
 
 
+class BulkAddRequest(BaseModel):
+    holdings: list[HoldingCreate]
+
+
+@router.post("/holdings/bulk")
+def bulk_add_holdings(
+    payload: BulkAddRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
+    """Add multiple holdings in a single transaction."""
+    if not payload.holdings:
+        return {"ok": True, "added": 0, "failed": 0}
+    added = 0
+    failed = 0
+    for h in payload.holdings:
+        try:
+            holding = Holding(**h.model_dump(), user_id=user.id)
+            db.add(holding)
+            added += 1
+        except Exception:
+            failed += 1
+    db.commit()
+    return {"ok": True, "added": added, "failed": failed}
+
+
 class BulkDeleteRequest(BaseModel):
     ids: list[int]
 
