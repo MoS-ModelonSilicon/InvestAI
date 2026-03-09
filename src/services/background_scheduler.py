@@ -28,6 +28,7 @@ MARKET_DATA_INTERVAL = 120  # 2 min  — lightweight (quotes + sparklines)
 NEWS_INTERVAL = 900  # 15 min — 8 Finnhub calls
 SMART_ADVISOR_INTERVAL = 900  # 15 min — heavy scan (40-80 candles)
 CACHE_SNAPSHOT_INTERVAL = 600  # 10 min — persist market cache to DB
+AUTOPILOT_INTERVAL = 1800      # 30 min — Smart Portfolios warmup
 
 
 # ── Individual scan runners ──────────────────────────────────
@@ -239,6 +240,19 @@ def _run_cache_snapshot() -> bool:
         return False
 
 
+def _run_autopilot_warmup() -> bool:
+    """Pre-compute Smart Portfolios for all profile/period/amount combos."""
+    try:
+        from src.services.autopilot import run_full_warmup
+        logger.info("Scheduler: starting autopilot warmup")
+        run_full_warmup()
+        logger.info("Scheduler: autopilot warmup complete")
+        return True
+    except Exception:
+        logger.exception("Scheduler: autopilot warmup failed")
+        return False
+
+
 # ── Main loop ────────────────────────────────────────────────
 def _scheduler_loop():
     """Blocking loop run inside a daemon thread."""
@@ -262,6 +276,9 @@ def _scheduler_loop():
     _run_smart_advisor_scan()  # smart advisor (heaviest but most important)
     if _stop_event.wait(timeout=10):
         return
+    _run_autopilot_warmup()   # Smart Portfolios pre-computation
+    if _stop_event.wait(timeout=10):
+        return
     _run_market_data_refresh()  # ~10 quote + 6 sparkline calls
     if _stop_event.wait(timeout=10):
         return
@@ -279,6 +296,7 @@ def _scheduler_loop():
     last_news = time.time()
     last_smart = time.time()
     last_snapshot = time.time()
+    last_autopilot = time.time()
 
     while not _stop_event.is_set():
         now = time.time()
@@ -306,6 +324,10 @@ def _scheduler_loop():
         if now - last_snapshot >= CACHE_SNAPSHOT_INTERVAL:
             _run_cache_snapshot()
             last_snapshot = time.time()
+
+        if now - last_autopilot >= AUTOPILOT_INTERVAL:
+            _run_autopilot_warmup()
+            last_autopilot = time.time()
 
         # Sleep in small increments so stop_event is responsive
         _stop_event.wait(timeout=30)
