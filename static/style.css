@@ -4841,6 +4841,66 @@ body {
 .pk-status-open { background: rgba(234,179,8,.15); color: var(--yellow); }
 .pk-status-nodata { background: rgba(100,116,139,.12); color: var(--text-muted); }
 
+/* ── Source filter buttons ──────────────────────── */
+.pk-source-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+.pk-source-btn {
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: .82em;
+    cursor: pointer;
+    transition: all .15s;
+}
+.pk-source-btn:hover { border-color: var(--primary); color: var(--text); }
+.pk-source-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+.pk-filter-group-label {
+    font-size: .78em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-right: 2px;
+    font-weight: 600;
+}
+
+/* ── Source badges in table ─────────────────────── */
+.pk-src {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: .78em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.pk-src-discord { background: rgba(88,101,242,.12); color: #5865f2; }
+.pk-src-reddit { background: rgba(255,69,0,.12); color: #ff4500; }
+.pk-src-tradingview { background: rgba(33,150,243,.12); color: #2196f3; }
+.pk-src-finviz { background: rgba(0,150,136,.12); color: #009688; }
+.pk-src-nick, .pk-src-unknown { background: rgba(100,116,139,.12); color: var(--text-muted); }
+
+/* source info strip */
+.pk-source-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    font-size: .8em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+.pk-src-badge { font-weight: 600; }
+.pk-src-refresh { opacity: .7; }
+
 /* ── Picks Tracker Toolbar ──────────────────────── */
 .pk-toolbar {
     display: flex;

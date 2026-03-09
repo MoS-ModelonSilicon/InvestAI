@@ -465,23 +465,36 @@
         <!-- ─── Picks Tracker ─────────────────────────── -->
         <section id="page-picks-tracker" class="page">
             <div class="page-header">
-                <h1>Picks Tracker <span style="font-size:.55em;color:var(--text-muted);">Community Alerts Backtested</span></h1>
-                <button class="btn btn-primary" id="pk-seed-btn" onclick="seedWatchlistFromPicks()">Add All to Watchlist</button>
+                <h1>Picks Tracker <span style="font-size:.55em;color:var(--text-muted);">Multi-Source Alerts Backtested</span></h1>
+                <div>
+                    <button class="btn btn-secondary" id="pk-refresh-btn" onclick="refreshPicksSources()" title="Fetch fresh picks from Reddit, TradingView, Finviz">&#x1F504; Refresh Sources</button>
+                    <button class="btn btn-primary" id="pk-seed-btn" onclick="seedWatchlistFromPicks()">Add All to Watchlist</button>
+                </div>
             </div>
-            <p class="pk-subtitle">Every trade alert from the Discord backtested against real market data. See what actually hit targets, what got stopped out, and the real win rate.</p>
+            <p class="pk-subtitle">Trade alerts from Discord, Reddit, TradingView &amp; Finviz — backtested against real market data. See what actually hit targets, what got stopped out, and the real win rate.</p>
             <div class="page-search-bar">
                 <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                <input type="text" id="picks-search" placeholder="Search picks by symbol or type..." oninput="filterPicks(this.value)">
+                <input type="text" id="picks-search" placeholder="Search picks by symbol, type, or source..." oninput="filterPicks(this.value)">
                 <button class="search-clear" onclick="clearPageSearch('picks-search', filterPicks)">&times;</button>
             </div>
             <div class="pk-controls">
                 <div class="pk-filters">
+                    <span class="pk-filter-group-label">Type:</span>
                     <button class="pk-filter-btn active" data-type="all" onclick="setPicksFilter(null)">All</button>
                     <button class="pk-filter-btn" data-type="breakout" onclick="setPicksFilter('breakout')">Breakout</button>
                     <button class="pk-filter-btn" data-type="swing" onclick="setPicksFilter('swing')">Swing</button>
                     <button class="pk-filter-btn" data-type="options" onclick="setPicksFilter('options')">Options</button>
                 </div>
+                <div class="pk-filters pk-source-filters">
+                    <span class="pk-filter-group-label">Source:</span>
+                    <button class="pk-source-btn active" data-source="all" onclick="setPicksSource(null)">All</button>
+                    <button class="pk-source-btn" data-source="discord" onclick="setPicksSource('discord')">&#x1F4AC; Discord</button>
+                    <button class="pk-source-btn" data-source="reddit" onclick="setPicksSource('reddit')">&#x1F916; Reddit</button>
+                    <button class="pk-source-btn" data-source="tradingview" onclick="setPicksSource('tradingview')">&#x1F4C8; TradingView</button>
+                    <button class="pk-source-btn" data-source="finviz" onclick="setPicksSource('finviz')">&#x1F50D; Finviz</button>
+                </div>
             </div>
+            <div class="pk-source-info" id="pk-source-info"></div>
             <div class="pk-stats-row" id="picks-stats-row"></div>
             <div id="picks-results">
                 <div class="empty-state"><p>Click a filter or navigate here to load picks data.</p></div>

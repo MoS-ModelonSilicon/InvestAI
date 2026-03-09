@@ -577,3 +577,19 @@ def startup():
         from src.services.background_scheduler import start_background_scheduler
 
         start_background_scheduler()
+
+        # Start picks multi-source scraper scheduler (fetches Reddit, TradingView, Finviz)
+        try:
+            from src.services.scrapers.pipeline import (
+                seed_db_from_json,
+                start_background_scheduler as start_picks_scheduler,
+            )
+
+            # One-time: import legacy discord-picks.json into the database
+            seed_db_from_json()
+
+            start_picks_scheduler()
+        except Exception:
+            import logging
+
+            logging.getLogger("investai").exception("Failed to start picks scraper scheduler")
