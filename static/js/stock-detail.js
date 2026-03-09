@@ -165,8 +165,8 @@ function renderStockDetail(info, history, news) {
             <div class="sd-timeframes" id="sd-timeframes"></div>
             <button class="sd-tf sd-spy-toggle" id="spy-toggle-btn" onclick="toggleSpyOverlay('${info.symbol}')" style="margin-left:auto">vs SPY</button>
             <div class="sd-zoom-controls">
-                <button class="sd-zoom-btn" onclick="chartZoom(-1)" title="Zoom in">+</button>
-                <button class="sd-zoom-btn" onclick="chartZoom(1)" title="Zoom out">&minus;</button>
+                <button class="sd-zoom-btn" onclick="chartZoom(1)" title="Zoom in">+</button>
+                <button class="sd-zoom-btn" onclick="chartZoom(-1)" title="Zoom out">&minus;</button>
                 <button class="sd-zoom-btn sd-zoom-reset" onclick="chartZoom(0)" title="Reset zoom">⟳</button>
             </div>
         </div>
@@ -288,9 +288,12 @@ function setChartType(type, symbol) {
 
 /* ── Chart Zoom ─────────────────────────────────────────────── */
 function chartZoom(dir) {
-    // dir: -1 = zoom in, 1 = zoom out, 0 = reset
+    // dir: 1 = zoom in (more detail), -1 = zoom out (wider view), 0 = reset
     if (dir === 0) { _zoomLevel = 1; }
-    else { _zoomLevel = Math.max(0.1, Math.min(5, _zoomLevel + dir * 0.3)); }
+    else {
+        const step = _zoomLevel >= 5 ? 0.8 : _zoomLevel >= 2 ? 0.5 : 0.3;
+        _zoomLevel = Math.max(0.1, Math.min(20, _zoomLevel + dir * step));
+    }
     localStorage.setItem("sd-zoom", String(_zoomLevel));
     _applyZoom();
 }
