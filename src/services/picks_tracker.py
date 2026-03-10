@@ -45,9 +45,7 @@ def _sanitize_dict(d: dict) -> dict:
         if isinstance(v, dict):
             out[k] = _sanitize_dict(v)
         elif isinstance(v, list):
-            out[k] = [
-                _sanitize_dict(i) if isinstance(i, dict) else _sanitize(i) for i in v
-            ]
+            out[k] = [_sanitize_dict(i) if isinstance(i, dict) else _sanitize(i) for i in v]
         else:
             out[k] = _sanitize(v)
     return out
