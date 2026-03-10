@@ -1649,3 +1649,34 @@ class TestPublicStockPages:
         anon = TestClient(app, raise_server_exceptions=False, base_url="https://testserver")
         r = anon.get("/api/public/stock/123BAD")
         assert r.status_code == 400
+
+
+# ── Dividend Analysis Grades ─────────────────────────────────
+class TestDividendAnalysis:
+    """Dividend grading endpoints return correct structure."""
+
+    @pytest.fixture(autouse=True, scope="class")
+    def setup_auth(self):
+        type(self).c, type(self).email = _register_and_login()
+
+    def test_dividend_grades_list(self):
+        r = _authed_get("/api/dividends", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert "items" in data
+        assert isinstance(data["items"], list)
+        assert "count" in data
+
+    def test_dividend_grades_custom_symbols(self):
+        r = _authed_get("/api/dividends?symbols=AAPL,MSFT", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert isinstance(data["items"], list)
+
+    def test_dividend_single_symbol(self):
+        r = _authed_get("/api/dividends/AAPL", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["symbol"] == "AAPL"
+        assert "overall" in data
+        assert "grade" in data["overall"]
