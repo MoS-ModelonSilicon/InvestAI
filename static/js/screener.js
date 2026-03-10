@@ -3,9 +3,49 @@ let _lastResults = [];
 let _scrPage = 1;
 const _scrPerPage = 50;
 let _scrDebounce = null;
+let _activeChip = null;  // currently active chip name, or null
+
+/* ── Chip filter definitions ─────────────────── */
+const CHIP_FILTERS = {
+    buy_rated:        { signal: "Buy" },
+    mega_cap:         { asset_type: "Stock", market_cap_min: 200 },
+    high_growth:      { asset_type: "Stock", revenue_growth_min: 20 },
+    dividend_payers:  { dividend_yield_min: 3 },
+    near_52w_low:     { asset_type: "Stock", pct_from_high_max: -30 },
+    top_gainers:      { asset_type: "Stock", year_change_min: 50 },
+    high_quality:     { asset_type: "Stock", profit_margin_min: 15, return_on_equity_min: 18, debt_to_equity_max: 100 },
+    low_vol:          { beta_max: 0.8 },
+    garp:             { asset_type: "Stock", earnings_growth_min: 15, pe_max: 25 },
+    turnaround:       { asset_type: "Stock", year_change_max: -20, signal: "Buy" },
+    etfs_only:        { asset_type: "ETF" },
+    tech:             { asset_type: "Stock", sector: "Technology" },
+    high_upside:      { asset_type: "Stock", year_change_min: -999 },  // placeholder — real filter is on analyst_targets (client hint)
+    beaten_down:      { asset_type: "Stock", year_change_max: -20 },
+    mid_cap:          { asset_type: "Stock", market_cap_min: 2, market_cap_max: 10 },
+    small_cap:        { asset_type: "Stock", market_cap_max: 2 },
+    deep_value:       { asset_type: "Stock", pe_max: 12, dividend_yield_min: 0.01 },
+    low_pe:           { pe_max: 15 },
+    high_beta:        { beta_min: 1.5 },
+    near_52w_high:    { asset_type: "Stock", pct_from_high_min: -5 },
+    safe_haven:       { beta_max: 0.8, dividend_yield_min: 2, signal: "Buy" },
+    cash_machines:    { asset_type: "Stock", profit_margin_min: 20 },
+    low_debt:         { asset_type: "Stock", debt_to_equity_max: 50 },
+    yield_5plus:      { dividend_yield_min: 5 },
+    healthcare:       { asset_type: "Stock", sector: "Healthcare" },
+    financials:       { asset_type: "Stock", sector: "Financial Services" },
+    energy:           { asset_type: "Stock", sector: "Energy" },
+    international:    { asset_type: "Stock", region_not: "US" },
+    india:            { asset_type: "Stock", region: "India" },
+    hyper_growth:     { asset_type: "Stock", revenue_growth_min: 40 },
+    fallen_angels:    { asset_type: "Stock", year_change_max: -25, profit_margin_min: 5 },
+    boring_beautiful: { asset_type: "Stock", beta_max: 0.7, dividend_yield_min: 2, debt_to_equity_max: 80, profit_margin_min: 10 },
+    avoid_rated:      { signal: "Avoid" },
+};
 
 /* ── Global search helpers ─── */
 function onScreenerSearchInput() {
+    // If user starts typing in search, deactivate any chip
+    clearActiveChip();
     const val = document.getElementById("scr-query").value.trim();
     const clearBtn = document.getElementById("scr-query-clear");
     const hint = document.getElementById("scr-search-hint");
@@ -50,6 +90,7 @@ async function initScreener() {
         }
         screenerLoaded = true;
     }
+    initChipBar();
     checkCacheStatus();
 }
 
@@ -89,18 +130,27 @@ async function runScreener(page) {
 
     const params = new URLSearchParams();
     const v = (id) => document.getElementById(id).value;
-    if (v("scr-query")) params.set("query", v("scr-query").trim());
-    if (v("scr-asset-type")) params.set("asset_type", v("scr-asset-type"));
-    if (v("scr-sector")) params.set("sector", v("scr-sector"));
-    if (v("scr-region")) params.set("region", v("scr-region"));
-    if (v("scr-mcap-min")) params.set("market_cap_min", v("scr-mcap-min"));
-    if (v("scr-mcap-max")) params.set("market_cap_max", v("scr-mcap-max"));
-    if (v("scr-pe-min")) params.set("pe_min", v("scr-pe-min"));
-    if (v("scr-pe-max")) params.set("pe_max", v("scr-pe-max"));
-    if (v("scr-div-min")) params.set("dividend_yield_min", v("scr-div-min"));
-    if (v("scr-beta-min")) params.set("beta_min", v("scr-beta-min"));
-    if (v("scr-beta-max")) params.set("beta_max", v("scr-beta-max"));
-    if (v("scr-signal")) params.set("signal", v("scr-signal"));
+
+    // If a chip is active, use chip params instead of sidebar
+    if (_activeChip && CHIP_FILTERS[_activeChip]) {
+        const chipParams = CHIP_FILTERS[_activeChip];
+        for (const [key, val] of Object.entries(chipParams)) {
+            params.set(key, val);
+        }
+    } else {
+        if (v("scr-query")) params.set("query", v("scr-query").trim());
+        if (v("scr-asset-type")) params.set("asset_type", v("scr-asset-type"));
+        if (v("scr-sector")) params.set("sector", v("scr-sector"));
+        if (v("scr-region")) params.set("region", v("scr-region"));
+        if (v("scr-mcap-min")) params.set("market_cap_min", v("scr-mcap-min"));
+        if (v("scr-mcap-max")) params.set("market_cap_max", v("scr-mcap-max"));
+        if (v("scr-pe-min")) params.set("pe_min", v("scr-pe-min"));
+        if (v("scr-pe-max")) params.set("pe_max", v("scr-pe-max"));
+        if (v("scr-div-min")) params.set("dividend_yield_min", v("scr-div-min"));
+        if (v("scr-beta-min")) params.set("beta_min", v("scr-beta-min"));
+        if (v("scr-beta-max")) params.set("beta_max", v("scr-beta-max"));
+        if (v("scr-signal")) params.set("signal", v("scr-signal"));
+    }
     params.set("page", _scrPage);
     params.set("per_page", _scrPerPage);
 
@@ -333,6 +383,8 @@ function clearScreener() {
     if (hint) hint.style.display = "none";
     const filtersEl = document.querySelector(".screener-filters");
     if (filtersEl) filtersEl.classList.remove("filters-dimmed");
+    // Clear active chip
+    clearActiveChip();
 }
 
 async function addToWLFromScreener(symbol, name) {
@@ -374,4 +426,71 @@ function applyPreset(name) {
         document.getElementById("scr-asset-type").value = "Stock";
     }
     runScreener();
+}
+
+/* ── Chip bar logic ──────────────────────────── */
+
+function initChipBar() {
+    const chips = document.querySelectorAll(".scr-chip");
+    chips.forEach(chip => {
+        chip.addEventListener("click", () => {
+            const name = chip.dataset.chip;
+            if (name === "_toggle_more") {
+                toggleMoreChips(chip);
+                return;
+            }
+            toggleChip(name);
+        });
+    });
+}
+
+function toggleMoreChips(btn) {
+    const extra = document.getElementById("scr-chip-row-extra");
+    if (!extra) return;
+    const visible = extra.style.display !== "none";
+    extra.style.display = visible ? "none" : "flex";
+    btn.textContent = visible ? "More ▾" : "Less ▴";
+    btn.classList.toggle("scr-chip-active", !visible);
+}
+
+function toggleChip(name) {
+    if (_activeChip === name) {
+        // Deactivate — go back to no filter
+        clearActiveChip();
+        // Clear results
+        const resultsEl = document.getElementById("scr-results-area");
+        const empty = document.getElementById("scr-empty");
+        const countEl = document.getElementById("scr-result-count");
+        const pagEl = document.getElementById("scr-pagination");
+        if (resultsEl) resultsEl.innerHTML = "";
+        if (empty) { empty.style.display = "block"; empty.innerHTML = `<p>Use the filters or presets on the left, then click "Search" to find stocks and ETFs.</p>`; }
+        if (countEl) countEl.textContent = "";
+        if (pagEl) pagEl.innerHTML = "";
+        return;
+    }
+    // Activate this chip
+    clearActiveChip();
+    _activeChip = name;
+    // Highlight the chip
+    const btn = document.querySelector(`.scr-chip[data-chip="${name}"]`);
+    if (btn) btn.classList.add("scr-chip-active");
+    // Clear sidebar filters (chip overrides them)
+    ["scr-query", "scr-asset-type", "scr-sector", "scr-region", "scr-mcap-min", "scr-mcap-max", "scr-pe-min", "scr-pe-max", "scr-div-min", "scr-beta-min", "scr-beta-max", "scr-signal"]
+        .forEach((id) => { const el = document.getElementById(id); if (el) el.value = ""; });
+    // Dim sidebar while chip is active
+    const filtersEl = document.querySelector(".screener-filters");
+    if (filtersEl) filtersEl.classList.add("filters-dimmed");
+    // Dim search bar
+    const chipBar = document.getElementById("scr-chip-bar");
+    if (chipBar) chipBar.classList.remove("chips-dimmed");
+    runScreener();
+}
+
+function clearActiveChip() {
+    _activeChip = null;
+    document.querySelectorAll(".scr-chip").forEach(c => {
+        if (c.dataset.chip !== "_toggle_more") c.classList.remove("scr-chip-active");
+    });
+    const filtersEl = document.querySelector(".screener-filters");
+    if (filtersEl) filtersEl.classList.remove("filters-dimmed");
 }
