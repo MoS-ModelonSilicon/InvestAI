@@ -146,6 +146,7 @@ function navigateTo(page, pushState = true) {
     if (page === "dca") loadDca();
     if (page === "admin") loadAdminPanel();
     if (page === "heatmap") loadHeatmap();
+    if (page === "dividends") loadDividends();
 }
 
 async function loadCategories() {

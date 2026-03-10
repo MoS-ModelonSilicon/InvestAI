@@ -7941,3 +7941,147 @@ body.tour-active { overflow: hidden; }
     }
 }
 
+/* ═══════════════════════════════════════════════════════════
+   DIVIDEND ANALYSIS GRADES
+   ═══════════════════════════════════════════════════════════ */
+.div-subtitle {
+    color: var(--text-muted);
+    margin: 0 0 16px;
+    font-size: 0.95rem;
+}
+.div-table-wrap { overflow-x: auto; }
+.div-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.div-table th, .div-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.div-table th {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+}
+.div-sortable { cursor: pointer; }
+.div-sortable:hover { color: var(--accent); }
+.div-row { cursor: pointer; transition: background 0.15s; }
+.div-row:hover { background: var(--bg-hover, rgba(99,102,241,0.06)); }
+.div-symbol { font-weight: 700; color: var(--accent); }
+.div-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.div-sector { color: var(--text-muted); font-size: 0.85rem; }
+
+/* Grade badges */
+.div-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.82rem;
+    min-width: 50px;
+    text-align: center;
+}
+.div-badge-lg {
+    display: inline-block;
+    padding: 8px 24px;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 2rem;
+}
+.div-score-lg {
+    font-size: 1.4rem;
+    color: var(--text-primary);
+    margin-left: 12px;
+    font-weight: 600;
+}
+
+/* Detail view */
+.div-detail { max-width: 900px; }
+.div-back-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 4px 0;
+    margin-bottom: 12px;
+}
+.div-back-btn:hover { text-decoration: underline; }
+.div-detail-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.div-detail-header h2 { margin: 0; }
+.div-sector-tag, .div-yield-tag, .div-price {
+    background: var(--bg-secondary);
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.div-yield-tag { color: var(--green, #22c55e); font-weight: 600; }
+.div-overall-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+.div-overall-label {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+}
+.div-grades-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.div-grade-card {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+}
+.div-grade-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.div-grade-icon { font-size: 1.3rem; }
+.div-grade-label { font-weight: 600; flex: 1; }
+.div-grade-details {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.div-grade-details li {
+    padding: 3px 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+.div-grade-details li:last-child { border-bottom: none; }
+.div-view-stock { margin-top: 8px; }
+
+@media (max-width: 768px) {
+    .div-grades-grid { grid-template-columns: 1fr; }
+    .div-detail-header { flex-direction: column; align-items: flex-start; }
+}
+
