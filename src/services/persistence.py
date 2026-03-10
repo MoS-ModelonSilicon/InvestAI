@@ -175,20 +175,38 @@ def save_market_cache_snapshot(cache: dict) -> bool:
 
     Only persists entries whose keys start with PERSIST_PREFIXES.
     Saves as a single JSON blob under key "market_cache_snapshot".
+
+    Merges with existing DB entries so that short-lived Render free-tier
+    instances accumulate data across restarts instead of losing it.
     """
     try:
         now = time.time()
-        snapshot = {}
+
+        # Load existing DB snapshot to merge with (accumulate across restarts)
+        existing = load_scan("market_cache_snapshot")
+        if not existing or not isinstance(existing, dict):
+            existing = {}
+
+        # Start from existing, then overlay new entries (newer wins)
+        merged = dict(existing)
         for k, (ts, data) in cache.items():
             if any(k.startswith(p) for p in PERSIST_PREFIXES):
-                # Only save entries that aren't too old (< 2 hours)
                 if now - ts < 7200:
-                    snapshot[k] = {"ts": ts, "data": data}
+                    merged[k] = {"ts": ts, "data": data}
 
-        if not snapshot:
+        # Prune entries older than 2 hours from the merged snapshot
+        merged = {k: v for k, v in merged.items() if now - v.get("ts", 0) < 7200}
+
+        if not merged:
             return True
 
-        return save_scan("market_cache_snapshot", snapshot)
+        logger.info(
+            "Saving market cache: %d entries (was %d in DB, %d new from memory)",
+            len(merged),
+            len(existing),
+            len(merged) - len(existing),
+        )
+        return save_scan("market_cache_snapshot", merged)
     except Exception:
         logger.exception("Failed to save market cache snapshot")
         return False
