@@ -42,6 +42,7 @@ from src.routers import (
     dca,
     admin,
     assistant,
+    public_stock,
 )
 
 import time as _time, logging as _logging
@@ -184,6 +185,7 @@ app.include_router(picks_tracker.router)
 app.include_router(dca.router)
 app.include_router(admin.router)
 app.include_router(assistant.router)
+app.include_router(public_stock.router)
 
 
 # ── Health / version check (public, no auth) ─────────────────
