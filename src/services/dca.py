@@ -18,7 +18,7 @@ from datetime import datetime, date, timedelta
 from sqlalchemy.orm import Session
 
 from src.models import DcaPlan, DcaExecution, Holding, RiskProfile
-from src.services.market_data import fetch_stock_info
+from src.services.market_data import fetch_stock_info, fetch_batch
 from src.services.data_provider import get_candles
 
 logger = logging.getLogger(__name__)
@@ -228,6 +228,12 @@ def get_dca_dashboard(db: Session, user_id: int) -> dict:
     holdings = db.query(Holding).filter(Holding.user_id == user_id).all()
 
     active_plans = [p for p in plans if p.active]
+
+    # Pre-fetch all needed symbols in parallel so subsequent
+    # fetch_stock_info calls hit the in-memory cache instantly.
+    all_symbols = list({p.symbol for p in active_plans} | {h.symbol for h in holdings})
+    if all_symbols:
+        fetch_batch(all_symbols)
 
     # Find opportunities (dipped stocks)
     opportunities = []
@@ -743,6 +749,12 @@ def get_rebalance_suggestions(db: Session, user_id: int) -> list[dict]:
 
     if not holdings or not plans:
         return []
+
+    # Pre-fetch all holding symbols in parallel (may already be cached
+    # from get_dca_dashboard, but this covers standalone calls too).
+    holding_symbols = list({h.symbol for h in holdings})
+    if holding_symbols:
+        fetch_batch(holding_symbols)
 
     # Calculate current portfolio weights
     symbol_values: dict[str, float] = {}

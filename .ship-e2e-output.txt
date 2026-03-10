@@ -17,7 +17,7 @@ tests/test_live_site.py::TestPerformance::test_dashboard_loads_after_login[chrom
 
 ================================== FAILURES ===================================
 _____ TestStockDetail.test_stock_detail_opens_from_market_card[chromium] ______
-tests\test_live_site.py:93: in test_stock_detail_opens_from_market_card
+tests\test_live_site.py:103: in test_stock_detail_opens_from_market_card
     cards.first.click()
 ..\..\..\..\AppData\Roaming\Python\Python314\site-packages\playwright\sync_api\_generated.py:15631: in click
     self._sync(
@@ -33,54 +33,54 @@ tests\test_live_site.py:93: in test_stock_detail_opens_from_market_card
 E   playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
 E   Call log:
 E     - waiting for locator(".market-card").first
-E       - locator resolved to <div data-symbol="AAPL" data-stock-price="257.46" data-stock-name="Apple Inc" class="market-card stock-down" onclick="navigateToStock('AAPL')">à</div>
+E       - locator resolved to <div data-symbol="AAPL" data-stock-price="256.54" data-stock-name="Apple Inc" class="market-card stock-down" onclick="navigateToStock('AAPL')">à</div>
 E     - attempting click action
 E       2 ╫ waiting for element to be visible, enabled and stable
 E         - element is visible, enabled and stable
 E         - scrolling into view if needed
 E         - done scrolling
-E         - <div class="tour-overlay open"></div> intercepts pointer events
+E         - <div class="tour-overlay"></div> intercepts pointer events
 E       - retrying click action
 E       - waiting 20ms
 E       2 ╫ waiting for element to be visible, enabled and stable
 E         - element is visible, enabled and stable
 E         - scrolling into view if needed
 E         - done scrolling
-E         - <div class="tour-overlay open"></div> intercepts pointer events
+E         - <div class="tour-overlay"></div> intercepts pointer events
 E       - retrying click action
 E         - waiting 100ms
 E       55 ╫ waiting for element to be visible, enabled and stable
 E          - element is visible, enabled and stable
 E          - scrolling into view if needed
 E          - done scrolling
-E          - <div class="tour-overlay open"></div> intercepts pointer events
+E          - <div class="tour-overlay"></div> intercepts pointer events
 E        - retrying click action
 E          - waiting 500ms
 =========================== short test summary info ===========================
 FAILED tests/test_live_site.py::TestStockDetail::test_stock_detail_opens_from_market_card[chromium] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
 Call log:
   - waiting for locator(".market-card").first
-    - locator resolved to <div data-symbol="AAPL" data-stock-price="257.46" data-stock-name="Apple Inc" class="market-card stock-down" onclick="navigateToStock('AAPL')">à</div>
+    - locator resolved to <div data-symbol="AAPL" data-stock-price="256.54" data-stock-name="Apple Inc" class="market-card stock-down" onclick="navigateToStock('AAPL')">à</div>
   - attempting click action
     2 ╫ waiting for element to be visible, enabled and stable
       - element is visible, enabled and stable
       - scrolling into view if needed
       - done scrolling
-      - <div class="tour-overlay open"></div> intercepts pointer events
+      - <div class="tour-overlay"></div> intercepts pointer events
     - retrying click action
     - waiting 20ms
     2 ╫ waiting for element to be visible, enabled and stable
       - element is visible, enabled and stable
       - scrolling into view if needed
       - done scrolling
-      - <div class="tour-overlay open"></div> intercepts pointer events
+      - <div class="tour-overlay"></div> intercepts pointer events
     - retrying click action
       - waiting 100ms
     55 ╫ waiting for element to be visible, enabled and stable
        - element is visible, enabled and stable
        - scrolling into view if needed
        - done scrolling
-       - <div class="tour-overlay open"></div> intercepts pointer events
+       - <div class="tour-overlay"></div> intercepts pointer events
      - retrying click action
        - waiting 500ms
-============ 1 failed, 3 passed, 98 deselected in 74.60s (0:01:14) ============
+============ 1 failed, 3 passed, 98 deselected in 77.22s (0:01:17) ============

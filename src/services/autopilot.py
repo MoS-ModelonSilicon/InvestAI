@@ -297,7 +297,10 @@ def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict
     Returns daily portfolio values, benchmark values, holdings breakdown,
     and performance statistics.
     """
-    cache_key = f"autopilot:{profile_id}:{amount}:{period}"
+    # Normalize amount to int when it's a whole number so cache keys match
+    # between the API (float 10000.0) and scheduler (int 10000).
+    amt_key = int(amount) if amount == int(amount) else amount
+    cache_key = f"autopilot:{profile_id}:{amt_key}:{period}"
 
     # Fast path: module-level sim cache (populated by scheduler/persistence)
     with _sim_lock:
