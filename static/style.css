@@ -7778,3 +7778,164 @@ body.tour-active { overflow: hidden; }
     }
     #ai-chat-fab { bottom: 16px; right: 16px; }
 }
+
+/* ── Heatmap page ───────────────────────────────────────────── */
+.hm-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.hm-view-btns {
+    display: flex;
+    gap: 6px;
+}
+
+.hm-view-btn {
+    padding: 7px 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: .85rem;
+    font-weight: 500;
+    transition: all .15s;
+}
+.hm-view-btn:hover {
+    border-color: var(--primary);
+    color: var(--text);
+}
+.hm-view-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+/* Legend bar */
+.hm-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .75rem;
+    color: var(--text-muted);
+}
+.hm-legend-bar {
+    width: 120px;
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(to right, #c0392b, #7f1d1d, #333, #14532d, #16a34a);
+}
+.hm-legend-label {
+    font-weight: 600;
+}
+
+/* Breadcrumb */
+.hm-breadcrumb {
+    margin-bottom: 10px;
+    font-size: .85rem;
+    color: var(--text-muted);
+}
+.hm-breadcrumb a {
+    color: var(--primary);
+    text-decoration: none;
+}
+.hm-breadcrumb a:hover {
+    text-decoration: underline;
+}
+.hm-bc-sep {
+    margin: 0 4px;
+    color: var(--text-muted);
+}
+.hm-bc-hint {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: .8rem;
+}
+
+/* Container */
+.heatmap-container {
+    width: 100%;
+    min-height: 500px;
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--card);
+    border: 1px solid var(--border);
+}
+
+/* Individual tile */
+.hm-tile {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+    border-radius: 3px;
+    transition: filter .15s, transform .15s;
+    user-select: none;
+    gap: 2px;
+    padding: 4px;
+    box-sizing: border-box;
+}
+.hm-tile:hover {
+    filter: brightness(1.25);
+    z-index: 10;
+    outline: 2px solid rgba(255,255,255,.6);
+}
+
+.hm-label {
+    font-weight: 700;
+    font-size: .85rem;
+    line-height: 1.1;
+    text-shadow: 0 1px 3px rgba(0,0,0,.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.hm-label-sm {
+    font-size: .7rem;
+}
+.hm-label-xs {
+    font-size: .55rem;
+    font-weight: 600;
+}
+
+.hm-pct {
+    font-size: .75rem;
+    font-weight: 600;
+    line-height: 1.1;
+    text-shadow: 0 1px 2px rgba(0,0,0,.5);
+}
+.hm-pct-sm {
+    font-size: .6rem;
+}
+
+.hm-cap {
+    font-size: .6rem;
+    opacity: .8;
+    line-height: 1.1;
+    text-shadow: 0 1px 2px rgba(0,0,0,.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .hm-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .heatmap-container {
+        min-height: 400px;
+    }
+}
+

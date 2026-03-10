@@ -630,6 +630,35 @@ class TestAllEndpointsSmoke:
         r = _authed_get("/api/market/cache-status", self.c)
         assert r.status_code == 200
 
+    # ── Heatmap ──
+    def test_heatmap_stocks(self):
+        r = _authed_get("/api/heatmap?view=stocks", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["view"] == "stocks"
+        assert isinstance(data["items"], list)
+
+    def test_heatmap_sectors(self):
+        r = _authed_get("/api/heatmap?view=sectors", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["view"] == "sectors"
+        assert isinstance(data["items"], list)
+
+    def test_heatmap_etfs(self):
+        r = _authed_get("/api/heatmap?view=etfs", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["view"] == "etfs"
+        assert isinstance(data["items"], list)
+
+    def test_heatmap_sector_drilldown(self):
+        r = _authed_get("/api/heatmap?view=stocks&sector=Technology", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["view"] == "stocks"
+        assert isinstance(data["items"], list)
+
     # ── Stock Detail (external API — may 404 without API key) ──
     @pytest.mark.external
     def test_stock_detail(self):
@@ -1552,3 +1581,50 @@ class TestSchedulerNewTasks:
         assert bs.SMART_ADVISOR_INTERVAL > 0
         assert bs.VALUE_SCANNER_INTERVAL > 0
         assert bs.TRADING_ADVISOR_INTERVAL > 0
+
+
+# ── Public stock pages (SEO) ─────────────────────────────────
+class TestPublicStockPages:
+    """Public stock pages should be accessible without auth."""
+
+    def test_robots_txt(self):
+        anon = TestClient(app, raise_server_exceptions=False, base_url="https://testserver")
+        r = anon.get("/robots.txt")
+        assert r.status_code == 200
+        assert "Sitemap:" in r.text
+        assert "/stocks/" in r.text
+
+    def test_sitemap_xml(self):
+        anon = TestClient(app, raise_server_exceptions=False, base_url="https://testserver")
+        r = anon.get("/sitemap.xml")
+        assert r.status_code == 200
+        assert "<urlset" in r.text
+        assert "/stocks/" in r.text
+
+    def test_public_stock_page_no_auth(self):
+        """GET /stocks/AAPL should return HTML without authentication."""
+        anon = TestClient(app, raise_server_exceptions=False, base_url="https://testserver")
+        r = anon.get("/stocks/AAPL")
+        assert r.status_code in (200, 404, 503)  # 404/503 if market data unavailable
+        if r.status_code == 200:
+            assert "AAPL" in r.text
+            assert "application/ld+json" in r.text
+
+    def test_public_stock_api_no_auth(self):
+        """GET /api/public/stock/AAPL should return JSON without authentication."""
+        anon = TestClient(app, raise_server_exceptions=False, base_url="https://testserver")
+        r = anon.get("/api/public/stock/AAPL")
+        assert r.status_code in (200, 404, 503)
+        if r.status_code == 200:
+            data = r.json()
+            assert data["symbol"] == "AAPL"
+
+    def test_public_stock_invalid_symbol(self):
+        anon = TestClient(app, raise_server_exceptions=False, base_url="https://testserver")
+        r = anon.get("/stocks/INVALID-SYM!")
+        assert r.status_code == 400
+
+    def test_public_api_invalid_symbol(self):
+        anon = TestClient(app, raise_server_exceptions=False, base_url="https://testserver")
+        r = anon.get("/api/public/stock/123BAD")
+        assert r.status_code == 400
