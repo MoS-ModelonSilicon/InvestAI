@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InvestAI — Competitive Market Analysis Report</title>
+<style>
+  /* ── Reset & Base ── */
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0b0f1a;--bg2:#111827;--bg3:#1a2035;--card:#161d2f;
+    --border:#2a3350;--text:#d1d5db;--heading:#f3f4f6;--accent:#818cf8;
+    --accent2:#6366f1;--green:#34d399;--red:#f87171;--yellow:#fbbf24;
+    --orange:#fb923c;--cyan:#22d3ee;--pink:#f472b6;
+    --font:'Inter',system-ui,-apple-system,sans-serif;
+    --mono:'JetBrains Mono','Fira Code',monospace;
+  }
+  html{scroll-behavior:smooth;font-size:15px}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.7;overflow-x:hidden}
+  ::selection{background:var(--accent2);color:#fff}
+  a{color:var(--accent);text-decoration:none;transition:.2s}
+  a:hover{color:#a5b4fc;text-decoration:underline}
+
+  /* ── Layout ── */
+  .wrap{max-width:1200px;margin:0 auto;padding:0 2rem}
+  section{padding:4rem 0;border-bottom:1px solid var(--border)}
+  section:last-child{border-bottom:none}
+
+  /* ── Hero ── */
+  .hero{min-height:60vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(180deg,#0d1224 0%,#111827 100%);position:relative;overflow:hidden;padding:6rem 2rem}
+  .hero::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.15),transparent 70%);top:-200px;right:-100px}
+  .hero::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(52,211,153,.1),transparent 70%);bottom:-150px;left:-50px}
+  .hero h1{font-size:3.2rem;font-weight:800;color:#fff;line-height:1.15;letter-spacing:-.02em;position:relative;z-index:1}
+  .hero h1 span{background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .hero .subtitle{font-size:1.15rem;color:#9ca3af;margin-top:1rem;max-width:700px;position:relative;z-index:1}
+  .hero .meta{display:flex;gap:2rem;margin-top:2rem;font-size:.85rem;color:#6b7280;position:relative;z-index:1}
+  .hero .meta span{display:flex;align-items:center;gap:.4rem}
+
+  /* ── TOC ── */
+  .toc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem 2.5rem;margin:3rem auto;max-width:700px}
+  .toc h3{color:var(--heading);margin-bottom:1rem;font-size:1.1rem;display:flex;align-items:center;gap:.5rem}
+  .toc ol{list-style:none;counter-reset:toc}
+  .toc ol li{counter-increment:toc}
+  .toc ol li a{display:flex;align-items:center;gap:.7rem;padding:.45rem 0;border-bottom:1px solid rgba(42,51,80,.5);font-size:.92rem;color:var(--text);transition:.2s}
+  .toc ol li a:hover{color:var(--accent);text-decoration:none;padding-left:.3rem}
+  .toc ol li a::before{content:counter(toc,decimal-leading-zero);font-family:var(--mono);font-size:.75rem;background:var(--bg3);padding:.15rem .5rem;border-radius:4px;color:var(--accent);min-width:2rem;text-align:center}
+
+  /* ── Headings ── */
+  h2{font-size:2rem;font-weight:700;color:var(--heading);margin-bottom:.3rem;display:flex;align-items:center;gap:.7rem}
+  h2 .num{font-family:var(--mono);font-size:.85rem;background:var(--accent2);color:#fff;padding:.2rem .7rem;border-radius:6px}
+  h3{font-size:1.3rem;font-weight:600;color:var(--heading);margin:2rem 0 .8rem}
+  h4{font-size:1.05rem;font-weight:600;color:var(--accent);margin:1.5rem 0 .5rem}
+  .section-desc{color:#9ca3af;margin-bottom:2rem;font-size:.95rem}
+
+  /* ── Cards ── */
+  .cards{display:grid;gap:1.2rem;margin:1.5rem 0}
+  .cards.c2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+  .cards.c3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .cards.c4{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:.25s}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,.08)}
+  .card .icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:.8rem}
+  .card h4{margin:0 0 .4rem;color:var(--heading);font-size:1rem}
+  .card p{font-size:.85rem;color:#9ca3af;line-height:1.6}
+  .card .tag{display:inline-block;font-size:.7rem;padding:.15rem .5rem;border-radius:4px;font-weight:600;margin-top:.5rem}
+
+  /* ── Key Findings Boxes ── */
+  .finding{display:flex;gap:1rem;padding:1.2rem 1.5rem;background:var(--bg3);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;margin:.6rem 0}
+  .finding .label{min-width:140px;font-weight:600;color:var(--accent);font-size:.9rem}
+  .finding .val{font-size:.9rem}
+
+  /* ── Bottom Line Box ── */
+  .bottomline{background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(52,211,153,.06));border:1px solid rgba(99,102,241,.25);border-radius:12px;padding:1.5rem 2rem;margin:2rem 0}
+  .bottomline h4{color:var(--green);margin:0 0 .5rem;font-size:1rem}
+  .bottomline p{font-size:.9rem;line-height:1.7}
+
+  /* ── Tables ── */
+  .table-wrap{overflow-x:auto;margin:1.5rem 0;border-radius:10px;border:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse;font-size:.85rem}
+  thead{background:var(--bg3)}
+  th{padding:.7rem 1rem;text-align:left;font-weight:600;color:var(--heading);white-space:nowrap;border-bottom:2px solid var(--border)}
+  td{padding:.6rem 1rem;border-bottom:1px solid rgba(42,51,80,.5);vertical-align:top}
+  tr:hover td{background:rgba(99,102,241,.03)}
+  .yes{color:var(--green);font-weight:700}
+  .no{color:var(--red);font-weight:700}
+  .partial{color:var(--yellow);font-weight:700}
+  .best{color:var(--cyan);font-weight:700}
+  .price-free{background:rgba(52,211,153,.12);color:var(--green);font-weight:700;padding:.15rem .5rem;border-radius:4px;font-size:.8rem}
+
+  /* ── SVG Charts ── */
+  .chart-container{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem;margin:1.5rem 0}
+  .chart-container h4{color:var(--heading);margin:0 0 1.5rem;text-align:center}
+  svg text{font-family:var(--font);fill:var(--text)}
+
+  /* ── Bar chart ── */
+  .bar-row{display:flex;align-items:center;gap:.8rem;margin:.5rem 0}
+  .bar-label{min-width:140px;font-size:.82rem;color:#9ca3af;text-align:right}
+  .bar-track{flex:1;height:28px;background:var(--bg);border-radius:6px;overflow:hidden;position:relative}
+  .bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:.7rem;font-size:.75rem;font-weight:600;color:#fff;transition:width .8s ease}
+  .bar-val{font-size:.82rem;color:var(--heading);min-width:70px;text-align:right;font-weight:600}
+
+  /* ── Stat blocks ── */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin:1.5rem 0}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.2rem;text-align:center}
+  .stat .num{font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .stat .desc{font-size:.78rem;color:#6b7280;margin-top:.3rem}
+
+  /* ── Positioning scatter ── */
+  .scatter-grid{position:relative;width:100%;max-width:700px;aspect-ratio:1/0.8;margin:1.5rem auto;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .scatter-grid .axis-label{position:absolute;font-size:.7rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .scatter-dot{position:absolute;padding:.4rem .8rem;border-radius:8px;font-size:.72rem;font-weight:600;white-space:nowrap;transform:translate(-50%,-50%);cursor:default;transition:.2s;border:1px solid rgba(255,255,255,.1)}
+  .scatter-dot:hover{transform:translate(-50%,-50%) scale(1.1);z-index:10}
+
+  /* ── Pie / Donut via SVG ── */
+  .donut-wrap{display:flex;flex-wrap:wrap;gap:2rem;align-items:center;justify-content:center;padding:1rem}
+  .donut-legend{display:flex;flex-direction:column;gap:.5rem}
+  .donut-legend .item{display:flex;align-items:center;gap:.5rem;font-size:.82rem}
+  .donut-legend .swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+  /* ── Callout ── */
+  .callout{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:1.2rem 1.5rem;margin:1.5rem 0;font-size:.9rem}
+  .callout strong{color:var(--yellow)}
+  .callout.green{background:rgba(52,211,153,.06);border-color:rgba(52,211,153,.2)}
+  .callout.green strong{color:var(--green)}
+  .callout.red{background:rgba(248,113,113,.06);border-color:rgba(248,113,113,.2)}
+  .callout.red strong{color:var(--red)}
+
+  /* ── Competitor profile ── */
+  .comp-profile{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem;margin:1.5rem 0}
+  .comp-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:1.2rem}
+  .comp-header h3{margin:0;display:flex;align-items:center;gap:.6rem}
+  .comp-header .pricing{font-size:.82rem;background:var(--bg);padding:.3rem .8rem;border-radius:6px;color:var(--yellow)}
+  .comp-meta{display:flex;gap:1.5rem;font-size:.8rem;color:#6b7280;margin-bottom:1rem;flex-wrap:wrap}
+  .comp-meta span{display:flex;align-items:center;gap:.3rem}
+  .comp-vs{background:var(--bg3);border-radius:8px;padding:1rem 1.2rem;margin-top:1rem;font-size:.85rem;border-left:3px solid var(--accent)}
+
+  /* ── Roadmap timeline ── */
+  .timeline{position:relative;padding-left:2.5rem;margin:1.5rem 0}
+  .timeline::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--accent),var(--green),var(--yellow),var(--orange))}
+  .tl-item{position:relative;margin-bottom:2rem}
+  .tl-item::before{content:'';position:absolute;left:-2.5rem;top:.4rem;width:12px;height:12px;border-radius:50%;border:2px solid var(--accent);background:var(--bg)}
+  .tl-item.p1::before{border-color:var(--accent)}
+  .tl-item.p2::before{border-color:var(--green)}
+  .tl-item.p3::before{border-color:var(--yellow)}
+  .tl-item.p4::before{border-color:var(--orange)}
+  .tl-item h4{margin:0 0 .3rem}
+  .tl-item .tl-tag{font-size:.72rem;font-weight:600;padding:.15rem .5rem;border-radius:4px;margin-left:.4rem}
+
+  /* ── Back to top ── */
+  .totop{position:fixed;bottom:2rem;right:2rem;width:44px;height:44px;border-radius:50%;background:var(--accent2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.2rem;box-shadow:0 4px 20px rgba(99,102,241,.3);cursor:pointer;opacity:0;transition:.3s;z-index:100;border:none}
+  .totop.show{opacity:1}
+
+  /* ── Feature matrix header fix ── */
+  .feature-matrix th:first-child{position:sticky;left:0;background:var(--bg3);z-index:2}
+  .feature-matrix td:first-child{position:sticky;left:0;background:var(--card);z-index:1;font-weight:600}
+
+  /* ── Print ── */
+  @media print{body{background:#fff;color:#222}h2,h3,h4,.card h4{color:#111}section{break-inside:avoid}.hero{min-height:auto;background:#fff}}
+  @media(max-width:640px){.hero h1{font-size:2rem}.wrap{padding:0 1rem}h2{font-size:1.4rem}.cards.c2,.cards.c3,.cards.c4{grid-template-columns:1fr}.bar-label{min-width:90px;font-size:.72rem}.comp-header{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<!-- ═══════ HERO ═══════ -->
+<header class="hero">
+  <h1>InvestAI — <span>Competitive Market Analysis</span></h1>
+  <p class="subtitle">McKinsey-style competitive landscape assessment of the retail investment platform market. Full feature benchmarking, pricing analysis, AI differentiation, gap analysis, and strategic roadmap.</p>
+  <div class="meta">
+    <span>📅 March 2026</span>
+    <span>📊 10+ Competitors Analyzed</span>
+    <span>🏷️ $28 B+ TAM</span>
+  </div>
+</header>
+
+<!-- ═══════ TOC ═══════ -->
+<div class="wrap">
+  <nav class="toc">
+    <h3>📑 Report Sections</h3>
+    <ol>
+      <li><a href="#exec">Executive Summary</a></li>
+      <li><a href="#market">Market Overview &amp; Size</a></li>
+      <li><a href="#landscape">Competitive Landscape Map</a></li>
+      <li><a href="#competitors">Detailed Competitor Profiles</a></li>
+      <li><a href="#matrix">Feature-by-Feature Matrix</a></li>
+      <li><a href="#pricing">Pricing &amp; Monetization</a></li>
+      <li><a href="#ux">User Flows &amp; UX Analysis</a></li>
+      <li><a href="#ai">AI &amp; Technology Differentiation</a></li>
+      <li><a href="#gaps">Gap Analysis</a></li>
+      <li><a href="#advantages">Our Competitive Advantages</a></li>
+      <li><a href="#trends">Market Trends &amp; Techniques</a></li>
+      <li><a href="#strategy">Strategic Recommendations</a></li>
+    </ol>
+  </nav>
+</div>
+
+<!-- ═══════ 1. EXECUTIVE SUMMARY ═══════ -->
+<section id="exec">
+<div class="wrap">
+  <h2><span class="num">01</span> Executive Summary</h2>
+  <p class="section-desc">InvestAI is a full-stack retail investment platform combining portfolio tracking, stock screening, AI-powered advisory, technical analysis, DCA planning, and personal finance into a single product.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="num">$28B+</div><div class="desc">Global Wealthtech TAM</div></div>
+    <div class="stat"><div class="num">~15%</div><div class="desc">Market CAGR</div></div>
+    <div class="stat"><div class="num">80+</div><div class="desc">API Endpoints</div></div>
+    <div class="stat"><div class="num">$0</div><div class="desc">InvestAI Price</div></div>
+    <div class="stat"><div class="num">$1,627</div><div class="desc">Cost to Replicate</div></div>
+  </div>
+
+  <h3>Key Findings</h3>
+  <div class="finding"><div class="label">Feature Breadth</div><div class="val">InvestAI covers <strong style="color:var(--green)">more ground than any single competitor</strong> — combining Finviz's screening, TradingView's TA, Seeking Alpha's research, Morningstar's fund evaluation, and Betterment's robo-advisory into one free platform.</div></div>
+  <div class="finding"><div class="label">Feature Depth</div><div class="val">Individual features are competitive but not best-in-class in every vertical; each specialized competitor goes deeper in their niche.</div></div>
+  <div class="finding"><div class="label">Pricing</div><div class="val"><strong style="color:var(--green)">Massive advantage</strong> — InvestAI is 100% free vs. competitors charging $80–$2,400/yr.</div></div>
+  <div class="finding"><div class="label">AI Integration</div><div class="val"><strong style="color:var(--cyan)">Industry-leading</strong> — no competitor offers a two-tier LLM assistant (GPT-5 nano + o3) with portfolio write capabilities and 16 tool functions.</div></div>
+  <div class="finding"><div class="label">Data Coverage</div><div class="val">280+ global symbols vs. TradingView's 3.5 M+ instruments — narrower but curated.</div></div>
+  <div class="finding"><div class="label">Mobile</div><div class="val"><strong style="color:var(--red)">Critical gap</strong> — all major competitors have mature mobile apps; InvestAI's Android app is designed but not built.</div></div>
+  <div class="finding"><div class="label">Community</div><div class="val"><strong style="color:var(--red)">Missing entirely</strong> — Seeking Alpha has 16 K+ analysts; TradingView has social features; InvestAI has none.</div></div>
+
+  <div class="bottomline">
+    <h4>⚡ Bottom Line</h4>
+    <p>InvestAI delivers ~80 % of the combined value of 6–8 paid platforms at $0 cost, with industry-first AI capabilities. The primary competitive risks are: (1) no mobile app, (2) no social / community layer, (3) limited data universe, and (4) no brokerage integration for real trading.</p>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 2. MARKET OVERVIEW ═══════ -->
+<section id="market">
+<div class="wrap">
+  <h2><span class="num">02</span> Market Overview &amp; Size</h2>
+  <p class="section-desc">InvestAI operates across four market segments traditionally served by separate, specialized platforms.</p>
+
+  <div class="cards c4">
+    <div class="card"><div class="icon" style="background:rgba(99,102,241,.15);color:var(--accent)">📊</div><h4>Portfolio Tracking</h4><p>Morningstar, Yahoo Finance, Seeking Alpha, Portfolio Visualizer</p></div>
+    <div class="card"><div class="icon" style="background:rgba(52,211,153,.15);color:var(--green)">🔍</div><h4>Stock Screening</h4><p>Finviz, TradingView, Stock Analysis, Zacks, Wisesheets</p></div>
+    <div class="card"><div class="icon" style="background:rgba(34,211,238,.15);color:var(--cyan)">🤖</div><h4>AI Advisory</h4><p>Betterment, Wealthfront, Schwab Intelligent, SigFig, Magnifi</p></div>
+    <div class="card"><div class="icon" style="background:rgba(244,114,182,.15);color:var(--pink)">💰</div><h4>Personal Finance</h4><p>Monarch Money, YNAB, Copilot Money, Quicken</p></div>
+  </div>
+
+  <div class="callout green"><strong>InvestAI is the only platform that covers all four segments in a single free product.</strong></div>
+
+  <!-- Market size bar chart -->
+  <div class="chart-container">
+    <h4>Market Size by Segment (2026 Estimates)</h4>
+    <div class="bar-row"><div class="bar-label">Financial Research</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))">$35.8 B</div></div><div class="bar-val">9.1 % CAGR</div></div>
+    <div class="bar-row"><div class="bar-label">Wealthtech / Robo</div><div class="bar-track"><div class="bar-fill" style="width:52%;background:linear-gradient(90deg,var(--green),#059669)">$18.7 B</div></div><div class="bar-val">14.2 % CAGR</div></div>
+    <div class="bar-row"><div class="bar-label">Stock Screening</div><div class="bar-track"><div class="bar-fill" style="width:9%;background:linear-gradient(90deg,var(--cyan),#0891b2)">$3.2 B</div></div><div class="bar-val">16.8 % CAGR</div></div>
+    <div class="bar-row"><div class="bar-label">Personal Finance</div><div class="bar-track"><div class="bar-fill" style="width:5%;background:linear-gradient(90deg,var(--pink),#db2777)">$1.8 B</div></div><div class="bar-val">11.5 % CAGR</div></div>
+  </div>
+
+  <h3>User Demographics &amp; Willingness to Pay</h3>
+  <div class="chart-container">
+    <h4>Retail Investor Segments</h4>
+    <div style="display:flex;flex-wrap:wrap;gap:2rem;align-items:center;justify-content:center">
+      <!-- SVG Donut -->
+      <svg width="220" height="220" viewBox="0 0 220 220">
+        <circle cx="110" cy="110" r="90" fill="none" stroke="var(--border)" stroke-width="24"/>
+        <circle cx="110" cy="110" r="90" fill="none" stroke="var(--accent)" stroke-width="24" stroke-dasharray="339.3 226.2" stroke-dashoffset="0" transform="rotate(-90 110 110)"/>
+        <circle cx="110" cy="110" r="90" fill="none" stroke="var(--green)" stroke-width="24" stroke-dasharray="141.4 424.1" stroke-dashoffset="-339.3" transform="rotate(-90 110 110)"/>
+        <circle cx="110" cy="110" r="90" fill="none" stroke="var(--yellow)" stroke-width="24" stroke-dasharray="56.5 509" stroke-dashoffset="-480.7" transform="rotate(-90 110 110)"/>
+        <circle cx="110" cy="110" r="90" fill="none" stroke="var(--orange)" stroke-width="24" stroke-dasharray="28.3 537.2" stroke-dashoffset="-537.2" transform="rotate(-90 110 110)"/>
+        <text x="110" y="105" text-anchor="middle" fill="var(--heading)" font-weight="700" font-size="22">85 %</text>
+        <text x="110" y="128" text-anchor="middle" fill="#6b7280" font-size="11">InvestAI Sweet Spot</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="item"><div class="swatch" style="background:var(--accent)"></div><strong>60 %</strong> Casual ($0–10/mo) — Age 25–40, &lt;$50 K portfolio</div>
+        <div class="item"><div class="swatch" style="background:var(--green)"></div><strong>25 %</strong> Serious Retail ($15–50/mo) — Age 30–55, $50–500 K</div>
+        <div class="item"><div class="swatch" style="background:var(--yellow)"></div><strong>10 %</strong> Semi-Pro ($50–200/mo) — Age 35–60, $500 K+</div>
+        <div class="item"><div class="swatch" style="background:var(--orange)"></div><strong>5 %</strong> Institutional ($200–2 K/mo) — Advisors, fund mgrs</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 3. LANDSCAPE MAP ═══════ -->
+<section id="landscape">
+<div class="wrap">
+  <h2><span class="num">03</span> Competitive Landscape Map</h2>
+  <p class="section-desc">Positioning by feature breadth (x-axis) vs. price (y-axis). InvestAI sits in the top-left: maximum breadth at minimum price.</p>
+
+  <div class="scatter-grid">
+    <!-- Axis labels -->
+    <div class="axis-label" style="top:50%;left:-4px;transform:rotate(-90deg) translateX(50%);transform-origin:top left">← Low Price · · High Price →</div>
+    <div class="axis-label" style="bottom:6px;left:50%;transform:translateX(-50%)">← Low Breadth · · High Breadth →</div>
+    <!-- Dots -->
+    <div class="scatter-dot" style="left:82%;top:14%;background:rgba(99,102,241,.25);color:var(--accent);border-color:var(--accent);font-size:.85rem;padding:.5rem 1rem">★ InvestAI</div>
+    <div class="scatter-dot" style="left:42%;top:60%;background:rgba(34,211,238,.12);color:var(--cyan)">TradingView</div>
+    <div class="scatter-dot" style="left:52%;top:48%;background:rgba(244,114,182,.12);color:var(--pink)">Seeking Alpha</div>
+    <div class="scatter-dot" style="left:45%;top:42%;background:rgba(251,191,36,.12);color:var(--yellow)">Morningstar</div>
+    <div class="scatter-dot" style="left:25%;top:55%;background:rgba(52,211,153,.12);color:var(--green)">Finviz</div>
+    <div class="scatter-dot" style="left:30%;top:22%;background:rgba(156,163,175,.12);color:#9ca3af">Stock Analysis</div>
+    <div class="scatter-dot" style="left:70%;top:45%;background:rgba(248,113,113,.12);color:var(--red)">Yahoo Finance</div>
+    <div class="scatter-dot" style="left:18%;top:85%;background:rgba(251,191,36,.12);color:var(--yellow)">Bloomberg</div>
+    <div class="scatter-dot" style="left:35%;top:73%;background:rgba(248,113,113,.12);color:var(--red)">Zacks</div>
+    <div class="scatter-dot" style="left:30%;top:36%;background:rgba(52,211,153,.12);color:var(--green)">Betterment</div>
+  </div>
+
+  <h3>Competitive Tiers</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tier</th><th>Competitors</th><th>Annual Revenue</th><th>Users</th></tr></thead>
+      <tbody>
+        <tr><td style="color:var(--red)">Enterprise</td><td>Bloomberg ($12.4 B), Refinitiv ($7.1 B), FactSet ($2.1 B)</td><td>$1 B+</td><td>&lt;500 K</td></tr>
+        <tr><td style="color:var(--yellow)">Premium Research</td><td>Morningstar ($2.0 B), Seeking Alpha (~$200 M), Zacks (~$100 M)</td><td>$100 M–2 B</td><td>1–10 M</td></tr>
+        <tr><td style="color:var(--green)">Tools &amp; Charting</td><td>TradingView (~$800 M), Finviz (~$40 M), Stock Analysis (~$15 M)</td><td>$15 M–800 M</td><td>5–100 M</td></tr>
+        <tr><td style="color:var(--cyan)">Robo-Advisors</td><td>Betterment, Wealthfront</td><td>$50–200 M</td><td>500 K–1 M</td></tr>
+        <tr><td style="color:var(--pink)">Personal Finance</td><td>Monarch ($30 M), YNAB ($100 M+), Copilot Money (~$20 M)</td><td>$20–100 M</td><td>500 K–5 M</td></tr>
+        <tr style="background:rgba(99,102,241,.06)"><td style="color:var(--accent)"><strong>InvestAI</strong></td><td>Free / planned freemium</td><td>Pre-revenue</td><td>Early stage</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 4. COMPETITOR PROFILES ═══════ -->
+<section id="competitors">
+<div class="wrap">
+  <h2><span class="num">04</span> Detailed Competitor Profiles</h2>
+
+  <!-- TradingView -->
+  <div class="comp-profile">
+    <div class="comp-header">
+      <h3>📈 TradingView</h3>
+      <span class="pricing">$0–$70/mo</span>
+    </div>
+    <div class="comp-meta">
+      <span>📅 Founded 2011</span><span>👥 100 M+ users</span><span>💰 ~$800 M rev</span><span>🏷️ Charting, TA, Social</span>
+    </div>
+    <div class="cards c3">
+      <div class="card"><h4>Best-in-Class Charting</h4><p>100+ indicators, 90+ drawing tools, multi-chart layouts (up to 16), second & tick-based intervals.</p></div>
+      <div class="card"><h4>3.5 M+ Instruments</h4><p>Stocks, ETFs, Bonds, Crypto, Forex from hundreds of global exchanges.</p></div>
+      <div class="card"><h4>Social Trading Community</h4><p>Community ideas, education posts, editors' picks. Social features drove growth to 100 M users.</p></div>
+      <div class="card"><h4>Pine Script</h4><p>Custom indicator programming language with marketplace of community-built scripts.</p></div>
+      <div class="card"><h4>30+ Broker Integrations</h4><p>Direct trading through connected brokers without leaving the platform.</p></div>
+      <div class="card"><h4>Multi-Platform</h4><p>Web, desktop, iOS, and Android apps with synced layouts, watchlists, and settings.</p></div>
+    </div>
+    <div class="comp-vs"><strong>vs. InvestAI:</strong> TradingView's charting is 5–10x more advanced. However, it has <strong style="color:var(--red)">zero</strong> AI advisory, portfolio management, personal finance, or DCA planning. Users need separate tools for everything outside charting.</div>
+  </div>
+
+  <!-- Seeking Alpha -->
+  <div class="comp-profile">
+    <div class="comp-header">
+      <h3>🔬 Seeking Alpha</h3>
+      <span class="pricing">$0–$200/mo</span>
+    </div>
+    <div class="comp-meta">
+      <span>📅 Founded 2004</span><span>👥 ~25 M monthly</span><span>💰 ~$200 M rev</span><span>🏷️ Research, Ratings, Community</span>
+    </div>
+    <div class="cards c3">
+      <div class="card"><h4>Quant Ratings</h4><p>Proprietary Buy/Hold/Sell ratings based on valuation, growth, profitability, momentum, EPS revisions.</p></div>
+      <div class="card"><h4>16 K+ Analysts</h4><p>Massive community of contributing analysts creating a content moat no algorithm can replicate.</p></div>
+      <div class="card"><h4>Alpha Picks</h4><p>Curated model portfolio. PRO tier includes weekly high-conviction picks from quant system.</p></div>
+      <div class="card"><h4>Dividend Grades</h4><p>A–F grades for dividend safety, growth, yield, and consistency.</p></div>
+      <div class="card"><h4>Virtual Analyst (NEW)</h4><p>AI-generated stock reports — their first AI feature, Premium only.</p></div>
+      <div class="card"><h4>SEO Engine</h4><p>Dominates Google search results for stock queries, driving massive organic traffic funneled into paywalls.</p></div>
+    </div>
+    <div class="comp-vs"><strong>vs. InvestAI:</strong> SA dominates in community research & quant ratings depth (10 K+ stocks). However, SA lacks TA tools, DCA planning, personal finance, budget management, and has no AI chatbot with write actions.</div>
+  </div>
+
+  <!-- Morningstar -->
+  <div class="comp-profile">
+    <div class="comp-header">
+      <h3>⭐ Morningstar</h3>
+      <span class="pricing">$35/mo or $249/yr</span>
+    </div>
+    <div class="comp-meta">
+      <span>📅 Founded 1984</span><span>👥 ~12 M investors</span><span>💰 $2.0 B rev</span><span>🏷️ Fund Research, Valuation</span>
+    </div>
+    <div class="cards c3">
+      <div class="card"><h4>Moat Ratings</h4><p>None/Narrow/Wide economic moat assessed by 100+ salaried analysts. Gold-standard methodology.</p></div>
+      <div class="card"><h4>Fair Value Estimates</h4><p>Discounted cash flow (DCF) fair value for 1,500+ stocks. The data IS the product.</p></div>
+      <div class="card"><h4>Portfolio X-Ray</h4><p>Holdings overlap, sector exposure, asset allocation, and fees analysis across all your accounts.</p></div>
+    </div>
+    <div class="comp-vs"><strong>vs. InvestAI:</strong> Morningstar's moat analysis & DCF fair values are gold-standard. InvestAI's "Company DNA" is a simpler heuristic. However, Morningstar lacks TA, DCA, AI chatbot, and budget tracking.</div>
+  </div>
+
+  <!-- Finviz -->
+  <div class="comp-profile">
+    <div class="comp-header">
+      <h3>🗺️ Finviz</h3>
+      <span class="pricing">$0–$40/mo</span>
+    </div>
+    <div class="comp-meta">
+      <span>📅 Founded 2007</span><span>👥 ~10 M monthly</span><span>💰 ~$40 M rev</span><span>🏷️ Screening, Visualization</span>
+    </div>
+    <div class="cards c3">
+      <div class="card"><h4>70+ Screener Filters</h4><p>The industry benchmark for stock screening. Covers the entire US stock universe.</p></div>
+      <div class="card"><h4>Market Heatmaps</h4><p>Interactive S&P 500, World, ETF, and crypto heatmaps — iconic visual interface.</p></div>
+      <div class="card"><h4>API + Export</h4><p>CSV export, Google Sheets / Python / JS API access for Elite subscribers.</p></div>
+    </div>
+    <div class="comp-vs"><strong>vs. InvestAI:</strong> Finviz has 70+ filters vs our 22 and covers all US stocks. But it has <strong style="color:var(--red)">zero</strong> portfolio management, AI advisory, personal finance, DCA, or advanced TA. Pure screening tool.</div>
+  </div>
+
+  <!-- Stock Analysis, Yahoo, Robo, PF - condensed -->
+  <div class="cards c2">
+    <div class="card">
+      <h4>📊 Stock Analysis</h4>
+      <p style="margin:.3rem 0"><span class="pricing" style="font-size:.72rem">$6.58–$17/mo</span></p>
+      <p>130 K+ global securities, 10–40 yr financial history, 200+ screening indicators. No AI, no TA, no portfolio management.</p>
+    </div>
+    <div class="card">
+      <h4>🌐 Yahoo Finance Plus</h4>
+      <p style="margin:.3rem 0"><span class="pricing" style="font-size:.72rem">$35/mo ($350/yr)</span></p>
+      <p>150 M monthly users, brokerage linking, Morningstar/Argus reports bundled. Tools are shallow — basic screening & charts.</p>
+    </div>
+    <div class="card">
+      <h4>🤖 Betterment / Wealthfront</h4>
+      <p style="margin:.3rem 0"><span class="pricing" style="font-size:.72rem">0.25 % AUM</span></p>
+      <p>Actually manage your money — auto-deposits, rebalancing, tax-loss harvesting. Zero research or screening tools.</p>
+    </div>
+    <div class="card">
+      <h4>💳 Monarch / YNAB</h4>
+      <p style="margin:.3rem 0"><span class="pricing" style="font-size:.72rem">$15/mo (~$100/yr)</span></p>
+      <p>Bank linking (11 K+ institutions), auto-import transactions. Zero investment analysis or stock tools.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 5. FEATURE MATRIX ═══════ -->
+<section id="matrix">
+<div class="wrap">
+  <h2><span class="num">05</span> Feature-by-Feature Matrix</h2>
+  <p class="section-desc">Comprehensive comparison across 27 feature categories. Scroll horizontally on mobile.</p>
+
+  <div class="table-wrap">
+    <table class="feature-matrix">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th style="background:rgba(99,102,241,.15)">InvestAI</th>
+          <th>TradingView</th>
+          <th>Seeking Alpha</th>
+          <th>Morningstar</th>
+          <th>Finviz</th>
+          <th>Stock Analysis</th>
+          <th>Yahoo Finance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Price</td><td class="price-free">FREE</td><td>$0–70/mo</td><td>$0–200/mo</td><td>$0–35/mo</td><td>$0–40/mo</td><td>$0–17/mo</td><td>$0–35/mo</td></tr>
+        <tr><td>Portfolio Tracking</td><td class="yes">✅ Full</td><td class="no">❌ Watchlist</td><td class="partial">⚠️ Basic</td><td class="yes">✅ X-Ray</td><td class="partial">⚠️ Basic</td><td class="partial">⚠️ Basic</td><td class="yes">✅ Full</td></tr>
+        <tr><td>Stock Screener</td><td class="yes">✅ 22 filters</td><td class="best">✅✅ 150+</td><td class="yes">✅ Multi-factor</td><td class="yes">✅ Fund focus</td><td class="best">✅✅ 70+</td><td class="best">✅✅ 200+</td><td class="partial">⚠️ Basic</td></tr>
+        <tr><td>Technical Analysis</td><td class="yes">✅ 35+ ind.</td><td class="best">✅✅ 100+</td><td class="no">❌</td><td class="no">❌</td><td class="partial">⚠️ Elite</td><td class="no">❌</td><td class="partial">⚠️ Basic</td></tr>
+        <tr><td>Chart Patterns (31)</td><td class="yes">✅ Auto</td><td class="yes">✅ Scripts</td><td class="no">❌</td><td class="no">❌</td><td class="yes">✅ Auto</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>AI Chatbot</td><td class="best">✅✅ GPT-5 + o3</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>AI Stock Picks</td><td class="yes">✅ 3 strategies</td><td class="no">❌</td><td class="yes">✅ Alpha Picks</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>AI Portfolio Builder</td><td class="yes">✅ AutoPilot</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>DCA Planner</td><td class="yes">✅ Full wizard</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>Value Scanning</td><td class="yes">✅ Graham</td><td class="no">❌</td><td class="yes">✅ Quant</td><td class="yes">✅ Fair Value</td><td class="no">❌</td><td class="no">❌</td><td class="partial">⚠️</td></tr>
+        <tr><td>Budget Tracking</td><td class="yes">✅</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>Income / Expense</td><td class="yes">✅</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>Price Alerts</td><td class="yes">✅</td><td class="best">✅ up to 1 K</td><td class="yes">✅</td><td class="no">❌</td><td class="yes">✅ Elite</td><td class="no">❌</td><td class="yes">✅</td></tr>
+        <tr><td>News Aggregation</td><td class="yes">✅</td><td class="yes">✅</td><td class="best">✅✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="no">❌</td><td class="best">✅✅ #1</td></tr>
+        <tr><td>Education</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="best">✅✅</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>Risk Profiling</td><td class="yes">✅ 6-step</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>Israeli Funds (481)</td><td class="yes">✅ Unique</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>Community / Social</td><td class="no">❌</td><td class="best">✅✅ Huge</td><td class="best">✅✅ 16 K</td><td class="yes">✅</td><td class="no">❌</td><td class="no">❌</td><td class="yes">✅</td></tr>
+        <tr><td>Brokerage Integration</td><td class="no">❌</td><td class="best">✅ 30+</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="yes">✅</td></tr>
+        <tr><td>Mobile App (Native)</td><td class="no">❌ (planned)</td><td class="best">✅✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="no">❌</td><td class="no">❌</td><td class="best">✅✅</td></tr>
+        <tr><td>Data Universe</td><td>280+</td><td class="best">3.5 M+</td><td>10 K+</td><td>40 K+</td><td>~8 K</td><td class="best">130 K+</td><td>Full</td></tr>
+        <tr><td>Backtesting</td><td class="yes">✅ DCA + AP</td><td class="yes">✅ Pine</td><td class="no">❌</td><td class="no">❌</td><td class="partial">⚠️ Elite</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>Picks Tracker</td><td class="yes">✅ Multi-src</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>Onboarding Tour</td><td class="best">✅✅ 11-step</td><td class="no">❌</td><td class="no">❌</td><td class="partial">⚠️</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 6. PRICING ═══════ -->
+<section id="pricing">
+<div class="wrap">
+  <h2><span class="num">06</span> Pricing &amp; Monetization</h2>
+
+  <div class="chart-container">
+    <h4>Annual Cost Comparison (Entry-level paid tier)</h4>
+    <div class="bar-row"><div class="bar-label">InvestAI</div><div class="bar-track"><div class="bar-fill" style="width:2%;background:var(--green);min-width:60px">$0</div></div><div class="bar-val" style="color:var(--green)">FREE</div></div>
+    <div class="bar-row"><div class="bar-label">Stock Analysis</div><div class="bar-track"><div class="bar-fill" style="width:3.3%;background:var(--cyan);min-width:60px">$79</div></div><div class="bar-val">$79/yr</div></div>
+    <div class="bar-row"><div class="bar-label">Monarch Money</div><div class="bar-track"><div class="bar-fill" style="width:4.1%;background:var(--pink);min-width:60px">$100</div></div><div class="bar-val">$100/yr</div></div>
+    <div class="bar-row"><div class="bar-label">YNAB</div><div class="bar-track"><div class="bar-fill" style="width:4.1%;background:var(--pink);min-width:60px">$99</div></div><div class="bar-val">$99/yr</div></div>
+    <div class="bar-row"><div class="bar-label">Morningstar</div><div class="bar-track"><div class="bar-fill" style="width:10.4%;background:var(--yellow)">$249</div></div><div class="bar-val">$249/yr</div></div>
+    <div class="bar-row"><div class="bar-label">Zacks Premium</div><div class="bar-track"><div class="bar-fill" style="width:10.4%;background:var(--yellow)">$249</div></div><div class="bar-val">$249/yr</div></div>
+    <div class="bar-row"><div class="bar-label">Seeking Alpha</div><div class="bar-track"><div class="bar-fill" style="width:12.5%;background:var(--orange)">$299</div></div><div class="bar-val">$299/yr</div></div>
+    <div class="bar-row"><div class="bar-label">Finviz Elite</div><div class="bar-track"><div class="bar-fill" style="width:12.5%;background:var(--orange)">$300</div></div><div class="bar-val">$300/yr</div></div>
+    <div class="bar-row"><div class="bar-label">Yahoo Plus</div><div class="bar-track"><div class="bar-fill" style="width:14.6%;background:var(--orange)">$350</div></div><div class="bar-val">$350/yr</div></div>
+    <div class="bar-row"><div class="bar-label">TradingView Prem.</div><div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--red)">$600</div></div><div class="bar-val">$600/yr</div></div>
+    <div class="bar-row"><div class="bar-label">Seeking Alpha PRO</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,var(--red),#991b1b)">$2,400</div></div><div class="bar-val">$2,400/yr</div></div>
+  </div>
+
+  <h3>Cost to Replicate InvestAI Feature Set</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Best Competitor</th><th>Annual Cost</th></tr></thead>
+      <tbody>
+        <tr><td>Technical Analysis (35+ indicators)</td><td>TradingView Premium</td><td>$600</td></tr>
+        <tr><td>Quant Ratings &amp; Screening</td><td>Seeking Alpha Premium</td><td>$299</td></tr>
+        <tr><td>Fund Analysis &amp; Moat Ratings</td><td>Morningstar Investor</td><td>$249</td></tr>
+        <tr><td>Stock Screener (Advanced)</td><td>Finviz Elite</td><td>$300</td></tr>
+        <tr><td>Financial Data (40yr history)</td><td>Stock Analysis Pro</td><td>$79</td></tr>
+        <tr><td>Budgeting &amp; Transactions</td><td>Monarch Money</td><td>$100</td></tr>
+        <tr><td>DCA Planning</td><td><em>No equivalent</em></td><td>—</td></tr>
+        <tr><td>AI Stock Advisory</td><td><em>No equivalent</em></td><td>—</td></tr>
+        <tr style="background:rgba(99,102,241,.08);font-weight:700"><td>TOTAL to replicate</td><td></td><td style="color:var(--red);font-size:1.1rem">$1,627/yr</td></tr>
+        <tr style="background:rgba(52,211,153,.08);font-weight:700"><td>InvestAI</td><td></td><td style="color:var(--green);font-size:1.1rem">$0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>InvestAI Planned Monetization</h3>
+  <div class="cards c2">
+    <div class="card" style="border-color:var(--green)">
+      <h4 style="color:var(--green)">Free Tier — $0</h4>
+      <p>Dashboard, Portfolio, Watchlist, basic Screener, Risk Profile, Transactions, Budgets</p>
+    </div>
+    <div class="card" style="border-color:var(--accent)">
+      <h4 style="color:var(--accent)">Premium — $4.99/mo ($39.99/yr)</h4>
+      <p>AutoPilot, Smart Advisor, Trading Advisor, Value Scanner, IL Funds, Alerts, Recommendations</p>
+    </div>
+  </div>
+  <div class="callout"><strong>Pricing Risk:</strong> At $4.99/mo, InvestAI is the cheapest AI-powered investment tool in the market (10x cheaper than TradingView Premium, 5x cheaper than SA Premium). Consider $9.99/mo mid-tier or $79/yr annual to avoid signaling low quality.</div>
+</div>
+</section>
+
+<!-- ═══════ 7. UX ═══════ -->
+<section id="ux">
+<div class="wrap">
+  <h2><span class="num">07</span> User Flows &amp; UX Analysis</h2>
+
+  <h3>User Journey Comparison</h3>
+  <div class="cards c2">
+    <div class="card">
+      <h4 style="color:var(--accent)">InvestAI Flow</h4>
+      <p style="font-family:var(--mono);font-size:.8rem;line-height:2;color:var(--green)">
+        Landing → Register → Risk Profile (6 steps) →<br>
+        Dashboard → AI assistant guides user →<br>
+        Portfolio → Screener → Smart Advisor →<br>
+        Alerts → DCA Planner
+      </p>
+      <p class="tag" style="background:rgba(52,211,153,.15);color:var(--green)">Most hand-held onboarding in market</p>
+    </div>
+    <div class="card">
+      <h4>TradingView Flow</h4>
+      <p style="font-family:var(--mono);font-size:.8rem;line-height:2;color:#9ca3af">
+        Landing → Free account → Explore charts →<br>
+        Hit chart limit (2/tab) → Subscribe →<br>
+        Multi-chart workspace → Pine indicators →<br>
+        Share ideas → Connect broker → Trade
+      </p>
+      <p class="tag" style="background:rgba(251,191,36,.15);color:var(--yellow)">Charts hook → paywall conversion</p>
+    </div>
+    <div class="card">
+      <h4>Seeking Alpha Flow</h4>
+      <p style="font-family:var(--mono);font-size:.8rem;line-height:2;color:#9ca3af">
+        Google stock search → Land on SA article →<br>
+        Read teaser → Paywall → Subscribe Premium →<br>
+        Explore Quant ratings → Build watchlist →<br>
+        Read community → Upgrade to PRO
+      </p>
+      <p class="tag" style="background:rgba(248,113,113,.15);color:var(--red)">SEO-driven acquisition → paywall</p>
+    </div>
+    <div class="card">
+      <h4>Morningstar Flow</h4>
+      <p style="font-family:var(--mono);font-size:.8rem;line-height:2;color:#9ca3af">
+        Fund / stock search → View basic data →<br>
+        Hit paywall for fair value & moat →<br>
+        Subscribe → Portfolio X-Ray →<br>
+        Weekly email research → Retirement tools
+      </p>
+      <p class="tag" style="background:rgba(251,191,36,.15);color:var(--yellow)">Proprietary data as paywall</p>
+    </div>
+  </div>
+
+  <h3>UX Dimensions</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Dimension</th><th style="background:rgba(99,102,241,.15)">InvestAI</th><th>TradingView</th><th>Seeking Alpha</th><th>Morningstar</th></tr></thead>
+      <tbody>
+        <tr><td>Onboarding</td><td class="best">✅✅ Best (11-step + AI)</td><td class="no">❌ None</td><td class="no">❌ Article-first</td><td class="partial">⚠️</td></tr>
+        <tr><td>Navigation</td><td class="yes">✅ Sidebar + bottom</td><td class="yes">✅ Tab workspace</td><td class="yes">✅ Website nav</td><td class="yes">✅ Traditional</td></tr>
+        <tr><td>Info Density</td><td class="yes">✅ Balanced</td><td class="best">✅✅ Very high</td><td class="yes">✅ Article-heavy</td><td class="yes">✅ Data-heavy</td></tr>
+        <tr><td>Mobile UX</td><td class="partial">⚠️ Responsive</td><td class="best">✅✅ Apps</td><td class="yes">✅ Apps</td><td class="yes">✅ Apps</td></tr>
+        <tr><td>Personalization</td><td class="yes">✅ Risk profile</td><td class="yes">✅ Custom layouts</td><td class="yes">✅ Watchlist</td><td class="yes">✅ Watchlist</td></tr>
+        <tr><td>Data Freshness</td><td>2-min refresh</td><td class="best">Real-time stream</td><td>Real-time</td><td>Real-time</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 8. AI DIFFERENTIATION ═══════ -->
+<section id="ai">
+<div class="wrap">
+  <h2><span class="num">08</span> AI &amp; Technology Differentiation</h2>
+  <p class="section-desc">InvestAI's AI integration is the most advanced in the retail investment tool market.</p>
+
+  <div class="chart-container">
+    <h4>AI Capability Depth Across Platforms</h4>
+    <div class="bar-row"><div class="bar-label">InvestAI</div><div class="bar-track"><div class="bar-fill" style="width:95%;background:linear-gradient(90deg,var(--accent),var(--cyan))">GPT-5 nano + o3 — 16 tool functions</div></div><div class="bar-val" style="color:var(--cyan)">★★★</div></div>
+    <div class="bar-row"><div class="bar-label">Bloomberg GPT</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:linear-gradient(90deg,var(--yellow),#b45309)">Proprietary LLM — deep but $25 K/yr</div></div><div class="bar-val">★★½</div></div>
+    <div class="bar-row"><div class="bar-label">Seeking Alpha</div><div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--orange)">Virtual Analyst Reports</div></div><div class="bar-val">★</div></div>
+    <div class="bar-row"><div class="bar-label">Yahoo Finance</div><div class="bar-track"><div class="bar-fill" style="width:15%;background:var(--pink)">Basic Q&A</div></div><div class="bar-val">½</div></div>
+    <div class="bar-row"><div class="bar-label">TradingView</div><div class="bar-track"><div class="bar-fill" style="width:2%;background:var(--red);min-width:40px">None</div></div><div class="bar-val" style="color:var(--red)">—</div></div>
+    <div class="bar-row"><div class="bar-label">Morningstar</div><div class="bar-track"><div class="bar-fill" style="width:2%;background:var(--red);min-width:40px">None</div></div><div class="bar-val" style="color:var(--red)">—</div></div>
+    <div class="bar-row"><div class="bar-label">Finviz</div><div class="bar-track"><div class="bar-fill" style="width:2%;background:var(--red);min-width:40px">None</div></div><div class="bar-val" style="color:var(--red)">—</div></div>
+  </div>
+
+  <h3>InvestAI's 5 AI Moats</h3>
+  <div class="cards c3" style="counter-reset:moat">
+    <div class="card"><h4>🔀 Two-Tier Model Routing</h4><p>GPT-5 nano for classification + fast Q&A; o3 for complex financial reasoning. Optimizes cost and quality simultaneously.</p></div>
+    <div class="card"><h4>✏️ Write Capabilities</h4><p>AI can add portfolio holdings, create alerts, log transactions. Competitors' AI can only read / display.</p></div>
+    <div class="card"><h4>🛠️ 16 Tool Functions</h4><p>Screener search, trading signals, app navigation, GitHub issue creation. This is agentic AI — not just a chatbot.</p></div>
+    <div class="card"><h4>📡 SSE Streaming + Badges</h4><p>Users see ⚡ nano or 🧠 o3 model badges in real-time. Transparency no competitor offers.</p></div>
+    <div class="card"><h4>🎯 Advisory Integration</h4><p>Scored picks with entry/target/stop-loss, R:R ratios, Fibonacci levels. Closer to hedge fund analysis than retail tools.</p></div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 9. GAP ANALYSIS ═══════ -->
+<section id="gaps">
+<div class="wrap">
+  <h2><span class="num">09</span> Gap Analysis</h2>
+  <p class="section-desc">What competitors have that InvestAI doesn't — prioritized by impact.</p>
+
+  <h3 style="color:var(--red)">🔴 Critical Gaps (High Impact)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Gap</th><th>Who Has It</th><th>Impact</th><th>Effort</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Native Mobile App</strong></td><td>TradingView, SA, Morningstar, Yahoo</td><td style="color:var(--red)">Very High — 60 %+ mobile-first</td><td>Very High (13-week plan exists)</td></tr>
+        <tr><td><strong>Social / Community</strong></td><td>TradingView, SA (16 K analysts), Yahoo</td><td style="color:var(--red)">High — content flywheel & SEO</td><td>High</td></tr>
+        <tr><td><strong>Brokerage Integration</strong></td><td>TradingView (30+ brokers), Yahoo</td><td style="color:var(--red)">High — real trading & auto-sync</td><td>Very High (regulatory)</td></tr>
+        <tr><td><strong>Bank Account Linking</strong></td><td>Monarch, YNAB, Yahoo (Plaid)</td><td style="color:var(--red)">High — auto-import vs manual</td><td>High ($$$)</td></tr>
+        <tr><td><strong>Data Universe (280→1 K+)</strong></td><td>TradingView (3.5 M), Stock Analysis (130 K)</td><td style="color:var(--orange)">Medium-High</td><td>Medium</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="color:var(--yellow)">🟡 Important Gaps (Medium Impact)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Gap</th><th>Who Has It</th><th>Effort</th></tr></thead>
+      <tbody>
+        <tr><td>Options Analysis</td><td>TradingView, Yahoo</td><td>Medium</td></tr>
+        <tr><td>ETF Deep Analysis</td><td>Finviz, Morningstar, Stock Analysis</td><td>Medium</td></tr>
+        <tr><td>Historical Financial Statements</td><td>Stock Analysis (40 yr), Morningstar</td><td>Medium</td></tr>
+        <tr><td>Chart Drawing Tools</td><td>TradingView (90+ tools)</td><td>High</td></tr>
+        <tr><td>Dividend Analysis Grades</td><td>SA (A–F grades), Morningstar</td><td>Low-Medium</td></tr>
+        <tr><td>Heatmaps</td><td>TradingView, Finviz</td><td>Medium</td></tr>
+        <tr><td>Crypto Coverage</td><td>TradingView, Yahoo, Finviz</td><td>Low-Medium</td></tr>
+        <tr><td>Retirement Planning</td><td>Morningstar, Betterment</td><td>Medium</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="color:var(--green)">🟢 Nice-to-Have (Lower Priority)</h3>
+  <div class="cards c3">
+    <div class="card"><h4>Insider Trading Data</h4><p>Finviz, SA — niche but useful. Low effort.</p></div>
+    <div class="card"><h4>IPO Calendar</h4><p>Stock Analysis, Yahoo — simple API integration.</p></div>
+    <div class="card"><h4>Data Export / API</h4><p>Finviz, Stock Analysis — power user feature.</p></div>
+    <div class="card"><h4>Multi-Currency</h4><p>Yahoo, Morningstar — important for intl users.</p></div>
+    <div class="card"><h4>Podcast / Video</h4><p>SA, Morningstar — media play, high content cost.</p></div>
+    <div class="card"><h4>Forex Deep Support</h4><p>TradingView, Finviz — different market segment.</p></div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 10. ADVANTAGES ═══════ -->
+<section id="advantages">
+<div class="wrap">
+  <h2><span class="num">10</span> Our Competitive Advantages</h2>
+
+  <h3>Unique or Best-in-Class Capabilities</h3>
+  <div class="cards c2">
+    <div class="card" style="border-left:3px solid var(--cyan)">
+      <h4>🤖 AI Two-Tier Chatbot with Write Actions</h4>
+      <p>GPT-5 nano + o3 assistant that can <strong>read AND modify</strong> portfolio, watchlist, alerts, transactions. 16 tool functions including screener search, navigation, and GitHub issue creation.</p>
+      <p class="tag" style="background:rgba(34,211,238,.15);color:var(--cyan)">Nothing comparable exists in retail tools</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--green)">
+      <h4>🆓 All-in-One Free Platform</h4>
+      <p>Portfolio + Screening + TA + AI Advisory + DCA + Budgets + Education in one free product. Would cost <strong>$1,627/yr</strong> assembling from competitors.</p>
+      <p class="tag" style="background:rgba(52,211,153,.15);color:var(--green)">Unmatched cost-value ratio</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--accent)">
+      <h4>🚀 AutoPilot Smart Portfolios</h4>
+      <p>3 risk profiles (Daredevil / Strategist / Fortress) with real-data backtests, Sharpe ratios, and rebalancing. Betterment charges 0.25 % AUM for similar.</p>
+      <p class="tag" style="background:rgba(99,102,241,.15);color:var(--accent)">Free robo-advisory equivalent</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--yellow)">
+      <h4>📉 DCA Planner with Dip Detection</h4>
+      <p>Full lifecycle: wizard → plan → auto-dip signals → execution log → rebalance. Detects 15-20 % dips from avg cost / 52-week high → recommends 2x+ buying.</p>
+      <p class="tag" style="background:rgba(251,191,36,.15);color:var(--yellow)">No competitor offers this</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--pink)">
+      <h4>🧬 Company DNA (Berkshire Score)</h4>
+      <p>Buffett / Munger-style analysis: moat assessment, management quality, insider activity, valuation margin of safety → 0–100 score.</p>
+      <p class="tag" style="background:rgba(244,114,182,.15);color:var(--pink)">Morningstar charges $249/yr for moat ratings</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--orange)">
+      <h4>📡 Picks Tracker (Multi-Source)</h4>
+      <p>Scrape Discord / Reddit / TradingView / Finviz picks → backtest against real price data → win/loss evaluation per source.</p>
+      <p class="tag" style="background:rgba(251,146,60,.15);color:var(--orange)">Completely unique feature</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 11. TRENDS ═══════ -->
+<section id="trends">
+<div class="wrap">
+  <h2><span class="num">11</span> Market Trends &amp; Emerging Techniques</h2>
+
+  <h3>8 Key Trends Shaping the Market (2025–2028)</h3>
+  <div class="cards c2">
+    <div class="card">
+      <h4>1. AI-Native Platforms</h4>
+      <p>Shift from "tools with AI add-ons" to "AI-first products." SA launched Virtual Analyst; startups like Composer & Magnifi are AI-first. InvestAI is <strong style="color:var(--green)">ahead</strong> but window is closing.</p>
+    </div>
+    <div class="card">
+      <h4>2. Agentic AI</h4>
+      <p>AI that <strong>acts</strong> — executing trades, rebalancing, tax-harvesting. InvestAI's write-action chatbot is an early version. OpenAI, Google, and brokerages are all racing here.</p>
+    </div>
+    <div class="card">
+      <h4>3. Tool Consolidation</h4>
+      <p>Subscription fatigue drives demand for all-in-one platforms. Yahoo bundles Morningstar; Robinhood adds Gold features; SoFi bundles everything. InvestAI's breadth is <strong style="color:var(--green)">aligned</strong>.</p>
+    </div>
+    <div class="card">
+      <h4>4. Democratization of Analytics</h4>
+      <p>Institutional-grade tools (factor models, backtesting, risk attribution) moving to retail at $0–50/mo. InvestAI's AutoPilot & Company DNA are <strong style="color:var(--green)">aligned</strong>.</p>
+    </div>
+    <div class="card">
+      <h4>5. Social Trading</h4>
+      <p>TradingView grew to 100 M users via social features. Community-validated ideas are a powerful retention lever. InvestAI has a <strong style="color:var(--red)">critical gap</strong> here.</p>
+    </div>
+    <div class="card">
+      <h4>6. Mobile-First</h4>
+      <p>60 %+ of retail usage is mobile. No native app = lost users. InvestAI has a <strong style="color:var(--red)">critical gap</strong>; Android strategy exists but needs execution.</p>
+    </div>
+    <div class="card">
+      <h4>7. Embedded Finance &amp; APIs</h4>
+      <p>TradingView's charting library is embedded on 1,000+ sites. API-first distribution creates growth beyond the core product.</p>
+    </div>
+    <div class="card">
+      <h4>8. Alternative Data</h4>
+      <p>Sentiment from social media, web traffic, patent filings. InvestAI's Picks Tracker (Discord / Reddit scraping) is an early version of this trend.</p>
+    </div>
+  </div>
+
+  <h3>Emerging Techniques Comparison</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Technique</th><th>Used By</th><th>InvestAI Status</th></tr></thead>
+      <tbody>
+        <tr><td>Quant Factor Models</td><td>SA, Zacks, Bloomberg</td><td class="yes">✅ Have (Buy/Hold/Avoid)</td></tr>
+        <tr><td>Backtesting Frameworks</td><td>TradingView, QuantConnect</td><td class="partial">⚠️ Partial (DCA + AutoPilot)</td></tr>
+        <tr><td>NLP Sentiment Analysis</td><td>Bloomberg, Refinitiv</td><td class="partial">⚠️ Partial (no systematic scoring)</td></tr>
+        <tr><td>Social Sentiment Gauges</td><td>Finbold, alt-data startups</td><td class="partial">⚠️ Partial (Picks Tracker)</td></tr>
+        <tr><td>Fair Value DCF Models</td><td>Morningstar, Simply Wall St</td><td class="partial">⚠️ Partial (Graham, not full DCF)</td></tr>
+        <tr><td>Risk Factor Attribution</td><td>Morningstar X-Ray, Bloomberg</td><td class="partial">⚠️ Partial (sector only)</td></tr>
+        <tr><td>Earnings Estimate Revisions</td><td>Zacks, SA</td><td class="no">❌ Not implemented</td></tr>
+        <tr><td>Options Flow Analysis</td><td>Unusual Whales, TradingView</td><td class="no">❌ Not implemented</td></tr>
+        <tr><td>Direct Indexing</td><td>Betterment, Wealthfront</td><td class="no">❌ Not implemented</td></tr>
+        <tr><td>Graph Neural Networks</td><td>Bloomberg, Kensho</td><td class="no">❌ Not implemented</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 12. STRATEGY ═══════ -->
+<section id="strategy">
+<div class="wrap">
+  <h2><span class="num">12</span> Strategic Recommendations</h2>
+
+  <h3>Priority Matrix</h3>
+  <div class="scatter-grid" style="aspect-ratio:1/0.65">
+    <div class="axis-label" style="top:50%;left:-4px;transform:rotate(-90deg) translateX(50%);transform-origin:top left">← Low Impact · · High Impact →</div>
+    <div class="axis-label" style="bottom:6px;left:50%;transform:translateX(-50%)">← Low Effort · · High Effort →</div>
+    <!-- Quadrant labels -->
+    <div style="position:absolute;top:10px;left:10px;font-size:.7rem;color:var(--accent);font-weight:700;text-transform:uppercase">🚀 Do First</div>
+    <div style="position:absolute;top:10px;right:10px;font-size:.7rem;color:var(--yellow);font-weight:700;text-transform:uppercase">📋 Plan Long-Term</div>
+    <div style="position:absolute;bottom:26px;left:10px;font-size:.7rem;color:var(--green);font-weight:700;text-transform:uppercase">⚡ Quick Wins</div>
+    <div style="position:absolute;bottom:26px;right:10px;font-size:.7rem;color:#6b7280;font-weight:700;text-transform:uppercase">🔽 Deprioritize</div>
+    <!-- Dividers -->
+    <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border)"></div>
+    <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:var(--border)"></div>
+    <!-- Items -->
+    <div class="scatter-dot" style="left:35%;top:18%;background:rgba(99,102,241,.2);color:var(--accent);font-size:.68rem">Mobile App</div>
+    <div class="scatter-dot" style="left:28%;top:25%;background:rgba(99,102,241,.2);color:var(--accent);font-size:.68rem">1000+ Symbols</div>
+    <div class="scatter-dot" style="left:38%;top:30%;background:rgba(99,102,241,.2);color:var(--accent);font-size:.68rem">Community</div>
+    <div class="scatter-dot" style="left:22%;top:22%;background:rgba(99,102,241,.2);color:var(--accent);font-size:.68rem">SEO Strategy</div>
+    <div class="scatter-dot" style="left:72%;top:22%;background:rgba(251,191,36,.15);color:var(--yellow);font-size:.68rem">Brokerage</div>
+    <div class="scatter-dot" style="left:78%;top:28%;background:rgba(251,191,36,.15);color:var(--yellow);font-size:.68rem">Bank Linking</div>
+    <div class="scatter-dot" style="left:65%;top:35%;background:rgba(251,191,36,.15);color:var(--yellow);font-size:.68rem">Options</div>
+    <div class="scatter-dot" style="left:20%;top:60%;background:rgba(52,211,153,.15);color:var(--green);font-size:.68rem">CSV Export</div>
+    <div class="scatter-dot" style="left:30%;top:65%;background:rgba(52,211,153,.15);color:var(--green);font-size:.68rem">Heatmaps</div>
+    <div class="scatter-dot" style="left:18%;top:70%;background:rgba(52,211,153,.15);color:var(--green);font-size:.68rem">DCF Model</div>
+    <div class="scatter-dot" style="left:28%;top:75%;background:rgba(52,211,153,.15);color:var(--green);font-size:.68rem">Div. Grades</div>
+    <div class="scatter-dot" style="left:75%;top:65%;background:rgba(107,114,128,.15);color:#6b7280;font-size:.68rem">Pine Script</div>
+    <div class="scatter-dot" style="left:82%;top:72%;background:rgba(107,114,128,.15);color:#6b7280;font-size:.68rem">Drawing Tools</div>
+  </div>
+
+  <h3>Phased Roadmap</h3>
+  <div class="timeline">
+    <div class="tl-item p1">
+      <h4 style="color:var(--accent)">Phase 1: Foundation <span class="tl-tag" style="background:rgba(99,102,241,.15);color:var(--accent)">Months 1–3</span></h4>
+      <div class="cards c2" style="margin:.7rem 0">
+        <div class="card"><h4>Expand to 1,000+ symbols</h4><p>280 symbols limits screener utility. Expected +40 % engagement.</p></div>
+        <div class="card"><h4>CSV / Excel export</h4><p>Table stakes feature — Finviz & Stock Analysis have it.</p></div>
+        <div class="card"><h4>Market heatmaps</h4><p>High visual impact. ~+15 % time-on-site.</p></div>
+        <div class="card"><h4>SEO stock pages</h4><p>SA gets 50 %+ traffic from Google. 10x organic traffic potential.</p></div>
+      </div>
+    </div>
+    <div class="tl-item p2">
+      <h4 style="color:var(--green)">Phase 2: Growth <span class="tl-tag" style="background:rgba(52,211,153,.15);color:var(--green)">Months 4–6</span></h4>
+      <div class="cards c2" style="margin:.7rem 0">
+        <div class="card"><h4>Android MVP</h4><p>60 %+ mobile-first users. Expected 2–3x user base.</p></div>
+        <div class="card"><h4>Community picks feed</h4><p>TradingView's growth engine. Engaged users stay 3x longer.</p></div>
+        <div class="card"><h4>Full DCF fair value</h4><p>Compete with Morningstar's $249/yr feature.</p></div>
+        <div class="card"><h4>NLP sentiment scoring</h4><p>Differentiation from all except Bloomberg.</p></div>
+      </div>
+    </div>
+    <div class="tl-item p3">
+      <h4 style="color:var(--yellow)">Phase 3: Monetization <span class="tl-tag" style="background:rgba(251,191,36,.15);color:var(--yellow)">Months 7–12</span></h4>
+      <div class="cards c2" style="margin:.7rem 0">
+        <div class="card"><h4>Freemium launch ($9.99/mo)</h4><p>Feature set justifies premium. First revenue.</p></div>
+        <div class="card"><h4>API access tier</h4><p>B2B revenue stream — Finviz model validated.</p></div>
+        <div class="card"><h4>Broker referral partnerships</h4><p>Revenue without custody risk — TradingView model.</p></div>
+        <div class="card"><h4>Plaid integration</h4><p>Auto-import transactions. Close gap with Monarch / YNAB.</p></div>
+      </div>
+    </div>
+    <div class="tl-item p4">
+      <h4 style="color:var(--orange)">Phase 4: Scale <span class="tl-tag" style="background:rgba(251,146,60,.15);color:var(--orange)">Year 2</span></h4>
+      <div class="cards c2" style="margin:.7rem 0">
+        <div class="card"><h4>Brokerage integration</h4><p>Paper trading → real trading. Transform tool into platform.</p></div>
+        <div class="card"><h4>iOS app + international</h4><p>Full mobile coverage. Multi-currency, multi-language. 3–5x TAM.</p></div>
+        <div class="card"><h4>Institutional / advisor tier</h4><p>Morningstar's highest ARPU segment.</p></div>
+        <div class="card"><h4>AI Agent V2</h4><p>Autonomous portfolio management — trades, rebalances, tax-optimizes. Category-defining.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Competitive Moat Strategy — Three Pillars</h3>
+  <div class="cards c3">
+    <div class="card" style="border-top:3px solid var(--accent)">
+      <h4>🧠 AI Depth</h4>
+      <p><strong>Hardest to copy.</strong> Expand tool functions, add autonomous actions, build proprietary fine-tuned models. Two-tier routing → multi-model ensemble.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--green)">
+      <h4>🔗 All-in-One Lock-In</h4>
+      <p><strong>Network effects.</strong> Users with portfolio + watchlist + DCA plans + budgets + AI history face massive switching costs.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--yellow)">
+      <h4>🇮🇱 Israeli Niche</h4>
+      <p><strong>Regional moat.</strong> Double down on TASE stocks, Israeli tax calculator, ₪ tracking. Own the Israeli retail investor before expanding.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ FOOTER ═══════ -->
+<footer style="padding:3rem 2rem;text-align:center;border-top:1px solid var(--border);color:#6b7280;font-size:.8rem">
+  <p style="margin-bottom:.5rem"><strong style="color:var(--heading)">InvestAI Competitive Market Analysis Report</strong></p>
+  <p>Prepared March 2026 · 10+ competitors analyzed · 80+ API endpoints benchmarked</p>
+  <p>Based on codebase analysis (24 routers, 30 services, 31 JS modules) and live competitor data</p>
+  <p style="margin-top:1rem;color:#4b5563">Data sources: TradingView, Seeking Alpha, Morningstar, Finviz, Stock Analysis, Yahoo Finance, industry reports</p>
+</footer>
+
+<!-- Back to Top -->
+<button class="totop" id="totop" onclick="window.scrollTo({top:0})">↑</button>
+
+<script>
+// Back-to-top visibility
+const btn = document.getElementById('totop');
+window.addEventListener('scroll', () => {
+  btn.classList.toggle('show', window.scrollY > 600);
+});
+</script>
+</body>
+</html>
