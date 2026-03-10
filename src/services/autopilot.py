@@ -309,6 +309,21 @@ def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict
     if isinstance(cached, dict):
         return cast(dict[str, Any], cached)
 
+    # DB fallback: load persisted simulation result (survives restarts)
+    try:
+        from src.services.persistence import load_scan
+
+        db_data = load_scan(cache_key)
+        if db_data and isinstance(db_data, dict) and db_data.get("stats"):
+            logger.info("Restored autopilot sim from DB: %s", cache_key)
+            # Warm all caches so subsequent calls are instant
+            with _sim_lock:
+                _sim_cache[cache_key] = db_data
+            _set_cache(cache_key, db_data)
+            return db_data
+    except Exception:
+        logger.debug("DB fallback failed for %s", cache_key)
+
     profile = PROFILES.get(profile_id)
     if not profile:
         return {"error": f"Unknown profile: {profile_id}"}
@@ -537,15 +552,59 @@ def simulate(profile_id: str, amount: float = 10000, period: str = "1y") -> dict
     return result
 
 
+def get_cached_status() -> dict[str, bool]:
+    """Return which profile/period combos are cached and ready.
+
+    Used by the frontend to show instant results vs 'needs computation' state.
+    """
+    from src.services.persistence import load_scan
+
+    status: dict[str, bool] = {}
+    for profile_id in PROFILES:
+        for period in AUTOPILOT_PERIODS:
+            for amount in AUTOPILOT_AMOUNTS:
+                key = f"autopilot:{profile_id}:{amount}:{period}"
+                # Check in-memory first (fastest)
+                with _sim_lock:
+                    if key in _sim_cache:
+                        status[f"{profile_id}:{period}"] = True
+                        continue
+                cached = _get_cached(key)
+                if isinstance(cached, dict):
+                    status[f"{profile_id}:{period}"] = True
+                    continue
+                # Check DB
+                try:
+                    db = load_scan(key)
+                    status[f"{profile_id}:{period}"] = bool(db and isinstance(db, dict) and db.get("stats"))
+                except Exception:
+                    status[f"{profile_id}:{period}"] = False
+    return status
+
+
 def run_full_warmup() -> None:
     """Pre-compute simulations for all profile/period/amount combos.
 
     Called by background_scheduler to ensure instant API responses.
     """
+    ok = 0
+    failed = 0
+    from_db = 0
     for profile_id in PROFILES:
         for period in AUTOPILOT_PERIODS:
             for amount in AUTOPILOT_AMOUNTS:
+                key = f"autopilot:{profile_id}:{amount}:{period}"
                 try:
-                    simulate(profile_id, amount=amount, period=period)
+                    result = simulate(profile_id, amount=amount, period=period)
+                    if isinstance(result, dict) and result.get("stats"):
+                        ok += 1
+                        # Check if it came from DB (already logged inside simulate)
+                    elif isinstance(result, dict) and result.get("error"):
+                        failed += 1
+                        logger.warning("Warmup %s: %s", key, result["error"])
+                    else:
+                        failed += 1
                 except Exception:
+                    failed += 1
                     logger.exception("Warmup failed for %s/%s/%s", profile_id, period, amount)
+    logger.info("Autopilot warmup: %d OK, %d failed (of %d total)", ok, failed, ok + failed)

@@ -1,8 +1,9 @@
 import logging
+import threading
 
 from fastapi import APIRouter, Query
 
-from src.services.autopilot import get_profiles, simulate
+from src.services.autopilot import get_profiles, simulate, get_cached_status
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,29 @@ def list_profiles():
     except Exception as e:
         logger.error("autopilot profiles error: %s", e)
         return []
+
+
+@router.get("/cached-status")
+def cached_status():
+    """Return which profile/period combos have cached data ready."""
+    try:
+        return get_cached_status()
+    except Exception as e:
+        logger.error("autopilot cached-status error: %s", e)
+        return {}
+
+
+@router.post("/warmup")
+def trigger_warmup():
+    """Manually trigger autopilot warmup in the background."""
+    try:
+        from src.services.autopilot import run_full_warmup
+
+        threading.Thread(target=run_full_warmup, daemon=True, name="ap-warmup").start()
+        return {"status": "warmup started"}
+    except Exception as e:
+        logger.error("autopilot warmup trigger error: %s", e)
+        return {"error": str(e)}
 
 
 @router.get("/simulate")

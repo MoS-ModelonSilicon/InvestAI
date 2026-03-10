@@ -6,6 +6,7 @@ let apAmount = 10000;
 let apPeriod = "1y";
 let apChart = null;
 let _apLastHoldings = [];
+let _apCachedStatus = {};  // tracks which combos are pre-computed
 
 const RISK_COLORS = { High: "#ef4444", Medium: "#f59e0b", Low: "#22c55e" };
 const RISK_ICONS = {
@@ -17,8 +18,19 @@ const RISK_ICONS = {
 async function loadAutopilot() {
     const container = document.getElementById("ap-profiles");
     try {
-        apProfiles = await api.get("/api/autopilot/profiles");
+        // Load profiles and cached status in parallel
+        const [profiles, cachedStatus] = await Promise.all([
+            api.get("/api/autopilot/profiles"),
+            api.get("/api/autopilot/cached-status").catch(() => ({})),
+        ]);
+        apProfiles = profiles;
+        _apCachedStatus = cachedStatus || {};
         renderProfileCards();
+
+        // Auto-select first profile and run simulation instantly if cached
+        if (apProfiles.length && !apSelectedProfile) {
+            selectProfile(apProfiles[0].id);
+        }
     } catch (e) {
         container.innerHTML = '<div class="empty-state"><p>Failed to load strategies.</p></div>';
     }
@@ -64,6 +76,9 @@ function selectProfile(id) {
     document.getElementById("ap-config").style.display = "";
     document.getElementById("ap-results").style.display = "none";
     document.getElementById("ap-error").style.display = "none";
+
+    // Auto-run simulation when profile is selected (instant if cached)
+    runAutopilot();
 }
 
 function setApAmount(val) {
@@ -82,6 +97,8 @@ function setApPeriod(val) {
     document.querySelectorAll(".ap-period-row .btn").forEach((b) => b.classList.remove("ap-preset-active"));
     const active = document.querySelector(`.ap-period-row .btn[data-period="${val}"]`);
     if (active) active.classList.add("ap-preset-active");
+    // Auto-run simulation on period change (instant if cached)
+    if (apSelectedProfile) runAutopilot();
 }
 
 async function runAutopilot() {
