@@ -47,11 +47,47 @@
 
 ## Post-Deploy Verification
 
-1. Hit the live site: https://investai-utho.onrender.com
-2. Check login works
-3. Check market data loads (screener, featured stocks)
-4. Verify admin panel (`/api/admin/stats`)
-5. Check GitHub Actions nightly tests (runs at 2 AM UTC)
+1. **Check Render deploy status** — query the Render API to confirm deploy is `live`:
+   ```bash
+   python _check_render.py
+   ```
+   Expected: `status=live` for the latest deploy matching your commit message.
+   If `build_failed` or stuck `update_in_progress` > 5 min, check build logs via Render API.
+
+2. **Verify new code is actually served** — curl the static assets to confirm:
+   ```bash
+   curl -s https://investai-utho.onrender.com/static/js/picks-tracker.js | head -5
+   curl -s https://finance-tracker-staging.onrender.com/static/js/picks-tracker.js | head -5
+   ```
+   The response should contain the code you just shipped (not a cached old version).
+
+3. **Hit the live site**: https://investai-utho.onrender.com
+4. **Check login works**
+5. **Check market data loads** (screener, featured stocks)
+6. **Verify admin panel** (`/api/admin/stats`)
+7. **Run E2E against live site**:
+   ```powershell
+   python -m pytest tests/test_live_site.py --live-url https://investai-utho.onrender.com -k "test_login_page_loads or test_dashboard_loads" -v
+   ```
+8. **Check GitHub Actions nightly tests** (runs at 2 AM UTC)
+
+> **Critical:** A commit on `master` is NOT shipped until it's verified live. Always confirm the Render deploy status AND that the new code is being served before considering the feature delivered.
+
+### Render Deploy Status Reference
+
+| Status | Meaning |
+|---|---|
+| `live` | Successfully deployed and serving traffic |
+| `update_in_progress` | Build/deploy is running (wait 2-3 min) |
+| `build_failed` | Build error — check logs via API or Render dashboard |
+| `deactivated` | Replaced by a newer deploy |
+
+### Trigger Production Deploy Manually
+
+Production has `autoDeploy: false`. If staging is green but prod hasn't deployed:
+```bash
+curl -X POST "https://api.render.com/deploy/srv-d6jcdsvgi27c73d2uta0?key=wnZP2EvMsZs"
+```
 
 ## Rollback
 

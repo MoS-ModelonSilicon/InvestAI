@@ -70,6 +70,13 @@ YOU: "feat: add DCA calculator"
 │  If E2E passes → close issue as completed                        │
 │  If E2E fails → leave open, production NOT promoted              │
 │  Note: Production promote happens via nightly auto-promote       │
+├──────────────────────────────────────────────────────────────────┤
+│  POST-DEPLOY — Render Verification (manual if pipeline exits)    │
+│  1. Query Render API: deploy status = "live"?                    │
+│  2. Curl the live JS/HTML: does it contain the new code?         │
+│  3. If build_failed/503: check Render logs via API               │
+│  4. Trigger prod deploy hook if staging-only auto-deploys        │
+│  5. Run E2E on live site to confirm feature works                │
 └──────────────────────────────────────────────────────────────────┘
  │
  ▼
@@ -277,6 +284,82 @@ The `TestAPIHealth._fetch()` helper includes automatic 401 recovery. If a fetch 
 - Stale auth cookies after deploy (via auto-recovery)
 
 If E2E fails, the issue stays open and the nightly pipeline will also flag it.
+
+## Post-Deploy Verification (Manual Checklist)
+
+After the pipeline completes (or if it exits early due to network/CI issues), **always verify the deployment actually landed**:
+
+### 1. Check Render Deploy Status via API
+
+```python
+# Run the helper script:
+python _check_render.py
+
+# Or query directly:
+import requests
+proxies = {"http": "http://proxy-dmz.intel.com:911", "https": "http://proxy-dmz.intel.com:912"}
+HEADERS = {"Authorization": "Bearer <RENDER_API_KEY>", "Accept": "application/json"}
+BASE = "https://api.render.com/v1"
+STAGING = "srv-d6mn2cma2pns73d9r23g"
+PROD    = "srv-d6jcdsvgi27c73d2uta0"
+
+r = requests.get(f"{BASE}/services/{STAGING}/deploys?limit=3", headers=HEADERS, proxies=proxies, timeout=15)
+for d in r.json():
+    dep = d.get("deploy", d)
+    print(dep["status"], dep.get("commit", {}).get("message", "")[:60])
+```
+
+Expected statuses: `live` (deployed), `update_in_progress` (building), `build_failed`, `deactivated` (replaced by newer deploy).
+
+### 2. Confirm the Code is Actually Served
+
+```bash
+# Check staging JS file includes the new code:
+curl -s https://finance-tracker-staging.onrender.com/static/js/picks-tracker.js | head -5
+# → Should contain SMART_FILTERS or whatever feature you just shipped
+
+# Check production:
+curl -s https://investai-utho.onrender.com/static/js/picks-tracker.js | head -5
+```
+
+### 3. Check Render Build Logs (if deploy failed)
+
+```python
+# Get logs for the latest deploy:
+r = requests.get(f"{BASE}/services/{sid}/deploys/{deploy_id}/logs", headers=HEADERS, proxies=proxies, timeout=15)
+for entry in r.json()[-20:]:
+    print(entry.get("message", ""))
+```
+
+Common failure reasons:
+- **`build_failed`** → dependency issue or syntax error; check `requirements.txt` and Python version
+- **`update_in_progress` for >5 min** → likely a slow build; Render free tier can be slow
+- **503 after deploy** → app crashed on startup; check Render dashboard logs or query the logs API
+- **Old code still served** → browser cache; hard-refresh or check with `curl`
+
+### 4. Trigger Production Deploy (if needed)
+
+Production has `autoDeploy: false` — it only deploys via the deploy hook:
+
+```bash
+# Via deploy hook (curl):
+curl -X POST "https://api.render.com/deploy/srv-d6jcdsvgi27c73d2uta0?key=wnZP2EvMsZs"
+
+# Or via ship.ps1 (auto-triggered in Phase 7 if RENDER_PROD_DEPLOY_HOOK is set):
+$env:RENDER_PROD_DEPLOY_HOOK = "https://api.render.com/deploy/srv-d6jcdsvgi27c73d2uta0?key=wnZP2EvMsZs"
+```
+
+### 5. Run E2E Against Live Site
+
+```powershell
+# Staging:
+python -m pytest tests/test_live_site.py --live-url https://finance-tracker-staging.onrender.com -k "test_login_page_loads or test_dashboard_loads" -v
+
+# Production:
+python -m pytest tests/test_live_site.py --live-url https://investai-utho.onrender.com -k "test_login_page_loads or test_dashboard_loads" -v
+```
+
+> **Key principle:** A commit on `master` is NOT shipped until it's verified live on the target site. Always confirm the deploy status and that the new code is actually being served before considering the feature delivered.
 
 ## Nightly Safety Net
 
