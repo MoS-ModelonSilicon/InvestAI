@@ -525,10 +525,21 @@ def screen_instruments(
     pe_min: Optional[float] = None,
     pe_max: Optional[float] = None,
     dividend_yield_min: Optional[float] = None,
+    dividend_yield_max: Optional[float] = None,
     beta_min: Optional[float] = None,
     beta_max: Optional[float] = None,
     signal: Optional[str] = None,
     query: Optional[str] = None,
+    year_change_min: Optional[float] = None,
+    year_change_max: Optional[float] = None,
+    profit_margin_min: Optional[float] = None,
+    return_on_equity_min: Optional[float] = None,
+    debt_to_equity_max: Optional[float] = None,
+    revenue_growth_min: Optional[float] = None,
+    earnings_growth_min: Optional[float] = None,
+    pct_from_high_min: Optional[float] = None,
+    pct_from_high_max: Optional[float] = None,
+    region_not: Optional[str] = None,
 ) -> list[dict]:
     query_lower = query.strip().lower() if query else None
 
@@ -589,11 +600,33 @@ def screen_instruments(
             continue
         if dividend_yield_min and (row.get("dividend_yield") is None or row["dividend_yield"] < dividend_yield_min):
             continue
+        if dividend_yield_max and (row.get("dividend_yield") is None or row["dividend_yield"] > dividend_yield_max):
+            continue
         if beta_min and (row.get("beta") is None or row["beta"] < beta_min):
             continue
         if beta_max and (row.get("beta") is None or row["beta"] > beta_max):
             continue
         if signal and (row.get("signal") or "").lower() != signal.lower():
+            continue
+        if year_change_min is not None and (row.get("year_change") is None or row["year_change"] < year_change_min):
+            continue
+        if year_change_max is not None and (row.get("year_change") is None or row["year_change"] > year_change_max):
+            continue
+        if profit_margin_min is not None and (row.get("profit_margin") is None or row["profit_margin"] < profit_margin_min):
+            continue
+        if return_on_equity_min is not None and (row.get("return_on_equity") is None or row["return_on_equity"] < return_on_equity_min):
+            continue
+        if debt_to_equity_max is not None and (row.get("debt_to_equity") is None or row["debt_to_equity"] > debt_to_equity_max):
+            continue
+        if revenue_growth_min is not None and (row.get("revenue_growth") is None or row["revenue_growth"] < revenue_growth_min):
+            continue
+        if earnings_growth_min is not None and (row.get("earnings_growth") is None or row["earnings_growth"] < earnings_growth_min):
+            continue
+        if pct_from_high_min is not None and (row.get("pct_from_high") is None or row["pct_from_high"] < pct_from_high_min):
+            continue
+        if pct_from_high_max is not None and (row.get("pct_from_high") is None or row["pct_from_high"] > pct_from_high_max):
+            continue
+        if region_not and row.get("region", "US") == region_not:
             continue
 
         filtered.append(row)

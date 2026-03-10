@@ -43,6 +43,22 @@ def pytest_addoption(parser):
         help="URL of the deployed site to test (e.g. https://investai-utho.onrender.com). "
         "When set, skips local server startup.",
     )
+    parser.addoption(
+        "--run-deep",
+        action="store_true",
+        default=False,
+        help="Run tests marked @pytest.mark.deep (skipped by default).",
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """Auto-skip deep-marked tests unless --run-deep is passed."""
+    if config.getoption("--run-deep"):
+        return
+    skip_deep = pytest.mark.skip(reason="Deep tests require --run-deep flag")
+    for item in items:
+        if "deep" in item.keywords:
+            item.add_marker(skip_deep)
 
 
 def _port_is_open(port: int) -> bool:

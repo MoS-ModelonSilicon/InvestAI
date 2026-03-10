@@ -1,11 +1,22 @@
 let picksData = null;
 let picksFilter = null;
 let picksSourceFilter = null;
+let picksSmartFilter = null;
 let picksSortCol = "date";
 let picksSortAsc = false;
 let picksPage = 1;
 let picksSearchQuery = "";
 const PICKS_PER_PAGE = 100;
+
+const SMART_FILTERS = {
+    winners:     { label: "\u{1F3C6} Winners",      desc: "Picks that hit at least one target",      fn: p => p.status === "winner" },
+    high_rr:     { label: "\u{1F3AF} High R/R",     desc: "Risk/Reward ratio \u2265 2:1",              fn: p => (p.risk_reward || 0) >= 2 },
+    fast_movers: { label: "\u26A1 Fast Movers",    desc: "Winners that hit target within 5 days",   fn: p => p.status === "winner" && p.speed_score != null && p.speed_score <= 5 },
+    big_gains:   { label: "\u{1F680} Big Gains",     desc: "P&L \u2265 +10%",                          fn: p => (p.pnl_pct || 0) >= 10 },
+    low_risk:    { label: "\u{1F6E1}\uFE0F Low Risk",     desc: "Max drawdown under 10%",                  fn: p => p.worst_loss_pct != null && p.worst_loss_pct > -10 && p.entry != null },
+    open_setups: { label: "\u{1F7E1} Open Setups",  desc: "Still in play \u2014 not hit target or stop", fn: p => p.status === "open" },
+    multi_target:{ label: "\u{1F4AF} Multi-Target", desc: "Hit 2+ price targets",                    fn: p => (p.targets_hit || 0) >= 2 },
+};
 
 async function loadPicksTracker() {
     const container = document.getElementById("picks-results");
@@ -118,15 +129,26 @@ function renderPicksStats(stats) {
 
 function _getFilteredPicks() {
     if (!picksData || !picksData.picks) return [];
+    let result = picksData.picks;
+
+    // Smart filter
+    if (picksSmartFilter && SMART_FILTERS[picksSmartFilter]) {
+        result = result.filter(SMART_FILTERS[picksSmartFilter].fn);
+    }
+
+    // Text search
     const q = picksSearchQuery.toLowerCase().trim();
-    if (!q) return picksData.picks;
-    return picksData.picks.filter(p => {
-        const sym = (p.symbol || "").toLowerCase();
-        const type = (p.type || "").toLowerCase();
-        const src = (p.source || "").toLowerCase();
-        const notes = (p.notes || "").toLowerCase();
-        return sym.includes(q) || type.includes(q) || src.includes(q) || notes.includes(q);
-    });
+    if (q) {
+        result = result.filter(p => {
+            const sym = (p.symbol || "").toLowerCase();
+            const type = (p.type || "").toLowerCase();
+            const src = (p.source || "").toLowerCase();
+            const notes = (p.notes || "").toLowerCase();
+            return sym.includes(q) || type.includes(q) || src.includes(q) || notes.includes(q);
+        });
+    }
+
+    return result;
 }
 
 function renderPicksTable(picks) {
@@ -400,6 +422,63 @@ function setPicksSource(source) {
     const active = document.querySelector(`.pk-source-btn[data-source="${source || "all"}"]`);
     if (active) active.classList.add("active");
     loadPicksTracker();
+}
+
+function setPicksSmartFilter(key) {
+    picksSmartFilter = picksSmartFilter === key ? null : key;
+    picksPage = 1;
+    document.querySelectorAll(".pk-smart-btn").forEach(b => b.classList.remove("active"));
+    if (picksSmartFilter) {
+        const active = document.querySelector(`.pk-smart-btn[data-smart="${picksSmartFilter}"]`);
+        if (active) active.classList.add("active");
+    } else {
+        const allBtn = document.querySelector('.pk-smart-btn[data-smart="all"]');
+        if (allBtn) allBtn.classList.add("active");
+    }
+    // Smart filters are client-side only — re-render from already-loaded data
+    if (picksData) {
+        const filtered = _getFilteredPicks();
+        _recomputeSmartStats(filtered);
+        renderPicksTable(filtered);
+    }
+}
+
+function _recomputeSmartStats(picks) {
+    // Recompute stats for the current filtered subset
+    const withEntry = picks.filter(p => p.entry && p.status !== "no_entry");
+    const winners = withEntry.filter(p => p.status === "winner");
+    const stopped = withEntry.filter(p => p.status === "stopped");
+    const openP = withEntry.filter(p => p.status === "open");
+    const totalWithData = withEntry.filter(p => p.status !== "no_data").length;
+    const winRate = totalWithData > 0 ? (winners.length / totalWithData * 100) : 0;
+    const avgWin = winners.length ? winners.reduce((s, p) => s + (p.pnl_pct || 0), 0) / winners.length : 0;
+    const avgLoss = stopped.length ? stopped.reduce((s, p) => s + (p.pnl_pct || 0), 0) / stopped.length : 0;
+    const allPnl = withEntry.map(p => p.pnl_pct).filter(v => v != null);
+    const avgPnl = allPnl.length ? allPnl.reduce((s, v) => s + v, 0) / allPnl.length : 0;
+    const totalPnl = allPnl.length ? allPnl.reduce((s, v) => s + v, 0) : 0;
+    const allRR = withEntry.map(p => p.risk_reward).filter(v => v != null);
+    const avgRR = allRR.length ? allRR.reduce((s, v) => s + v, 0) / allRR.length : null;
+    const allDays = withEntry.map(p => p.days_held).filter(v => v != null);
+    const avgDays = allDays.length ? Math.round(allDays.reduce((s, v) => s + v, 0) / allDays.length) : null;
+    const grossWins = withEntry.filter(p => (p.pnl_pct || 0) > 0).reduce((s, p) => s + p.pnl_pct, 0);
+    const grossLosses = Math.abs(withEntry.filter(p => (p.pnl_pct || 0) < 0).reduce((s, p) => s + p.pnl_pct, 0));
+    const pf = grossLosses > 0 ? +(grossWins / grossLosses).toFixed(2) : null;
+
+    renderPicksStats({
+        total_picks: picks.length,
+        with_entry: withEntry.length,
+        winners: winners.length,
+        stopped: stopped.length,
+        open: openP.length,
+        win_rate: +winRate.toFixed(1),
+        avg_win_pct: +avgWin.toFixed(1),
+        avg_loss_pct: +avgLoss.toFixed(1),
+        avg_pnl_pct: +avgPnl.toFixed(1),
+        total_pnl_pct: +totalPnl.toFixed(1),
+        profit_factor: pf,
+        avg_risk_reward: avgRR != null ? +avgRR.toFixed(1) : null,
+        avg_days_held: avgDays,
+    });
 }
 
 async function refreshPicksSources() {
