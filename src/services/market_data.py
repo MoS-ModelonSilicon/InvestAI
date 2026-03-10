@@ -2383,6 +2383,15 @@ def _get_cached(key: str) -> Any:
     return None
 
 
+def _get_cached_any(key: str) -> Any:
+    """Return cached value even if expired (stale). Used by snapshot builders."""
+    with _cache_lock:
+        if key in _cache:
+            _, data = _cache[key]
+            return data
+    return None
+
+
 def _set_cache(key: str, data: Any) -> None:
     with _cache_lock:
         _cache[key] = (time.time(), data)
@@ -2499,13 +2508,22 @@ def fetch_stock_info(symbol: str, full: bool = True) -> Optional[dict[str, Any]]
         return None
 
 
-def fetch_batch(symbols: list[str], cached_only: bool = False) -> list[dict]:
-    """Fetch info for multiple symbols. If cached_only=True, skip uncached symbols."""
+def fetch_batch(
+    symbols: list[str],
+    cached_only: bool = False,
+    include_stale: bool = False,
+) -> list[dict]:
+    """Fetch info for multiple symbols.
+
+    If cached_only=True, skip uncached symbols.
+    If include_stale=True, return cached entries even if their TTL expired.
+    """
+    getter = _get_cached_any if include_stale else _get_cached
     cached_results = []
     uncached = []
 
     for sym in symbols:
-        c = _get_cached(f"info:{sym}")
+        c = getter(f"info:{sym}")
         if c and c.get("price", 0) > 0:
             cached_results.append(c)
         else:
@@ -2575,6 +2593,21 @@ def format_market_cap(cap: float) -> str:
 
 
 QUOTE_CACHE_TTL = 300  # 5 min cache for live quotes
+
+
+def get_cached_quotes(symbols: list[str]) -> dict[str, dict]:
+    """Return cached quote data for symbols WITHOUT making any API calls.
+
+    This is O(n) dict lookups against the in-memory cache -- instant even for
+    1000 symbols.  Used by the heatmap which must render quickly and can
+    tolerate data that is up to CACHE_TTL seconds stale.
+    """
+    result: dict[str, dict] = {}
+    for sym in symbols:
+        q = _get_cached(f"quote:{sym}")
+        if q:
+            result[sym] = q
+    return result
 
 
 def fetch_live_quotes(symbols: list[str]) -> list[dict]:

@@ -9,7 +9,7 @@ from src.services.market_data import (
     ETF_UNIVERSE,
     STOCK_UNIVERSE,
     fetch_batch,
-    fetch_live_quotes,
+    get_cached_quotes,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,15 +27,14 @@ def _build_heatmap_items(
     Each item: {symbol, name, sector, market_cap, change_pct, price}
     """
     infos = fetch_batch(symbols, cached_only=cached_only)
-    # Enrich with live quote change_pct when available
-    quotes = fetch_live_quotes(symbols)
-    quote_map = {q["symbol"]: q for q in quotes}
+    # Enrich with cached quote data (O(n) dict lookups, no API calls)
+    quote_map = get_cached_quotes(symbols)
 
     items: list[dict] = []
     for info in infos:
         sym = info["symbol"]
         q = quote_map.get(sym, {})
-        change_pct = q.get("change_pct") or 0
+        change_pct = q.get("change_pct") or info.get("change_pct") or 0
         # Use quote price if fresher, else info price
         price = q.get("price") or info.get("price", 0)
         market_cap = info.get("market_cap", 0) or 0

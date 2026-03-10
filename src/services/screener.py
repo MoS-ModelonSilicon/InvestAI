@@ -434,7 +434,7 @@ def refresh_screener_snapshot() -> int:
     import time
 
     t0 = time.time()
-    all_data = fetch_batch(ALL_UNIVERSE, cached_only=True)
+    all_data = fetch_batch(ALL_UNIVERSE, cached_only=True, include_stale=True)
     rows = []
     for d in all_data:
         try:
@@ -555,11 +555,11 @@ def screen_instruments(
             matched_syms = [sym for sym in ALL_UNIVERSE if _matches_query(query_lower, sym, KNOWN_NAMES.get(sym, sym))]
             all_data = fetch_batch(matched_syms, cached_only=False) if matched_syms else []
         elif asset_type == "ETF":
-            all_data = fetch_batch(ETF_UNIVERSE, cached_only=True)
+            all_data = fetch_batch(ETF_UNIVERSE, cached_only=True, include_stale=True)
         elif asset_type == "Stock":
-            all_data = fetch_batch(STOCK_UNIVERSE, cached_only=True)
+            all_data = fetch_batch(STOCK_UNIVERSE, cached_only=True, include_stale=True)
         else:
-            all_data = fetch_batch(ALL_UNIVERSE, cached_only=True)
+            all_data = fetch_batch(ALL_UNIVERSE, cached_only=True, include_stale=True)
         snapshot = []
         for d in all_data:
             try:
