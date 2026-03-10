@@ -305,10 +305,17 @@ let _taOverlayToggles = { sma: true, bollinger: true, vwap: false, keltner: fals
 let _taCurrentData = null;
 let _taCollapsed = {};  // track collapsed sections across re-renders
 
+/* Map section ids to their chart-redraw functions (filled by _drawAllTACharts) */
+const _taChartRedraw = {};
+
 function _taToggleSection(id) {
     _taCollapsed[id] = !_taCollapsed[id];
     const sec = document.getElementById('ta-sec-' + id);
     if (sec) sec.classList.toggle('ta-sec-collapsed', !!_taCollapsed[id]);
+    /* When a section with a chart is expanded, redraw so Chart.js picks up real size */
+    if (!_taCollapsed[id] && _taChartRedraw[id]) {
+        requestAnimationFrame(() => _taChartRedraw[id]());
+    }
 }
 function _taSecWrap(id, title, content, defaultOpen = true) {
     if (!(id in _taCollapsed)) _taCollapsed[id] = !defaultOpen;
@@ -564,10 +571,18 @@ function _drawAllTACharts(data) {
     _taLastData = data;
     _drawWaterfallChart(data);
     _drawPriceChart(data);
-    _drawRSIChart(data);
-    _drawMACDChart(data);
-    _drawStochChart(data);
-    _drawADXChart(data);
+
+    /* Register redraw callbacks so collapsed sections get a proper draw on first open */
+    _taChartRedraw['rsi']   = () => _drawRSIChart(data);
+    _taChartRedraw['macd']  = () => _drawMACDChart(data);
+    _taChartRedraw['stoch'] = () => _drawStochChart(data);
+    _taChartRedraw['adx']   = () => _drawADXChart(data);
+
+    /* Only draw charts whose sections are currently visible */
+    if (!_taCollapsed['rsi'])   _drawRSIChart(data);
+    if (!_taCollapsed['macd'])  _drawMACDChart(data);
+    if (!_taCollapsed['stoch']) _drawStochChart(data);
+    if (!_taCollapsed['adx'])   _drawADXChart(data);
 }
 
 /* ── Waterfall "Decision" chart ─────────────────── */

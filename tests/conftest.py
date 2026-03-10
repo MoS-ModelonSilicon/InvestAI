@@ -22,8 +22,25 @@ from playwright.sync_api import Page
 os.environ["NO_PROXY"] = "127.0.0.1,localhost"
 os.environ["no_proxy"] = "127.0.0.1,localhost"
 
+
+def _detect_intel_proxy() -> bool:
+    """Auto-detect Intel corporate proxy by probing the proxy host."""
+    if os.environ.get("CI"):
+        return False
+    explicit = os.environ.get("USE_INTEL_PROXY")
+    if explicit is not None:
+        return explicit == "1"
+    # Quick TCP probe to the proxy host
+    try:
+        s = socket.create_connection(("proxy-dmz.intel.com", 912), timeout=2)
+        s.close()
+        return True
+    except OSError:
+        return False
+
+
 # Detect if we need Intel corporate proxy (local dev) or not (CI/GitHub Actions)
-_NEED_PROXY = os.environ.get("USE_INTEL_PROXY") == "1" and not os.environ.get("CI")
+_NEED_PROXY = _detect_intel_proxy()
 _PROXY_HTTP = "http://proxy-dmz.intel.com:911" if _NEED_PROXY else None
 _PROXY_HTTPS = "http://proxy-dmz.intel.com:912" if _NEED_PROXY else None
 _PROXIES = {"http": _PROXY_HTTP, "https": _PROXY_HTTPS} if _NEED_PROXY else None
