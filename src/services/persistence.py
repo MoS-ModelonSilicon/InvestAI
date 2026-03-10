@@ -374,7 +374,10 @@ def restore_all_caches():
     except Exception:
         logger.exception("Failed to restore smart advisor cache")
 
-    # 6. Restore screener snapshot (or build from restored market cache)
+    # 6. Restore screener snapshot, then always rebuild from restored market
+    #    cache.  The DB snapshot may be stale (e.g. 293 rows) while the
+    #    market cache has many more entries.  Rebuilding with include_stale
+    #    ensures the screener shows every cached symbol immediately.
     snapshot_size = 0
     try:
         data = load_scan("screener_snapshot")
@@ -384,22 +387,22 @@ def restore_all_caches():
             restore_screener_snapshot(data)
             snapshot_size = len(data)
             logger.info("Restored screener snapshot: %d instruments", snapshot_size)
-        else:
-            # No snapshot in DB yet (first deploy with this feature).
-            # Build one immediately from the market cache we just restored
-            # in step 4 so the screener is usable right away instead of
-            # waiting 1-2 min for the cache warmer to finish.
-            from src.services.screener import refresh_screener_snapshot
 
-            count = refresh_screener_snapshot()
+        # Always rebuild from the (potentially richer) market cache
+        from src.services.screener import refresh_screener_snapshot
+
+        count = refresh_screener_snapshot()
+        if count > snapshot_size:
             snapshot_size = count
-            if count > 0:
-                logger.info(
-                    "Built screener snapshot from restored market cache: %d instruments",
-                    count,
-                )
-            else:
-                logger.info("No market data to build screener snapshot — will build after cache warm")
+            logger.info(
+                "Rebuilt screener snapshot from restored market cache: %d instruments (was %d)",
+                count,
+                snapshot_size,
+            )
+        elif count > 0:
+            logger.info("Screener snapshot unchanged at %d instruments", count)
+        else:
+            logger.info("No market data to build screener snapshot — will build after cache warm")
     except Exception:
         logger.exception("Failed to restore screener snapshot")
 
