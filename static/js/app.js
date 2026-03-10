@@ -147,6 +147,7 @@ function navigateTo(page, pushState = true) {
     if (page === "admin") loadAdminPanel();
     if (page === "heatmap") loadHeatmap();
     if (page === "dividends") loadDividends();
+    if (page === "etf-analysis") loadEtfAnalysis();
 }
 
 async function loadCategories() {
