@@ -8,6 +8,345 @@ let _currentPatterns = null;
 let _currentCurrency = "USD";
 let _zoomLevel = parseFloat(localStorage.getItem("sd-zoom") || "1");
 
+/* ── Semantic Zoom State ───────────────────────────────────── */
+let _zoomStack = [];            // stack of { min, max, label } for breadcrumb trail
+let _dragZoomStart = null;      // pixel X where drag began
+let _dragZoomActive = false;
+let _dragOverlay = null;        // the blue highlight overlay element
+let _currentTimeframe = null;   // { label, period, interval } of currently active TF
+
+/* Resolution ladder — when zoomed in deeply, re-fetch at finer granularity */
+const RESOLUTION_LADDER = [
+    { maxRangeMs: 2 * 3600_000,  interval: "1m",  period: "1d"  },  // ≤2h  → 1min bars
+    { maxRangeMs: 8 * 3600_000,  interval: "2m",  period: "1d"  },  // ≤8h  → 2min bars
+    { maxRangeMs: 24 * 3600_000, interval: "5m",  period: "1d"  },  // ≤1d  → 5min bars
+    { maxRangeMs: 5 * 86400_000, interval: "15m", period: "5d"  },  // ≤5d  → 15min bars
+    { maxRangeMs: 30 * 86400_000, interval: "1h", period: "1mo" },  // ≤30d → 1h bars
+];
+
+function _getVisibleTimestamps() {
+    if (!detailChart || !_lastHistory) return [];
+    return _lastHistory.timestamps || (_lastHistory.dates || []).map(d => new Date(d).getTime());
+}
+
+/** Convert a canvas pixel X to the nearest data index */
+function _pixelToIndex(chart, pixelX) {
+    const xScale = chart.scales.x;
+    if (!xScale) return -1;
+    const val = xScale.getValueForPixel(pixelX);
+    if (xScale.type === "linear") return Math.round(val);
+    if (xScale.type === "time" || xScale.type === "timeseries") {
+        // Find closest timestamp
+        const ts = _getVisibleTimestamps();
+        let best = 0, bestDiff = Infinity;
+        for (let i = 0; i < ts.length; i++) {
+            const diff = Math.abs(ts[i] - val);
+            if (diff < bestDiff) { bestDiff = diff; best = i; }
+        }
+        return best;
+    }
+    return Math.round(val);
+}
+
+/** Build a human-readable label for a zoom range */
+function _rangeLabel(idxStart, idxEnd) {
+    const ts = _getVisibleTimestamps();
+    if (!ts.length) return "";
+    const s = Math.max(0, Math.min(idxStart, ts.length - 1));
+    const e = Math.max(0, Math.min(idxEnd, ts.length - 1));
+    const d0 = new Date(ts[s]), d1 = new Date(ts[e]);
+    const sameDay = d0.toDateString() === d1.toDateString();
+    if (sameDay) {
+        return d0.toLocaleDateString([], { month: "short", day: "numeric" }) + " " +
+            d0.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + "–" +
+            d1.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+    return d0.toLocaleDateString([], { month: "short", day: "numeric" }) + " – " +
+        d1.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+/** Apply a zoom to a specific index range, push to stack, optionally re-fetch finer data */
+async function _semanticZoomTo(idxStart, idxEnd, pushStack = true) {
+    if (!detailChart || !_lastHistory) return;
+    const ts = _getVisibleTimestamps();
+    if (ts.length < 2) return;
+    const s = Math.max(0, Math.min(idxStart, idxEnd));
+    const e = Math.min(ts.length - 1, Math.max(idxStart, idxEnd));
+    if (e - s < 2) return; // too small to zoom
+
+    const label = _rangeLabel(s, e);
+    if (pushStack) {
+        _zoomStack.push({ min: s, max: e, label });
+    }
+
+    // Check if we should re-fetch at higher resolution
+    const rangeMs = ts[e] - ts[s];
+    const sym = _currentDetailSymbol;
+    let refetched = false;
+
+    if (sym && rangeMs > 0) {
+        for (const rung of RESOLUTION_LADDER) {
+            if (rangeMs <= rung.maxRangeMs) {
+                // Only re-fetch if the rung interval is finer than current
+                const curInterval = _currentTimeframe ? _currentTimeframe.interval : "1d";
+                if (_intervalRank(rung.interval) < _intervalRank(curInterval)) {
+                    try {
+                        // Fetch a time window around the selection (with some padding)
+                        const fromSec = Math.floor(ts[s] / 1000) - 3600;
+                        const toSec = Math.ceil(ts[e] / 1000) + 3600;
+                        const url = `/api/stock/${sym}/history?period=${rung.period}&interval=${rung.interval}`;
+                        _showChartLoading();
+                        const newHistory = await api.get(url);
+                        if (newHistory && newHistory.close && newHistory.close.length > 0) {
+                            // Filter to just the selected time window
+                            const newTs = newHistory.timestamps || newHistory.dates.map(d => new Date(d).getTime());
+                            const fromMs = ts[s], toMs = ts[e];
+                            let si = 0, ei = newTs.length - 1;
+                            for (let i = 0; i < newTs.length; i++) { if (newTs[i] >= fromMs) { si = Math.max(0, i - 1); break; } }
+                            for (let i = newTs.length - 1; i >= 0; i--) { if (newTs[i] <= toMs) { ei = Math.min(newTs.length - 1, i + 1); break; } }
+
+                            // Slice the history to just the visible range
+                            const sliced = _sliceHistory(newHistory, si, ei + 1);
+                            if (sliced.close.length >= 3) {
+                                _lastHistory = sliced;
+                                if (_candleMode) {
+                                    renderCandlestickChart(sliced);
+                                } else {
+                                    renderDetailChart(sliced, _spyOverlayActive ? _lastSpyHistory : undefined);
+                                }
+                                refetched = true;
+                            }
+                        }
+                        _hideChartLoading();
+                    } catch { _hideChartLoading(); }
+                }
+                break;
+            }
+        }
+    }
+
+    if (!refetched) {
+        // Just zoom the existing chart's x-axis
+        const xScale = detailChart.options.scales.x;
+        if (xScale.type === "linear") {
+            xScale.min = s - 0.5;
+            xScale.max = e + 0.5;
+        } else {
+            // category or time
+            const labels = detailChart.data.labels;
+            if (labels && labels.length) {
+                xScale.min = s;
+                xScale.max = e;
+            }
+        }
+        detailChart.update("none");
+    }
+
+    _updateZoomBreadcrumb();
+}
+
+function _intervalRank(interval) {
+    const ranks = { "1m": 1, "2m": 2, "5m": 3, "15m": 4, "30m": 5, "1h": 6, "1d": 7, "1wk": 8, "1mo": 9 };
+    return ranks[interval] || 10;
+}
+
+function _sliceHistory(h, start, end) {
+    const result = {
+        dates: (h.dates || []).slice(start, end),
+        timestamps: (h.timestamps || []).slice(start, end),
+        open: (h.open || []).slice(start, end),
+        high: (h.high || []).slice(start, end),
+        low: (h.low || []).slice(start, end),
+        close: (h.close || []).slice(start, end),
+        volume: (h.volume || []).slice(start, end),
+    };
+    if (h.sessions) result.sessions = h.sessions.slice(start, end);
+    if (h.sma50) result.sma50 = h.sma50.slice(start, end);
+    return result;
+}
+
+function _zoomOut() {
+    if (_zoomStack.length === 0) return;
+    _zoomStack.pop();
+    if (_zoomStack.length === 0) {
+        _restoreFullView();
+    } else {
+        // Re-apply the last remaining zoom level
+        const last = _zoomStack[_zoomStack.length - 1];
+        _zoomStack.pop(); // will be re-pushed by _semanticZoomTo
+        _restoreFullViewThen(() => _semanticZoomTo(last.min, last.max, true));
+    }
+}
+
+function _zoomReset() {
+    _zoomStack = [];
+    _restoreFullView();
+}
+
+async function _restoreFullViewThen(callback) {
+    // Re-fetch original timeframe data, then run callback
+    if (_currentDetailSymbol && _currentTimeframe) {
+        const { period, interval } = _currentTimeframe;
+        const btn = document.querySelector("#sd-timeframes .sd-tf.active");
+        // Save/restore stack since changeTimeframe resets it
+        const savedStack = [..._zoomStack];
+        await changeTimeframe(_currentDetailSymbol, period, interval, btn);
+        _zoomStack = savedStack;
+        if (callback) await callback();
+        _updateZoomBreadcrumb();
+    }
+}
+
+async function _restoreFullView() {
+    // Re-fetch original timeframe data
+    if (_currentDetailSymbol && _currentTimeframe) {
+        const { period, interval } = _currentTimeframe;
+        const btn = document.querySelector("#sd-timeframes .sd-tf.active");
+        await changeTimeframe(_currentDetailSymbol, period, interval, btn);
+    }
+    _updateZoomBreadcrumb();
+}
+
+function _updateZoomBreadcrumb() {
+    let el = document.getElementById("sd-zoom-breadcrumb");
+    if (!el) {
+        const wrap = document.querySelector(".sd-chart-controls");
+        if (!wrap) return;
+        el = document.createElement("div");
+        el.id = "sd-zoom-breadcrumb";
+        el.className = "sd-zoom-breadcrumb";
+        // Insert after the controls row
+        wrap.parentNode.insertBefore(el, wrap.nextSibling);
+    }
+
+    if (_zoomStack.length === 0) {
+        el.style.display = "none";
+        return;
+    }
+
+    el.style.display = "flex";
+    const tfLabel = _currentTimeframe ? _currentTimeframe.label : "";
+    let crumbs = `<span class="zb-crumb zb-clickable" onclick="_zoomReset()">${tfLabel || 'Full'}</span>`;
+    _zoomStack.forEach((z, i) => {
+        crumbs += `<span class="zb-sep">›</span>`;
+        if (i === _zoomStack.length - 1) {
+            crumbs += `<span class="zb-crumb zb-active">${z.label}</span>`;
+        } else {
+            crumbs += `<span class="zb-crumb zb-clickable" onclick="_zoomToStackLevel(${i})">${z.label}</span>`;
+        }
+    });
+    crumbs += `<button class="zb-back" onclick="_zoomOut()" title="Zoom out one level">↩ Back</button>`;
+    crumbs += `<button class="zb-reset" onclick="_zoomReset()" title="Reset to full view">⟳ Reset</button>`;
+    el.innerHTML = crumbs;
+}
+
+function _zoomToStackLevel(level) {
+    _zoomStack = _zoomStack.slice(0, level + 1);
+    _restoreFullView();
+}
+
+/* ── Drag-to-zoom overlay plugin for Chart.js ────────────── */
+const dragZoomPlugin = {
+    id: "dragZoom",
+    afterInit(chart) {
+        const canvas = chart.canvas;
+        if (!canvas || canvas._dragZoomBound) return;
+        canvas._dragZoomBound = true;
+
+        canvas.addEventListener("mousedown", (e) => {
+            if (e.button !== 0) return; // left click only
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const area = chart.chartArea;
+            if (!area || x < area.left || x > area.right) return;
+            _dragZoomStart = x;
+            _dragZoomActive = false;
+
+            // Create overlay
+            _dragOverlay = document.createElement("div");
+            _dragOverlay.className = "sd-drag-overlay";
+            _dragOverlay.style.left = x + "px";
+            _dragOverlay.style.top = area.top + "px";
+            _dragOverlay.style.height = (area.bottom - area.top) + "px";
+            _dragOverlay.style.width = "0px";
+            canvas.parentElement.appendChild(_dragOverlay);
+        });
+
+        canvas.addEventListener("mousemove", (e) => {
+            if (_dragZoomStart == null || !_dragOverlay) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.max(chart.chartArea.left, Math.min(e.clientX - rect.left, chart.chartArea.right));
+            const left = Math.min(_dragZoomStart, x);
+            const width = Math.abs(x - _dragZoomStart);
+            if (width > 5) _dragZoomActive = true;
+            _dragOverlay.style.left = left + "px";
+            _dragOverlay.style.width = width + "px";
+        });
+
+        canvas.addEventListener("mouseup", (e) => {
+            if (_dragOverlay) { _dragOverlay.remove(); _dragOverlay = null; }
+            if (!_dragZoomActive || _dragZoomStart == null) {
+                _dragZoomStart = null;
+                _dragZoomActive = false;
+                return;
+            }
+            const rect = canvas.getBoundingClientRect();
+            const endX = Math.max(chart.chartArea.left, Math.min(e.clientX - rect.left, chart.chartArea.right));
+            const startIdx = _pixelToIndex(chart, Math.min(_dragZoomStart, endX));
+            const endIdx = _pixelToIndex(chart, Math.max(_dragZoomStart, endX));
+            _dragZoomStart = null;
+            _dragZoomActive = false;
+            if (endIdx - startIdx >= 2) {
+                _semanticZoomTo(startIdx, endIdx);
+            }
+        });
+
+        canvas.addEventListener("mouseleave", () => {
+            if (_dragOverlay) { _dragOverlay.remove(); _dragOverlay = null; }
+            _dragZoomStart = null;
+            _dragZoomActive = false;
+        });
+
+        // Double-click to zoom in 50% centered on click point
+        canvas.addEventListener("dblclick", (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const area = chart.chartArea;
+            if (!area || x < area.left || x > area.right) return;
+            const centerIdx = _pixelToIndex(chart, x);
+            const ts = _getVisibleTimestamps();
+            if (ts.length < 4) return;
+
+            // Determine current visible range
+            const xScale = chart.options.scales.x;
+            let curMin = 0, curMax = ts.length - 1;
+            if (xScale.min != null) curMin = Math.max(0, Math.round(xScale.min));
+            if (xScale.max != null) curMax = Math.min(ts.length - 1, Math.round(xScale.max));
+            const curRange = curMax - curMin;
+            const newRange = Math.max(4, Math.round(curRange * 0.5));
+            const newMin = Math.max(0, centerIdx - Math.round(newRange / 2));
+            const newMax = Math.min(ts.length - 1, newMin + newRange);
+            _semanticZoomTo(newMin, newMax);
+        });
+
+        // Right-click context: zoom out
+        canvas.addEventListener("contextmenu", (e) => {
+            if (_zoomStack.length > 0) {
+                e.preventDefault();
+                _zoomOut();
+            }
+        });
+    },
+};
+
+// Keyboard: Escape to zoom out
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && _zoomStack.length > 0) {
+        _zoomOut();
+    }
+});
+
 /* ── Market session shading plugin ─────────────────────────── */
 const sessionZonePlugin = {
     id: "sessionZones",
@@ -221,6 +560,10 @@ function renderStockDetail(info, history, news) {
                 <button class="sd-zoom-btn sd-zoom-reset" onclick="chartZoom(0)" title="Reset zoom">⟳</button>
             </div>
         </div>
+        <div class="sd-zoom-hint" id="sd-zoom-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            Drag to select a range · Double-click to zoom in · Right-click to zoom out
+        </div>
         <div class="sd-chart-wrapper">
             <canvas id="sd-price-chart"></canvas>
         </div>
@@ -306,6 +649,8 @@ function renderStockDetail(info, history, news) {
     _lastSpyHistory = null;
     _candleMode = false;
     _currentPatterns = null;
+    _zoomStack = [];
+    _currentTimeframe = LINE_TF[2]; // default 1M
     buildTimeframeButtons(info.symbol);
     if (history && history.close && history.close.length > 0) {
         _lastHistory = history;
@@ -331,6 +676,8 @@ function setChartType(type, symbol) {
     if (spyBtn) spyBtn.style.display = _candleMode ? "none" : "";
     _spyOverlayActive = false;
     _currentPatterns = null;
+    _zoomStack = [];
+    _updateZoomBreadcrumb();
     buildTimeframeButtons(symbol);
     const tfs = _candleMode ? CANDLE_TF : LINE_TF;
     const def = tfs[_candleMode ? 4 : 2];
@@ -501,7 +848,7 @@ function renderDetailChart(history, spyHistory) {
     detailChart = new Chart(canvas, {
         type: "line",
         data: { labels: history.dates, datasets },
-        plugins: [...(hasSessions ? [sessionZonePlugin] : []), ...(hasSessions ? [sessionBoundaryPlugin] : [])],
+        plugins: [dragZoomPlugin, ...(hasSessions ? [sessionZonePlugin] : []), ...(hasSessions ? [sessionBoundaryPlugin] : [])],
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -575,6 +922,13 @@ async function changeTimeframe(symbol, period, interval, btn) {
     document.querySelectorAll("#sd-timeframes .sd-tf").forEach(b => b.classList.remove("active"));
     if (btn) btn.classList.add("active");
     _lastSpyHistory = null;
+
+    // Track current timeframe and reset zoom stack on explicit TF change
+    const tfs = _candleMode ? CANDLE_TF : LINE_TF;
+    const matched = tfs.find(t => t.period === period && t.interval === interval);
+    _currentTimeframe = matched || { label: interval, period, interval };
+    _zoomStack = [];
+    _updateZoomBreadcrumb();
 
     const fetchId = ++_tfFetchId;
     _hideChartEmpty();
@@ -673,7 +1027,7 @@ function renderCandlestickChart(history) {
     }
 
     // Build plugins: session shading + boundary lines
-    const chartPlugins = [];
+    const chartPlugins = [dragZoomPlugin];
     if (hasSessions) chartPlugins.push(sessionZonePlugin);
     if (isSubDaily) chartPlugins.push(sessionBoundaryPlugin);
 

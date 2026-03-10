@@ -37,10 +37,12 @@ def _nav(page: Page, page_id: str):
 
 def _dismiss_tour(page: Page):
     """Close the tour overlay if it's open (it intercepts pointer events)."""
-    overlay = page.locator(".tour-overlay.open")
-    if overlay.count() > 0:
-        page.evaluate("document.querySelector('.tour-overlay')?.classList.remove('open')")
-        page.wait_for_timeout(300)
+    page.evaluate("""() => {
+        document.querySelectorAll('.tour-overlay').forEach(el => el.remove());
+        document.querySelectorAll('.tour-spotlight').forEach(el => el.remove());
+        document.querySelectorAll('.tour-tooltip').forEach(el => el.remove());
+    }""")
+    page.wait_for_timeout(300)
 
 
 def _wait_for_content(page: Page, container_sel: str, *, min_len: int = 100, timeout: int = 30_000, poll: int = 1_000):
