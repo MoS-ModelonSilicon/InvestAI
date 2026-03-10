@@ -294,7 +294,6 @@ STOCK_UNIVERSE = [
     "ITMR.TA",
     "SPNS.TA",
     "NVPT.TA",
-
     # ── S&P 500 + Russell 1000 Expansion (auto-generated) ──
     "INTU",
     "KLAC",
@@ -890,7 +889,6 @@ STOCK_UNIVERSE = [
     "VERX",
     "BLD",
     "RELY",
-
     # ── Second expansion pass ──
     "APPF",
     "PCOR",
@@ -1024,7 +1022,6 @@ ETF_UNIVERSE = [
     "VNQ",
     "USO",
     "DBC",
-
     # ── Additional ETFs (expansion) ──
     "XBI",
     "IBB",
@@ -1062,7 +1059,6 @@ ETF_UNIVERSE = [
     "IYR",
     "SCHG",
     "VBR",
-
     # ── More ETFs (second pass) ──
     "SPLG",
     "SPTM",
@@ -1414,7 +1410,6 @@ KNOWN_NAMES: dict[str, str] = {
     "VNQ": "Vanguard Real Estate ETF",
     "USO": "United States Oil Fund",
     "DBC": "Invesco DB Commodity Index Tracking Fund",
-
     # ── Expansion names (auto-generated) ──
     "INTU": "Intuit Inc",
     "KLAC": "KLA Corporation",
@@ -2046,7 +2041,6 @@ KNOWN_NAMES: dict[str, str] = {
     "IYR": "iShares U.S. Real Estate ETF",
     "SCHG": "Schwab U.S. Large-Cap Growth ETF",
     "VBR": "Vanguard Small-Cap Value ETF",
-
     # ── Second expansion names ──
     "APPF": "AppFolio Inc",
     "PCOR": "Procore Technologies Inc",
@@ -2233,7 +2227,26 @@ _INTL = {
     "China / Hong Kong": {"BABA", "JD", "BIDU", "NIO", "LI", "XPEV", "PDD", "TME", "BEKE"},
     "Japan": {"TM", "SONY", "MUFG"},
     "Taiwan": {"TSM"},
-    "Europe": {"ASML", "NVO", "SAP", "SHEL", "AZN", "UL", "DEO", "TTE", "SPOT", "ARGX", "ARM", "BIRK", "ONON", "RIO", "LOGI", "GLOB", "ESTC", "CRSP"},
+    "Europe": {
+        "ASML",
+        "NVO",
+        "SAP",
+        "SHEL",
+        "AZN",
+        "UL",
+        "DEO",
+        "TTE",
+        "SPOT",
+        "ARGX",
+        "ARM",
+        "BIRK",
+        "ONON",
+        "RIO",
+        "LOGI",
+        "GLOB",
+        "ESTC",
+        "CRSP",
+    },
     "India": {"INFY", "WIT", "IBN"},
     "Canada": {"SHOP", "RY", "TD", "TECK", "CCJ", "OVV", "WPM", "AEM"},
     "Brazil": {"VALE", "PBR", "ITUB", "NU", "MELI"},
@@ -2295,7 +2308,6 @@ _INTL = {
         "NVPT.TA",
         "CAMT",
     },
-
     "South Korea": {"CPNG"},
     "Australia": {"BHP"},
 }
