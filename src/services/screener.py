@@ -386,6 +386,19 @@ def _build_instrument_row(d: dict) -> dict:
     if summary_text and len(summary_text) > 250:
         summary_text = summary_text[:247] + "..."
 
+    # Lightweight sentiment (may return 0 if no news cached yet)
+    sentiment_score: float | None = None
+    sentiment_label: str = "Neutral"
+    try:
+        from src.services.sentiment import get_sentiment_summary
+
+        sent = get_sentiment_summary(d["symbol"])
+        if sent["article_count"] > 0:
+            sentiment_score = sent["score"]
+            sentiment_label = sent["label"]
+    except Exception:
+        pass
+
     return {
         "symbol": d["symbol"],
         "name": d.get("name") or KNOWN_NAMES.get(d["symbol"], d["symbol"]),
@@ -415,6 +428,8 @@ def _build_instrument_row(d: dict) -> dict:
         "summary": summary_text,
         "asset_type": d.get("asset_type", "Stock"),
         "region": d.get("region", "US"),
+        "sentiment_score": sentiment_score,
+        "sentiment_label": sentiment_label,
     }
 
 
@@ -540,6 +555,7 @@ def screen_instruments(
     pct_from_high_min: Optional[float] = None,
     pct_from_high_max: Optional[float] = None,
     region_not: Optional[str] = None,
+    sentiment: Optional[str] = None,
 ) -> list[dict]:
     query_lower = query.strip().lower() if query else None
 
@@ -641,6 +657,8 @@ def screen_instruments(
         ):
             continue
         if region_not and row.get("region", "US") == region_not:
+            continue
+        if sentiment and (row.get("sentiment_label") or "").lower() != sentiment.lower():
             continue
 
         filtered.append(row)

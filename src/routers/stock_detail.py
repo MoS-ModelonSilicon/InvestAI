@@ -4,10 +4,11 @@ from fastapi import APIRouter, HTTPException
 from src.services.stock_detail import get_stock_detail, get_price_history
 from src.services.news import get_ticker_news
 from src.services.screener import _build_risk_analysis, _build_analyst_view, _compute_signal
+from src.services.sentiment import get_symbol_sentiment
 
 router = APIRouter(prefix="/api/stock", tags=["stock-detail"])
 
-_pool = ThreadPoolExecutor(max_workers=3)
+_pool = ThreadPoolExecutor(max_workers=4)
 
 
 def _compute_sma(closes: list, window: int = 50) -> list:
@@ -29,6 +30,7 @@ def stock_full(symbol: str, period: str = "1y", interval: str = "1d"):
     info_future = _pool.submit(get_stock_detail, sym)
     history_future = _pool.submit(get_price_history, sym, period, interval)
     news_future = _pool.submit(get_ticker_news, sym)
+    sentiment_future = _pool.submit(get_symbol_sentiment, sym)
 
     info = info_future.result(timeout=15)
     if not info:
@@ -48,7 +50,17 @@ def stock_full(symbol: str, period: str = "1y", interval: str = "1d"):
 
     news = news_future.result(timeout=15)
 
-    return {"info": info, "history": history, "news": news or []}
+    try:
+        sentiment = sentiment_future.result(timeout=15)
+    except Exception:
+        sentiment = None
+
+    return {
+        "info": info,
+        "history": history,
+        "news": news or [],
+        "sentiment": sentiment,
+    }
 
 
 @router.get("/{symbol}/history")

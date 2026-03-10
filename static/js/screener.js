@@ -40,6 +40,8 @@ const CHIP_FILTERS = {
     fallen_angels:    { asset_type: "Stock", year_change_max: -25, profit_margin_min: 5 },
     boring_beautiful: { asset_type: "Stock", beta_max: 0.7, dividend_yield_min: 2, debt_to_equity_max: 80, profit_margin_min: 10 },
     avoid_rated:      { signal: "Avoid" },
+    bullish_news:     { sentiment: "Bullish" },
+    bearish_news:     { sentiment: "Bearish" },
 };
 
 /* ── Global search helpers ─── */
@@ -223,6 +225,7 @@ function renderCard(r, idx) {
             <div class="scr-card-signal">
                 ${signalBadge(r.signal)}
                 <span class="scr-signal-reason">${r.signal_reason}</span>
+                ${r.sentiment_label && r.sentiment_label !== "Neutral" ? `<span class="sent-chip sent-chip-${r.sentiment_label.toLowerCase()}">${r.sentiment_label === "Bullish" ? "📈" : "📉"} ${r.sentiment_label}</span>` : ""}
             </div>
             <div class="scr-card-metrics">
                 <div><span class="metric-label">Mkt Cap</span><span class="metric-value">${r.market_cap_fmt}</span></div>
