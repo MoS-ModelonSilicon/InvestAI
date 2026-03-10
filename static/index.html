@@ -149,6 +149,7 @@
             <div class="page-header">
                 <h1>Portfolio</h1>
                 <span style="display:flex;gap:8px;">
+                    <button class="btn btn-ghost btn-export" data-export="portfolio" onclick="exportCSV('portfolio')" title="Export to CSV">⬇ Export CSV</button>
                     <button id="pf-manage-btn" class="btn btn-ghost" onclick="togglePfEditMode()" style="display:none;">Manage</button>
                     <button class="btn btn-primary" onclick="openAddHoldingModal()">+ Add Holding</button>
                 </span>
@@ -184,6 +185,7 @@
                 <h1>Watchlist</h1>
                 <span style="display:flex;gap:8px;align-items:center;">
                     <span class="scr-result-count" id="watchlist-count"></span>
+                    <button class="btn btn-ghost btn-export" data-export="watchlist" onclick="exportCSV('watchlist')" title="Export to CSV">⬇ Export CSV</button>
                     <button id="wl-manage-btn" class="btn btn-ghost" onclick="toggleWlEditMode()" style="display:none;">Manage</button>
                 </span>
             </div>
@@ -222,7 +224,7 @@
 
         <!-- ─── Transactions ─────────────────────────── -->
         <section id="page-transactions" class="page">
-            <div class="page-header"><h1>Transactions</h1><button class="btn btn-primary" onclick="openTransactionModal()">+ Add Transaction</button></div>
+            <div class="page-header"><h1>Transactions</h1><span style="display:flex;gap:8px;"><button class="btn btn-ghost btn-export" data-export="transactions" onclick="exportCSV('transactions')" title="Export to CSV">⬇ Export CSV</button><button class="btn btn-primary" onclick="openTransactionModal()">+ Add Transaction</button></span></div>
             <div class="page-search-bar">
                 <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input type="text" id="transactions-search" placeholder="Search transactions by description..." oninput="filterTransactions(this.value)">
@@ -259,7 +261,7 @@
 
         <!-- ─── Screener (merged: Custom Filters + Value Investing) ── -->
         <section id="page-screener" class="page">
-            <div class="page-header"><h1>Screener</h1><span class="scr-result-count" id="scr-result-count"></span></div>
+            <div class="page-header"><h1>Screener</h1><span style="display:flex;gap:8px;align-items:center;"><span class="scr-result-count" id="scr-result-count"></span><button class="btn btn-ghost btn-export" data-export="screener" onclick="exportCSV('screener')" title="Export to CSV">⬇ Export CSV</button></span></div>
             <div class="merge-tabs">
                 <button class="merge-tab active" onclick="navigateTo('screener')">Custom Filters</button>
                 <button class="merge-tab" onclick="navigateTo('value-scanner')">Value Investing</button>
@@ -993,6 +995,7 @@
     <script src="/static/js/recommendations.js"></script>
     <script src="/static/js/market.js"></script>
     <script src="/static/js/stock-detail.js"></script>
+    <script src="/static/js/export.js"></script>
     <script src="/static/js/watchlist.js"></script>
     <script src="/static/js/portfolio.js"></script>
     <script src="/static/js/news.js"></script>

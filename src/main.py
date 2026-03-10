@@ -42,6 +42,7 @@ from src.routers import (
     dca,
     admin,
     assistant,
+    export,
     heatmap,
     public_stock,
 )
@@ -186,6 +187,7 @@ app.include_router(picks_tracker.router)
 app.include_router(dca.router)
 app.include_router(admin.router)
 app.include_router(assistant.router)
+app.include_router(export.router)
 app.include_router(heatmap.router)
 app.include_router(public_stock.router)
 

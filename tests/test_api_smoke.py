@@ -611,6 +611,27 @@ class TestAllEndpointsSmoke:
         r = _authed_get("/api/screener/watchlist/live", self.c)
         assert r.status_code < 500
 
+    # ── CSV Export ──
+    def test_export_screener_csv(self):
+        r = _authed_get("/api/export/screener", self.c)
+        assert r.status_code == 200
+        assert "text/csv" in r.headers.get("content-type", "")
+
+    def test_export_portfolio_csv(self):
+        r = _authed_get("/api/export/portfolio", self.c)
+        assert r.status_code == 200
+        assert "text/csv" in r.headers.get("content-type", "")
+
+    def test_export_watchlist_csv(self):
+        r = _authed_get("/api/export/watchlist", self.c)
+        assert r.status_code == 200
+        assert "text/csv" in r.headers.get("content-type", "")
+
+    def test_export_transactions_csv(self):
+        r = _authed_get("/api/export/transactions", self.c)
+        assert r.status_code == 200
+        assert "text/csv" in r.headers.get("content-type", "")
+
     # ── Market (may use cached external data) ──
     def test_market_ticker(self):
         r = _authed_get("/api/market/ticker", self.c)
