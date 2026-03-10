@@ -1033,6 +1033,8 @@ body {
     padding: 20px;
     position: sticky;
     top: 32px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
 }
 
 .screener-filters h3 {
