@@ -501,13 +501,13 @@ async function loadStockDetail() {
     try {
         // Single combined endpoint — 1 round trip instead of 3
         const resp = await api.get(`/api/stock/${sym}/full`);
-        renderStockDetail(resp.info, resp.history, resp.news);
+        renderStockDetail(resp.info, resp.history, resp.news, resp.sentiment);
     } catch (e) {
         container.innerHTML = `<p style="color:var(--red);padding:20px;">Failed to load data for ${sym}.</p>`;
     }
 }
 
-function renderStockDetail(info, history, news) {
+function renderStockDetail(info, history, news, sentiment) {
     _currentCurrency = info.currency || "USD";
     const container = document.getElementById("stock-detail-content");
     const ycSign = (info.year_change || 0) >= 0 ? "+" : "";
@@ -613,6 +613,62 @@ function renderStockDetail(info, history, news) {
         html += `</div></div>`;
     }
     html += `</div>`;
+
+    // ── News Sentiment Gauge ──────────────────────────────────
+    if (sentiment && sentiment.article_count > 0) {
+        const sc = sentiment.overall_score;
+        const pct = Math.round((sc + 1) / 2 * 100);  // map -1..1 → 0..100
+        const sentColor = sc >= 0.10 ? "var(--green)" : sc <= -0.10 ? "var(--red)" : "#eab308";
+        const bullPct = sentiment.bullish_count ? Math.round(sentiment.bullish_count / sentiment.article_count * 100) : 0;
+        const bearPct = sentiment.bearish_count ? Math.round(sentiment.bearish_count / sentiment.article_count * 100) : 0;
+        const neutPct = 100 - bullPct - bearPct;
+
+        html += `<div class="sd-section"><h3>News Sentiment</h3>
+            <div class="sentiment-gauge-wrap">
+                <div class="sentiment-gauge-bar">
+                    <div class="sentiment-gauge-fill" style="width:${pct}%;background:${sentColor}"></div>
+                    <div class="sentiment-gauge-needle" style="left:${pct}%"></div>
+                </div>
+                <div class="sentiment-gauge-labels">
+                    <span>Bearish</span><span>Neutral</span><span>Bullish</span>
+                </div>
+                <div class="sentiment-score-row">
+                    <span class="sentiment-overall" style="color:${sentColor}">${sentiment.overall_label}</span>
+                    <span class="sentiment-score-num">${sc >= 0 ? "+" : ""}${sc.toFixed(2)}</span>
+                </div>
+                <div class="sentiment-breakdown">
+                    <div class="sentiment-bar-stacked">
+                        <div class="sent-bull" style="width:${bullPct}%"></div>
+                        <div class="sent-neut" style="width:${neutPct}%"></div>
+                        <div class="sent-bear" style="width:${bearPct}%"></div>
+                    </div>
+                    <div class="sentiment-breakdown-labels">
+                        <span class="sent-label-bull">${bullPct}% Bullish</span>
+                        <span class="sent-label-neut">${neutPct}% Neutral</span>
+                        <span class="sent-label-bear">${bearPct}% Bearish</span>
+                    </div>
+                </div>
+                <div class="sentiment-articles-count">${sentiment.article_count} articles analysed</div>
+            </div>`;
+
+        // Individual article sentiments
+        if (sentiment.articles && sentiment.articles.length > 0) {
+            html += `<div class="sentiment-articles">`;
+            sentiment.articles.forEach(a => {
+                const aColor = a.sentiment_label === "Bullish" ? "var(--green)" : a.sentiment_label === "Bearish" ? "var(--red)" : "#eab308";
+                const icon = a.sentiment_label === "Bullish" ? "▲" : a.sentiment_label === "Bearish" ? "▼" : "●";
+                const date = a.published ? new Date(a.published * 1000).toLocaleDateString() : "";
+                html += `<div class="sentiment-article-row">
+                    <span class="sent-icon" style="color:${aColor}">${icon}</span>
+                    <span class="sent-article-title">${a.title}</span>
+                    <span class="sent-article-meta">${a.publisher}${date ? " · " + date : ""}</span>
+                    <span class="sent-article-badge" style="background:${aColor}">${a.sentiment_label}</span>
+                </div>`;
+            });
+            html += `</div>`;
+        }
+        html += `</div>`;
+    }
 
     // Analyst Targets
     if (info.analyst_targets) {

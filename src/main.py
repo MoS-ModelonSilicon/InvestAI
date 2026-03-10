@@ -46,6 +46,7 @@ from src.routers import (
     export,
     heatmap,
     public_stock,
+    sentiment,
 )
 
 import time as _time, logging as _logging
@@ -192,6 +193,7 @@ app.include_router(export.router)
 app.include_router(dividend_analysis.router)
 app.include_router(heatmap.router)
 app.include_router(public_stock.router)
+app.include_router(sentiment.router)
 
 
 # ── Health / version check (public, no auth) ─────────────────

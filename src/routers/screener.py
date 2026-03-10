@@ -39,6 +39,7 @@ def run_screener(
     pct_from_high_min: Optional[float] = None,
     pct_from_high_max: Optional[float] = None,
     region_not: Optional[str] = None,
+    sentiment: Optional[str] = None,
     page: int = 1,
     per_page: int = 50,
 ):
@@ -66,6 +67,7 @@ def run_screener(
         pct_from_high_min=pct_from_high_min,
         pct_from_high_max=pct_from_high_max,
         region_not=region_not,
+        sentiment=sentiment,
     )
     total = len(all_results)
     start = (page - 1) * per_page

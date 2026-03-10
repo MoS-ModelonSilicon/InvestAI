@@ -733,6 +733,43 @@ class TestAllEndpointsSmoke:
         r = _authed_get("/api/news/AAPL", self.c)
         assert r.status_code != 500
 
+    # ── Sentiment (NLP on news) ──
+    @pytest.mark.external
+    def test_sentiment_endpoint(self):
+        """GET /api/sentiment/{symbol} should return sentiment data."""
+        r = _authed_get("/api/sentiment/AAPL", self.c)
+        assert r.status_code != 500
+        if r.status_code == 200:
+            data = r.json()
+            assert "overall_score" in data
+            assert "overall_label" in data
+            assert data["overall_label"] in ("Bullish", "Bearish", "Neutral")
+            assert "article_count" in data
+            assert "articles" in data
+
+    def test_sentiment_service_scoring(self):
+        """Unit-test the lexicon-based sentiment scorer."""
+        from src.services.sentiment import analyze_article_sentiment
+
+        bull = analyze_article_sentiment("AAPL beats expectations with record earnings, stock surges")
+        assert bull["label"] == "Bullish"
+        assert bull["score"] > 0
+
+        bear = analyze_article_sentiment("Company misses estimates, stock plunges on weak guidance")
+        assert bear["label"] == "Bearish"
+        assert bear["score"] < 0
+
+        neut = analyze_article_sentiment("Company announces quarterly results")
+        assert neut["label"] == "Neutral"
+
+    def test_stock_full_includes_sentiment(self):
+        """The /api/stock/{sym}/full endpoint should include sentiment key."""
+        r = _authed_get("/api/stock/AAPL/full", self.c)
+        assert r.status_code != 500
+        if r.status_code == 200:
+            data = r.json()
+            assert "sentiment" in data, "Missing 'sentiment' in /full response"
+
     # ── Recommendations (needs profile + may call external APIs) ──
     @pytest.mark.external
     def test_recommendations(self):
