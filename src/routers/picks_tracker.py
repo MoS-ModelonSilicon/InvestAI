@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.database import get_db
@@ -20,9 +21,11 @@ def get_picks(
     source: Optional[str] = Query(None, description="Filter by source: discord, reddit, tradingview, finviz"),
 ):
     try:
-        return evaluate_all_picks(pick_type=type, source_filter=source)
+        data = evaluate_all_picks(pick_type=type, source_filter=source)
+        # Verify JSON-serializable before returning (catches stray NaN/Inf)
+        return JSONResponse(content=data)
     except Exception as e:
-        logger.error("picks tracker error: %s", e)
+        logger.error("picks tracker error: %s", e, exc_info=True)
         return {"picks": [], "stats": {}}
 
 

@@ -8,6 +8,7 @@ Render deploys and are available to every user immediately.
 
 import json
 import logging
+import math
 import os
 import threading
 import time
@@ -28,6 +29,26 @@ CACHE_TTL = 86400  # 24h — background job handles freshness
 
 # Cache key for the pre-computed evaluated picks list
 _EVAL_CACHE_KEY = "picks_evaluated_all"
+
+
+def _sanitize(val):
+    """Replace NaN / Infinity floats with None so JSON serialisation never fails."""
+    if isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
+        return None
+    return val
+
+
+def _sanitize_dict(d: dict) -> dict:
+    """Recursively sanitize all float values in a dict."""
+    out = {}
+    for k, v in d.items():
+        if isinstance(v, dict):
+            out[k] = _sanitize_dict(v)
+        elif isinstance(v, list):
+            out[k] = [_sanitize_dict(i) if isinstance(i, dict) else _sanitize(i) for i in v]
+        else:
+            out[k] = _sanitize(v)
+    return out
 
 
 def _get_cached(key: str):
@@ -178,7 +199,7 @@ def _evaluate_pick(pick: dict) -> dict:
         logger.warning("Failed to evaluate pick %s: %s", symbol, e)
         result["status"] = "error"
 
-    return result
+    return _sanitize_dict(result)
 
 
 def _compute_stats(evaluated: list[dict]) -> dict:
@@ -217,7 +238,7 @@ def _compute_stats(evaluated: list[dict]) -> dict:
     gross_losses = abs(sum(p["pnl_pct"] for p in with_entry if (p.get("pnl_pct") or 0) < 0))
     profit_factor = round(gross_wins / gross_losses, 2) if gross_losses > 0 else None
 
-    return {
+    return _sanitize_dict({
         "picks": evaluated,
         "stats": {
             "total_picks": len(evaluated),
@@ -239,7 +260,7 @@ def _compute_stats(evaluated: list[dict]) -> dict:
             "avg_speed_days": avg_speed,
             "profit_factor": profit_factor,
         },
-    }
+    })
 
 
 def _get_evaluated_picks() -> list[dict]:
