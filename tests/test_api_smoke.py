@@ -1717,3 +1717,53 @@ class TestDividendAnalysis:
         assert data["symbol"] == "AAPL"
         assert "overall" in data
         assert "grade" in data["overall"]
+
+
+# ── ETF Deep Analysis ────────────────────────────────────────
+class TestEtfAnalysis:
+    """ETF analysis endpoints return correct structure."""
+
+    @pytest.fixture(autouse=True, scope="class")
+    def setup_auth(self):
+        type(self).c, type(self).email = _register_and_login()
+
+    def test_etf_list(self):
+        r = _authed_get("/api/etf-analysis", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert "items" in data
+        assert isinstance(data["items"], list)
+        assert "count" in data
+
+    def test_etf_list_filter_type(self):
+        r = _authed_get("/api/etf-analysis?type=Bond", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert isinstance(data["items"], list)
+
+    def test_etf_detail(self):
+        r = _authed_get("/api/etf-analysis/SPY", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["symbol"] == "SPY"
+        # In TESTING mode cache may be empty — accept either shape
+        if "error" not in data:
+            assert "holdings" in data
+            assert "sector_allocation" in data
+            assert "expense_ratio" in data
+
+    def test_etf_compare(self):
+        r = _authed_get("/api/etf-analysis/compare?symbols=SPY,QQQ", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert "items" in data
+        assert data["count"] >= 0
+
+    def test_etf_overlap(self):
+        r = _authed_get("/api/etf-analysis/overlap?a=SPY&b=QQQ", self.c)
+        assert r.status_code == 200
+        data = r.json()
+        assert "overlap_count" in data
+        assert "common_holdings" in data
+        assert data["etf_a"] == "SPY"
+        assert data["etf_b"] == "QQQ"

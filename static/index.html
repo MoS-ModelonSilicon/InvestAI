@@ -63,6 +63,9 @@
             <li><a href="#" class="nav-link" data-page="dividends">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 Dividends</a></li>
+            <li><a href="#" class="nav-link" data-page="etf-analysis">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                ETF Analysis</a></li>
         </ul>
         <div class="nav-section-label">Track &amp; Learn</div>
         <ul class="nav-links">
@@ -779,6 +782,61 @@
             <div id="div-container"></div>
         </section>
 
+        <!-- ─── ETF Deep Analysis ────────────────────── -->
+        <section id="page-etf-analysis" class="page">
+            <div class="page-header">
+                <h1>ETF Deep Analysis</h1>
+                <span class="scr-result-count" id="etf-stats"></span>
+            </div>
+            <p class="div-subtitle">Holdings, overlap, comparison &amp; screening for 100+ ETFs</p>
+
+            <!-- Filter chips -->
+            <div class="etf-filter-chips">
+                <span class="etf-chip-label">Type:</span>
+                <button class="etf-chip" data-key="type" data-value="Equity" onclick="_etfToggleFilter('type','Equity')">Equity</button>
+                <button class="etf-chip" data-key="type" data-value="Bond" onclick="_etfToggleFilter('type','Bond')">Bond</button>
+                <button class="etf-chip" data-key="type" data-value="Sector" onclick="_etfToggleFilter('type','Sector')">Sector</button>
+                <button class="etf-chip" data-key="type" data-value="Thematic" onclick="_etfToggleFilter('type','Thematic')">Thematic</button>
+                <button class="etf-chip" data-key="type" data-value="Commodity" onclick="_etfToggleFilter('type','Commodity')">Commodity</button>
+                <button class="etf-chip" data-key="type" data-value="Factor" onclick="_etfToggleFilter('type','Factor')">Factor</button>
+                <span class="etf-chip-label" style="margin-left:12px">Region:</span>
+                <button class="etf-chip" data-key="region" data-value="US" onclick="_etfToggleFilter('region','US')">US</button>
+                <button class="etf-chip" data-key="region" data-value="International" onclick="_etfToggleFilter('region','International')">Int'l</button>
+                <button class="etf-chip" data-key="region" data-value="Emerging" onclick="_etfToggleFilter('region','Emerging')">EM</button>
+                <button class="etf-chip" data-key="region" data-value="Asia" onclick="_etfToggleFilter('region','Asia')">Asia</button>
+                <button class="etf-chip" data-key="region" data-value="Global" onclick="_etfToggleFilter('region','Global')">Global</button>
+            </div>
+
+            <div class="page-search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="etf-search" placeholder="Search ticker, name, or category…" oninput="_etfSearch()">
+            </div>
+
+            <div id="etf-container"></div>
+
+            <!-- Compare tool -->
+            <div class="card etf-section" style="margin-top:24px">
+                <h3>Compare ETFs</h3>
+                <div class="etf-tool-row">
+                    <input type="text" id="etf-compare-input" placeholder="e.g. SPY, QQQ, VTI" class="etf-tool-input">
+                    <button class="btn btn-primary" onclick="_etfCompare()">Compare</button>
+                </div>
+                <div id="etf-compare-result"></div>
+            </div>
+
+            <!-- Overlap tool -->
+            <div class="card etf-section" style="margin-top:16px">
+                <h3>Holdings Overlap</h3>
+                <div class="etf-tool-row">
+                    <input type="text" id="etf-overlap-a" placeholder="ETF A (e.g. SPY)" class="etf-tool-input etf-tool-sm">
+                    <span style="color:var(--text-muted)">vs</span>
+                    <input type="text" id="etf-overlap-b" placeholder="ETF B (e.g. QQQ)" class="etf-tool-input etf-tool-sm">
+                    <button class="btn btn-primary" onclick="_etfOverlap()">Analyze</button>
+                </div>
+                <div id="etf-overlap-result"></div>
+            </div>
+        </section>
+
         <!-- ─── Admin Panel ──────────────────────────── -->
         <section id="page-admin" class="page">
             <div class="page-header">
@@ -1026,6 +1084,7 @@
     <script src="/static/js/value-scanner.js"></script>
     <script src="/static/js/heatmap.js"></script>
     <script src="/static/js/dividends.js"></script>
+    <script src="/static/js/etf-analysis.js"></script>
     <script src="/static/js/smart-advisor.js"></script>
     <script src="/static/js/advisor.js"></script>
     <script src="/static/js/picks-tracker.js"></script>

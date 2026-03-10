@@ -43,6 +43,7 @@ from src.routers import (
     admin,
     assistant,
     dividend_analysis,
+    etf_analysis,
     export,
     heatmap,
     public_stock,
@@ -191,6 +192,7 @@ app.include_router(admin.router)
 app.include_router(assistant.router)
 app.include_router(export.router)
 app.include_router(dividend_analysis.router)
+app.include_router(etf_analysis.router)
 app.include_router(heatmap.router)
 app.include_router(public_stock.router)
 app.include_router(sentiment.router)
