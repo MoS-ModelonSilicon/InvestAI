@@ -279,13 +279,27 @@ def _try_yahoo_candles(symbol: str, resolution: str, from_ts: int, to_ts: int, f
 
         if not force:
             _yahoo_success()
+        # Drop rows with NaN close prices to avoid downstream serialisation errors
+        df = df.dropna(subset=["Close"])
+        if df.empty:
+            logger.debug("Yahoo candles all-NaN for %s (%s)", symbol, yf_interval)
+            return None
+
+        import math as _math
+
+        def _safe_round(v, n=2):
+            """Round a value, replacing NaN/Inf with 0."""
+            if isinstance(v, float) and (_math.isnan(v) or _math.isinf(v)):
+                return 0.0
+            return round(v, n)
+
         result = {
             "s": "ok",
-            "c": [round(v, 2) for v in df["Close"].tolist()],
-            "o": [round(v, 2) for v in df["Open"].tolist()],
-            "h": [round(v, 2) for v in df["High"].tolist()],
-            "l": [round(v, 2) for v in df["Low"].tolist()],
-            "v": [int(v) for v in df["Volume"].tolist()],
+            "c": [_safe_round(v) for v in df["Close"].tolist()],
+            "o": [_safe_round(v) for v in df["Open"].tolist()],
+            "h": [_safe_round(v) for v in df["High"].tolist()],
+            "l": [_safe_round(v) for v in df["Low"].tolist()],
+            "v": [int(v) if not (_math.isnan(v) or _math.isinf(v)) else 0 for v in df["Volume"].tolist()],
             "t": [int(ts.timestamp()) for ts in df.index],
         }
         # Compute market session labels for intraday data
