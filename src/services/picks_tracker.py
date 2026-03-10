@@ -40,7 +40,7 @@ def _sanitize(val):
 
 def _sanitize_dict(d: dict) -> dict:
     """Recursively sanitize all float values in a dict."""
-    out = {}
+    out: dict = {}
     for k, v in d.items():
         if isinstance(v, dict):
             out[k] = _sanitize_dict(v)
@@ -238,29 +238,31 @@ def _compute_stats(evaluated: list[dict]) -> dict:
     gross_losses = abs(sum(p["pnl_pct"] for p in with_entry if (p.get("pnl_pct") or 0) < 0))
     profit_factor = round(gross_wins / gross_losses, 2) if gross_losses > 0 else None
 
-    return _sanitize_dict({
-        "picks": evaluated,
-        "stats": {
-            "total_picks": len(evaluated),
-            "with_entry": len(with_entry),
-            "winners": len(winners),
-            "stopped": len(stopped),
-            "open": len(open_picks),
-            "win_rate": round(win_rate, 1),
-            "avg_win_pct": round(avg_win, 1),
-            "avg_loss_pct": round(avg_loss, 1),
-            "avg_pnl_pct": round(avg_pnl, 1),
-            "best_pick": best_pick["symbol"] if best_pick else None,
-            "best_gain_pct": best_pick["best_gain_pct"] if best_pick else None,
-            "worst_pick": worst_pick["symbol"] if worst_pick else None,
-            "worst_loss_pct": worst_pick["worst_loss_pct"] if worst_pick else None,
-            "avg_risk_reward": avg_rr,
-            "total_pnl_pct": total_pnl,
-            "avg_days_held": avg_days,
-            "avg_speed_days": avg_speed,
-            "profit_factor": profit_factor,
-        },
-    })
+    return _sanitize_dict(
+        {
+            "picks": evaluated,
+            "stats": {
+                "total_picks": len(evaluated),
+                "with_entry": len(with_entry),
+                "winners": len(winners),
+                "stopped": len(stopped),
+                "open": len(open_picks),
+                "win_rate": round(win_rate, 1),
+                "avg_win_pct": round(avg_win, 1),
+                "avg_loss_pct": round(avg_loss, 1),
+                "avg_pnl_pct": round(avg_pnl, 1),
+                "best_pick": best_pick["symbol"] if best_pick else None,
+                "best_gain_pct": best_pick["best_gain_pct"] if best_pick else None,
+                "worst_pick": worst_pick["symbol"] if worst_pick else None,
+                "worst_loss_pct": worst_pick["worst_loss_pct"] if worst_pick else None,
+                "avg_risk_reward": avg_rr,
+                "total_pnl_pct": total_pnl,
+                "avg_days_held": avg_days,
+                "avg_speed_days": avg_speed,
+                "profit_factor": profit_factor,
+            },
+        }
+    )
 
 
 def _get_evaluated_picks() -> list[dict]:

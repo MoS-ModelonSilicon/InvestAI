@@ -612,19 +612,33 @@ def screen_instruments(
             continue
         if year_change_max is not None and (row.get("year_change") is None or row["year_change"] > year_change_max):
             continue
-        if profit_margin_min is not None and (row.get("profit_margin") is None or row["profit_margin"] < profit_margin_min):
+        if profit_margin_min is not None and (
+            row.get("profit_margin") is None or row["profit_margin"] < profit_margin_min
+        ):
             continue
-        if return_on_equity_min is not None and (row.get("return_on_equity") is None or row["return_on_equity"] < return_on_equity_min):
+        if return_on_equity_min is not None and (
+            row.get("return_on_equity") is None or row["return_on_equity"] < return_on_equity_min
+        ):
             continue
-        if debt_to_equity_max is not None and (row.get("debt_to_equity") is None or row["debt_to_equity"] > debt_to_equity_max):
+        if debt_to_equity_max is not None and (
+            row.get("debt_to_equity") is None or row["debt_to_equity"] > debt_to_equity_max
+        ):
             continue
-        if revenue_growth_min is not None and (row.get("revenue_growth") is None or row["revenue_growth"] < revenue_growth_min):
+        if revenue_growth_min is not None and (
+            row.get("revenue_growth") is None or row["revenue_growth"] < revenue_growth_min
+        ):
             continue
-        if earnings_growth_min is not None and (row.get("earnings_growth") is None or row["earnings_growth"] < earnings_growth_min):
+        if earnings_growth_min is not None and (
+            row.get("earnings_growth") is None or row["earnings_growth"] < earnings_growth_min
+        ):
             continue
-        if pct_from_high_min is not None and (row.get("pct_from_high") is None or row["pct_from_high"] < pct_from_high_min):
+        if pct_from_high_min is not None and (
+            row.get("pct_from_high") is None or row["pct_from_high"] < pct_from_high_min
+        ):
             continue
-        if pct_from_high_max is not None and (row.get("pct_from_high") is None or row["pct_from_high"] > pct_from_high_max):
+        if pct_from_high_max is not None and (
+            row.get("pct_from_high") is None or row["pct_from_high"] > pct_from_high_max
+        ):
             continue
         if region_not and row.get("region", "US") == region_not:
             continue
