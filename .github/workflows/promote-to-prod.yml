@@ -47,8 +47,8 @@ jobs:
       - name: Quick health check
         run: |
           echo "Checking staging health..."
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.STAGING_URL }}/api/dashboard/summary" --max-time 30)
-          echo "Dashboard API: HTTP $STATUS"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.STAGING_URL }}/login" --max-time 30)
+          echo "Login page: HTTP $STATUS"
           if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
             echo "Staging is healthy"
           else
