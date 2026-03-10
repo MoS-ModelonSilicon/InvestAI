@@ -493,6 +493,17 @@
                     <button class="pk-source-btn" data-source="tradingview" onclick="setPicksSource('tradingview')">&#x1F4C8; TradingView</button>
                     <button class="pk-source-btn" data-source="finviz" onclick="setPicksSource('finviz')">&#x1F50D; Finviz</button>
                 </div>
+                <div class="pk-filters pk-smart-filters">
+                    <span class="pk-filter-group-label">Smart:</span>
+                    <button class="pk-smart-btn active" data-smart="all" onclick="setPicksSmartFilter(null)" title="Show all picks">All</button>
+                    <button class="pk-smart-btn" data-smart="winners" onclick="setPicksSmartFilter('winners')" title="Picks that hit at least one target">&#x1F3C6; Winners</button>
+                    <button class="pk-smart-btn" data-smart="high_rr" onclick="setPicksSmartFilter('high_rr')" title="Risk/Reward ratio &#x2265; 2:1">&#x1F3AF; High R/R</button>
+                    <button class="pk-smart-btn" data-smart="fast_movers" onclick="setPicksSmartFilter('fast_movers')" title="Winners that hit target within 5 days">&#x26A1; Fast Movers</button>
+                    <button class="pk-smart-btn" data-smart="big_gains" onclick="setPicksSmartFilter('big_gains')" title="P&amp;L &#x2265; +10%">&#x1F680; Big Gains</button>
+                    <button class="pk-smart-btn" data-smart="low_risk" onclick="setPicksSmartFilter('low_risk')" title="Max drawdown under 10%">&#x1F6E1;&#xFE0F; Low Risk</button>
+                    <button class="pk-smart-btn" data-smart="open_setups" onclick="setPicksSmartFilter('open_setups')" title="Still in play — not hit target or stop">&#x1F7E1; Open Setups</button>
+                    <button class="pk-smart-btn" data-smart="multi_target" onclick="setPicksSmartFilter('multi_target')" title="Hit 2+ price targets">&#x1F4AF; Multi-Target</button>
+                </div>
             </div>
             <div class="pk-source-info" id="pk-source-info"></div>
             <div class="pk-stats-row" id="picks-stats-row"></div>
