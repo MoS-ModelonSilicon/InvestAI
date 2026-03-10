@@ -270,6 +270,47 @@
                 <div class="scr-search-hint" id="scr-search-hint" style="display:none;">Showing results across <strong>all markets &amp; asset types</strong> — filters are bypassed while searching</div>
             </div>
             <div class="scr-cache-banner" id="scr-cache-banner" style="display:none;"></div>
+            <!-- ── Quick-filter chip bar ── -->
+            <div class="scr-chip-bar" id="scr-chip-bar">
+                <div class="scr-chip-row" id="scr-chip-row-main">
+                    <button class="scr-chip" data-chip="buy_rated" title="Signal = Buy">🟢 Buy Rated</button>
+                    <button class="scr-chip" data-chip="mega_cap" title="Market cap &gt; $200B">🏢 Mega Cap</button>
+                    <button class="scr-chip" data-chip="high_growth" title="Revenue or earnings growth &gt; 20%">📈 High Growth</button>
+                    <button class="scr-chip" data-chip="dividend_payers" title="Dividend yield ≥ 3%">💰 Dividend Payers</button>
+                    <button class="scr-chip" data-chip="near_52w_low" title="Within 10% of 52-week low">🏷️ Near 52W Low</button>
+                    <button class="scr-chip" data-chip="top_gainers" title="1-year change &gt; 50%">🚀 Top Gainers</button>
+                    <button class="scr-chip" data-chip="high_quality" title="Profit margin &gt; 15%, ROE &gt; 18%, D/E &lt; 100%">🏆 High Quality</button>
+                    <button class="scr-chip" data-chip="low_vol" title="Beta &lt; 0.8">😴 Low Volatility</button>
+                    <button class="scr-chip" data-chip="garp" title="Growth at Reasonable Price: earnings growth &gt; 15%, P/E &lt; 25">🧠 GARP</button>
+                    <button class="scr-chip" data-chip="turnaround" title="Down &gt; 20% but signal = Buy">🔄 Turnaround</button>
+                    <button class="scr-chip" data-chip="etfs_only" title="ETFs only">📦 ETFs Only</button>
+                    <button class="scr-chip" data-chip="tech" title="Technology sector">💻 Tech</button>
+                    <button class="scr-chip scr-chip-more" data-chip="_toggle_more" title="Show more filters">More ▾</button>
+                </div>
+                <div class="scr-chip-row scr-chip-row-extra" id="scr-chip-row-extra" style="display:none;">
+                    <button class="scr-chip" data-chip="high_upside" title="Analyst upside &gt; 20%">🎯 High Upside</button>
+                    <button class="scr-chip" data-chip="beaten_down" title="1-year change &lt; -20%">📉 Beaten Down</button>
+                    <button class="scr-chip" data-chip="mid_cap" title="Market cap $2B–$10B">⚖️ Mid Cap</button>
+                    <button class="scr-chip" data-chip="small_cap" title="Market cap &lt; $2B">🧪 Small Cap</button>
+                    <button class="scr-chip" data-chip="deep_value" title="P/E &lt; 12 + dividend &gt; 0%">💎 Deep Value</button>
+                    <button class="scr-chip" data-chip="low_pe" title="P/E &lt; 15">📊 Low P/E</button>
+                    <button class="scr-chip" data-chip="high_beta" title="Beta &gt; 1.5">🔥 High Beta</button>
+                    <button class="scr-chip" data-chip="near_52w_high" title="Within 5% of 52-week high">📍 Near 52W High</button>
+                    <button class="scr-chip" data-chip="safe_haven" title="Low beta + dividend + Buy">🛡️ Safe Haven</button>
+                    <button class="scr-chip" data-chip="cash_machines" title="Profit margin &gt; 20%">💸 Cash Machines</button>
+                    <button class="scr-chip" data-chip="low_debt" title="Debt/Equity &lt; 50%">🪨 Low Debt</button>
+                    <button class="scr-chip" data-chip="yield_5plus" title="Dividend yield ≥ 5%">🪙 Yield &gt; 5%</button>
+                    <button class="scr-chip" data-chip="healthcare" title="Healthcare sector">💊 Healthcare</button>
+                    <button class="scr-chip" data-chip="financials" title="Financial Services sector">🏦 Financials</button>
+                    <button class="scr-chip" data-chip="energy" title="Energy sector">⚡ Energy</button>
+                    <button class="scr-chip" data-chip="international" title="Non-US stocks">🌏 International</button>
+                    <button class="scr-chip" data-chip="india" title="India region">🇮🇳 India</button>
+                    <button class="scr-chip" data-chip="hyper_growth" title="Revenue or earnings growth &gt; 40%">⚡ Hyper Growth</button>
+                    <button class="scr-chip" data-chip="fallen_angels" title="Down 25%+ but profitable &amp; not Avoid">🌊 Fallen Angels</button>
+                    <button class="scr-chip" data-chip="boring_beautiful" title="Low beta, dividend, low debt, profitable">💤 Boring &amp; Beautiful</button>
+                    <button class="scr-chip" data-chip="avoid_rated" title="Signal = Avoid">⚠️ Avoid Rated</button>
+                </div>
+            </div>
             <div class="screener-layout">
                 <aside class="screener-filters">
                     <h3>Filters</h3>
