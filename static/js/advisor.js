@@ -422,27 +422,28 @@ function _renderTADetailModal(data) {
                                 <button class="ta-chart-mode-btn ${_taChartMode === 'candle' ? 'active' : ''}" onclick="_setChartMode('candle')">Candlestick</button>
                                 <button class="ta-chart-mode-btn ${_taChartMode === 'line' ? 'active' : ''}" onclick="_setChartMode('line')">Line</button>
                             </div>
+                            <button class="ta-chart-expand-btn" onclick="_expandChart()" title="Open chart fullscreen">⛶ Expand</button>
                         </div>
                         <div class="ta-overlay-toggles">${overlayBtns}</div>
                         <div id="ta-chart-pattern-badge"></div>
-                        <canvas id="ta-detail-canvas" height="220"></canvas>
+                        <canvas id="ta-detail-canvas" height="380"></canvas>
                     </div>
                 `, true)}
 
                 ${_taSecWrap('rsi', '📉 RSI (14)', `
-                    <div class="ta-detail-chart-area"><canvas id="ta-rsi-canvas" height="80"></canvas></div>
+                    <div class="ta-detail-chart-area"><canvas id="ta-rsi-canvas" height="120"></canvas></div>
                 `, false)}
 
                 ${_taSecWrap('macd', '📉 MACD (12, 26, 9)', `
-                    <div class="ta-detail-chart-area"><canvas id="ta-macd-canvas" height="90"></canvas></div>
+                    <div class="ta-detail-chart-area"><canvas id="ta-macd-canvas" height="130"></canvas></div>
                 `, false)}
 
                 ${_taSecWrap('stoch', '📉 Stochastic %K / %D', `
-                    <div class="ta-detail-chart-area"><canvas id="ta-stoch-canvas" height="80"></canvas></div>
+                    <div class="ta-detail-chart-area"><canvas id="ta-stoch-canvas" height="120"></canvas></div>
                 `, false)}
 
                 ${_taSecWrap('adx', '📉 ADX — Trend Strength', `
-                    <div class="ta-detail-chart-area"><canvas id="ta-adx-canvas" height="80"></canvas></div>
+                    <div class="ta-detail-chart-area"><canvas id="ta-adx-canvas" height="120"></canvas></div>
                 `, false)}
 
                 ${edgeSignals ? _taSecWrap('advsig', '★ Advanced Signals', '<div class="ta-detail-edge">' + edgeSignals + '</div>', false) : ''}
@@ -557,8 +558,10 @@ function _setChartMode(mode) {
    ════════════════════════════════════════════════════ */
 
 let _taPriceChart = null, _taRsiChart = null, _taMacdChart = null, _taStochChart = null, _taAdxChart = null, _taWaterfallChart = null;
+let _taLastData = null;
 
 function _drawAllTACharts(data) {
+    _taLastData = data;
     _drawWaterfallChart(data);
     _drawPriceChart(data);
     _drawRSIChart(data);
@@ -783,7 +786,7 @@ function _drawPriceChart(data) {
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: {
-                legend: { display: true, position: "top", labels: { color: "#8b8fa3", font: { size: 9 }, boxWidth: 10, filter: item => item.text !== 'Wick' } },
+                legend: { display: true, position: "top", labels: { color: "#8b8fa3", font: { size: 11 }, boxWidth: 12, filter: item => item.text !== 'Wick' } },
                 tooltip: {
                     mode: "index", intersect: false,
                     backgroundColor: "rgba(20,22,34,0.95)", titleColor: "#8b8fa3", bodyColor: "#e4e4e7",
@@ -798,8 +801,8 @@ function _drawPriceChart(data) {
                 },
             },
             scales: {
-                x: { display: true, ticks: { color: "#8b8fa3", font: { size: 9 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
-                y: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => currSym(data.currency) + v }, grid: { color: "rgba(42,45,62,0.3)" } },
+                x: { display: true, ticks: { color: "#8b8fa3", font: { size: 11 }, maxTicksLimit: 10 }, grid: { color: "rgba(42,45,62,0.3)" } },
+                y: { display: true, ticks: { color: "#8b8fa3", font: { size: 11 }, callback: v => currSym(data.currency) + v }, grid: { color: "rgba(42,45,62,0.3)" } },
             },
             interaction: { mode: "index", intersect: false },
         },
@@ -809,6 +812,54 @@ function _drawPriceChart(data) {
     const badgeEl = document.getElementById("ta-chart-pattern-badge");
     if (badgeEl) badgeEl.innerHTML = ''; // badges are now in their own section
 }
+
+/* ── Chart Fullscreen Expand ───────────────────── */
+let _taFsChart = null;
+function _expandChart() {
+    if (!_taPriceChart) return;
+    // Clone chart config from current chart
+    const src = _taPriceChart.config;
+    const overlay = document.createElement('div');
+    overlay.className = 'ta-chart-fullscreen-overlay';
+    const symbol = _taLastData?.symbol || '';
+    overlay.innerHTML = `
+        <div class="ta-fs-toolbar">
+            <h3>${symbol} — Price Chart</h3>
+            <div style="display:flex;gap:6px;align-items:center;">
+                <div class="ta-overlay-toggles" id="ta-fs-overlays"></div>
+                <button class="ta-fs-close" id="ta-fs-close-btn">✕ Close</button>
+            </div>
+        </div>
+        <div class="ta-fs-canvas-wrap"><canvas id="ta-fs-canvas"></canvas></div>`;
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    const closeFs = () => {
+        if (_taFsChart) { _taFsChart.destroy(); _taFsChart = null; }
+        overlay.remove();
+        document.body.style.overflow = '';
+    };
+    overlay.querySelector('#ta-fs-close-btn').addEventListener('click', closeFs);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeFs(); });
+    document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') { closeFs(); document.removeEventListener('keydown', escHandler); }
+    });
+
+    const fsCanvas = overlay.querySelector('#ta-fs-canvas');
+    const fsOpts = JSON.parse(JSON.stringify(src.options));
+    fsOpts.plugins.legend.labels.font = { size: 13 };
+    fsOpts.plugins.legend.labels.boxWidth = 14;
+    fsOpts.scales.x.ticks.font = { size: 12 };
+    fsOpts.scales.x.ticks.maxTicksLimit = 16;
+    fsOpts.scales.y.ticks.font = { size: 12 };
+
+    _taFsChart = new Chart(fsCanvas, {
+        type: src.type,
+        data: { labels: [...src.data.labels], datasets: src.data.datasets.map(ds => ({ ...ds, data: [...ds.data] })) },
+        options: fsOpts,
+    });
+}
+window._expandChart = _expandChart;
 
 /* ── RSI chart ──────────────────────────────────── */
 function _drawRSIChart(data) {
@@ -899,14 +950,14 @@ function _chartOpts(prefix, sugMin, sugMax) {
     return {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-            legend: { display: true, position: "top", labels: { color: "#8b8fa3", font: { size: 10 } } },
+            legend: { display: true, position: "top", labels: { color: "#8b8fa3", font: { size: 11 } } },
             tooltip: { mode: "index", intersect: false, backgroundColor: "rgba(20,22,34,0.95)", titleColor: "#8b8fa3", bodyColor: "#e4e4e7" },
         },
         scales: {
-            x: { display: true, ticks: { color: "#8b8fa3", font: { size: 9 }, maxTicksLimit: 8 }, grid: { color: "rgba(42,45,62,0.3)" } },
+            x: { display: true, ticks: { color: "#8b8fa3", font: { size: 10 }, maxTicksLimit: 10 }, grid: { color: "rgba(42,45,62,0.3)" } },
             y: {
                 display: true,
-                ticks: { color: "#8b8fa3", font: { size: 10 }, callback: v => prefix + v },
+                ticks: { color: "#8b8fa3", font: { size: 11 }, callback: v => prefix + v },
                 grid: { color: "rgba(42,45,62,0.3)" },
                 ...(sugMin != null ? { suggestedMin: sugMin } : {}),
                 ...(sugMax != null ? { suggestedMax: sugMax } : {}),
