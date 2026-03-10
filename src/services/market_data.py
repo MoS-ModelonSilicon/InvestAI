@@ -2877,10 +2877,21 @@ def warm_cache():
     logger.info("Cache warm phase 1 done in %.1fs", time.time() - t0)
     _warm_done.set()
 
+    # Rebuild screener snapshot early so users see stale-but-complete data
+    # while Phase 2 slowly fills remaining symbols.
+    try:
+        from src.services.screener import refresh_screener_snapshot
+
+        early_count = refresh_screener_snapshot()
+        logger.info("Early screener snapshot: %d instruments", early_count)
+    except Exception:
+        logger.exception("Failed early screener snapshot rebuild")
+
     # Phase 2 — remaining universe (sequential batches, no rush)
     rest = [s for s in ALL_UNIVERSE if not _get_cached(f"info:{s}")]
     if rest:
         logger.info("Cache warm phase 2: %d remaining symbols", len(rest))
+        batches_done = 0
         for i in range(0, len(rest), batch_size):
             batch = rest[i : i + batch_size]
             with ThreadPoolExecutor(max_workers=2) as pool:
@@ -2890,10 +2901,27 @@ def warm_cache():
                         fut.result()
                     except Exception:
                         pass
+            batches_done += 1
+            # Save progress every 40 batches (~320 symbols) so restarts
+            # don't lose accumulated data on Render free tier.
+            if batches_done % 40 == 0:
+                try:
+                    from src.services.persistence import save_market_cache_snapshot
+                    from src.services.screener import refresh_screener_snapshot as _refresh
+
+                    with _cache_lock:
+                        save_market_cache_snapshot(dict(_cache))
+                    _refresh()
+                    logger.info(
+                        "Phase 2 checkpoint: saved cache + rebuilt snapshot after %d batches",
+                        batches_done,
+                    )
+                except Exception:
+                    logger.exception("Phase 2 checkpoint save failed")
             time.sleep(3)  # larger pause between phase-2 batches
         logger.info("Cache warm phase 2 done in %.1fs total", time.time() - t0)
 
-    # Phase 3 — build screener snapshot now that all data is cached
+    # Phase 3 — final screener snapshot rebuild with all data
     try:
         from src.services.screener import refresh_screener_snapshot
 
