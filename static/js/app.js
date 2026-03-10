@@ -145,6 +145,7 @@ function navigateTo(page, pushState = true) {
     if (page === "picks-tracker") loadPicksTracker();
     if (page === "dca") loadDca();
     if (page === "admin") loadAdminPanel();
+    if (page === "heatmap") loadHeatmap();
 }
 
 async function loadCategories() {

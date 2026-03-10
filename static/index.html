@@ -48,6 +48,9 @@
             <li><a href="#" class="nav-link" data-page="screener">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 Screener</a></li>
+            <li><a href="#" class="nav-link" data-page="heatmap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="15" width="7" height="6" rx="1"/></svg>
+                Heatmap</a></li>
             <li><a href="#" class="nav-link" data-page="autopilot">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/><circle cx="12" cy="12" r="3"/></svg>
                 AI Picks</a></li>
@@ -366,6 +369,27 @@
             <div id="recs-no-profile" class="empty-state" style="display:none;">
                 <p>Complete your <a href="#" onclick="navigateTo('profile');return false;" style="color:var(--primary)">Risk Profile</a> first to get personalized recommendations.</p>
             </div>
+        </section>
+
+        <!-- ─── Heatmap ───────────────────────────────────── -->
+        <section id="page-heatmap" class="page">
+            <div class="page-header">
+                <h1>Market Heatmap</h1>
+            </div>
+            <div class="hm-toolbar">
+                <div class="hm-view-btns">
+                    <button class="hm-view-btn active" data-view="stocks" onclick="setHeatmapView('stocks')">Stocks</button>
+                    <button class="hm-view-btn" data-view="sectors" onclick="setHeatmapView('sectors')">Sectors</button>
+                    <button class="hm-view-btn" data-view="etfs" onclick="setHeatmapView('etfs')">ETFs</button>
+                </div>
+                <div class="hm-legend">
+                    <span class="hm-legend-label">-5%</span>
+                    <div class="hm-legend-bar"></div>
+                    <span class="hm-legend-label">+5%</span>
+                </div>
+            </div>
+            <div id="hm-breadcrumb" class="hm-breadcrumb" style="display:none;"></div>
+            <div id="heatmap-container" class="heatmap-container"></div>
         </section>
 
         <!-- ─── Value Scanner (tab of Screener) ────────── -->
@@ -978,6 +1002,7 @@
     <script src="/static/js/il-funds.js"></script>
     <script src="/static/js/autopilot.js"></script>
     <script src="/static/js/value-scanner.js"></script>
+    <script src="/static/js/heatmap.js"></script>
     <script src="/static/js/smart-advisor.js"></script>
     <script src="/static/js/advisor.js"></script>
     <script src="/static/js/picks-tracker.js"></script>
