@@ -26,6 +26,8 @@ PUBLIC_PATHS = {
     "/auth/forgot-password",
     "/auth/reset-password",
     "/health",
+    "/sitemap.xml",
+    "/robots.txt",
 }
 
 # ── Password hashing ─────────────────────────────────────────
@@ -89,6 +91,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # Allow static files without auth
         if path.startswith("/static/"):
+            return cast(Response, await call_next(request))
+
+        # Allow public stock pages & public API (SEO)
+        if path.startswith("/stocks/") or path.startswith("/api/public/"):
             return cast(Response, await call_next(request))
 
         cookie = request.cookies.get(COOKIE_NAME, "")

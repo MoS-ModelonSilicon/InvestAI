@@ -43,6 +43,7 @@ from src.routers import (
     admin,
     assistant,
     heatmap,
+    public_stock,
 )
 
 import time as _time, logging as _logging
@@ -186,6 +187,7 @@ app.include_router(dca.router)
 app.include_router(admin.router)
 app.include_router(assistant.router)
 app.include_router(heatmap.router)
+app.include_router(public_stock.router)
 
 
 # ── Health / version check (public, no auth) ─────────────────
