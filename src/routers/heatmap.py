@@ -26,7 +26,7 @@ def _build_heatmap_items(
 
     Each item: {symbol, name, sector, market_cap, change_pct, price}
     """
-    infos = fetch_batch(symbols, cached_only=cached_only)
+    infos = fetch_batch(symbols, cached_only=cached_only, include_stale=True)
     # Enrich with cached quote data (O(n) dict lookups, no API calls)
     quote_map = get_cached_quotes(symbols)
 
