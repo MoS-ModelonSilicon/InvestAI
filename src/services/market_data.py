@@ -2604,7 +2604,7 @@ def get_cached_quotes(symbols: list[str]) -> dict[str, dict]:
     """
     result: dict[str, dict] = {}
     for sym in symbols:
-        q = _get_cached(f"quote:{sym}")
+        q = _get_cached_any(f"quote:{sym}")
         if q:
             result[sym] = q
     return result
@@ -2918,14 +2918,16 @@ def start_cache_warmer():
 
     def _loop():
         while True:
+            # Evict BEFORE warming so fresh entries are never immediately removed.
+            # The previous cycle's data may be stale but the warmer will
+            # re-populate everything in Phase 1+2.
+            with _cache_lock:
+                _evict_expired()
+                logger.info("Cache size after eviction: %d entries", len(_cache))
             try:
                 warm_cache()
             except Exception as e:
                 logger.error("Cache warmer error: %s", e)
-            # Evict stale cache entries between warm cycles
-            with _cache_lock:
-                _evict_expired()
-                logger.info("Cache size after eviction: %d entries", len(_cache))
             time.sleep(CACHE_TTL - 60)  # refresh 1 min before expiry
 
     t = threading.Thread(target=_loop, daemon=True, name="cache-warmer")
