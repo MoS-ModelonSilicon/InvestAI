@@ -274,23 +274,9 @@ def _overall_grade(
     return {"score": composite, "grade": _letter(composite)}
 
 
-def analyze_dividend(symbol: str) -> Optional[dict[str, Any]]:
-    """Produce full dividend grade report for a single symbol."""
-    infos = fetch_batch([symbol], cached_only=True, include_stale=True)
-    info: Optional[dict[str, Any]] = None
-    for item in infos:
-        if item.get("symbol", "").upper() == symbol.upper():
-            info = item
-            break
-    if not info:
-        info = infos[0] if infos else None
-    if not info or not isinstance(info, dict):
-        return None
-
-    quotes = get_cached_quotes([symbol])
-    quote = quotes.get(symbol, {})
-
-    enriched: dict[str, Any] = {
+def _enrich_from_info(symbol: str, info: dict[str, Any], quote: dict[str, Any]) -> dict[str, Any]:
+    """Map cached info-dict fields to the enriched dict used by graders."""
+    return {
         "symbol": symbol,
         "name": info.get("name", symbol),
         "sector": info.get("sector", "N/A"),
@@ -299,21 +285,23 @@ def analyze_dividend(symbol: str) -> Optional[dict[str, Any]]:
         "payout_ratio": info.get("payout_ratio"),
         "debt_to_equity": info.get("debt_to_equity"),
         "free_cash_flow": info.get("free_cash_flow"),
-        "net_profit_margin": info.get("net_profit_margin"),
+        "net_profit_margin": info.get("profit_margin"),
         "revenue_growth": info.get("revenue_growth"),
-        "eps_growth": info.get("eps_growth"),
-        "roe": info.get("roe"),
+        "eps_growth": info.get("earnings_growth"),
+        "roe": info.get("return_on_equity"),
         "five_year_avg_yield": info.get("five_year_avg_yield"),
     }
 
+
+def _grade_one(enriched: dict[str, Any]) -> dict[str, Any]:
+    """Run all four graders + overall for a single enriched dict."""
     safety = _grade_safety(enriched)
     growth = _grade_growth(enriched)
     yld = _grade_yield(enriched)
     consistency = _grade_consistency(enriched)
     overall = _overall_grade(safety, growth, yld, consistency)
-
     return {
-        "symbol": symbol,
+        "symbol": enriched["symbol"],
         "name": enriched["name"],
         "sector": enriched["sector"],
         "price": enriched["price"],
@@ -328,13 +316,47 @@ def analyze_dividend(symbol: str) -> Optional[dict[str, Any]]:
     }
 
 
+def analyze_dividend(symbol: str) -> Optional[dict[str, Any]]:
+    """Produce full dividend grade report for a single symbol."""
+    infos = fetch_batch([symbol], cached_only=False, include_stale=True)
+    info: Optional[dict[str, Any]] = None
+    for item in infos:
+        if item.get("symbol", "").upper() == symbol.upper():
+            info = item
+            break
+    if not info:
+        info = infos[0] if infos else None
+    if not info or not isinstance(info, dict):
+        return None
+
+    quotes = get_cached_quotes([symbol])
+    quote = quotes.get(symbol, {})
+    enriched = _enrich_from_info(symbol, info, quote)
+    return _grade_one(enriched)
+
+
 def analyze_dividends_batch(symbols: list[str]) -> list[dict[str, Any]]:
-    """Grade multiple symbols; returns list sorted by overall score desc."""
+    """Grade multiple symbols; single batch fetch, sorted by overall score."""
+    infos = fetch_batch(symbols, cached_only=True, include_stale=True)
+    info_map: dict[str, dict[str, Any]] = {}
+    for item in infos:
+        sym = item.get("symbol", "").upper()
+        if sym:
+            info_map[sym] = item
+
+    quotes = get_cached_quotes(list(info_map.keys())) if info_map else {}
+
     results: list[dict[str, Any]] = []
     for sym in symbols:
+        info = info_map.get(sym.upper())
+        if not info:
+            continue
         try:
-            result = analyze_dividend(sym)
-            if result and result.get("dividend_yield") and result["dividend_yield"] > 0:
+            quote = quotes.get(sym.upper(), {})
+            enriched = _enrich_from_info(sym.upper(), info, quote)
+            result = _grade_one(enriched)
+            # Include stocks with dividend yield; skip non-payers
+            if result.get("dividend_yield") and result["dividend_yield"] > 0:
                 results.append(result)
         except Exception:
             logger.debug("dividend analysis failed for %s", sym, exc_info=True)
