@@ -569,39 +569,35 @@ def startup():
     db.close()
 
     if not _testing:
-        # Restore cached data from DB before starting scanners
-        # This lets the API serve last-known data immediately
-        try:
-            from src.services.persistence import restore_all_caches
+        import threading
 
-            restore_all_caches()
-        except Exception:
-            import logging
+        def _deferred_init():
+            """Heavy init in background so the port binds immediately."""
+            try:
+                from src.services.persistence import restore_all_caches
 
-            logging.getLogger("investai").exception("Failed to restore caches from DB")
+                restore_all_caches()
+            except Exception:
+                logging.getLogger("investai").exception("Failed to restore caches from DB")
 
-        from src.services.market_data import start_cache_warmer
+            from src.services.market_data import start_cache_warmer
 
-        start_cache_warmer()
+            start_cache_warmer()
 
-        # Single background scheduler handles all periodic scans
-        # (value scanner, trading advisor) on fixed server-side intervals
-        from src.services.background_scheduler import start_background_scheduler
+            from src.services.background_scheduler import start_background_scheduler
 
-        start_background_scheduler()
+            start_background_scheduler()
 
-        # Start picks multi-source scraper scheduler (fetches Reddit, TradingView, Finviz)
-        try:
-            from src.services.scrapers.pipeline import (
-                seed_db_from_json,
-                start_background_scheduler as start_picks_scheduler,
-            )
+            try:
+                from src.services.scrapers.pipeline import (
+                    seed_db_from_json,
+                    start_background_scheduler as start_picks_scheduler,
+                )
 
-            # One-time: import legacy discord-picks.json into the database
-            seed_db_from_json()
+                seed_db_from_json()
+                start_picks_scheduler()
+            except Exception:
+                logging.getLogger("investai").exception("Failed to start picks scraper scheduler")
 
-            start_picks_scheduler()
-        except Exception:
-            import logging
-
-            logging.getLogger("investai").exception("Failed to start picks scraper scheduler")
+        threading.Thread(target=_deferred_init, daemon=True, name="deferred-init").start()
+        logger.info("Deferred initialization started in background")
