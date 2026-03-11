@@ -1,5 +1,5 @@
 /* ETF Deep Analysis — holdings, overlap, comparison, screening */
-/* global fetchAPI, navigateTo, Chart */
+/* global api, navigateTo, Chart */
 
 let _etfData = null;
 let _etfSortKey = "market_cap";
@@ -23,7 +23,7 @@ async function loadEtfAnalysis() {
     ctr.innerHTML = '<div class="loading-spinner"></div>';
 
     try {
-        const data = await fetchAPI("/api/etf-analysis");
+        const data = await api.get("/api/etf-analysis");
         _etfData = data.items || [];
         _renderEtfList(_etfData);
         _updateEtfStats(_etfData);
@@ -186,7 +186,7 @@ async function _showEtfDetail(symbol) {
     ctr.innerHTML = '<div class="loading-spinner"></div>';
 
     try {
-        const data = await fetchAPI(`/api/etf-analysis/${symbol}`);
+        const data = await api.get(`/api/etf-analysis/${symbol}`);
         if (data.error) {
             ctr.innerHTML = `<p class="empty-state">${data.error}</p>`;
             return;
@@ -378,7 +378,7 @@ async function _etfCompare() {
     resultEl.innerHTML = '<div class="loading-spinner"></div>';
 
     try {
-        const data = await fetchAPI(`/api/etf-analysis/compare?symbols=${symbols.join(",")}`);
+        const data = await api.get(`/api/etf-analysis/compare?symbols=${symbols.join(",")}`);
         _renderCompareResult(data);
     } catch {
         resultEl.innerHTML = '<p class="empty-state">Failed to compare ETFs.</p>';
@@ -455,7 +455,7 @@ async function _etfOverlap() {
     resultEl.innerHTML = '<div class="loading-spinner"></div>';
 
     try {
-        const data = await fetchAPI(`/api/etf-analysis/overlap?a=${a}&b=${b}`);
+        const data = await api.get(`/api/etf-analysis/overlap?a=${a}&b=${b}`);
         _renderOverlapResult(data);
     } catch {
         resultEl.innerHTML = '<p class="empty-state">Failed to compute overlap.</p>';

@@ -1,5 +1,5 @@
 /* Dividend Analysis — A–F grading page */
-/* global fetchAPI, navigateTo */
+/* global api, navigateTo */
 
 let _divData = null;
 let _divSortKey = "overall";
@@ -25,7 +25,7 @@ async function loadDividends() {
     if (searchInput) searchInput.value = "";
 
     try {
-        const data = await fetchAPI("/api/dividends");
+        const data = await api.get("/api/dividends");
         _divData = data.items || [];
         _renderDividendTable(_divData);
     } catch (e) {
@@ -61,7 +61,7 @@ function _divSearch() {
 async function _fetchSingleDividend(symbol) {
     const ctr = document.getElementById("div-container");
     try {
-        const data = await fetchAPI(`/api/dividends/${symbol}`);
+        const data = await api.get(`/api/dividends/${symbol}`);
         if (data && !data.error) {
             _renderDividendDetail(data);
         } else {
