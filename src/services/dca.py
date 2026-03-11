@@ -231,9 +231,11 @@ def get_dca_dashboard(db: Session, user_id: int) -> dict:
 
     # Pre-fetch all needed symbols in parallel so subsequent
     # fetch_stock_info calls hit the in-memory cache instantly.
+    # full=False skips the expensive get_metrics() Finnhub call for
+    # uncached symbols — DCA only needs price, name, and pct_from_high.
     all_symbols = list({p.symbol for p in active_plans} | {h.symbol for h in holdings})
     if all_symbols:
-        fetch_batch(all_symbols)
+        fetch_batch(all_symbols, full=False)
 
     # Find opportunities (dipped stocks)
     opportunities = []
@@ -754,7 +756,7 @@ def get_rebalance_suggestions(db: Session, user_id: int) -> list[dict]:
     # from get_dca_dashboard, but this covers standalone calls too).
     holding_symbols = list({h.symbol for h in holdings})
     if holding_symbols:
-        fetch_batch(holding_symbols)
+        fetch_batch(holding_symbols, full=False)
 
     # Calculate current portfolio weights
     symbol_values: dict[str, float] = {}
