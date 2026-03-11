@@ -294,7 +294,6 @@ STOCK_UNIVERSE = [
     "ITMR.TA",
     "SPNS.TA",
     "NVPT.TA",
-
     # ── S&P 500 + Russell 1000 Expansion ─────────────────────
     "INTU",
     "KLAC",
@@ -1022,7 +1021,6 @@ ETF_UNIVERSE = [
     "VNQ",
     "USO",
     "DBC",
-
     # ── Additional ETFs ──────────────────────────────────────
     "XBI",
     "IBB",
@@ -1410,7 +1408,6 @@ KNOWN_NAMES: dict[str, str] = {
     "VNQ": "Vanguard Real Estate ETF",
     "USO": "United States Oil Fund",
     "DBC": "Invesco DB Commodity Index Tracking Fund",
-
     # ── Expansion ────────────────────────────────────────────
     "INTU": "Intuit Inc",
     "KLAC": "KLA Corporation",
@@ -2228,8 +2225,24 @@ _INTL = {
     "Japan": {"TM", "SONY", "MUFG"},
     "Taiwan": {"TSM"},
     "Europe": {
-        "ASML", "NVO", "SAP", "SHEL", "AZN", "UL", "DEO", "TTE", "SPOT",
-        "ARGX", "ARM", "BIRK", "ONON", "RIO", "LOGI", "GLOB", "ESTC", "CRSP",
+        "ASML",
+        "NVO",
+        "SAP",
+        "SHEL",
+        "AZN",
+        "UL",
+        "DEO",
+        "TTE",
+        "SPOT",
+        "ARGX",
+        "ARM",
+        "BIRK",
+        "ONON",
+        "RIO",
+        "LOGI",
+        "GLOB",
+        "ESTC",
+        "CRSP",
     },
     "India": {"INFY", "WIT", "IBN"},
     "Canada": {"SHOP", "RY", "TD", "TECK", "CCJ", "OVV", "WPM", "AEM"},
@@ -2292,7 +2305,6 @@ _INTL = {
         "NVPT.TA",
         "CAMT",
     },
-
     "South Korea": {"CPNG"},
     "Australia": {"BHP"},
 }
@@ -2365,15 +2377,6 @@ def _get_cached(key: str) -> Any:
             ts, data = _cache[key]
             if time.time() - ts < CACHE_TTL:
                 return data
-    return None
-
-
-def _get_cached_any(key: str) -> Any:
-    """Return cached value even if expired (stale). Used by snapshot builders."""
-    with _cache_lock:
-        if key in _cache:
-            _, data = _cache[key]
-            return data
     return None
 
 
