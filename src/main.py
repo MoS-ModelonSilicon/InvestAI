@@ -597,9 +597,7 @@ def startup():
                 seed_db_from_json()
                 start_picks_scheduler()
             except Exception:
-                logging.getLogger("investai").exception(
-                    "Failed to start picks scraper scheduler"
-                )
+                logging.getLogger("investai").exception("Failed to start picks scraper scheduler")
 
         threading.Thread(target=_deferred_init, daemon=True, name="deferred-init").start()
         logger.info("Deferred initialization started in background")
