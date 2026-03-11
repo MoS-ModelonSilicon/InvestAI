@@ -29,7 +29,8 @@ async function loadDividends() {
         _divData = data.items || [];
         _renderDividendTable(_divData);
     } catch (e) {
-        ctr.innerHTML = '<p class="empty-state">Failed to load dividend data.</p>';
+        ctr.innerHTML = '<p class="empty-state">Failed to load dividend data. Please try again later.</p>';
+        console.error("Dividends load error:", e);
     }
 }
 
@@ -106,7 +107,7 @@ function _renderDividendTable(items) {
     if (!ctr) return;
 
     if (!items || items.length === 0) {
-        ctr.innerHTML = '<p class="empty-state">No dividend-paying stocks found.</p>';
+        ctr.innerHTML = '<p class="empty-state">No dividend-paying stocks found. Data is still loading — try again in a minute.</p>';
         return;
     }
 
